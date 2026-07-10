@@ -21,7 +21,7 @@ import {
 export const Route = createFileRoute("/e/$slug")({
   ssr: false,
   component: EventDetailPage,
-  head: ({ params }) => ({
+  head: ({ params }: { params: { slug: string } }) => ({
     meta: [
       { title: `${params.slug} — TixNaija` },
       { name: "description", content: "Buy tickets to this event on TixNaija." },
