@@ -156,29 +156,76 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* Coming up — typographic empty state, no decorative pin */}
+      {/* Coming up — real published events */}
       <section className="mx-auto max-w-6xl px-4 pb-24">
         <div className="mb-6 flex items-end justify-between">
           <div>
             <h2 className="font-display text-3xl md:text-4xl">Coming up</h2>
-            <p className="text-sm text-muted-foreground">Fresh events landing here soon.</p>
+            <p className="text-sm text-muted-foreground">
+              {upcoming.data && upcoming.data.length > 0
+                ? "Grab your ticket before they're gone."
+                : "Fresh events landing here soon."}
+            </p>
           </div>
+          <Link to="/browse" className="text-xs uppercase tracking-[0.2em] text-primary hover:underline">
+            Browse all →
+          </Link>
         </div>
-        <div className="grid gap-4 md:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="border border-dashed border-border bg-card/40 p-8"
-            >
-              <div className="font-display text-5xl leading-none text-muted-foreground/40">
-                {String(i).padStart(2, "0")}
+
+        {upcoming.isLoading && (
+          <div className="text-sm text-muted-foreground">Loading events…</div>
+        )}
+
+        {upcoming.data && upcoming.data.length === 0 && (
+          <div className="grid gap-4 md:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="border border-dashed border-border bg-card/40 p-8">
+                <div className="font-display text-5xl leading-none text-muted-foreground/40">
+                  {String(i).padStart(2, "0")}
+                </div>
+                <p className="mt-4 text-sm text-muted-foreground">
+                  Be the first to list an event in this slot.
+                </p>
               </div>
-              <p className="mt-4 text-sm text-muted-foreground">
-                Be the first to list an event in this slot.
-              </p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
+
+        {upcoming.data && upcoming.data.length > 0 && (
+          <div className="grid gap-4 md:grid-cols-3">
+            {upcoming.data.map((ev) => (
+              <Link
+                key={ev.id}
+                to="/e/$slug"
+                params={{ slug: ev.slug }}
+                className="group overflow-hidden border border-border bg-card/60 transition hover:border-primary/50"
+              >
+                <div
+                  className="h-40 w-full bg-secondary bg-cover bg-center"
+                  style={ev.cover_image_url ? { backgroundImage: `url(${ev.cover_image_url})` } : undefined}
+                />
+                <div className="p-5">
+                  <h3 className="font-semibold leading-tight group-hover:text-primary">{ev.title}</h3>
+                  <div className="mt-2 flex flex-col gap-1 text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {new Date(ev.start_datetime).toLocaleString("en-NG", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })}
+                    </span>
+                    {(ev.venue_name || ev.city) && (
+                      <span className="inline-flex items-center gap-1">
+                        <MapPin className="h-3.5 w-3.5" />
+                        {[ev.venue_name, ev.city].filter(Boolean).join(", ")}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       <footer className="border-t border-border/50 py-8">
