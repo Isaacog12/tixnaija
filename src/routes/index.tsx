@@ -43,6 +43,10 @@ const VALUE_PROPS = [
 ];
 
 function LandingPage() {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+  const upcoming = useQuery({ queryKey: ["home-upcoming"], queryFn: fetchUpcoming });
+
   return (
     <div className="min-h-screen">
       <SiteNav />
