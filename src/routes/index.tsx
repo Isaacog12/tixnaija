@@ -1,12 +1,29 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Search } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Search, Calendar, MapPin } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { SiteNav } from "@/components/site-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { formatNaira } from "@/lib/currency";
 
 export const Route = createFileRoute("/")({
+  ssr: false,
   component: LandingPage,
 });
+
+async function fetchUpcoming() {
+  const { data, error } = await supabase
+    .from("events")
+    .select("id, title, slug, city, venue_name, start_datetime, cover_image_url")
+    .eq("status", "published")
+    .gte("start_datetime", new Date().toISOString())
+    .order("start_datetime", { ascending: true })
+    .limit(6);
+  if (error) throw error;
+  return data ?? [];
+}
 
 const CATEGORIES = ["Concerts", "Comedy", "Conferences", "Church", "Campus", "Parties"];
 
@@ -26,6 +43,10 @@ const VALUE_PROPS = [
 ];
 
 function LandingPage() {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+  const upcoming = useQuery({ queryKey: ["home-upcoming"], queryFn: fetchUpcoming });
+
   return (
     <div className="min-h-screen">
       <SiteNav />
@@ -52,10 +73,15 @@ function LandingPage() {
 
             <form
               className="mx-auto mt-10 flex max-w-xl items-center gap-2 border border-border bg-card/60 p-2"
-              onSubmit={(e) => e.preventDefault()}
+              onSubmit={(e) => {
+                e.preventDefault();
+                navigate({ to: "/browse", search: { q: query.trim() || undefined } });
+              }}
             >
               <Search className="ml-2 h-4 w-4 text-muted-foreground" />
               <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search events, artists, cities…"
                 className="border-0 bg-transparent shadow-none focus-visible:ring-0"
               />
@@ -68,6 +94,7 @@ function LandingPage() {
               {CATEGORIES.map((label) => (
                 <button
                   key={label}
+                  onClick={() => navigate({ to: "/browse", search: { q: label } })}
                   className="rounded-full border border-border bg-card/40 px-3 py-1.5 text-xs transition hover:border-primary hover:text-primary"
                 >
                   {label}
@@ -129,29 +156,76 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* Coming up — typographic empty state, no decorative pin */}
+      {/* Coming up — real published events */}
       <section className="mx-auto max-w-6xl px-4 pb-24">
         <div className="mb-6 flex items-end justify-between">
           <div>
             <h2 className="font-display text-3xl md:text-4xl">Coming up</h2>
-            <p className="text-sm text-muted-foreground">Fresh events landing here soon.</p>
+            <p className="text-sm text-muted-foreground">
+              {upcoming.data && upcoming.data.length > 0
+                ? "Grab your ticket before they're gone."
+                : "Fresh events landing here soon."}
+            </p>
           </div>
+          <Link to="/browse" className="text-xs uppercase tracking-[0.2em] text-primary hover:underline">
+            Browse all →
+          </Link>
         </div>
-        <div className="grid gap-4 md:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="border border-dashed border-border bg-card/40 p-8"
-            >
-              <div className="font-display text-5xl leading-none text-muted-foreground/40">
-                {String(i).padStart(2, "0")}
+
+        {upcoming.isLoading && (
+          <div className="text-sm text-muted-foreground">Loading events…</div>
+        )}
+
+        {upcoming.data && upcoming.data.length === 0 && (
+          <div className="grid gap-4 md:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="border border-dashed border-border bg-card/40 p-8">
+                <div className="font-display text-5xl leading-none text-muted-foreground/40">
+                  {String(i).padStart(2, "0")}
+                </div>
+                <p className="mt-4 text-sm text-muted-foreground">
+                  Be the first to list an event in this slot.
+                </p>
               </div>
-              <p className="mt-4 text-sm text-muted-foreground">
-                Be the first to list an event in this slot.
-              </p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
+
+        {upcoming.data && upcoming.data.length > 0 && (
+          <div className="grid gap-4 md:grid-cols-3">
+            {upcoming.data.map((ev) => (
+              <Link
+                key={ev.id}
+                to="/e/$slug"
+                params={{ slug: ev.slug }}
+                className="group overflow-hidden border border-border bg-card/60 transition hover:border-primary/50"
+              >
+                <div
+                  className="h-40 w-full bg-secondary bg-cover bg-center"
+                  style={ev.cover_image_url ? { backgroundImage: `url(${ev.cover_image_url})` } : undefined}
+                />
+                <div className="p-5">
+                  <h3 className="font-semibold leading-tight group-hover:text-primary">{ev.title}</h3>
+                  <div className="mt-2 flex flex-col gap-1 text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {new Date(ev.start_datetime).toLocaleString("en-NG", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })}
+                    </span>
+                    {(ev.venue_name || ev.city) && (
+                      <span className="inline-flex items-center gap-1">
+                        <MapPin className="h-3.5 w-3.5" />
+                        {[ev.venue_name, ev.city].filter(Boolean).join(", ")}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       <footer className="border-t border-border/50 py-8">
