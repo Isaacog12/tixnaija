@@ -127,24 +127,24 @@ function EventDetailPage() {
         count: i.count
       }));
 
-      const { data: initData, error: initErr } = await supabase.functions.invoke("initialize-payment", {
-        body: {
-          eventId: data!.event.id,
-          buyerName,
-          buyerEmail,
-          buyerPhone,
-          items: itemsPayload
-        }
+      const { data: orderId, error: checkoutErr } = await supabase.rpc("process_test_checkout" as any, {
+        p_event_id: data!.event.id,
+        p_buyer_name: buyerName,
+        p_buyer_email: buyerEmail,
+        p_buyer_phone: buyerPhone,
+        p_items: itemsPayload
       });
 
-      if (initErr) throw initErr;
-      if (initData?.error) throw new Error(initData.error);
+      if (checkoutErr) throw checkoutErr;
+      if (!orderId) throw new Error("Failed to process order.");
       
-      if (initData?.authorization_url) {
-        window.location.href = initData.authorization_url;
-      } else {
-        throw new Error("Did not receive authorization URL from payment gateway.");
-      }
+      toast.success("Test checkout successful!");
+      
+      // Navigate to the verification success page directly
+      navigate({
+        to: "/checkout/verify",
+        search: { reference: `TEST_ORD_`, orderId: orderId as string },
+      });
     } catch (err: any) {
       toast.error(err.message || "Checkout failed");
     } finally {

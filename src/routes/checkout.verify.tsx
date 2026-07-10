@@ -26,14 +26,19 @@ function VerifyCheckoutPage() {
 
     async function verify() {
       try {
-        const { data, error } = await supabase.functions.invoke("verify-payment", {
-          body: { reference }
-        });
+        if (reference.startsWith("TEST_ORD_")) {
+          // If it's a test order, it was already processed successfully via RPC
+          setStatus("success");
+        } else {
+          const { data, error } = await supabase.functions.invoke("verify-payment", {
+            body: { reference }
+          });
 
-        if (error) throw error;
-        if (data?.error) throw new Error(data.error);
+          if (error) throw error;
+          if (data?.error) throw new Error(data.error);
 
-        setStatus("success");
+          setStatus("success");
+        }
       } catch (err: any) {
         console.error("Verification error:", err);
         setStatus("error");
