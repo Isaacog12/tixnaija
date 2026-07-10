@@ -28,7 +28,7 @@ export function SiteNav() {
     queryFn: async () => {
       if (!user) return 0;
       const { count, error } = await supabase
-        .from("messages")
+        .from("messages" as any)
         .select("*", { count: "exact", head: true })
         .eq("is_read", false);
       if (error) return 0;
@@ -108,6 +108,7 @@ export function SiteNav() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </>
           ) : (
             <>
               <Button asChild variant="ghost" size="sm">

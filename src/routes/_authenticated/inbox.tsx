@@ -17,7 +17,7 @@ function InboxPage() {
     queryKey: ["messages"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("messages")
+        .from("messages" as any)
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -27,7 +27,7 @@ function InboxPage() {
 
   const markRead = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("messages").update({ is_read: true }).eq("id", id);
+      const { error } = await (supabase.from("messages" as any) as any).update({ is_read: true }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -48,7 +48,7 @@ function InboxPage() {
             <Skeleton className="h-24 w-full rounded-xl" />
           </>
         ) : messages && messages.length > 0 ? (
-          messages.map((msg) => (
+          messages.map((msg: any) => (
             <div
               key={msg.id}
               className={`rounded-xl border p-5 transition ${

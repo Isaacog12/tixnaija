@@ -94,12 +94,12 @@ function EventDetailPage() {
   const items = useMemo(() => {
     if (!data) return [] as { type: TicketType; count: number; subtotal: number }[];
     return data.types
-      .map((t) => ({ type: t, count: qty[t.id] ?? 0, subtotal: (qty[t.id] ?? 0) * t.price_kobo }))
-      .filter((i) => i.count > 0);
+      .map((t: TicketType) => ({ type: t, count: qty[t.id] ?? 0, subtotal: (qty[t.id] ?? 0) * t.price_kobo }))
+      .filter((i: { count: number }) => i.count > 0);
   }, [data, qty]);
 
-  const totalKobo = items.reduce((sum, i) => sum + i.subtotal, 0);
-  const totalCount = items.reduce((sum, i) => sum + i.count, 0);
+  const totalKobo = items.reduce((sum: number, i: { subtotal: number }) => sum + i.subtotal, 0);
+  const totalCount = items.reduce((sum: number, i: { count: number }) => sum + i.count, 0);
 
   function setCount(t: TicketType, next: number) {
     const remaining = Math.max(0, t.quantity_available - t.quantity_sold);
@@ -122,7 +122,7 @@ function EventDetailPage() {
 
     setCheckoutBusy(true);
     try {
-      const itemsPayload = items.map(i => ({
+      const itemsPayload = items.map((i: any) => ({
         ticketTypeId: i.type.id,
         count: i.count
       }));
