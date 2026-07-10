@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Calendar, MapPin, Minus, Plus, Ticket as TicketIcon } from "lucide-react";
+import { Calendar, MapPin, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteNav } from "@/components/site-nav";
@@ -150,8 +150,23 @@ function EventBody({
                 className="aspect-[16/10] w-full object-cover"
               />
             ) : (
-              <div className="grid aspect-[16/10] w-full place-items-center gradient-sunset">
-                <TicketIcon className="h-12 w-12 text-primary-foreground/80" />
+              <div className="relative aspect-[16/10] w-full overflow-hidden bg-card">
+                <div
+                  aria-hidden
+                  className="absolute inset-0 opacity-30"
+                  style={{
+                    backgroundImage:
+                      "repeating-linear-gradient(135deg, transparent 0 22px, color-mix(in oklab, var(--primary) 40%, transparent) 22px 23px)",
+                  }}
+                />
+                <div className="absolute inset-x-6 bottom-6 flex items-end justify-between gap-4">
+                  <span className="font-display text-2xl leading-none text-foreground/80 md:text-3xl">
+                    {event.title}
+                  </span>
+                  <span className="font-display text-[11px] uppercase tracking-[0.35em] text-primary">
+                    Admit One
+                  </span>
+                </div>
               </div>
             )}
           </div>

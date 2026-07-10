@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Calendar, MapPin, Search, TicketCheck, Zap } from "lucide-react";
+import { Search } from "lucide-react";
 import { SiteNav } from "@/components/site-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,13 +8,21 @@ export const Route = createFileRoute("/")({
   component: LandingPage,
 });
 
-const CATEGORIES = [
-  { label: "Concerts", emoji: "🎤" },
-  { label: "Comedy", emoji: "🎭" },
-  { label: "Conferences", emoji: "🎯" },
-  { label: "Church", emoji: "⛪" },
-  { label: "Campus", emoji: "🎓" },
-  { label: "Parties", emoji: "🕺" },
+const CATEGORIES = ["Concerts", "Comedy", "Conferences", "Church", "Campus", "Parties"];
+
+const VALUE_PROPS = [
+  {
+    title: "QR tickets, zero drama",
+    body: "Every ticket has a unique code. Fast door scans, no double entries.",
+  },
+  {
+    title: "Pay with Paystack",
+    body: "Cards, transfers, USSD — the payment methods Naija actually uses.",
+  },
+  {
+    title: "Sell tickets in minutes",
+    body: "Create an event, add ticket tiers, share the link. That's it.",
+  },
 ];
 
 function LandingPage() {
@@ -23,7 +31,7 @@ function LandingPage() {
       <SiteNav />
 
       {/* Hero */}
-      <section className="relative overflow-hidden">
+      <section className="relative">
         <div className="mx-auto max-w-6xl px-4 pt-16 pb-20 md:pt-24 md:pb-28">
           <div className="mx-auto max-w-3xl text-center">
             <div className="inline-flex flex-col items-center gap-2">
@@ -43,27 +51,26 @@ function LandingPage() {
             </p>
 
             <form
-              className="mx-auto mt-10 flex max-w-xl items-center gap-2 rounded-full border border-border bg-card/60 p-2 shadow-glow backdrop-blur"
+              className="mx-auto mt-10 flex max-w-xl items-center gap-2 border border-border bg-card/60 p-2"
               onSubmit={(e) => e.preventDefault()}
             >
-              <Search className="ml-3 h-4 w-4 text-muted-foreground" />
+              <Search className="ml-2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search events, artists, cities…"
                 className="border-0 bg-transparent shadow-none focus-visible:ring-0"
               />
-              <Button type="submit" className="rounded-full gradient-sunset text-primary-foreground hover:opacity-90">
+              <Button type="submit" className="gradient-sunset text-primary-foreground hover:opacity-90">
                 Search
               </Button>
             </form>
 
             <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
-              {CATEGORIES.map((c) => (
+              {CATEGORIES.map((label) => (
                 <button
-                  key={c.label}
+                  key={label}
                   className="rounded-full border border-border bg-card/40 px-3 py-1.5 text-xs transition hover:border-primary hover:text-primary"
                 >
-                  <span className="mr-1">{c.emoji}</span>
-                  {c.label}
+                  {label}
                 </button>
               ))}
             </div>
@@ -71,34 +78,18 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* Value props */}
+      {/* Value props — editorial numeral treatment, no decorative icons */}
       <section className="mx-auto max-w-6xl px-4 pb-20">
-        <div className="grid gap-4 md:grid-cols-3">
-          {[
-            {
-              icon: TicketCheck,
-              title: "QR tickets, zero drama",
-              body: "Every ticket has a unique code. Fast door scans, no double entries.",
-            },
-            {
-              icon: Zap,
-              title: "Pay with Paystack",
-              body: "Cards, transfers, USSD — the payment methods Naija actually uses.",
-            },
-            {
-              icon: Calendar,
-              title: "Sell tickets in minutes",
-              body: "Create an event, add ticket tiers, share the link. That's it.",
-            },
-          ].map(({ icon: Icon, title, body }) => (
-            <div
-              key={title}
-              className="rounded-2xl border border-border bg-card/60 p-6 backdrop-blur transition hover:border-primary/40"
-            >
-              <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary/15 text-primary">
-                <Icon className="h-5 w-5" />
+        <div className="grid gap-px overflow-hidden border border-border bg-border md:grid-cols-3">
+          {VALUE_PROPS.map(({ title, body }, i) => (
+            <div key={title} className="bg-card/60 p-6 md:p-8">
+              <div className="flex items-baseline gap-3">
+                <span className="font-display text-4xl leading-none text-gradient-sunset">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span className="h-px flex-1 bg-border" />
               </div>
-              <h3 className="mt-4 text-xl font-semibold tracking-tight">{title}</h3>
+              <h3 className="mt-5 text-xl font-semibold tracking-tight">{title}</h3>
               <p className="mt-2 text-sm text-muted-foreground">{body}</p>
             </div>
           ))}
@@ -107,7 +98,7 @@ function LandingPage() {
 
       {/* Organizer CTA */}
       <section className="mx-auto max-w-6xl px-4 pb-24">
-        <div className="relative overflow-hidden rounded-3xl border border-primary/30 p-8 md:p-14">
+        <div className="relative overflow-hidden border border-primary/30 p-8 md:p-14">
           <div className="absolute inset-0 gradient-sunset opacity-90" />
           <div className="relative grid gap-6 md:grid-cols-2 md:items-center">
             <div>
@@ -138,7 +129,7 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* Empty state / coming events */}
+      {/* Coming up — typographic empty state, no decorative pin */}
       <section className="mx-auto max-w-6xl px-4 pb-24">
         <div className="mb-6 flex items-end justify-between">
           <div>
@@ -150,10 +141,10 @@ function LandingPage() {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="group overflow-hidden rounded-2xl border border-dashed border-border bg-card/40 p-6 text-center"
+              className="border border-dashed border-border bg-card/40 p-8"
             >
-              <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-primary/15 text-primary">
-                <MapPin className="h-6 w-6" />
+              <div className="font-display text-5xl leading-none text-muted-foreground/40">
+                {String(i).padStart(2, "0")}
               </div>
               <p className="mt-4 text-sm text-muted-foreground">
                 Be the first to list an event in this slot.
