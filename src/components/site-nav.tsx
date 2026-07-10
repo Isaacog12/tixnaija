@@ -41,6 +41,9 @@ export function SiteNav() {
           <Link to="/" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
             Discover
           </Link>
+          <Link to="/browse" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+            Browse events
+          </Link>
           {user && (
             <Link to="/dashboard" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
               Dashboard
