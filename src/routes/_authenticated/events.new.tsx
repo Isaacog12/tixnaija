@@ -155,6 +155,13 @@ function NewEventPage() {
         coverUrl = pub.publicUrl;
       }
 
+      const { data: testHasRole, error: testHasRoleErr } = await supabase.rpc("test_has_role");
+      console.log("DEBUG: RPC test_has_role returned:", testHasRole, testHasRoleErr);
+
+      if (testHasRole === false) {
+         toast.error("RPC test_has_role returned FALSE! The DB policy thinks you don't have the role.");
+      }
+
       const slug = slugify(parsed.data.title);
       const { data: event, error: evErr } = await supabase
         .from("events")
