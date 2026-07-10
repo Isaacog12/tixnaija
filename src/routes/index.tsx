@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Calendar, MapPin, Search, Sparkles, TicketCheck, Zap } from "lucide-react";
+import { Calendar, MapPin, Search, TicketCheck, Zap } from "lucide-react";
 import { SiteNav } from "@/components/site-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,9 +26,12 @@ function LandingPage() {
       <section className="relative overflow-hidden">
         <div className="mx-auto max-w-6xl px-4 pt-16 pb-20 md:pt-24 md:pb-28">
           <div className="mx-auto max-w-3xl text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs uppercase tracking-widest text-primary">
-              <Sparkles className="h-3 w-3" /> Naija's ticket hub
-            </span>
+            <div className="inline-flex flex-col items-center gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.35em] text-primary">
+                Naija's Ticket Hub
+              </span>
+              <span aria-hidden className="h-px w-16 gradient-sunset" />
+            </div>
             <h1 className="mt-6 font-display text-5xl leading-[0.95] md:text-7xl lg:text-8xl">
               Every big night
               <br />
@@ -161,9 +164,12 @@ function LandingPage() {
       </section>
 
       <footer className="border-t border-border/50 py-8">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 text-xs text-muted-foreground md:flex-row">
-          <p>© {new Date().getFullYear()} TixNaija. Made for Naija.</p>
-          <p>Buy tickets. Turn up. Repeat.</p>
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 text-xs text-muted-foreground md:flex-row">
+          <div className="flex items-baseline gap-0">
+            <span className="font-display text-xl leading-none tracking-[0.02em] text-foreground">TIX</span>
+            <span className="font-display text-xl leading-none tracking-[0.02em] font-light text-gradient-sunset">NAIJA</span>
+          </div>
+          <p>© {new Date().getFullYear()} — Buy tickets. Turn up. Repeat.</p>
         </div>
       </footer>
     </div>
