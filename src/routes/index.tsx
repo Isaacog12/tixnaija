@@ -73,10 +73,15 @@ function LandingPage() {
 
             <form
               className="mx-auto mt-10 flex max-w-xl items-center gap-2 border border-border bg-card/60 p-2"
-              onSubmit={(e) => e.preventDefault()}
+              onSubmit={(e) => {
+                e.preventDefault();
+                navigate({ to: "/browse", search: { q: query.trim() || undefined } });
+              }}
             >
               <Search className="ml-2 h-4 w-4 text-muted-foreground" />
               <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search events, artists, cities…"
                 className="border-0 bg-transparent shadow-none focus-visible:ring-0"
               />
@@ -89,6 +94,7 @@ function LandingPage() {
               {CATEGORIES.map((label) => (
                 <button
                   key={label}
+                  onClick={() => navigate({ to: "/browse", search: { q: label } })}
                   className="rounded-full border border-border bg-card/40 px-3 py-1.5 text-xs transition hover:border-primary hover:text-primary"
                 >
                   {label}
