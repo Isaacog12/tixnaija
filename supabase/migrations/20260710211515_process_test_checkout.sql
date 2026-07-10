@@ -56,27 +56,40 @@ begin
   ) returning id into v_order_id;
 
   -- Generate tickets and update counts
-  for v_item in select * from jsonb_array_elements(p_items)
-  loop
-    v_ticket_type_id := (v_item->>'ticketTypeId')::uuid;
-    v_count := (v_item->>'count')::integer;
+  declare
+    v_order_item_id uuid;
+  begin
+    for v_item in select * from jsonb_array_elements(p_items) loop
+      v_ticket_type_id := (v_item->>'ticketTypeId')::uuid;
+      v_count := (v_item->>'count')::integer;
 
-    -- Update sold count
-    update public.ticket_types 
-    set quantity_sold = quantity_sold + v_count 
-    where id = v_ticket_type_id;
+      -- Get unit price
+      select price_kobo into v_ticket_type from public.ticket_types where id = v_ticket_type_id;
 
-    -- Insert tickets
-    for i in 1..v_count loop
-      insert into public.tickets (
-        order_id, event_id, ticket_type_id, user_id, status
+      -- Update sold count
+      update public.ticket_types 
+      set quantity_sold = quantity_sold + v_count 
+      where id = v_ticket_type_id;
+
+      -- Insert order_item
+      insert into public.order_items (
+        order_id, ticket_type_id, quantity, unit_price_kobo, total_price_kobo
       ) values (
-        v_order_id, p_event_id, v_ticket_type_id, v_user_id, 'valid'
-      ) returning id into v_new_ticket_id;
-      
-      v_ticket_ids := array_append(v_ticket_ids, v_new_ticket_id);
+        v_order_id, v_ticket_type_id, v_count, v_ticket_type.price_kobo, (v_ticket_type.price_kobo * v_count)
+      ) returning id into v_order_item_id;
+
+      -- Insert tickets
+      for i in 1..v_count loop
+        insert into public.tickets (
+          order_item_id, status
+        ) values (
+          v_order_item_id, 'valid'
+        ) returning id into v_new_ticket_id;
+        
+        v_ticket_ids := array_append(v_ticket_ids, v_new_ticket_id);
+      end loop;
     end loop;
-  end loop;
+  end;
 
   -- Create message
   insert into public.messages (
