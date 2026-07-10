@@ -26,9 +26,12 @@ function LandingPage() {
       <section className="relative overflow-hidden">
         <div className="mx-auto max-w-6xl px-4 pt-16 pb-20 md:pt-24 md:pb-28">
           <div className="mx-auto max-w-3xl text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs uppercase tracking-widest text-primary">
-              <Sparkles className="h-3 w-3" /> Naija's ticket hub
-            </span>
+            <div className="inline-flex flex-col items-center gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.35em] text-primary">
+                Naija's Ticket Hub
+              </span>
+              <span aria-hidden className="h-px w-16 gradient-sunset" />
+            </div>
             <h1 className="mt-6 font-display text-5xl leading-[0.95] md:text-7xl lg:text-8xl">
               Every big night
               <br />
