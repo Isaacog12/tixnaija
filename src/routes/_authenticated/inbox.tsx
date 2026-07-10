@@ -73,7 +73,7 @@ function InboxPage() {
                     {msg.type === 'ticket_delivery' && msg.related_order_id && (
                       <div className="mt-4">
                         <Button asChild variant="outline" size="sm">
-                          <Link to={`/dashboard`}>
+                          <Link to={`/orders/${msg.related_order_id}/tickets`}>
                             <QrCode className="mr-2 h-4 w-4" /> View Tickets
                           </Link>
                         </Button>
