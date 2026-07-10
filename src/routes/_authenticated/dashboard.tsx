@@ -117,51 +117,75 @@ function Dashboard() {
           {data.events.map((ev) => {
             const stats = data.statsByEvent[ev.id] ?? { sold: 0, revenueKobo: 0 };
             return (
-              <Link
+              <div
                 key={ev.id}
-                to="/events/$eventId/edit"
-                params={{ eventId: ev.id }}
-                className="group overflow-hidden rounded-2xl border border-border bg-card/60 transition hover:border-primary/50 hover:shadow-glow"
+                className="group overflow-hidden rounded-2xl border border-border bg-card/60 transition hover:border-primary/50"
               >
-                <div
-                  className="h-40 w-full bg-secondary bg-cover bg-center"
-                  style={ev.cover_image_url ? { backgroundImage: `url(${ev.cover_image_url})` } : undefined}
-                />
-                <div className="p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <h3 className="text-lg font-semibold leading-tight group-hover:text-primary">
-                      {ev.title}
-                    </h3>
-                    <StatusBadge status={ev.status} />
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-4 text-xs text-muted-foreground">
-                    <span className="inline-flex items-center gap-1">
-                      <CalendarDays className="h-3.5 w-3.5" />
-                      {new Date(ev.start_datetime).toLocaleString("en-NG", {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      })}
-                    </span>
-                    {ev.city && (
-                      <span className="inline-flex items-center gap-1">
-                        <MapPin className="h-3.5 w-3.5" /> {ev.city}
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-4 flex items-center gap-6 border-t border-border pt-4 text-sm">
-                    <div>
-                      <div className="text-xs uppercase tracking-wider text-muted-foreground">Sold</div>
-                      <div className="font-display text-xl">{stats.sold}</div>
+                <Link to="/events/$eventId/edit" params={{ eventId: ev.id }} className="block">
+                  <div
+                    className="h-40 w-full bg-secondary bg-cover bg-center"
+                    style={ev.cover_image_url ? { backgroundImage: `url(${ev.cover_image_url})` } : undefined}
+                  />
+                  <div className="p-5 pb-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <h3 className="text-lg font-semibold leading-tight group-hover:text-primary">
+                        {ev.title}
+                      </h3>
+                      <StatusBadge status={ev.status} />
                     </div>
-                    <div>
-                      <div className="text-xs uppercase tracking-wider text-muted-foreground">Revenue</div>
-                      <div className="font-display text-xl text-gradient-sunset">
-                        {formatNaira(stats.revenueKobo)}
+                    <div className="mt-2 flex flex-wrap gap-4 text-xs text-muted-foreground">
+                      <span className="inline-flex items-center gap-1">
+                        <CalendarDays className="h-3.5 w-3.5" />
+                        {new Date(ev.start_datetime).toLocaleString("en-NG", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                      </span>
+                      {ev.city && (
+                        <span className="inline-flex items-center gap-1">
+                          <MapPin className="h-3.5 w-3.5" /> {ev.city}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-4 flex items-center gap-6 border-t border-border pt-4 text-sm">
+                      <div>
+                        <div className="text-xs uppercase tracking-wider text-muted-foreground">Sold</div>
+                        <div className="font-display text-xl">{stats.sold}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs uppercase tracking-wider text-muted-foreground">Revenue</div>
+                        <div className="font-display text-xl text-gradient-sunset">
+                          {formatNaira(stats.revenueKobo)}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
+                {ev.status === "published" && (
+                  <div className="flex items-center justify-between gap-2 border-t border-border bg-background/40 px-5 py-3">
+                    <a
+                      href={`/e/${ev.slug}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="truncate text-xs text-muted-foreground hover:text-primary"
+                    >
+                      /e/{ev.slug}
+                    </a>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const url = `${window.location.origin}/e/${ev.slug}`;
+                        navigator.clipboard.writeText(url);
+                        toast.success("Public link copied");
+                      }}
+                    >
+                      <Copy className="mr-1.5 h-3.5 w-3.5" /> Copy link
+                    </Button>
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
