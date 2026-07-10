@@ -66,8 +66,7 @@ function AccountPage() {
     setOrganizerOn(next);
     const { error: pErr } = await supabase
       .from("profiles")
-      .update({ is_organizer: next })
-      .eq("id", data.userId);
+      .upsert({ id: data.userId, is_organizer: next }, { onConflict: "id" });
     if (pErr) {
       toast.error(pErr.message);
       setOrganizerOn(!next);
