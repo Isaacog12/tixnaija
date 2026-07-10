@@ -134,7 +134,9 @@ function NewEventPage() {
 
       // Ensure organizer role — quietly upgrade if user hit this page directly.
       await supabase.from("profiles").update({ is_organizer: true }).eq("id", userId);
-      const roleRes = await supabase.from("user_roles").insert({ user_id: userId, role: "organizer" });
+      const roleRes = await supabase
+        .from("user_roles")
+        .upsert({ user_id: userId, role: "organizer" }, { onConflict: "user_id,role", ignoreDuplicates: true });
       if (roleRes.error && !roleRes.error.message.toLowerCase().includes("duplicate")) {
         // Non-duplicate errors are non-fatal here; the events insert policy will surface any real issue.
         console.warn("user_roles insert:", roleRes.error.message);

@@ -76,7 +76,7 @@ function AccountPage() {
       // grant organizer role
       const { error: rErr } = await supabase
         .from("user_roles")
-        .insert({ user_id: data.userId, role: "organizer" });
+        .upsert({ user_id: data.userId, role: "organizer" }, { onConflict: "user_id,role", ignoreDuplicates: true });
       if (rErr && !rErr.message.includes("duplicate")) {
         toast.error(rErr.message);
         return;
