@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Ticket } from "lucide-react";
+
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
@@ -35,12 +35,10 @@ function AuthPage() {
     <div className="relative flex min-h-screen items-center justify-center px-4 py-10">
       <div className="pointer-events-none absolute inset-0 gradient-sunset opacity-10" />
       <div className="relative w-full max-w-md">
-        <Link to="/" className="mb-6 flex items-center justify-center gap-2">
-          <span className="grid h-10 w-10 place-items-center rounded-lg gradient-sunset shadow-glow">
-            <Ticket className="h-5 w-5 text-primary-foreground" />
-          </span>
-          <span className="font-display text-3xl tracking-wide">
-            Tix<span className="text-gradient-sunset">Naija</span>
+        <Link to="/" className="mb-6 flex items-baseline justify-center">
+          <span className="font-display text-3xl leading-none tracking-[0.02em]">TIX</span>
+          <span className="font-display text-3xl leading-none font-light tracking-[0.02em] text-gradient-sunset">
+            NAIJA
           </span>
         </Link>
 
@@ -142,6 +140,13 @@ function EmailForm({ mode }: { mode: "signin" | "signup" }) {
       <div className="space-y-1.5">
         <Label htmlFor="password">Password</Label>
         <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+        {mode === "signin" && (
+          <div className="pt-1 text-right">
+            <Link to="/forgot-password" className="text-xs text-muted-foreground hover:text-primary">
+              Forgot password?
+            </Link>
+          </div>
+        )}
       </div>
       <Button
         type="submit"
