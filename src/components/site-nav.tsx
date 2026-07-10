@@ -69,7 +69,7 @@ export function SiteNav() {
 
         <div className="flex items-center gap-2">
           {loading ? null : user ? (
-            <>
+            <div className="flex items-center">
               <Button asChild variant="ghost" size="icon" className="relative mr-2">
                 <Link to="/inbox">
                   <Mail className="h-5 w-5 text-muted-foreground" />
@@ -108,9 +108,9 @@ export function SiteNav() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            </>
+            </div>
           ) : (
-            <>
+            <div className="flex items-center gap-2">
               <Button asChild variant="ghost" size="sm">
                 <Link to="/auth">Sign in</Link>
               </Button>
@@ -119,7 +119,7 @@ export function SiteNav() {
                   Get started
                 </Link>
               </Button>
-            </>
+            </div>
           )}
         </div>
       </div>
