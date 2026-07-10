@@ -1,13 +1,22 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Calendar, MapPin, Minus, Plus } from "lucide-react";
+import { Calendar, MapPin, Minus, Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteNav } from "@/components/site-nav";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { formatNaira } from "@/lib/currency";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/e/$slug")({
   ssr: false,
@@ -16,9 +25,6 @@ export const Route = createFileRoute("/e/$slug")({
     meta: [
       { title: `${params.slug} — TixNaija` },
       { name: "description", content: "Buy tickets to this event on TixNaija." },
-      { property: "og:title", content: `${params.slug} — TixNaija` },
-      { property: "og:description", content: "Buy tickets to this event on TixNaija." },
-      { property: "og:type", content: "event" },
     ],
   }),
 });
@@ -64,6 +70,26 @@ function EventDetailPage() {
   });
 
   const [qty, setQty] = useState<Record<string, number>>({});
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [buyerName, setBuyerName] = useState("");
+  const [buyerEmail, setBuyerEmail] = useState("");
+  const [buyerPhone, setBuyerPhone] = useState("");
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
+
+  // Pre-fill user data if logged in
+  useQuery({
+    queryKey: ["user-session-checkout"],
+    queryFn: async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData?.user) {
+        setBuyerEmail(userData.user.email || "");
+        // Fetch profile
+        const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", userData.user.id).single();
+        if (profile?.full_name) setBuyerName(profile.full_name);
+      }
+      return userData?.user ?? null;
+    },
+  });
 
   const items = useMemo(() => {
     if (!data) return [] as { type: TicketType; count: number; subtotal: number }[];
@@ -84,7 +110,46 @@ function EventDetailPage() {
 
   function onCheckout() {
     if (!totalCount) return;
-    toast.info("Checkout is coming next — Paystack integration lands in the next stage.");
+    setCheckoutOpen(true);
+  }
+
+  async function handleCheckoutSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!buyerName || !buyerEmail) {
+      toast.error("Please fill in your name and email.");
+      return;
+    }
+
+    setCheckoutBusy(true);
+    try {
+      const itemsPayload = items.map(i => ({
+        ticketTypeId: i.type.id,
+        count: i.count
+      }));
+
+      const { data: initData, error: initErr } = await supabase.functions.invoke("initialize-payment", {
+        body: {
+          eventId: data!.event.id,
+          buyerName,
+          buyerEmail,
+          buyerPhone,
+          items: itemsPayload
+        }
+      });
+
+      if (initErr) throw initErr;
+      if (initData?.error) throw new Error(initData.error);
+      
+      if (initData?.authorization_url) {
+        window.location.href = initData.authorization_url;
+      } else {
+        throw new Error("Did not receive authorization URL from payment gateway.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Checkout failed");
+    } finally {
+      setCheckoutBusy(false);
+    }
   }
 
   return (
@@ -92,7 +157,7 @@ function EventDetailPage() {
       <SiteNav />
 
       {isLoading ? <EventSkeleton /> : isError || !data ? <EventMissing /> : (
-        <EventBody event={data.event} types={data.types} qty={qty} setCount={setCount} />
+        <EventBody event={data.event} types={data.types} qty={qty} setCount={setCount} onCheckout={onCheckout} totalCount={totalCount} totalKobo={totalKobo} />
       )}
 
       {/* Sticky mobile buy bar */}
@@ -118,6 +183,36 @@ function EventDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Checkout Dialog */}
+      <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Complete Checkout</DialogTitle>
+            <DialogDescription>
+              You're buying {totalCount} tickets for {formatNaira(totalKobo)}.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCheckoutSubmit} className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name</Label>
+              <Input id="name" required value={buyerName} onChange={(e) => setBuyerName(e.target.value)} placeholder="Jane Doe" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input id="email" type="email" required value={buyerEmail} onChange={(e) => setBuyerEmail(e.target.value)} placeholder="jane@example.com" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number (Optional)</Label>
+              <Input id="phone" type="tel" value={buyerPhone} onChange={(e) => setBuyerPhone(e.target.value)} placeholder="08012345678" />
+            </div>
+            <Button type="submit" disabled={checkoutBusy} className="w-full gradient-sunset text-primary-foreground shadow-glow">
+              {checkoutBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Pay {formatNaira(totalKobo)}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -127,20 +222,23 @@ function EventBody({
   types,
   qty,
   setCount,
+  onCheckout,
+  totalCount,
+  totalKobo,
 }: {
   event: Awaited<ReturnType<typeof fetchEventBySlug>>["event"];
   types: TicketType[];
   qty: Record<string, number>;
   setCount: (t: TicketType, n: number) => void;
+  onCheckout: () => void;
+  totalCount: number;
+  totalKobo: number;
 }) {
-  const totalKobo = types.reduce((sum, t) => sum + (qty[t.id] ?? 0) * t.price_kobo, 0);
-  const totalCount = types.reduce((sum, t) => sum + (qty[t.id] ?? 0), 0);
   const start = new Date(event.start_datetime);
 
   return (
     <div className="mx-auto max-w-6xl px-4 pt-6 md:pt-10">
       <div className="grid gap-8 md:grid-cols-[1.4fr_1fr] md:gap-10">
-        {/* Left: cover + details */}
         <div>
           <div className="relative overflow-hidden rounded-2xl border border-border">
             {event.cover_image_url ? (
@@ -204,7 +302,6 @@ function EventBody({
           )}
         </div>
 
-        {/* Right: ticket picker */}
         <aside className="md:sticky md:top-24 md:self-start">
           <div className="rounded-2xl border border-border bg-card/70 p-5 backdrop-blur">
             <h2 className="font-display text-2xl">Tickets</h2>
@@ -275,7 +372,7 @@ function EventBody({
             </div>
             <Button
               disabled={!totalCount}
-              onClick={() => toast.info("Checkout is coming next — Paystack lands in the next stage.")}
+              onClick={onCheckout}
               className="mt-4 hidden w-full gradient-sunset text-primary-foreground shadow-glow hover:opacity-90 disabled:opacity-40 md:inline-flex"
               size="lg"
             >

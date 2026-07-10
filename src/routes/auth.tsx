@@ -106,6 +106,7 @@ function EmailForm({ mode }: { mode: "signin" | "signup" }) {
           },
         });
         if (error) throw error;
+        await supabase.rpc("claim_guest_messages").catch(console.error);
         toast.success("Account created! You're signed in.");
         navigate({ to: "/dashboard", replace: true });
       } else {
@@ -114,6 +115,7 @@ function EmailForm({ mode }: { mode: "signin" | "signup" }) {
           password: parsed.data.password,
         });
         if (error) throw error;
+        await supabase.rpc("claim_guest_messages").catch(console.error);
         toast.success("Welcome back!");
         navigate({ to: "/dashboard", replace: true });
       }
@@ -170,6 +172,7 @@ function GoogleButton() {
       if (result.error) {
         toast.error(result.error.message ?? "Google sign-in failed");
       } else if (!result.redirected) {
+        await supabase.rpc("claim_guest_messages").catch(console.error);
         toast.success("Signed in!");
         window.location.href = "/dashboard";
       }

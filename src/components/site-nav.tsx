@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, LayoutDashboard, User as UserIcon } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { LogOut, LayoutDashboard, User as UserIcon, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,21 @@ export function SiteNav() {
     await supabase.auth.signOut();
     navigate({ to: "/", replace: true });
   }
+
+  // Fetch unread count if user is logged in
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ["unread-messages"],
+    queryFn: async () => {
+      if (!user) return 0;
+      const { count, error } = await supabase
+        .from("messages")
+        .select("*", { count: "exact", head: true })
+        .eq("is_read", false);
+      if (error) return 0;
+      return count ?? 0;
+    },
+    enabled: !!user,
+  });
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/40 bg-background/70 backdrop-blur-xl">
@@ -53,15 +69,26 @@ export function SiteNav() {
 
         <div className="flex items-center gap-2">
           {loading ? null : user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/20 text-xs font-semibold text-primary">
-                    {(user.email ?? "?").slice(0, 1).toUpperCase()}
-                  </span>
-                  <span className="hidden max-w-[140px] truncate text-sm md:inline">{user.email}</span>
-                </Button>
-              </DropdownMenuTrigger>
+            <>
+              <Button asChild variant="ghost" size="icon" className="relative mr-2">
+                <Link to="/inbox">
+                  <Mail className="h-5 w-5 text-muted-foreground" />
+                  {unreadCount > 0 && (
+                    <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </Link>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/20 text-xs font-semibold text-primary">
+                      {(user.email ?? "?").slice(0, 1).toUpperCase()}
+                    </span>
+                    <span className="hidden max-w-[140px] truncate text-sm md:inline">{user.email}</span>
+                  </Button>
+                </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
                 <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
