@@ -134,11 +134,11 @@ function NewEventPage() {
 
       // Ensure organizer role — quietly upgrade if user hit this page directly.
       await supabase.from("profiles").update({ is_organizer: true }).eq("id", userId);
-      await supabase
-        .from("user_roles")
-        .insert({ user_id: userId, role: "organizer" })
-        .then((r) => (r.error && !r.error.message.includes("duplicate") ? Promise.reject(r.error) : null))
-        .catch(() => null);
+      const roleRes = await supabase.from("user_roles").insert({ user_id: userId, role: "organizer" });
+      if (roleRes.error && !roleRes.error.message.toLowerCase().includes("duplicate")) {
+        // Non-duplicate errors are non-fatal here; the events insert policy will surface any real issue.
+        console.warn("user_roles insert:", roleRes.error.message);
+      }
 
       // Upload cover if any
       let coverUrl: string | null = null;
