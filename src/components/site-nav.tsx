@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, Ticket, LayoutDashboard, User as UserIcon } from "lucide-react";
+import { LogOut, LayoutDashboard, User as UserIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -24,13 +24,17 @@ export function SiteNav() {
   return (
     <header className="sticky top-0 z-40 border-b border-border/40 bg-background/70 backdrop-blur-xl">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4">
-        <Link to="/" className="flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-lg gradient-sunset shadow-glow">
-            <Ticket className="h-5 w-5 text-primary-foreground" />
+        <Link to="/" className="group relative flex items-baseline">
+          <span className="font-display text-3xl leading-none tracking-[0.02em] text-foreground">
+            TIX
           </span>
-          <span className="font-display text-2xl tracking-wide">
-            Tix<span className="text-gradient-sunset">Naija</span>
+          <span className="font-display text-3xl leading-none tracking-[0.02em] font-light text-gradient-sunset">
+            NAIJA
           </span>
+          <span
+            aria-hidden
+            className="absolute -bottom-1 left-0 h-[2px] w-8 gradient-sunset transition-all duration-300 group-hover:w-full"
+          />
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">

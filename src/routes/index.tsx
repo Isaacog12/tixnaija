@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Calendar, MapPin, Search, Sparkles, TicketCheck, Zap } from "lucide-react";
+import { Calendar, MapPin, Search, TicketCheck, Zap } from "lucide-react";
 import { SiteNav } from "@/components/site-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
