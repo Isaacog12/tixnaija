@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, MapPin, Plus, TicketCheck } from "lucide-react";
+import { CalendarDays, MapPin, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -60,7 +60,7 @@ function Dashboard() {
       <div className="mb-8 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div>
           <h1 className="font-display text-4xl md:text-5xl">
-            Hey {data?.profile?.full_name?.split(" ")[0] || "there"} 👋
+            Hey {data?.profile?.full_name?.split(" ")[0] || "there"}.
           </h1>
           <p className="text-muted-foreground">Your event organizer control room.</p>
         </div>
@@ -94,12 +94,13 @@ function Dashboard() {
       {error && <div className="text-sm text-destructive">{(error as Error).message}</div>}
 
       {isOrganizer && data && data.events.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-border bg-card/40 p-12 text-center">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/15 text-primary">
-            <TicketCheck className="h-6 w-6" />
+        <div className="border border-dashed border-border bg-card/40 p-12">
+          <div className="flex items-baseline gap-4">
+            <span className="font-display text-6xl leading-none text-gradient-sunset">00</span>
+            <span className="h-px flex-1 bg-border" />
           </div>
-          <h3 className="mt-4 font-display text-2xl">No events yet</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h3 className="mt-6 font-display text-3xl">No events yet</h3>
+          <p className="mt-1 max-w-md text-sm text-muted-foreground">
             Create your first event and start selling tickets in minutes.
           </p>
           <Button asChild className="mt-6 gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
