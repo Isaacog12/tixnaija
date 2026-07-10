@@ -217,7 +217,7 @@ function NewEventPage() {
         state: parsed.data.state || null,
         start_datetime: new Date(parsed.data.start_datetime).toISOString(),
         end_datetime: parsed.data.end_datetime ? new Date(parsed.data.end_datetime).toISOString() : null,
-        status: publish ? "published" : "draft",
+        status: (publish ? "published" : "draft") as "published" | "draft",
       };
       
       console.log("DEBUG: Inserting event payload", payload);

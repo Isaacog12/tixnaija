@@ -106,7 +106,8 @@ function EmailForm({ mode }: { mode: "signin" | "signup" }) {
           },
         });
         if (error) throw error;
-        await supabase.rpc("claim_guest_messages" as any).catch(console.error);
+        const { error: rpcErr } = await supabase.rpc("claim_guest_messages" as any);
+        if (rpcErr) console.error(rpcErr);
         toast.success("Account created! You're signed in.");
         navigate({ to: "/dashboard", replace: true });
       } else {
@@ -115,7 +116,8 @@ function EmailForm({ mode }: { mode: "signin" | "signup" }) {
           password: parsed.data.password,
         });
         if (error) throw error;
-        await supabase.rpc("claim_guest_messages" as any).catch(console.error);
+        const { error: rpcErr } = await supabase.rpc("claim_guest_messages" as any);
+        if (rpcErr) console.error(rpcErr);
         toast.success("Welcome back!");
         navigate({ to: "/dashboard", replace: true });
       }
@@ -172,7 +174,8 @@ function GoogleButton() {
       if (result.error) {
         toast.error(result.error.message ?? "Google sign-in failed");
       } else if (!result.redirected) {
-        await supabase.rpc("claim_guest_messages" as any).catch(console.error);
+        const { error: rpcErr } = await supabase.rpc("claim_guest_messages" as any);
+        if (rpcErr) console.error(rpcErr);
         toast.success("Signed in!");
         window.location.href = "/dashboard";
       }
