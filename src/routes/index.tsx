@@ -1,12 +1,29 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Search } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Search, Calendar, MapPin } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { SiteNav } from "@/components/site-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { formatNaira } from "@/lib/currency";
 
 export const Route = createFileRoute("/")({
+  ssr: false,
   component: LandingPage,
 });
+
+async function fetchUpcoming() {
+  const { data, error } = await supabase
+    .from("events")
+    .select("id, title, slug, city, venue_name, start_datetime, cover_image_url")
+    .eq("status", "published")
+    .gte("start_datetime", new Date().toISOString())
+    .order("start_datetime", { ascending: true })
+    .limit(6);
+  if (error) throw error;
+  return data ?? [];
+}
 
 const CATEGORIES = ["Concerts", "Comedy", "Conferences", "Church", "Campus", "Parties"];
 
