@@ -155,19 +155,6 @@ function NewEventPage() {
         coverUrl = pub.publicUrl;
       }
 
-      // DEBUG: Let's see what roles we actually have in the DB right now
-      const { data: dbRoles, error: dbRolesErr } = await supabase.from("user_roles").select("*").eq("user_id", userId);
-      console.log("DEBUG: User roles in DB:", dbRoles, dbRolesErr);
-      
-      // DEBUG: Let's also check if has_role function works via RPC (we don't have an RPC for has_role, but we can try)
-      // Actually we can't easily call has_role via RPC because it's not exposed, but we can check the JS array.
-      const hasOrganizerRoleInJS = dbRoles?.some(r => r.role === 'organizer');
-      console.log("DEBUG: Has organizer role?", hasOrganizerRoleInJS);
-
-      if (!hasOrganizerRoleInJS) {
-         toast.error("You don't have the organizer role in the database! Upsert might have failed silently.");
-      }
-
       const slug = slugify(parsed.data.title);
       const { data: event, error: evErr } = await supabase
         .from("events")
