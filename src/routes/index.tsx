@@ -164,9 +164,12 @@ function LandingPage() {
       </section>
 
       <footer className="border-t border-border/50 py-8">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 text-xs text-muted-foreground md:flex-row">
-          <p>© {new Date().getFullYear()} TixNaija. Made for Naija.</p>
-          <p>Buy tickets. Turn up. Repeat.</p>
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 text-xs text-muted-foreground md:flex-row">
+          <div className="flex items-baseline gap-0">
+            <span className="font-display text-xl leading-none tracking-[0.02em] text-foreground">TIX</span>
+            <span className="font-display text-xl leading-none tracking-[0.02em] font-light text-gradient-sunset">NAIJA</span>
+          </div>
+          <p>© {new Date().getFullYear()} — Buy tickets. Turn up. Repeat.</p>
         </div>
       </footer>
     </div>
