@@ -73,9 +73,9 @@ begin
 
       -- Insert order_item
       insert into public.order_items (
-        order_id, ticket_type_id, quantity, unit_price_kobo, total_price_kobo
+        order_id, ticket_type_id, quantity, unit_price_kobo
       ) values (
-        v_order_id, v_ticket_type_id, v_count, v_ticket_type.price_kobo, (v_ticket_type.price_kobo * v_count)
+        v_order_id, v_ticket_type_id, v_count, v_ticket_type.price_kobo
       ) returning id into v_order_item_id;
 
       -- Insert tickets

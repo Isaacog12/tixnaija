@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Calendar, MapPin, Minus, Plus, Loader2 } from "lucide-react";
@@ -64,6 +64,7 @@ async function fetchEventBySlug(slug: string) {
 
 function EventDetailPage() {
   const { slug } = Route.useParams();
+  const navigate = useNavigate();
   const { data, isLoading, isError } = useQuery({
     queryKey: ["public-event", slug],
     queryFn: () => fetchEventBySlug(slug),
