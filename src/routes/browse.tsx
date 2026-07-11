@@ -31,7 +31,8 @@ async function fetchEvents(q: string) {
     .from("events")
     .select("id, title, slug, city, venue_name, start_datetime, cover_image_url, description")
     .eq("status", "published")
-    .gte("start_datetime", new Date().toISOString())
+    // Allow events from yesterday to show up, useful for testing
+    .gte("start_datetime", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
     .order("start_datetime", { ascending: true })
     .limit(60);
 
