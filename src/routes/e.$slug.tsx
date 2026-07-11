@@ -75,7 +75,10 @@ function EventDetailPage() {
   const [buyerName, setBuyerName] = useState("");
   const [buyerEmail, setBuyerEmail] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
+  // attendee names keyed by ticketTypeId -> array of names (one per ticket in that tier)
+  const [attendeeNames, setAttendeeNames] = useState<Record<string, string[]>>({});
   const [checkoutBusy, setCheckoutBusy] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   // Pre-fill user data if logged in
   useQuery({
@@ -83,8 +86,8 @@ function EventDetailPage() {
     queryFn: async () => {
       const { data: userData } = await supabase.auth.getUser();
       if (userData?.user) {
+        setUserId(userData.user.id);
         setBuyerEmail(userData.user.email || "");
-        // Fetch profile
         const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", userData.user.id).single();
         if (profile?.full_name) setBuyerName(profile.full_name);
       }
@@ -107,6 +110,20 @@ function EventDetailPage() {
     const cap = Math.min(t.max_per_order || 10, remaining);
     const clamped = Math.max(0, Math.min(cap, next));
     setQty((q) => ({ ...q, [t.id]: clamped }));
+    setAttendeeNames((prev) => {
+      const existing = prev[t.id] ?? [];
+      const next = existing.slice(0, clamped);
+      while (next.length < clamped) next.push("");
+      return { ...prev, [t.id]: next };
+    });
+  }
+
+  function setAttendeeName(ticketTypeId: string, index: number, value: string) {
+    setAttendeeNames((prev) => {
+      const arr = [...(prev[ticketTypeId] ?? [])];
+      arr[index] = value;
+      return { ...prev, [ticketTypeId]: arr };
+    });
   }
 
   function onCheckout() {
@@ -123,35 +140,61 @@ function EventDetailPage() {
 
     setCheckoutBusy(true);
     try {
-      const itemsPayload = items.map((i: any) => ({
+      const ticketsPayload = items.map((i: { type: TicketType; count: number }) => ({
         ticketTypeId: i.type.id,
-        count: i.count
+        count: i.count,
+        attendee_names: (attendeeNames[i.type.id] ?? []).slice(0, i.count),
       }));
 
-      const { data: orderId, error: checkoutErr } = await supabase.rpc("process_test_checkout" as any, {
-        p_event_id: data!.event.id,
-        p_buyer_name: buyerName,
-        p_buyer_email: buyerEmail,
-        p_buyer_phone: buyerPhone,
-        p_items: itemsPayload
-      });
+      // Free events: skip Paystack, use the RPC directly (still marks paid)
+      if (totalKobo === 0) {
+        const ref = `FREE_${Date.now()}`;
+        const { data: orderId, error: rpcErr } = await supabase.rpc("process_test_checkout" as any, {
+          p_event_id: data!.event.id,
+          p_user_id: userId,
+          p_buyer_name: buyerName,
+          p_buyer_email: buyerEmail,
+          p_buyer_phone: buyerPhone || null,
+          p_tickets: ticketsPayload,
+          p_subtotal_kobo: 0,
+          p_discount_kobo: 0,
+          p_total_kobo: 0,
+          p_payment_reference: ref,
+        });
+        if (rpcErr) throw rpcErr;
+        toast.success("Tickets confirmed!");
+        navigate({ to: "/checkout/verify", search: { reference: ref } as any });
+        return;
+      }
 
-      if (checkoutErr) throw checkoutErr;
-      if (!orderId) throw new Error("Failed to process order.");
-      
-      toast.success("Test checkout successful!");
-      
-      // Navigate to the verification success page directly
-      navigate({
-        to: "/checkout/verify",
-        search: { reference: `TEST_ORD_`, orderId: orderId as string },
+      const metadata = {
+        eventId: data!.event.id,
+        userId,
+        buyerName,
+        buyerEmail,
+        buyerPhone: buyerPhone || null,
+        tickets: ticketsPayload,
+      };
+
+      const { data: initData, error: initErr } = await supabase.functions.invoke("initialize-payment", {
+        body: {
+          email: buyerEmail,
+          amount: totalKobo / 100, // edge fn multiplies by 100
+          metadata,
+        },
       });
+      if (initErr) throw initErr;
+      if (initData?.error) throw new Error(initData.error);
+      if (!initData?.authorization_url) throw new Error("Could not start payment.");
+
+      window.location.href = initData.authorization_url;
     } catch (err: any) {
       toast.error(err.message || "Checkout failed");
     } finally {
       setCheckoutBusy(false);
     }
   }
+
 
   return (
     <div className="min-h-screen pb-32 md:pb-0">
