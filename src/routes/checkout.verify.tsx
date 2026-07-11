@@ -26,7 +26,7 @@ function VerifyCheckoutPage() {
 
     async function verify() {
       try {
-        if (reference.startsWith("TEST_ORD_")) {
+        if (reference!.startsWith("TEST_ORD_")) {
           // If it's a test order, it was already processed successfully via RPC
           setStatus("success");
         } else {

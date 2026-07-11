@@ -16,9 +16,12 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ESlugRouteImport } from './routes/e.$slug'
+import { Route as CheckoutVerifyRouteImport } from './routes/checkout.verify'
+import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/inbox'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedEventsNewRouteImport } from './routes/_authenticated/events.new'
+import { Route as AuthenticatedOrdersOrderIdTicketsRouteImport } from './routes/_authenticated/orders.$orderId.tickets'
 import { Route as AuthenticatedEventsEventIdEditRouteImport } from './routes/_authenticated/events.$eventId.edit'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -55,6 +58,16 @@ const ESlugRoute = ESlugRouteImport.update({
   path: '/e/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CheckoutVerifyRoute = CheckoutVerifyRouteImport.update({
+  id: '/checkout/verify',
+  path: '/checkout/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedInboxRoute = AuthenticatedInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -70,6 +83,12 @@ const AuthenticatedEventsNewRoute = AuthenticatedEventsNewRouteImport.update({
   path: '/events/new',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedOrdersOrderIdTicketsRoute =
+  AuthenticatedOrdersOrderIdTicketsRouteImport.update({
+    id: '/orders/$orderId/tickets',
+    path: '/orders/$orderId/tickets',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEventsEventIdEditRoute =
   AuthenticatedEventsEventIdEditRouteImport.update({
     id: '/events/$eventId/edit',
@@ -85,9 +104,12 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/account': typeof AuthenticatedAccountRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/inbox': typeof AuthenticatedInboxRoute
+  '/checkout/verify': typeof CheckoutVerifyRoute
   '/e/$slug': typeof ESlugRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
+  '/orders/$orderId/tickets': typeof AuthenticatedOrdersOrderIdTicketsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -97,9 +119,12 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/account': typeof AuthenticatedAccountRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/inbox': typeof AuthenticatedInboxRoute
+  '/checkout/verify': typeof CheckoutVerifyRoute
   '/e/$slug': typeof ESlugRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
+  '/orders/$orderId/tickets': typeof AuthenticatedOrdersOrderIdTicketsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -111,9 +136,12 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/inbox': typeof AuthenticatedInboxRoute
+  '/checkout/verify': typeof CheckoutVerifyRoute
   '/e/$slug': typeof ESlugRoute
   '/_authenticated/events/new': typeof AuthenticatedEventsNewRoute
   '/_authenticated/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
+  '/_authenticated/orders/$orderId/tickets': typeof AuthenticatedOrdersOrderIdTicketsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -125,9 +153,12 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/account'
     | '/dashboard'
+    | '/inbox'
+    | '/checkout/verify'
     | '/e/$slug'
     | '/events/new'
     | '/events/$eventId/edit'
+    | '/orders/$orderId/tickets'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -137,9 +168,12 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/account'
     | '/dashboard'
+    | '/inbox'
+    | '/checkout/verify'
     | '/e/$slug'
     | '/events/new'
     | '/events/$eventId/edit'
+    | '/orders/$orderId/tickets'
   id:
     | '__root__'
     | '/'
@@ -150,9 +184,12 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/account'
     | '/_authenticated/dashboard'
+    | '/_authenticated/inbox'
+    | '/checkout/verify'
     | '/e/$slug'
     | '/_authenticated/events/new'
     | '/_authenticated/events/$eventId/edit'
+    | '/_authenticated/orders/$orderId/tickets'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -162,6 +199,7 @@ export interface RootRouteChildren {
   BrowseRoute: typeof BrowseRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  CheckoutVerifyRoute: typeof CheckoutVerifyRoute
   ESlugRoute: typeof ESlugRoute
 }
 
@@ -216,6 +254,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ESlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/checkout/verify': {
+      id: '/checkout/verify'
+      path: '/checkout/verify'
+      fullPath: '/checkout/verify'
+      preLoaderRoute: typeof CheckoutVerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/inbox': {
+      id: '/_authenticated/inbox'
+      path: '/inbox'
+      fullPath: '/inbox'
+      preLoaderRoute: typeof AuthenticatedInboxRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -237,6 +289,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/orders/$orderId/tickets': {
+      id: '/_authenticated/orders/$orderId/tickets'
+      path: '/orders/$orderId/tickets'
+      fullPath: '/orders/$orderId/tickets'
+      preLoaderRoute: typeof AuthenticatedOrdersOrderIdTicketsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/events/$eventId/edit': {
       id: '/_authenticated/events/$eventId/edit'
       path: '/events/$eventId/edit'
@@ -250,15 +309,20 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
   AuthenticatedEventsNewRoute: typeof AuthenticatedEventsNewRoute
   AuthenticatedEventsEventIdEditRoute: typeof AuthenticatedEventsEventIdEditRoute
+  AuthenticatedOrdersOrderIdTicketsRoute: typeof AuthenticatedOrdersOrderIdTicketsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedInboxRoute: AuthenticatedInboxRoute,
   AuthenticatedEventsNewRoute: AuthenticatedEventsNewRoute,
   AuthenticatedEventsEventIdEditRoute: AuthenticatedEventsEventIdEditRoute,
+  AuthenticatedOrdersOrderIdTicketsRoute:
+    AuthenticatedOrdersOrderIdTicketsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -271,6 +335,7 @@ const rootRouteChildren: RootRouteChildren = {
   BrowseRoute: BrowseRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  CheckoutVerifyRoute: CheckoutVerifyRoute,
   ESlugRoute: ESlugRoute,
 }
 export const routeTree = rootRouteImport

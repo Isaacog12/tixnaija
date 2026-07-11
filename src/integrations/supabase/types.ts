@@ -79,6 +79,53 @@ export type Database = {
           },
         ]
       }
+      messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          is_read: boolean
+          recipient_email: string | null
+          recipient_id: string | null
+          related_order_id: string | null
+          related_ticket_ids: string[] | null
+          title: string
+          type: Database["public"]["Enums"]["message_type"]
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          recipient_email?: string | null
+          recipient_id?: string | null
+          related_order_id?: string | null
+          related_ticket_ids?: string[] | null
+          title: string
+          type: Database["public"]["Enums"]["message_type"]
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          recipient_email?: string | null
+          recipient_id?: string | null
+          related_order_id?: string | null
+          related_ticket_ids?: string[] | null
+          title?: string
+          type?: Database["public"]["Enums"]["message_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_related_order_id_fkey"
+            columns: ["related_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string
@@ -399,12 +446,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_guest_messages: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      process_test_checkout: {
+        Args: {
+          p_buyer_email: string
+          p_buyer_name: string
+          p_buyer_phone: string
+          p_discount_kobo: number
+          p_event_id: string
+          p_payment_reference: string
+          p_subtotal_kobo: number
+          p_tickets: Json
+          p_total_kobo: number
+          p_user_id: string
+        }
+        Returns: string
       }
     }
     Enums: {
@@ -420,6 +483,7 @@ export type Database = {
         | "sport"
         | "other"
       event_status: "draft" | "published" | "cancelled" | "completed"
+      message_type: "ticket_delivery" | "system" | "event_update"
       order_status: "pending" | "paid" | "failed" | "refunded"
       ticket_status: "valid" | "checked_in" | "cancelled"
     }
@@ -562,6 +626,7 @@ export const Constants = {
         "other",
       ],
       event_status: ["draft", "published", "cancelled", "completed"],
+      message_type: ["ticket_delivery", "system", "event_update"],
       order_status: ["pending", "paid", "failed", "refunded"],
       ticket_status: ["valid", "checked_in", "cancelled"],
     },
