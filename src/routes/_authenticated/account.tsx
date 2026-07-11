@@ -64,28 +64,21 @@ function AccountPage() {
   async function toggleOrganizer(next: boolean) {
     if (!data) return;
     setOrganizerOn(next);
-    const { error: pErr } = await supabase
-      .from("profiles")
-      .upsert({ id: data.userId, is_organizer: next }, { onConflict: "id" });
-    if (pErr) {
-      toast.error(pErr.message);
+    
+    const { error } = await supabase.rpc("set_organizer_status", { is_org: next });
+    
+    if (error) {
+      toast.error(error.message);
       setOrganizerOn(!next);
       return;
     }
+    
     if (next) {
-      // grant organizer role
-      const { error: rErr } = await supabase
-        .from("user_roles")
-        .upsert({ user_id: data.userId, role: "organizer" }, { onConflict: "user_id,role", ignoreDuplicates: true });
-      if (rErr && !rErr.message.includes("duplicate")) {
-        toast.error(rErr.message);
-        return;
-      }
       toast.success("Organizer mode on. Create your first event!");
     } else {
-      await supabase.from("user_roles").delete().eq("user_id", data.userId).eq("role", "organizer");
       toast.success("Organizer mode off");
     }
+    
     qc.invalidateQueries({ queryKey: ["me"] });
     qc.invalidateQueries({ queryKey: ["my-events"] });
   }

@@ -118,8 +118,8 @@ function NewEventPage() {
       
       if (roleErr) throw new Error("Failed to grant organizer role: " + roleErr.message);
 
-      // Update profiles
-      await supabase.from("profiles").update({ is_organizer: true }).eq("id", userId);
+      // Update profiles using the secure RPC
+      await supabase.rpc("set_organizer_status", { is_org: true });
 
       // Refresh session
       const { error: refreshErr } = await supabase.auth.refreshSession();
