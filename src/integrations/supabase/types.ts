@@ -459,8 +459,13 @@ export type Database = {
           p_buyer_email: string
           p_buyer_name: string
           p_buyer_phone: string
+          p_discount_kobo: number
           p_event_id: string
-          p_items: Json
+          p_payment_reference: string
+          p_subtotal_kobo: number
+          p_tickets: Json
+          p_total_kobo: number
+          p_user_id: string
         }
         Returns: string
       }
