@@ -230,16 +230,16 @@ function EventDetailPage() {
 
       {/* Checkout Dialog */}
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[480px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Complete Checkout</DialogTitle>
             <DialogDescription>
-              You're buying {totalCount} tickets for {formatNaira(totalKobo)}.
+              You're buying {totalCount} ticket{totalCount === 1 ? "" : "s"} for {formatNaira(totalKobo)}.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCheckoutSubmit} className="space-y-4 pt-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">Your Full Name</Label>
               <Input id="name" required value={buyerName} onChange={(e) => setBuyerName(e.target.value)} placeholder="Jane Doe" />
             </div>
             <div className="space-y-2">
@@ -250,12 +250,40 @@ function EventDetailPage() {
               <Label htmlFor="phone">Phone Number (Optional)</Label>
               <Input id="phone" type="tel" value={buyerPhone} onChange={(e) => setBuyerPhone(e.target.value)} placeholder="08012345678" />
             </div>
+
+            {totalCount > 1 && (
+              <div className="space-y-3 border-t border-border pt-4">
+                <div>
+                  <p className="text-sm font-semibold">Attendee names</p>
+                  <p className="text-xs text-muted-foreground">
+                    Add a name for each ticket (optional — blanks use your name).
+                  </p>
+                </div>
+                {items.map((it) => (
+                  <div key={it.type.id} className="space-y-2">
+                    <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                      {it.type.name}
+                    </p>
+                    {Array.from({ length: it.count }).map((_, idx) => (
+                      <Input
+                        key={idx}
+                        value={attendeeNames[it.type.id]?.[idx] ?? ""}
+                        onChange={(e) => setAttendeeName(it.type.id, idx, e.target.value)}
+                        placeholder={`Attendee ${idx + 1} full name`}
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+
             <Button type="submit" disabled={checkoutBusy} className="w-full gradient-sunset text-primary-foreground shadow-glow">
               {checkoutBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Pay {formatNaira(totalKobo)}
+              {totalKobo === 0 ? "Get free tickets" : `Pay ${formatNaira(totalKobo)}`}
             </Button>
           </form>
         </DialogContent>
+
       </Dialog>
     </div>
   );
