@@ -147,10 +147,23 @@ function EventDetailPage() {
       }));
 
       if (totalKobo === 0) {
-        throw new Error("Free tickets aren't supported yet — please contact the organizer.");
+        // Handle free tickets locally
+        const { data: orderId, error: checkoutError } = await supabase.rpc('process_test_checkout', {
+          p_event_id: data!.event.id,
+          p_buyer_name: buyerName,
+          p_buyer_email: buyerEmail,
+          p_buyer_phone: buyerPhone || null,
+          p_items: ticketsPayload,
+        });
+
+        if (checkoutError) {
+          throw new Error(`Database error: ${checkoutError.message}`);
+        }
+
+        toast.success("Free ticket claimed successfully!");
+        router.navigate({ to: "/inbox" });
+        return;
       }
-
-
 
       const metadata = {
         eventId: data!.event.id,
