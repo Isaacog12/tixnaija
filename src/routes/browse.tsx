@@ -35,15 +35,22 @@ async function fetchEvents(q: string) {
     .order("start_datetime", { ascending: true })
     .limit(60);
 
-  if (q.trim()) {
-    const like = `%${q.trim()}%`;
-    query = query.or(
-      `title.ilike.${like},description.ilike.${like},city.ilike.${like},venue_name.ilike.${like}`,
-    );
+  const cleaned = q.trim();
+  if (cleaned) {
+    // Escape characters that break PostgREST's .or() and ILIKE pattern:
+    // commas separate filters, parens group them, % and _ are wildcards.
+    const safe = cleaned.replace(/[,()%_*]/g, " ").replace(/\s+/g, " ").trim();
+    if (safe) {
+      const like = `%${safe}%`;
+      query = query.or(
+        `title.ilike.${like},description.ilike.${like},city.ilike.${like},venue_name.ilike.${like}`,
+      );
+    }
   }
 
   const { data, error } = await query;
   if (error) throw error;
+
 
   // Fetch min price per event
   const ids = (data ?? []).map((e) => e.id);
