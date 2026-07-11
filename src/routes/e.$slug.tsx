@@ -64,7 +64,7 @@ async function fetchEventBySlug(slug: string) {
 
 function EventDetailPage() {
   const { slug } = Route.useParams();
-  const navigate = useNavigate();
+  
   const { data, isLoading, isError } = useQuery({
     queryKey: ["public-event", slug],
     queryFn: () => fetchEventBySlug(slug),
