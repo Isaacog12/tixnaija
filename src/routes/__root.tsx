@@ -8,10 +8,10 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
-
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
   return (
@@ -129,6 +129,18 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        supabase.rpc("claim_guest_messages" as any).catch(console.error);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
