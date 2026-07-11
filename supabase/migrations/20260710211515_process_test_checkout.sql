@@ -76,9 +76,12 @@ begin
     -- Insert tickets
     for i in 1..v_count loop
       insert into public.tickets (
-        order_item_id, status
+        order_item_id, attendee_name, attendee_email, status
       ) values (
-        v_order_item_id, 'valid'
+        v_order_item_id, 
+        coalesce(v_item->'attendee_names'->>(i-1), p_buyer_name),
+        p_buyer_email,
+        'valid'
       ) returning id into v_new_ticket_id;
       
       v_ticket_ids := array_append(v_ticket_ids, v_new_ticket_id);
