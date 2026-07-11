@@ -11,6 +11,7 @@ create or replace function public.process_test_checkout(
   p_payment_reference text
 ) returns uuid
 language plpgsql security definer
+set search_path = public
 as $$
 declare
   v_order_id uuid;
@@ -104,3 +105,7 @@ begin
   return v_order_id;
 end;
 $$;
+
+-- Security best practices
+revoke execute on function public.process_test_checkout from public;
+grant execute on function public.process_test_checkout to anon, authenticated, service_role;
