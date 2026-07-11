@@ -16,6 +16,11 @@ function VerifyCheckoutPage() {
   
   const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying");
   const [errorMsg, setErrorMsg] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setUserId(data.session?.user?.id || null));
+  }, []);
 
   useEffect(() => {
     if (!reference) {
@@ -65,12 +70,26 @@ function VerifyCheckoutPage() {
           <>
             <CheckCircle2 className="mb-6 h-16 w-16 text-green-500" />
             <h1 className="font-display text-3xl">Payment Successful!</h1>
-            <p className="mt-2 text-muted-foreground">
-              Your tickets have been generated. We've sent them to your inbox.
-            </p>
-            <Button asChild className="mt-8 w-full gradient-sunset" size="lg">
-              <Link to="/inbox">Go to Inbox</Link>
-            </Button>
+            
+            {userId ? (
+              <>
+                <p className="mt-2 text-muted-foreground">
+                  Your tickets have been generated. We've sent them to your inbox.
+                </p>
+                <Button asChild className="mt-8 w-full gradient-sunset" size="lg">
+                  <Link to="/inbox">Go to Inbox</Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="mt-2 text-muted-foreground">
+                  Since you checked out as a guest, please create an account or log in with the email you used to view your tickets.
+                </p>
+                <Button asChild className="mt-8 w-full gradient-sunset" size="lg">
+                  <Link to="/auth">Create Account or Log in</Link>
+                </Button>
+              </>
+            )}
           </>
         )}
 

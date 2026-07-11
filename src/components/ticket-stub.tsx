@@ -2,6 +2,7 @@ import React, { useRef } from "react";
 import { format } from "date-fns";
 import { QRCodeSVG } from "qrcode.react";
 import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 import { MapPin, Calendar, Download } from "lucide-react";
 import { Button } from "./ui/button";
 
@@ -24,10 +25,15 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
         backgroundColor: null, // Transparent
       });
       const dataUrl = canvas.toDataURL("image/png");
-      const link = document.createElement("a");
-      link.download = `Ticket_${event.title}_${ticket.ticket_code.split("-")[0]}.png`;
-      link.href = dataUrl;
-      link.click();
+      
+      const pdf = new jsPDF({
+        orientation: canvas.width > canvas.height ? "landscape" : "portrait",
+        unit: "px",
+        format: [canvas.width, canvas.height]
+      });
+      
+      pdf.addImage(dataUrl, 'PNG', 0, 0, canvas.width, canvas.height);
+      pdf.save(`Ticket_${event.title}_${ticket.ticket_code.split("-")[0]}.pdf`);
     } catch (err) {
       console.error("Failed to download ticket", err);
     }

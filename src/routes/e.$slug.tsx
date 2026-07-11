@@ -165,8 +165,13 @@ function EventDetailPage() {
           throw new Error(`Database error: ${checkoutError.message}`);
         }
 
-        toast.success("Free ticket claimed successfully!");
-        navigate({ to: "/inbox" });
+        if (!userId) {
+          toast.success("Free ticket claimed! Please sign up or log in to view your tickets.", { duration: 6000 });
+          navigate({ to: "/auth" });
+        } else {
+          toast.success("Free ticket claimed successfully!");
+          navigate({ to: "/inbox" });
+        }
         return;
       }
 
