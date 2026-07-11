@@ -171,19 +171,26 @@ function Dashboard() {
                     >
                       /e/{ev.slug}
                     </a>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        const url = `${window.location.origin}/e/${ev.slug}`;
-                        navigator.clipboard.writeText(url);
-                        toast.success("Public link copied");
-                      }}
-                    >
-                      <Copy className="mr-1.5 h-3.5 w-3.5" /> Copy link
-                    </Button>
-                  </div>
+                      <div className="flex gap-2">
+                        <Button asChild size="sm" variant="outline" className="text-primary hover:text-primary">
+                          <Link to={`/events/${ev.id}/scan`}>
+                            Scan Tickets
+                          </Link>
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const url = `${window.location.origin}/e/${ev.slug}`;
+                            navigator.clipboard.writeText(url);
+                            toast.success("Public link copied");
+                          }}
+                        >
+                          <Copy className="mr-1.5 h-3.5 w-3.5" /> Copy link
+                        </Button>
+                      </div>
+                    </div>
                 )}
               </div>
             );
