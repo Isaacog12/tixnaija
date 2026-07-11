@@ -146,26 +146,11 @@ function EventDetailPage() {
         attendee_names: (attendeeNames[i.type.id] ?? []).slice(0, i.count),
       }));
 
-      // Free events: skip Paystack, use the RPC directly (still marks paid)
       if (totalKobo === 0) {
-        const ref = `FREE_${Date.now()}`;
-        const { data: orderId, error: rpcErr } = await supabase.rpc("process_test_checkout" as any, {
-          p_event_id: data!.event.id,
-          p_user_id: userId,
-          p_buyer_name: buyerName,
-          p_buyer_email: buyerEmail,
-          p_buyer_phone: buyerPhone || null,
-          p_tickets: ticketsPayload,
-          p_subtotal_kobo: 0,
-          p_discount_kobo: 0,
-          p_total_kobo: 0,
-          p_payment_reference: ref,
-        });
-        if (rpcErr) throw rpcErr;
-        toast.success("Tickets confirmed!");
-        navigate({ to: "/checkout/verify", search: { reference: ref } as any });
-        return;
+        throw new Error("Free tickets aren't supported yet — please contact the organizer.");
       }
+
+
 
       const metadata = {
         eventId: data!.event.id,
