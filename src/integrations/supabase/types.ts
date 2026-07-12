@@ -469,6 +469,7 @@ export type Database = {
         }
         Returns: string
       }
+      set_organizer_status: { Args: { is_org: boolean }; Returns: undefined }
     }
     Enums: {
       app_role: "attendee" | "organizer" | "admin"

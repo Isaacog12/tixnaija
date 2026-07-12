@@ -22,6 +22,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedEventsNewRouteImport } from './routes/_authenticated/events.new'
 import { Route as AuthenticatedOrdersOrderIdTicketsRouteImport } from './routes/_authenticated/orders.$orderId.tickets'
+import { Route as AuthenticatedEventsEventIdScanRouteImport } from './routes/_authenticated/events.$eventId.scan'
 import { Route as AuthenticatedEventsEventIdEditRouteImport } from './routes/_authenticated/events.$eventId.edit'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -89,6 +90,12 @@ const AuthenticatedOrdersOrderIdTicketsRoute =
     path: '/orders/$orderId/tickets',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEventsEventIdScanRoute =
+  AuthenticatedEventsEventIdScanRouteImport.update({
+    id: '/events/$eventId/scan',
+    path: '/events/$eventId/scan',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEventsEventIdEditRoute =
   AuthenticatedEventsEventIdEditRouteImport.update({
     id: '/events/$eventId/edit',
@@ -109,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/e/$slug': typeof ESlugRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
+  '/events/$eventId/scan': typeof AuthenticatedEventsEventIdScanRoute
   '/orders/$orderId/tickets': typeof AuthenticatedOrdersOrderIdTicketsRoute
 }
 export interface FileRoutesByTo {
@@ -124,6 +132,7 @@ export interface FileRoutesByTo {
   '/e/$slug': typeof ESlugRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
+  '/events/$eventId/scan': typeof AuthenticatedEventsEventIdScanRoute
   '/orders/$orderId/tickets': typeof AuthenticatedOrdersOrderIdTicketsRoute
 }
 export interface FileRoutesById {
@@ -141,6 +150,7 @@ export interface FileRoutesById {
   '/e/$slug': typeof ESlugRoute
   '/_authenticated/events/new': typeof AuthenticatedEventsNewRoute
   '/_authenticated/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
+  '/_authenticated/events/$eventId/scan': typeof AuthenticatedEventsEventIdScanRoute
   '/_authenticated/orders/$orderId/tickets': typeof AuthenticatedOrdersOrderIdTicketsRoute
 }
 export interface FileRouteTypes {
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/e/$slug'
     | '/events/new'
     | '/events/$eventId/edit'
+    | '/events/$eventId/scan'
     | '/orders/$orderId/tickets'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/e/$slug'
     | '/events/new'
     | '/events/$eventId/edit'
+    | '/events/$eventId/scan'
     | '/orders/$orderId/tickets'
   id:
     | '__root__'
@@ -189,6 +201,7 @@ export interface FileRouteTypes {
     | '/e/$slug'
     | '/_authenticated/events/new'
     | '/_authenticated/events/$eventId/edit'
+    | '/_authenticated/events/$eventId/scan'
     | '/_authenticated/orders/$orderId/tickets'
   fileRoutesById: FileRoutesById
 }
@@ -296,6 +309,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOrdersOrderIdTicketsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/events/$eventId/scan': {
+      id: '/_authenticated/events/$eventId/scan'
+      path: '/events/$eventId/scan'
+      fullPath: '/events/$eventId/scan'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdScanRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/events/$eventId/edit': {
       id: '/_authenticated/events/$eventId/edit'
       path: '/events/$eventId/edit'
@@ -312,6 +332,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
   AuthenticatedEventsNewRoute: typeof AuthenticatedEventsNewRoute
   AuthenticatedEventsEventIdEditRoute: typeof AuthenticatedEventsEventIdEditRoute
+  AuthenticatedEventsEventIdScanRoute: typeof AuthenticatedEventsEventIdScanRoute
   AuthenticatedOrdersOrderIdTicketsRoute: typeof AuthenticatedOrdersOrderIdTicketsRoute
 }
 
@@ -321,6 +342,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
   AuthenticatedEventsNewRoute: AuthenticatedEventsNewRoute,
   AuthenticatedEventsEventIdEditRoute: AuthenticatedEventsEventIdEditRoute,
+  AuthenticatedEventsEventIdScanRoute: AuthenticatedEventsEventIdScanRoute,
   AuthenticatedOrdersOrderIdTicketsRoute:
     AuthenticatedOrdersOrderIdTicketsRoute,
 }
