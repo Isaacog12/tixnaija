@@ -150,10 +150,10 @@ function EventDetailPage() {
         // Handle free tickets locally
         const { data: orderId, error: checkoutError } = await supabase.rpc('process_test_checkout', {
           p_event_id: data!.event.id,
-          p_user_id: userId || null,
+          p_user_id: (userId || null) as string,
           p_buyer_name: buyerName,
           p_buyer_email: buyerEmail,
-          p_buyer_phone: buyerPhone || null,
+          p_buyer_phone: (buyerPhone || null) as string,
           p_tickets: ticketsPayload,
           p_subtotal_kobo: 0,
           p_discount_kobo: 0,
