@@ -73,7 +73,7 @@ function ScannerPage() {
 
       // 2. Check ticket status
       if (ticketData.status === 'checked_in') {
-        const time = new Date(ticketData.checked_in_at).toLocaleTimeString();
+        const time = new Date(ticketData.checked_in_at ?? Date.now()).toLocaleTimeString();
         setScanResult({ 
           status: "warning", 
           message: `Already scanned at ${time}!`,
