@@ -1,10 +1,11 @@
 import React, { useRef } from "react";
 import { format } from "date-fns";
-import { QRCodeSVG } from "qrcode.react";
+import { QRCodeCanvas } from "qrcode.react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { MapPin, Calendar, Download } from "lucide-react";
 import { Button } from "./ui/button";
+import { toast } from "sonner";
 
 interface TicketStubProps {
   ticket: any;
@@ -34,8 +35,10 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
       
       pdf.addImage(dataUrl, 'PNG', 0, 0, canvas.width, canvas.height);
       pdf.save(`Ticket_${event.title}_${ticket.ticket_code.split("-")[0]}.pdf`);
-    } catch (err) {
+      toast.success("Ticket downloaded successfully!");
+    } catch (err: any) {
       console.error("Failed to download ticket", err);
+      toast.error(`Download failed: ${err.message || "Unknown error"}`);
     }
   };
 
@@ -131,7 +134,7 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
           </div>
           
           <div className="bg-white p-3 rounded-xl shadow-sm mb-4">
-            <QRCodeSVG 
+            <QRCodeCanvas 
               value={ticket.ticket_code}
               size={140}
               bgColor={"#ffffff"}

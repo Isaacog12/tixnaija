@@ -131,9 +131,10 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && session) {
-        supabase.rpc("claim_guest_messages" as any).catch(console.error);
+        const { error } = await supabase.rpc("claim_guest_messages" as any);
+        if (error) console.error("Failed to claim guest messages:", error);
       }
     });
 
