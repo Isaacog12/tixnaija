@@ -130,18 +130,22 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  const router = useRouter();
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && session) {
         const { error } = await supabase.rpc("claim_guest_messages" as any);
         if (error) console.error("Failed to claim guest messages:", error);
       }
+      // Re-evaluate routes when auth state changes
+      router.invalidate();
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [router]);
 
   return (
     <QueryClientProvider client={queryClient}>
