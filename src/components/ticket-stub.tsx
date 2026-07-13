@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { QRCodeCanvas } from "qrcode.react";
 import { toPng } from "html-to-image";
 import { jsPDF } from "jspdf";
-import { MapPin, Calendar, Download } from "lucide-react";
+import { MapPin, Calendar, Download, CalendarPlus } from "lucide-react";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
 
@@ -59,6 +59,50 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
   const formattedTime = event.start_datetime 
     ? format(new Date(event.start_datetime), "h:mm a") 
     : "TBA";
+
+  const generateCalendarDates = () => {
+    const start = new Date(event.start_datetime);
+    const end = event.end_datetime ? new Date(event.end_datetime) : new Date(start.getTime() + 2 * 60 * 60 * 1000);
+    const formatForCal = (d: Date) => d.toISOString().replace(/-|:|\.\d+/g, "");
+    return { startStr: formatForCal(start), endStr: formatForCal(end) };
+  };
+
+  const handleGoogleCalendar = () => {
+    if (!event.start_datetime) return;
+    const { startStr, endStr } = generateCalendarDates();
+    const title = encodeURIComponent(event.title);
+    const details = encodeURIComponent(event.description || "");
+    const location = encodeURIComponent([event.venue_name, event.address, event.city, event.state].filter(Boolean).join(", "));
+    window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startStr}/${endStr}&details=${details}&location=${location}`, "_blank");
+  };
+
+  const handleIcsDownload = () => {
+    if (!event.start_datetime) return;
+    const { startStr, endStr } = generateCalendarDates();
+    const location = [event.venue_name, event.address, event.city, event.state].filter(Boolean).join(", ");
+    
+    const icsContent = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "BEGIN:VEVENT",
+      `DTSTART:${startStr}`,
+      `DTEND:${endStr}`,
+      `SUMMARY:${event.title}`,
+      `DESCRIPTION:${event.description || ""}`,
+      `LOCATION:${location}`,
+      "END:VEVENT",
+      "END:VCALENDAR"
+    ].join("\r\n");
+
+    const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${event.slug || "event"}.ics`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="w-full max-w-2xl mx-auto mb-8">
@@ -161,9 +205,19 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
       </div>
 
       {/* Action Buttons */}
-      <div className="flex justify-end mt-4">
-        <Button variant="outline" onClick={handleDownload} className="gap-2">
-          <Download className="w-4 h-4" /> Download Ticket
+      <div className="flex flex-wrap justify-end gap-3 mt-4">
+        {event.start_datetime && (
+          <>
+            <Button variant="outline" onClick={handleGoogleCalendar} className="gap-2">
+              <CalendarPlus className="w-4 h-4" /> Google Calendar
+            </Button>
+            <Button variant="outline" onClick={handleIcsDownload} className="gap-2">
+              <CalendarPlus className="w-4 h-4" /> Download .ics
+            </Button>
+          </>
+        )}
+        <Button variant="default" onClick={handleDownload} className="gap-2 gradient-sunset text-white border-0 shadow-glow hover:opacity-90">
+          <Download className="w-4 h-4" /> Download PDF Ticket
         </Button>
       </div>
     </div>

@@ -23,6 +23,7 @@ function AuthPage() {
   const { mode } = Route.useSearch();
   const navigate = useNavigate();
   const [tab, setTab] = useState<"signin" | "signup">(mode ?? "signin");
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // If already signed in, bounce to dashboard.
   useEffect(() => {
@@ -67,7 +68,7 @@ function AuthPage() {
               <EmailForm mode="signin" />
             </TabsContent>
             <TabsContent value="signup" className="mt-6">
-              <EmailForm mode="signup" />
+              <EmailForm mode="signup" termsAccepted={termsAccepted} setTermsAccepted={setTermsAccepted} />
             </TabsContent>
           </Tabs>
 
@@ -77,12 +78,8 @@ function AuthPage() {
             <span className="h-px flex-1 bg-border" />
           </div>
 
-          <GoogleButton />
+          <GoogleButton mode={tab} termsAccepted={termsAccepted} />
         </div>
-
-        <p className="mt-6 text-center text-xs text-muted-foreground">
-          By continuing you agree to TixNaija's terms of service.
-        </p>
       </div>
     </div>
   );
@@ -94,7 +91,7 @@ const emailSchema = z.object({
   fullName: z.string().trim().max(80).optional(),
 });
 
-function EmailForm({ mode }: { mode: "signin" | "signup" }) {
+function EmailForm({ mode, termsAccepted, setTermsAccepted }: { mode: "signin" | "signup", termsAccepted?: boolean, setTermsAccepted?: (val: boolean) => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -106,6 +103,10 @@ function EmailForm({ mode }: { mode: "signin" | "signup" }) {
     const parsed = emailSchema.safeParse({ email, password, fullName: mode === "signup" ? fullName : undefined });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Check your input");
+      return;
+    }
+    if (mode === "signup" && !termsAccepted) {
+      toast.error("You must agree to the Terms of Service and Privacy Policy.");
       return;
     }
     setBusy(true);
@@ -162,9 +163,26 @@ function EmailForm({ mode }: { mode: "signin" | "signup" }) {
           </div>
         )}
       </div>
+
+      {mode === "signup" && setTermsAccepted && (
+        <div className="flex items-start gap-2 border-t border-border pt-4 mt-2">
+          <input 
+            type="checkbox" 
+            id="auth-terms" 
+            required
+            className="mt-1"
+            checked={termsAccepted}
+            onChange={(e) => setTermsAccepted(e.target.checked)}
+          />
+          <Label htmlFor="auth-terms" className="text-xs text-muted-foreground leading-relaxed">
+            I agree to the <Link to="/terms" target="_blank" className="text-primary hover:underline">Terms of Service</Link> and <Link to="/privacy" target="_blank" className="text-primary hover:underline">Privacy Policy</Link>.
+          </Label>
+        </div>
+      )}
+
       <Button
         type="submit"
-        disabled={busy}
+        disabled={busy || (mode === "signup" && !termsAccepted)}
         className="w-full gradient-sunset text-primary-foreground shadow-glow hover:opacity-90"
       >
         {busy ? "Please wait…" : mode === "signup" ? "Create account" : "Sign in"}
@@ -173,9 +191,13 @@ function EmailForm({ mode }: { mode: "signin" | "signup" }) {
   );
 }
 
-function GoogleButton() {
+function GoogleButton({ mode, termsAccepted }: { mode: "signin" | "signup", termsAccepted?: boolean }) {
   const [busy, setBusy] = useState(false);
   async function onGoogle() {
+    if (mode === "signup" && !termsAccepted) {
+      toast.error("You must agree to the Terms of Service and Privacy Policy.");
+      return;
+    }
     setBusy(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -194,9 +216,9 @@ function GoogleButton() {
   return (
     <Button 
       variant="outline" 
-      className="w-full bg-white text-black border-gray-300 hover:bg-gray-50 shadow-sm" 
+      className="w-full bg-white text-black border-gray-300 hover:bg-gray-50 shadow-sm disabled:opacity-50" 
       onClick={onGoogle} 
-      disabled={busy}
+      disabled={busy || (mode === "signup" && !termsAccepted)}
     >
       <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24" aria-hidden>
         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>

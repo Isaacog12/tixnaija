@@ -35,13 +35,25 @@ async function fetchMyEvents() {
   if (eventIds.length) {
     const { data: types } = await supabase
       .from("ticket_types")
-      .select("event_id, quantity_sold, price_kobo")
+      .select("event_id, quantity_sold")
       .in("event_id", eventIds);
+      
+    const { data: orders } = await supabase
+      .from("orders")
+      .select("event_id, total_kobo")
+      .in("event_id", eventIds)
+      .eq("status", "success");
+
     for (const t of types ?? []) {
       const s = statsByEvent[t.event_id] ?? { sold: 0, revenueKobo: 0 };
       s.sold += t.quantity_sold;
-      s.revenueKobo += t.quantity_sold * t.price_kobo;
       statsByEvent[t.event_id] = s;
+    }
+    
+    for (const o of orders ?? []) {
+      const s = statsByEvent[o.event_id] ?? { sold: 0, revenueKobo: 0 };
+      s.revenueKobo += o.total_kobo || 0;
+      statsByEvent[o.event_id] = s;
     }
   }
 

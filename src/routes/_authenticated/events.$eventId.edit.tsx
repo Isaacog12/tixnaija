@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatNaira, nairaToKobo, koboToNaira } from "@/lib/currency";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/events/$eventId/edit")({
   component: EditEventPage,
@@ -181,6 +182,20 @@ function EditEventPage() {
           </div>
         </div>
       </form>
+
+      {/* Advanced Actions (Comp / Cancel / Postpone) */}
+      <section className="mt-10 rounded-2xl border border-border bg-card/60 p-6">
+        <h2 className="mb-4 text-lg font-semibold">Event Actions</h2>
+        <div className="flex flex-wrap gap-4">
+          <CompTicketsDialog eventId={eventId} ticketTypes={data.types} />
+          {data.event.status !== "cancelled" && (
+            <>
+              <PostponeEventDialog eventId={eventId} eventStart={data.event.start_datetime} eventEnd={data.event.end_datetime} />
+              <CancelEventDialog eventId={eventId} />
+            </>
+          )}
+        </div>
+      </section>
 
       {/* Ticket types */}
       <section className="mt-10 rounded-2xl border border-border bg-card/60 p-6">
@@ -417,5 +432,201 @@ function PromoCodesSection({ eventId, promoCodes }: { eventId: string; promoCode
         )}
       </div>
     </section>
+  );
+}
+
+function CompTicketsDialog({ eventId, ticketTypes }: { eventId: string, ticketTypes: any[] }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [ticketTypeId, setTicketTypeId] = useState("");
+  const [recipientsText, setRecipientsText] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!ticketTypeId) return toast.error("Select a ticket tier");
+    
+    const lines = recipientsText.split("\n").map(l => l.trim()).filter(Boolean);
+    const recipients = [];
+    for (const line of lines) {
+      const parts = line.split(",");
+      if (parts.length < 2) return toast.error(`Invalid line format: ${line}. Use "Name, Email"`);
+      recipients.push({ name: parts[0].trim(), email: parts[1].trim() });
+    }
+    
+    if (recipients.length === 0) return toast.error("Enter at least one recipient");
+    
+    setBusy(true);
+    const { error } = await supabase.rpc("issue_comp_tickets", {
+      p_event_id: eventId,
+      p_ticket_type_id: ticketTypeId,
+      p_recipients: recipients,
+    });
+    setBusy(false);
+    
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success(`${recipients.length} comp tickets issued!`);
+      setOpen(false);
+      setRecipientsText("");
+      qc.invalidateQueries({ queryKey: ["event", eventId] });
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline">Issue Comp Tickets</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Issue Complimentary Tickets</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Field label="Ticket Tier">
+            <Select value={ticketTypeId} onValueChange={setTicketTypeId}>
+              <SelectTrigger><SelectValue placeholder="Select ticket tier" /></SelectTrigger>
+              <SelectContent>
+                {ticketTypes.map(t => (
+                  <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Recipients (One per line: Name, Email)">
+            <Textarea 
+              rows={5} 
+              required
+              placeholder={`John Doe, john@example.com\nJane Smith, jane@example.com`}
+              value={recipientsText} 
+              onChange={e => setRecipientsText(e.target.value)} 
+            />
+          </Field>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button type="submit" disabled={busy}>{busy ? "Issuing..." : "Issue Tickets"}</Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function CancelEventDialog({ eventId }: { eventId: string }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
+
+  async function handleCancel() {
+    if (!confirm("Are you sure? This cannot be undone and buyers will be notified.")) return;
+    setBusy(true);
+    const { error } = await supabase.rpc("cancel_event", {
+      p_event_id: eventId,
+      p_note: note || null,
+    });
+    setBusy(false);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Event cancelled and buyers notified");
+      setOpen(false);
+      qc.invalidateQueries({ queryKey: ["event", eventId] });
+      qc.invalidateQueries({ queryKey: ["my-events"] });
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="text-destructive hover:text-destructive border-destructive/50 hover:bg-destructive/10">Cancel Event</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Cancel Event</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Cancelling an event will notify all valid ticket holders and update the event status to cancelled. You will still need to manually issue refunds through Paystack.
+          </p>
+          <Field label="Cancellation Note (Sent to buyers)">
+            <Textarea 
+              rows={3} 
+              placeholder="e.g. Due to unforeseen circumstances..."
+              value={note} 
+              onChange={e => setNote(e.target.value)} 
+            />
+          </Field>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setOpen(false)}>Back</Button>
+            <Button variant="destructive" disabled={busy} onClick={handleCancel}>{busy ? "Cancelling..." : "Confirm Cancellation"}</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function PostponeEventDialog({ eventId, eventStart, eventEnd }: { eventId: string, eventStart?: string, eventEnd?: string }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [start, setStart] = useState(eventStart ? new Date(eventStart).toISOString().slice(0, 16) : "");
+  const [end, setEnd] = useState(eventEnd ? new Date(eventEnd).toISOString().slice(0, 16) : "");
+  const [note, setNote] = useState("");
+
+  async function handlePostpone() {
+    if (!start) return toast.error("New start date is required");
+    setBusy(true);
+    const { error } = await supabase.rpc("postpone_event", {
+      p_event_id: eventId,
+      p_new_start: new Date(start).toISOString(),
+      p_new_end: end ? new Date(end).toISOString() : null,
+      p_note: note || null,
+    });
+    setBusy(false);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Event postponed and buyers notified");
+      setOpen(false);
+      qc.invalidateQueries({ queryKey: ["event", eventId] });
+      qc.invalidateQueries({ queryKey: ["my-events"] });
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline">Postpone Event</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Postpone Event</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Postponing will update the event dates and automatically notify all valid ticket holders that their tickets remain valid.
+          </p>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="New Start Date"><Input type="datetime-local" value={start} onChange={e => setStart(e.target.value)} /></Field>
+            <Field label="New End Date"><Input type="datetime-local" value={end} onChange={e => setEnd(e.target.value)} /></Field>
+          </div>
+          <Field label="Note for Buyers">
+            <Textarea 
+              rows={3} 
+              placeholder="e.g. We apologize for the delay..."
+              value={note} 
+              onChange={e => setNote(e.target.value)} 
+            />
+          </Field>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button disabled={busy} onClick={handlePostpone}>{busy ? "Postponing..." : "Confirm Postponement"}</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

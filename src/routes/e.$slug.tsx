@@ -47,7 +47,7 @@ async function fetchEventBySlug(slug: string) {
     .from("events")
     .select("*")
     .eq("slug", slug)
-    .eq("status", "published")
+    .in("status", ["published", "cancelled"])
     .maybeSingle();
   if (error) throw error;
   if (!event) throw notFound();
@@ -83,6 +83,7 @@ function EventDetailPage() {
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<{ id: string; discount_type: string; discount_value: number } | null>(null);
   const [validatingPromo, setValidatingPromo] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Pre-fill user data if logged in
   useQuery({
@@ -171,6 +172,10 @@ function EventDetailPage() {
       toast.error("Please fill in your name and email.");
       return;
     }
+    if (!termsAccepted) {
+      toast.error("You must agree to the Terms of Service and Privacy Policy.");
+      return;
+    }
 
     setCheckoutBusy(true);
     try {
@@ -247,7 +252,7 @@ function EventDetailPage() {
       )}
 
       {/* Sticky mobile buy bar */}
-      {data && (
+      {data && data.event.status !== "cancelled" && (
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-background/95 backdrop-blur md:hidden">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
             <div className="min-w-0">
@@ -345,7 +350,21 @@ function EventDetailPage() {
               </div>
             )}
 
-            <Button type="submit" disabled={checkoutBusy} className="w-full gradient-sunset text-primary-foreground shadow-glow">
+            <div className="flex items-start gap-2 border-t border-border pt-4">
+              <input 
+                type="checkbox" 
+                id="terms" 
+                required
+                className="mt-1"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+              />
+              <Label htmlFor="terms" className="text-xs text-muted-foreground leading-relaxed">
+                I agree to the <Link to="/terms" target="_blank" className="text-primary hover:underline">Terms of Service</Link> and <Link to="/privacy" target="_blank" className="text-primary hover:underline">Privacy Policy</Link>.
+              </Label>
+            </div>
+
+            <Button type="submit" disabled={checkoutBusy || !termsAccepted} className="w-full gradient-sunset text-primary-foreground shadow-glow">
               {checkoutBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {totalKobo === 0 ? "Get free tickets" : `Pay ${formatNaira(totalKobo)}`}
             </Button>
@@ -378,6 +397,18 @@ function EventBody({
 
   return (
     <div className="mx-auto max-w-6xl px-4 pt-6 md:pt-10">
+      {event.status === "cancelled" && (
+        <div className="mb-8 rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-destructive">
+          <h2 className="font-semibold text-lg">Event Cancelled</h2>
+          <p className="text-sm mt-1">{event.organizer_note || "This event has been cancelled by the organizer. Ticket holders have been notified regarding refunds."}</p>
+        </div>
+      )}
+      {event.postponed_at && event.status !== "cancelled" && (
+        <div className="mb-8 rounded-xl border border-amber-500/50 bg-amber-500/10 p-4 text-amber-600 dark:text-amber-400">
+          <h2 className="font-semibold text-lg">Event Postponed</h2>
+          <p className="text-sm mt-1">{event.organizer_note || "This event has been postponed to a new date. Previously purchased tickets remain valid."}</p>
+        </div>
+      )}
       <div className="grid gap-8 md:grid-cols-[1.4fr_1fr] md:gap-10">
         <div>
           <div className="relative overflow-hidden rounded-2xl border border-border">
@@ -461,11 +492,12 @@ function EventBody({
                 const isEnded = salesEnd && now >= salesEnd;
                 const remaining = Math.max(0, t.quantity_available - t.quantity_sold);
                 const soldOut = remaining === 0;
-                const unavailable = !isStarted || isEnded || soldOut;
+                const unavailable = !isStarted || isEnded || soldOut || event.status === "cancelled";
                 const count = qty[t.id] ?? 0;
                 
                 let statusText = `${remaining} left`;
-                if (!isStarted) statusText = "Sales not started";
+                if (event.status === "cancelled") statusText = "Sales closed";
+                else if (!isStarted) statusText = "Sales not started";
                 else if (isEnded) statusText = "Sales ended";
                 else if (soldOut) statusText = "Sold out";
 
