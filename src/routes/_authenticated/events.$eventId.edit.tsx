@@ -524,7 +524,7 @@ function CompTicketsDialog({ eventId, ticketTypes }: { eventId: string, ticketTy
             <Textarea 
               rows={5} 
               required
-              placeholder={`John Doe, john@example.com\nJane Smith, jane@example.com`}
+              placeholder={`Chinedu Okafor, chinedu@company.com\nNneka Eze, nneka@company.com`}
               value={recipientsText} 
               onChange={e => setRecipientsText(e.target.value)} 
             />

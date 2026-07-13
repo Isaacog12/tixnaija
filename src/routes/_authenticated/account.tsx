@@ -192,106 +192,133 @@ function AccountPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="font-display text-4xl md:text-5xl">Account</h1>
-      <p className="text-muted-foreground">Signed in as {data?.email}</p>
+    <div className="mx-auto max-w-5xl px-4 py-10">
+      <div className="mb-10">
+        <h1 className="font-display text-4xl md:text-5xl">Account Settings</h1>
+        <p className="mt-2 text-muted-foreground">Signed in as {data?.email}</p>
+      </div>
 
-      {/* Organizer toggle */}
-      <section className="mt-8 rounded-2xl border border-border bg-card/60 p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-lg bg-primary/15 text-primary">
-              <ShieldCheck className="h-5 w-5" />
-            </span>
-            <div>
-              <h2 className="text-lg font-semibold">Organizer mode</h2>
-              <p className="text-sm text-muted-foreground">
-                Turn this on to create and sell tickets to your own events.
-              </p>
+      <div className="space-y-16">
+        {/* Profile Section */}
+        <div className="grid gap-8 md:grid-cols-3">
+          <div className="md:col-span-1">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <UserIcon className="h-5 w-5 text-primary" />
+              Personal Info
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Update your personal details, phone number, and location.
+            </p>
+          </div>
+          <div className="md:col-span-2">
+            <form onSubmit={save} className="rounded-2xl border border-border bg-card/60 p-6 shadow-sm">
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field label="Full name">
+                  <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+                </Field>
+                <Field label="Phone">
+                  <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+2348012345678" />
+                </Field>
+                <Field label="City" className="sm:col-span-2">
+                  <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Lagos" />
+                </Field>
+              </div>
+              <div className="mt-6 flex justify-end border-t border-border pt-4">
+                <Button type="submit" disabled={saving} className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
+                  {saving ? "Saving…" : "Save profile"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div className="h-px bg-border w-full" />
+
+        {/* Organizer mode Section */}
+        <div className="grid gap-8 md:grid-cols-3">
+          <div className="md:col-span-1">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-primary" />
+              Organizer Mode
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Turn this on to access the dashboard and start selling tickets to your events.
+            </p>
+          </div>
+          <div className="md:col-span-2">
+            <div className="rounded-2xl border border-border bg-card/60 p-6 shadow-sm flex items-center justify-between gap-4">
+              <div>
+                <h3 className="font-medium text-foreground">Enable Organizer Tools</h3>
+                <p className="text-sm text-muted-foreground mt-1">Unlock event creation and ticket sales.</p>
+              </div>
+              <Switch checked={organizerOn} onCheckedChange={toggleOrganizer} />
             </div>
           </div>
-          <Switch checked={organizerOn} onCheckedChange={toggleOrganizer} />
         </div>
-      </section>
 
-      {/* Profile */}
-      <form onSubmit={save} className="mt-6 space-y-6">
-        <section className="rounded-2xl border border-border bg-card/60 p-6">
-          <div className="mb-4 flex items-center gap-3">
-            <UserIcon className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">Profile</h2>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Full name">
-              <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
-            </Field>
-            <Field label="Phone">
-              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+2348012345678" />
-            </Field>
-            <Field label="City">
-              <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Lagos" />
-            </Field>
-          </div>
-        </section>
+        <div className="h-px bg-border w-full" />
 
-        <div className="flex justify-end">
-          <Button type="submit" disabled={saving} className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
-            {saving ? "Saving…" : "Save profile"}
-          </Button>
-        </div>
-      </form>
-
-      {/* Payout Bank Account (Separate Form) */}
-      <form onSubmit={connectPayout} className="mt-6 space-y-6">
-        <section className="rounded-2xl border border-border bg-card/60 p-6">
-          <div className="mb-2 flex items-center justify-between">
-            <div className="flex items-center gap-3">
+        {/* Payout Bank Account Section */}
+        <div className="grid gap-8 md:grid-cols-3">
+          <div className="md:col-span-1">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
               <Landmark className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-semibold">Payout bank account</h2>
-            </div>
-            {data?.profile?.paystack_subaccount_code && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-1 text-xs font-medium text-green-500">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                Connected
-              </span>
-            )}
+              Payout Account
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Connect your Nigerian bank account to receive event payouts automatically.
+            </p>
+            <p className="mt-4 text-xs font-medium text-muted-foreground bg-primary/10 text-primary px-3 py-2 rounded-md">
+              A 15% platform fee applies to all ticket sales.
+            </p>
           </div>
-          <p className="mb-4 text-sm text-muted-foreground">
-            Connect your Nigerian bank account to receive payouts automatically. 15% platform fee applies.
-          </p>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Bank name">
-              <Select value={form.bank_name} onValueChange={(v) => setForm({ ...form, bank_name: v })}>
-                <SelectTrigger><SelectValue placeholder="Select Bank" /></SelectTrigger>
-                <SelectContent>
-                  {banks?.map((b) => (
-                    <SelectItem key={b.code} value={b.name}>{b.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field label="Account number">
-              <Input inputMode="numeric" value={form.bank_account_number} onChange={(e) => setForm({ ...form, bank_account_number: e.target.value })} placeholder="0123456789" />
-            </Field>
-            <Field label="Account name" className="md:col-span-2">
-              <div className="relative">
-                <Input readOnly={resolvingAccount} value={form.bank_account_name} onChange={(e) => setForm({ ...form, bank_account_name: e.target.value })} placeholder="As shown on your bank statement" />
-                {resolvingAccount && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                    Resolving...
-                  </div>
+          <div className="md:col-span-2">
+            <form onSubmit={connectPayout} className="rounded-2xl border border-border bg-card/60 p-6 shadow-sm">
+              <div className="mb-6 flex items-center justify-between">
+                <h3 className="font-medium text-foreground">Bank Details</h3>
+                {data?.profile?.paystack_subaccount_code && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-1 text-xs font-medium text-green-500">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Connected
+                  </span>
                 )}
               </div>
-            </Field>
+              
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field label="Bank name">
+                  <Select value={form.bank_name} onValueChange={(v) => setForm({ ...form, bank_name: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select Bank" /></SelectTrigger>
+                    <SelectContent>
+                      {banks?.map((b) => (
+                        <SelectItem key={b.code} value={b.name}>{b.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="Account number">
+                  <Input inputMode="numeric" value={form.bank_account_number} onChange={(e) => setForm({ ...form, bank_account_number: e.target.value })} placeholder="0123456789" />
+                </Field>
+                <Field label="Account name" className="sm:col-span-2">
+                  <div className="relative">
+                    <Input readOnly={resolvingAccount} value={form.bank_account_name} onChange={(e) => setForm({ ...form, bank_account_name: e.target.value })} placeholder="As shown on your bank statement" />
+                    {resolvingAccount && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                        Resolving...
+                      </div>
+                    )}
+                  </div>
+                </Field>
+              </div>
+              
+              <div className="mt-6 flex justify-end border-t border-border pt-4">
+                <Button type="submit" disabled={connectingPayout} variant={data?.profile?.paystack_subaccount_code ? "outline" : "default"} className={data?.profile?.paystack_subaccount_code ? "" : "gradient-sunset text-primary-foreground shadow-glow hover:opacity-90"}>
+                  {connectingPayout ? "Connecting…" : data?.profile?.paystack_subaccount_code ? "Update Account" : "Connect Account"}
+                </Button>
+              </div>
+            </form>
           </div>
-          
-          <div className="mt-6 flex justify-end">
-            <Button type="submit" disabled={connectingPayout} variant={data?.profile?.paystack_subaccount_code ? "outline" : "default"}>
-              {connectingPayout ? "Connecting…" : data?.profile?.paystack_subaccount_code ? "Update Payout Account" : "Connect Payout Account"}
-            </Button>
-          </div>
-        </section>
-      </form>
+        </div>
+      </div>
     </div>
   );
 }

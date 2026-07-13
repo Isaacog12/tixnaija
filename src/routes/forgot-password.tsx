@@ -75,7 +75,7 @@ function ForgotPasswordPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  placeholder="you@company.com"
                 />
               </div>
               <Button

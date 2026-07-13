@@ -18,7 +18,7 @@ async function fetchMyEvents() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("is_organizer, full_name")
+    .select("is_organizer, is_admin, full_name")
     .eq("id", userId)
     .maybeSingle();
 
@@ -67,6 +67,7 @@ function Dashboard() {
   });
 
   const isOrganizer = data?.profile?.is_organizer ?? false;
+  const isAdmin = data?.profile?.is_admin ?? false;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
@@ -77,17 +78,24 @@ function Dashboard() {
           </h1>
           <p className="text-muted-foreground">Your event organizer control room.</p>
         </div>
-        {isOrganizer ? (
-          <Button asChild size="lg" className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
-            <Link to="/events/new">
-              <Plus className="mr-2 h-4 w-4" /> New event
-            </Link>
-          </Button>
-        ) : (
-          <Button asChild size="lg" variant="outline">
-            <Link to="/account">Become an organizer</Link>
-          </Button>
-        )}
+        <div className="flex items-center gap-3">
+          {isAdmin && (
+            <Button asChild size="lg" variant="outline" className="border-primary/20 text-primary">
+              <Link to="/admin">Admin Panel</Link>
+            </Button>
+          )}
+          {isOrganizer ? (
+            <Button asChild size="lg" className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
+              <Link to="/events/new">
+                <Plus className="mr-2 h-4 w-4" /> New event
+              </Link>
+            </Button>
+          ) : (
+            <Button asChild size="lg" variant="outline">
+              <Link to="/account">Become an organizer</Link>
+            </Button>
+          )}
+        </div>
       </div>
 
       {!isOrganizer && (
@@ -125,84 +133,78 @@ function Dashboard() {
       )}
 
       {isOrganizer && data && data.events.length > 0 && (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="flex flex-col gap-4">
           {data.events.map((ev) => {
             const stats = data.statsByEvent[ev.id] ?? { sold: 0, revenueKobo: 0 };
             return (
               <div
                 key={ev.id}
-                className="group overflow-hidden rounded-2xl border border-border bg-card/60 transition hover:border-primary/50"
+                className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card/60 transition hover:border-primary/50 md:flex-row"
               >
-                <Link to="/events/$eventId/edit" params={{ eventId: ev.id }} className="block">
+                <Link to="/events/$eventId/edit" params={{ eventId: ev.id }} className="flex flex-1 flex-col md:flex-row">
                   <div
-                    className="h-40 w-full bg-secondary bg-cover bg-center"
+                    className="h-48 w-full shrink-0 bg-secondary bg-cover bg-center md:h-auto md:w-64"
                     style={ev.cover_image_url ? { backgroundImage: `url(${ev.cover_image_url})` } : undefined}
                   />
-                  <div className="p-5 pb-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <h3 className="text-lg font-semibold leading-tight group-hover:text-primary">
-                        {ev.title}
-                      </h3>
-                      <StatusBadge status={ev.status} />
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-4 text-xs text-muted-foreground">
-                      <span className="inline-flex items-center gap-1">
-                        <CalendarDays className="h-3.5 w-3.5" />
-                        {new Date(ev.start_datetime).toLocaleString("en-NG", {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        })}
-                      </span>
-                      {ev.city && (
-                        <span className="inline-flex items-center gap-1">
-                          <MapPin className="h-3.5 w-3.5" /> {ev.city}
+                  <div className="flex flex-1 flex-col justify-between p-5 md:p-6">
+                    <div>
+                      <div className="flex items-start justify-between gap-3">
+                        <h3 className="text-xl font-semibold leading-tight group-hover:text-primary">
+                          {ev.title}
+                        </h3>
+                        <StatusBadge status={ev.status} />
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-4 text-sm text-muted-foreground">
+                        <span className="inline-flex items-center gap-1.5">
+                          <CalendarDays className="h-4 w-4" />
+                          {new Date(ev.start_datetime).toLocaleString("en-NG", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
                         </span>
-                      )}
+                        {ev.city && (
+                          <span className="inline-flex items-center gap-1.5">
+                            <MapPin className="h-4 w-4" /> {ev.city}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="mt-4 flex items-center gap-6 border-t border-border pt-4 text-sm">
+                    
+                    <div className="mt-6 flex items-center gap-8 border-t border-border pt-4">
                       <div>
-                        <div className="text-xs uppercase tracking-wider text-muted-foreground">Sold</div>
-                        <div className="font-display text-xl">{stats.sold}</div>
+                        <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Tickets Sold</div>
+                        <div className="mt-1 font-display text-2xl">{stats.sold}</div>
                       </div>
                       <div>
-                        <div className="text-xs uppercase tracking-wider text-muted-foreground">Revenue</div>
-                        <div className="font-display text-xl text-gradient-sunset">
+                        <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Revenue</div>
+                        <div className="mt-1 font-display text-2xl text-gradient-sunset">
                           {formatNaira(stats.revenueKobo)}
                         </div>
                       </div>
                     </div>
                   </div>
                 </Link>
+                
                 {ev.status === "published" && (
-                  <div className="flex items-center justify-between gap-2 border-t border-border bg-background/40 px-5 py-3">
-                    <a
-                      href={`/e/${ev.slug}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="truncate text-xs text-muted-foreground hover:text-primary"
+                  <div className="flex flex-row items-center justify-between gap-3 border-t border-border bg-background/40 p-5 md:w-48 md:flex-col md:items-stretch md:justify-center md:border-t-0 md:border-l">
+                    <Button asChild variant="outline" className="w-full text-primary hover:text-primary">
+                      <Link to="/events/$eventId/scan" params={{ eventId: ev.id }}>
+                        Scan Tickets
+                      </Link>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="w-full"
+                      onClick={() => {
+                        const url = `${window.location.origin}/e/${ev.slug}`;
+                        navigator.clipboard.writeText(url);
+                        toast.success("Public link copied");
+                      }}
                     >
-                      /e/{ev.slug}
-                    </a>
-                      <div className="flex gap-2">
-                        <Button asChild size="sm" variant="outline" className="text-primary hover:text-primary">
-                          <Link to="/events/$eventId/scan" params={{ eventId: ev.id }}>
-                            Scan Tickets
-                          </Link>
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            const url = `${window.location.origin}/e/${ev.slug}`;
-                            navigator.clipboard.writeText(url);
-                            toast.success("Public link copied");
-                          }}
-                        >
-                          <Copy className="mr-1.5 h-3.5 w-3.5" /> Copy link
-                        </Button>
-                      </div>
-                    </div>
+                      <Copy className="mr-2 h-4 w-4" /> Copy link
+                    </Button>
+                  </div>
                 )}
               </div>
             );

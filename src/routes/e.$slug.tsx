@@ -287,11 +287,11 @@ function EventDetailPage() {
           <form onSubmit={handleCheckoutSubmit} className="space-y-4 pt-4">
             <div className="space-y-2">
               <Label htmlFor="name">Your Full Name</Label>
-              <Input id="name" required value={buyerName} onChange={(e) => setBuyerName(e.target.value)} placeholder="Jane Doe" />
+              <Input id="name" required value={buyerName} onChange={(e) => setBuyerName(e.target.value)} placeholder="Nneka Okafor" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
-              <Input id="email" type="email" required value={buyerEmail} onChange={(e) => setBuyerEmail(e.target.value)} placeholder="jane@example.com" />
+              <Input id="email" type="email" required value={buyerEmail} onChange={(e) => setBuyerEmail(e.target.value)} placeholder="nneka@company.com" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number (Optional)</Label>

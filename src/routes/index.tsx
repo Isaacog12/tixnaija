@@ -62,13 +62,12 @@ function LandingPage() {
               <span aria-hidden className="h-px w-16 gradient-sunset" />
             </div>
             <h1 className="mt-6 font-display text-5xl leading-[0.95] md:text-7xl lg:text-8xl">
-              Every big night
+              Buy tickets.
               <br />
-              <span className="text-gradient-sunset">starts with a ticket.</span>
+              <span className="text-gradient-sunset">Turn up.</span>
             </h1>
-            <p className="mx-auto mt-6 max-w-xl text-base text-muted-foreground md:text-lg">
-              Concerts in Lagos. Comedy in Abuja. Church programs, campus jams, industry
-              conferences — buy tickets in seconds and turn up with a scannable QR code.
+            <p className="mx-auto mt-6 max-w-lg text-base text-muted-foreground md:text-lg">
+              Concerts, comedy, and conferences across Nigeria. Buy tickets in seconds and enter with a scannable QR code.
             </p>
 
             <form
@@ -137,8 +136,8 @@ function LandingPage() {
                 No listing fees.
               </p>
             </div>
-            <div className="flex flex-wrap gap-3 md:justify-end">
-              <Button asChild size="lg" variant="secondary" className="bg-background text-foreground hover:bg-background/90">
+            <div className="flex flex-wrap gap-4 md:justify-end">
+              <Button asChild size="lg" variant="secondary" className="bg-background text-foreground hover:bg-background/90 shadow-none border-0">
                 <Link to="/auth" search={{ mode: "signup" }}>
                   Create your event
                 </Link>
@@ -192,35 +191,50 @@ function LandingPage() {
         )}
 
         {upcoming.data && upcoming.data.length > 0 && (
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-8">
             {upcoming.data.map((ev) => (
               <Link
                 key={ev.id}
                 to="/e/$slug"
                 params={{ slug: ev.slug }}
-                className="group overflow-hidden border border-border bg-card/60 transition hover:border-primary/50"
+                className="group flex flex-col overflow-hidden rounded-2xl bg-card/60 transition-all hover:-translate-y-1 hover:shadow-glow border border-border/50 hover:border-primary/30"
               >
-                <div
-                  className="h-40 w-full bg-secondary bg-cover bg-center"
-                  style={ev.cover_image_url ? { backgroundImage: `url(${ev.cover_image_url})` } : undefined}
-                />
-                <div className="p-5">
-                  <h3 className="font-semibold leading-tight group-hover:text-primary">{ev.title}</h3>
-                  <div className="mt-2 flex flex-col gap-1 text-xs text-muted-foreground">
-                    <span className="inline-flex items-center gap-1">
-                      <Calendar className="h-3.5 w-3.5" />
-                      {new Date(ev.start_datetime).toLocaleString("en-NG", {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      })}
-                    </span>
-                    {(ev.venue_name || ev.city) && (
-                      <span className="inline-flex items-center gap-1">
-                        <MapPin className="h-3.5 w-3.5" />
-                        {[ev.venue_name, ev.city].filter(Boolean).join(", ")}
-                      </span>
-                    )}
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary">
+                  {ev.cover_image_url && (
+                    <img
+                      src={ev.cover_image_url}
+                      alt={ev.title}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  )}
+                  {ev.city && (
+                    <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/80 px-2.5 py-1 text-xs font-medium backdrop-blur-md">
+                      <MapPin className="h-3 w-3 text-primary" />
+                      {ev.city}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex flex-1 flex-col p-5">
+                  <div className="mb-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary">
+                    <Calendar className="h-3.5 w-3.5" />
+                    {new Date(ev.start_datetime).toLocaleString("en-NG", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit"
+                    })}
                   </div>
+                  
+                  <h3 className="font-display text-xl leading-tight group-hover:text-primary line-clamp-2">
+                    {ev.title}
+                  </h3>
+                  
+                  {ev.venue_name && (
+                    <p className="mt-2 text-sm text-muted-foreground line-clamp-1">
+                      {ev.venue_name}
+                    </p>
+                  )}
                 </div>
               </Link>
             ))}

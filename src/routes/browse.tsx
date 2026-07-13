@@ -82,28 +82,32 @@ function BrowsePage() {
   return (
     <div className="min-h-screen">
       <SiteNav />
-      <section className="mx-auto max-w-6xl px-4 pt-12 pb-6">
-        <h1 className="font-display text-4xl md:text-5xl">Browse events</h1>
-        <p className="text-sm text-muted-foreground">Upcoming events across Nigeria.</p>
-
-        <form
-          className="mt-6 flex max-w-xl items-center gap-2 border border-border bg-card/60 p-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            navigate({ to: "/browse", search: { q: input.trim() || undefined } });
-          }}
-        >
-          <Search className="ml-2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Search events, artists, cities…"
-            className="border-0 bg-transparent shadow-none focus-visible:ring-0"
-          />
-          <Button type="submit" className="gradient-sunset text-primary-foreground hover:opacity-90">
-            Search
-          </Button>
-        </form>
+      <section className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-md">
+        <div className="mx-auto max-w-6xl px-4 py-4 md:py-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="font-display text-2xl md:text-3xl">Browse events</h1>
+            <p className="text-sm text-muted-foreground hidden md:block">Discover what's happening across Nigeria.</p>
+          </div>
+          
+          <form
+            className="flex w-full md:max-w-md items-center gap-2 rounded-full border border-border bg-card/60 px-2 py-1.5 focus-within:ring-1 focus-within:ring-primary shadow-sm"
+            onSubmit={(e) => {
+              e.preventDefault();
+              navigate({ to: "/browse", search: { q: input.trim() || undefined } });
+            }}
+          >
+            <Search className="ml-2 h-4 w-4 text-muted-foreground shrink-0" />
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Search events, artists, cities…"
+              className="h-8 border-0 bg-transparent px-2 shadow-none focus-visible:ring-0 text-sm"
+            />
+            <Button type="submit" size="sm" className="rounded-full gradient-sunset text-primary-foreground hover:opacity-90 shrink-0">
+              Search
+            </Button>
+          </form>
+        </div>
       </section>
 
       <section className="mx-auto max-w-6xl px-4 pb-24">
@@ -120,7 +124,7 @@ function BrowsePage() {
           </div>
         )}
         {query.data && query.data.events.length > 0 && (
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-8">
             {query.data.events.map((ev) => {
               const min = query.data.minPrice[ev.id];
               return (
@@ -128,41 +132,51 @@ function BrowsePage() {
                   key={ev.id}
                   to="/e/$slug"
                   params={{ slug: ev.slug }}
-                  className="group overflow-hidden border border-border bg-card/60 transition hover:border-primary/50"
+                  className="group flex flex-col overflow-hidden rounded-2xl bg-card/60 transition-all hover:-translate-y-1 hover:shadow-glow border border-border/50 hover:border-primary/30"
                 >
-                  <div
-                    className="h-40 w-full bg-secondary bg-cover bg-center"
-                    style={
-                      ev.cover_image_url
-                        ? { backgroundImage: `url(${ev.cover_image_url})` }
-                        : undefined
-                    }
-                  />
-                  <div className="p-5">
-                    <h3 className="font-semibold leading-tight group-hover:text-primary">{ev.title}</h3>
-                    <div className="mt-2 flex flex-col gap-1 text-xs text-muted-foreground">
-                      <span className="inline-flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {new Date(ev.start_datetime).toLocaleString("en-NG", {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        })}
-                      </span>
-                      {(ev.venue_name || ev.city) && (
-                        <span className="inline-flex items-center gap-1">
-                          <MapPin className="h-3.5 w-3.5" />
-                          {[ev.venue_name, ev.city].filter(Boolean).join(", ")}
-                        </span>
-                      )}
-                    </div>
-                    {min !== undefined && (
-                      <div className="mt-4 border-t border-border pt-3 text-sm">
-                        From{" "}
-                        <span className="font-display text-lg text-gradient-sunset">
-                          {formatNaira(min)}
-                        </span>
+                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary">
+                    {ev.cover_image_url && (
+                      <img
+                        src={ev.cover_image_url}
+                        alt={ev.title}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    )}
+                    {ev.city && (
+                      <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/80 px-2.5 py-1 text-xs font-medium backdrop-blur-md">
+                        <MapPin className="h-3 w-3 text-primary" />
+                        {ev.city}
                       </div>
                     )}
+                  </div>
+                  
+                  <div className="flex flex-1 flex-col p-5">
+                    <div className="mb-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {new Date(ev.start_datetime).toLocaleString("en-NG", {
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit"
+                      })}
+                    </div>
+                    
+                    <h3 className="font-display text-xl leading-tight group-hover:text-primary line-clamp-2 mb-2">
+                      {ev.title}
+                    </h3>
+                    
+                    {ev.venue_name && (
+                      <p className="text-sm text-muted-foreground line-clamp-1 mb-4">
+                        {ev.venue_name}
+                      </p>
+                    )}
+                    
+                    <div className="mt-auto pt-4 flex items-center justify-between border-t border-border/50">
+                      <div className="text-xs text-muted-foreground">Tickets from</div>
+                      <div className="font-display text-lg text-gradient-sunset">
+                        {min !== undefined ? formatNaira(min) : "Free"}
+                      </div>
+                    </div>
                   </div>
                 </Link>
               );

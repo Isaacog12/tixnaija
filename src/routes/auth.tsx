@@ -8,7 +8,6 @@ import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const searchSchema = z.object({
   mode: z.enum(["signin", "signup"]).optional(),
@@ -58,19 +57,18 @@ function AuthPage() {
         </Link>
 
         <div className="rounded-2xl border border-border bg-card/80 p-6 shadow-glow backdrop-blur">
-          <Tabs value={tab} onValueChange={(v) => setTab(v as "signin" | "signup")}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign in</TabsTrigger>
-              <TabsTrigger value="signup">Create account</TabsTrigger>
-            </TabsList>
+          <div className="mb-6">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {tab === "signin" ? "Sign in to TixNaija" : "Create your account"}
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {tab === "signin" 
+                ? "Welcome back! Please enter your details." 
+                : "Enter your details to get started."}
+            </p>
+          </div>
 
-            <TabsContent value="signin" className="mt-6">
-              <EmailForm mode="signin" />
-            </TabsContent>
-            <TabsContent value="signup" className="mt-6">
-              <EmailForm mode="signup" termsAccepted={termsAccepted} setTermsAccepted={setTermsAccepted} />
-            </TabsContent>
-          </Tabs>
+          <EmailForm mode={tab} termsAccepted={termsAccepted} setTermsAccepted={setTermsAccepted} />
 
           <div className="my-6 flex items-center gap-2 text-xs text-muted-foreground">
             <span className="h-px flex-1 bg-border" />
@@ -79,6 +77,30 @@ function AuthPage() {
           </div>
 
           <GoogleButton mode={tab} termsAccepted={termsAccepted} />
+
+          <div className="mt-6 text-center text-sm text-muted-foreground">
+            {tab === "signin" ? (
+              <>
+                Don't have an account?{" "}
+                <button
+                  onClick={() => setTab("signup")}
+                  className="font-medium text-primary hover:underline"
+                >
+                  Sign up
+                </button>
+              </>
+            ) : (
+              <>
+                Already have an account?{" "}
+                <button
+                  onClick={() => setTab("signin")}
+                  className="font-medium text-primary hover:underline"
+                >
+                  Sign in
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -150,7 +172,7 @@ function EmailForm({ mode, termsAccepted, setTermsAccepted }: { mode: "signin" |
       )}
       <div className="space-y-1.5">
         <Label htmlFor="email">Email</Label>
-        <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+        <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="password">Password</Label>
