@@ -92,7 +92,7 @@ function AccountPage() {
       return;
     }
     setSaving(true);
-    const { error } = await supabase.from("profiles").update(parsed.data).eq("id", data.userId);
+    const { error } = await supabase.from("profiles").upsert({ id: data.userId, ...parsed.data });
     setSaving(false);
     if (error) toast.error(error.message);
     else {
