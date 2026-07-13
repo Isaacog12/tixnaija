@@ -185,7 +185,7 @@ function Dashboard() {
                     </a>
                       <div className="flex gap-2">
                         <Button asChild size="sm" variant="outline" className="text-primary hover:text-primary">
-                          <Link to={`/events/${ev.id}/scan`}>
+                          <Link to="/events/$eventId/scan" params={{ eventId: ev.id }}>
                             Scan Tickets
                           </Link>
                         </Button>
