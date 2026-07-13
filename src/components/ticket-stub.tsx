@@ -20,11 +20,16 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
   const handleDownload = async () => {
     if (!ticketRef.current) return;
     try {
+      // Ensure fonts are fully loaded before capturing so we don't get generic fallback fonts
+      await document.fonts.ready;
+      
       // Use html-to-image to fully support modern CSS like oklch from Tailwind v4
       const dataUrl = await toPng(ticketRef.current, {
         cacheBust: true,
         pixelRatio: 2,
-        backgroundColor: '#ffffff' // Ensure background isn't transparent so text stays legible
+        backgroundColor: '#ffffff', // Ensure background isn't transparent so text stays legible
+        // html-to-image supports modern CSS natively, but we ensure CORS is handled:
+        skipFonts: false,
       });
       
       // Get actual dimensions of the element to scale the PDF correctly
