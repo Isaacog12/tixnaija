@@ -42,7 +42,7 @@ async function fetchMyEvents() {
       .from("orders")
       .select("event_id, total_kobo")
       .in("event_id", eventIds)
-      .eq("status", "success");
+      .eq("status", "paid");
 
     for (const t of types ?? []) {
       const s = statsByEvent[t.event_id] ?? { sold: 0, revenueKobo: 0 };
