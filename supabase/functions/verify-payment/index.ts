@@ -38,18 +38,17 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const supabase = createClient(supabaseUrl, supabaseKey);
-    // 3. Process the checkout using the RPC function we created earlier
-    const { data: orderId, error: checkoutError } = await supabase.rpc('process_test_checkout', {
+    // 3. Process the checkout using the updated RPC function
+    const { data: orderId, error: checkoutError } = await supabase.rpc('process_checkout', {
       p_event_id: metadata.eventId,
       p_user_id: metadata.userId || null,
       p_buyer_name: metadata.buyerName,
       p_buyer_email: metadata.buyerEmail,
       p_buyer_phone: metadata.buyerPhone || null,
       p_tickets: metadata.tickets,
-      p_subtotal_kobo: verifyData.data.amount,
-      p_discount_kobo: 0,
-      p_total_kobo: verifyData.data.amount,
+      p_amount_paid: verifyData.data.amount,
       p_payment_reference: reference,
+      p_promo_code_id: metadata.promoCodeId || null,
     });
     if (checkoutError) {
       console.error("Supabase checkout error:", checkoutError);

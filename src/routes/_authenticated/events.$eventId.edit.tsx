@@ -38,7 +38,15 @@ async function fetchEvent(eventId: string) {
     .eq("event_id", eventId)
     .order("sort_order", { ascending: true });
   if (e2) throw e2;
-  return { event, types: types ?? [] };
+
+  const { data: promoCodes, error: e3 } = await supabase
+    .from("promo_codes")
+    .select("*")
+    .eq("event_id", eventId)
+    .order("created_at", { ascending: false });
+  if (e3) throw e3;
+
+  return { event, types: types ?? [], promoCodes: promoCodes ?? [] };
 }
 
 function EditEventPage() {
@@ -191,6 +199,9 @@ function EditEventPage() {
           )}
         </div>
       </section>
+
+      {/* Promo Codes */}
+      <PromoCodesSection eventId={eventId} promoCodes={data.promoCodes} />
     </div>
   );
 }
@@ -199,7 +210,7 @@ function TicketRow({
   row,
   eventId,
 }: {
-  row: { id: string; name: string; price_kobo: number; quantity_available: number; quantity_sold: number; max_per_order: number };
+  row: any;
   eventId: string;
 }) {
   const qc = useQueryClient();
@@ -208,6 +219,8 @@ function TicketRow({
     price_naira: String(koboToNaira(row.price_kobo)),
     quantity_available: String(row.quantity_available),
     max_per_order: String(row.max_per_order),
+    sales_start_at: row.sales_start_at ? new Date(row.sales_start_at).toISOString().slice(0, 16) : "",
+    sales_end_at: row.sales_end_at ? new Date(row.sales_end_at).toISOString().slice(0, 16) : "",
   });
   const [busy, setBusy] = useState(false);
 
@@ -224,6 +237,8 @@ function TicketRow({
       price_kobo: nairaToKobo(price),
       quantity_available: qty,
       max_per_order: max,
+      sales_start_at: state.sales_start_at ? new Date(state.sales_start_at).toISOString() : null,
+      sales_end_at: state.sales_end_at ? new Date(state.sales_end_at).toISOString() : null,
     }).eq("id", row.id);
     setBusy(false);
     if (error) toast.error(error.message);
@@ -260,6 +275,14 @@ function TicketRow({
           <Label>Max/order</Label>
           <Input inputMode="numeric" value={state.max_per_order} onChange={(e) => setState({ ...state, max_per_order: e.target.value })} />
         </div>
+        <div className="space-y-1.5 md:col-span-2">
+          <Label>Sales Start (Optional)</Label>
+          <Input type="datetime-local" value={state.sales_start_at} onChange={(e) => setState({ ...state, sales_start_at: e.target.value })} />
+        </div>
+        <div className="space-y-1.5 md:col-span-3">
+          <Label>Sales End (Optional)</Label>
+          <Input type="datetime-local" value={state.sales_end_at} onChange={(e) => setState({ ...state, sales_end_at: e.target.value })} />
+        </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
         <div>
@@ -285,5 +308,114 @@ function Field({ label, children, className }: { label: string; children: React.
       <Label>{label}</Label>
       {children}
     </div>
+  );
+}
+
+function PromoCodesSection({ eventId, promoCodes }: { eventId: string; promoCodes: any[] }) {
+  const qc = useQueryClient();
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState({
+    code: "", discount_type: "percent" as "percent"|"fixed", discount_value: "", max_uses: "", expires_at: ""
+  });
+  const [busy, setBusy] = useState(false);
+
+  async function addCode(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    let val = Number(form.discount_value);
+    if (form.discount_type === "fixed") val = nairaToKobo(val);
+    
+    const { error } = await supabase.from("promo_codes").insert({
+      event_id: eventId,
+      code: form.code.toUpperCase(),
+      discount_type: form.discount_type,
+      discount_value: val,
+      max_uses: form.max_uses ? parseInt(form.max_uses) : null,
+      expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
+    });
+    setBusy(false);
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Promo code created");
+      setAdding(false);
+      qc.invalidateQueries({ queryKey: ["event", eventId] });
+      setForm({ code: "", discount_type: "percent", discount_value: "", max_uses: "", expires_at: "" });
+    }
+  }
+
+  async function toggleStatus(id: string, current: boolean) {
+    const { error } = await supabase.from("promo_codes").update({ active: !current }).eq("id", id);
+    if (error) toast.error(error.message);
+    else qc.invalidateQueries({ queryKey: ["event", eventId] });
+  }
+
+  async function removeCode(id: string) {
+    if (!confirm("Delete promo code?")) return;
+    const { error } = await supabase.from("promo_codes").delete().eq("id", id);
+    if (error) toast.error(error.message);
+    else qc.invalidateQueries({ queryKey: ["event", eventId] });
+  }
+
+  return (
+    <section className="mt-10 rounded-2xl border border-border bg-card/60 p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Promo Codes</h2>
+        {!adding && (
+          <Button type="button" size="sm" variant="outline" onClick={() => setAdding(true)}>
+            Add code
+          </Button>
+        )}
+      </div>
+
+      {adding && (
+        <form onSubmit={addCode} className="mb-6 space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            <Field label="Code Name"><Input required value={form.code} onChange={e => setForm({...form, code: e.target.value.toUpperCase()})} placeholder="SUMMER25" /></Field>
+            <Field label="Discount Type">
+              <Select value={form.discount_type} onValueChange={(v: "percent"|"fixed") => setForm({...form, discount_type: v})}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="percent">Percentage (%)</SelectItem>
+                  <SelectItem value="fixed">Fixed Amount (₦)</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Discount Value"><Input required type="number" step="any" min="0" value={form.discount_value} onChange={e => setForm({...form, discount_value: e.target.value})} placeholder={form.discount_type === "percent" ? "10" : "5000"} /></Field>
+            <Field label="Max Uses (Optional)"><Input type="number" min="1" value={form.max_uses} onChange={e => setForm({...form, max_uses: e.target.value})} placeholder="Unlimited" /></Field>
+            <Field label="Expires At (Optional)" className="md:col-span-2"><Input type="datetime-local" value={form.expires_at} onChange={e => setForm({...form, expires_at: e.target.value})} /></Field>
+          </div>
+          <div className="flex gap-2">
+            <Button type="button" variant="ghost" size="sm" onClick={() => setAdding(false)}>Cancel</Button>
+            <Button type="submit" size="sm" disabled={busy}>{busy ? "Adding..." : "Save Code"}</Button>
+          </div>
+        </form>
+      )}
+
+      <div className="space-y-3">
+        {promoCodes.map((p) => (
+          <div key={p.id} className={`flex items-center justify-between rounded-xl border p-4 ${p.active ? 'border-border bg-background/50' : 'border-muted bg-muted/20 opacity-60'}`}>
+            <div>
+              <p className="font-semibold">{p.code}</p>
+              <p className="text-sm text-muted-foreground">
+                {p.discount_type === "percent" ? `${p.discount_value}%` : formatNaira(p.discount_value)} off
+                {" · "} 
+                Used {p.times_used} {p.max_uses ? `/ ${p.max_uses}` : ""} times
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => toggleStatus(p.id, p.active)}>
+                {p.active ? "Disable" : "Enable"}
+              </Button>
+              <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => removeCode(p.id)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        ))}
+        {promoCodes.length === 0 && !adding && (
+          <p className="text-sm text-muted-foreground">No promo codes active.</p>
+        )}
+      </div>
+    </section>
   );
 }

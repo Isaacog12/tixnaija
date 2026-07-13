@@ -80,6 +80,10 @@ function EventDetailPage() {
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
+  const [promoCode, setPromoCode] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<{ id: string; discount_type: string; discount_value: number } | null>(null);
+  const [validatingPromo, setValidatingPromo] = useState(false);
+
   // Pre-fill user data if logged in
   useQuery({
     queryKey: ["user-session-checkout"],
@@ -102,8 +106,38 @@ function EventDetailPage() {
       .filter((i: { count: number }) => i.count > 0);
   }, [data, qty]);
 
-  const totalKobo = items.reduce((sum: number, i: { subtotal: number }) => sum + i.subtotal, 0);
+  const subtotalKobo = items.reduce((sum: number, i: { subtotal: number }) => sum + i.subtotal, 0);
+  let discountKobo = 0;
+  if (appliedPromo) {
+    if (appliedPromo.discount_type === "percent") {
+      discountKobo = Math.floor(subtotalKobo * appliedPromo.discount_value / 100);
+    } else {
+      discountKobo = appliedPromo.discount_value;
+    }
+    if (discountKobo > subtotalKobo) discountKobo = subtotalKobo;
+  }
+  const totalKobo = subtotalKobo - discountKobo;
   const totalCount = items.reduce((sum: number, i: { count: number }) => sum + i.count, 0);
+
+  async function applyPromo() {
+    if (!promoCode.trim() || !data) return;
+    setValidatingPromo(true);
+    try {
+      const { data: res, error } = await supabase.rpc('validate_promo_code', {
+        p_event_id: data.event.id,
+        p_code: promoCode.trim()
+      });
+      if (error) throw error;
+      if (!res) throw new Error("Invalid promo code");
+      setAppliedPromo(res as any);
+      toast.success("Promo code applied!");
+    } catch (err: any) {
+      toast.error(err.message || "Invalid promo code");
+      setAppliedPromo(null);
+    } finally {
+      setValidatingPromo(false);
+    }
+  }
 
   function setCount(t: TicketType, next: number) {
     const remaining = Math.max(0, t.quantity_available - t.quantity_sold);
@@ -148,17 +182,16 @@ function EventDetailPage() {
 
       if (totalKobo === 0) {
         // Handle free tickets locally
-        const { data: orderId, error: checkoutError } = await supabase.rpc('process_test_checkout', {
+        const { data: orderId, error: checkoutError } = await supabase.rpc('process_checkout', {
           p_event_id: data!.event.id,
           p_user_id: (userId || null) as string,
           p_buyer_name: buyerName,
           p_buyer_email: buyerEmail,
           p_buyer_phone: (buyerPhone || null) as string,
           p_tickets: ticketsPayload,
-          p_subtotal_kobo: 0,
-          p_discount_kobo: 0,
-          p_total_kobo: 0,
-          p_payment_reference: `FREE_${Date.now()}_${Math.random().toString(36).substring(7)}`
+          p_amount_paid: 0,
+          p_payment_reference: `FREE_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+          p_promo_code_id: appliedPromo?.id || null,
         });
 
         if (checkoutError) {
@@ -182,6 +215,7 @@ function EventDetailPage() {
         buyerEmail,
         buyerPhone: buyerPhone || null,
         tickets: ticketsPayload,
+        promoCodeId: appliedPromo?.id || null,
       };
 
       const { data: initData, error: initErr } = await supabase.functions.invoke("initialize-payment", {
@@ -257,6 +291,32 @@ function EventDetailPage() {
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number (Optional)</Label>
               <Input id="phone" type="tel" value={buyerPhone} onChange={(e) => setBuyerPhone(e.target.value)} placeholder="08012345678" />
+            </div>
+
+            <div className="space-y-2 border-t border-border pt-4">
+              <Label>Promo Code</Label>
+              <div className="flex gap-2">
+                <Input 
+                  value={promoCode} 
+                  onChange={(e) => setPromoCode(e.target.value)} 
+                  placeholder="e.g. EARLYBIRD" 
+                  disabled={!!appliedPromo}
+                />
+                {!appliedPromo ? (
+                  <Button type="button" variant="secondary" onClick={applyPromo} disabled={validatingPromo || !promoCode.trim()}>
+                    {validatingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
+                  </Button>
+                ) : (
+                  <Button type="button" variant="destructive" onClick={() => { setAppliedPromo(null); setPromoCode(""); }}>
+                    Remove
+                  </Button>
+                )}
+              </div>
+              {appliedPromo && (
+                <p className="text-xs text-green-500 font-medium">
+                  {appliedPromo.discount_type === "percent" ? `${appliedPromo.discount_value}%` : formatNaira(appliedPromo.discount_value)} discount applied!
+                </p>
+              )}
             </div>
 
             {totalCount > 1 && (
@@ -394,13 +454,25 @@ function EventBody({
                 </p>
               )}
               {types.map((t) => {
+                const now = new Date();
+                const salesStart = t.sales_start_at ? new Date(t.sales_start_at) : null;
+                const salesEnd = t.sales_end_at ? new Date(t.sales_end_at) : null;
+                const isStarted = !salesStart || now >= salesStart;
+                const isEnded = salesEnd && now >= salesEnd;
                 const remaining = Math.max(0, t.quantity_available - t.quantity_sold);
                 const soldOut = remaining === 0;
+                const unavailable = !isStarted || isEnded || soldOut;
                 const count = qty[t.id] ?? 0;
+                
+                let statusText = `${remaining} left`;
+                if (!isStarted) statusText = "Sales not started";
+                else if (isEnded) statusText = "Sales ended";
+                else if (soldOut) statusText = "Sold out";
+
                 return (
                   <div
                     key={t.id}
-                    className="rounded-xl border border-border bg-background/40 p-4 transition hover:border-primary/40"
+                    className={`rounded-xl border border-border p-4 transition ${unavailable ? 'bg-muted/30 opacity-75' : 'bg-background/40 hover:border-primary/40'}`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -412,7 +484,7 @@ function EventBody({
                           {t.price_kobo === 0 ? "Free" : formatNaira(t.price_kobo)}
                         </p>
                         <p className="mt-1 text-[11px] uppercase tracking-widest text-muted-foreground">
-                          {soldOut ? "Sold out" : `${remaining} left`}
+                          {statusText}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -420,7 +492,7 @@ function EventBody({
                           type="button"
                           size="icon"
                           variant="outline"
-                          disabled={count === 0 || soldOut}
+                          disabled={count === 0}
                           onClick={() => setCount(t, count - 1)}
                           aria-label={`Remove one ${t.name}`}
                         >
@@ -431,7 +503,7 @@ function EventBody({
                           type="button"
                           size="icon"
                           variant="outline"
-                          disabled={soldOut}
+                          disabled={unavailable}
                           onClick={() => setCount(t, count + 1)}
                           aria-label={`Add one ${t.name}`}
                         >
