@@ -61,12 +61,14 @@ serve(async (req) => {
       const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
       const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
       const supabaseAuth = createClient(supabaseUrl, anonKey, {
+        auth: { persistSession: false },
         global: { headers: { Authorization: authHeader } },
       });
 
-      const { data: userData, error: userError } = await supabaseAuth.auth.getUser();
+      const jwt = authHeader.replace('Bearer ', '');
+      const { data: userData, error: userError } = await supabaseAuth.auth.getUser(jwt);
       if (userError || !userData?.user) {
-        throw new Error("Unauthorized");
+        throw new Error(`Unauthorized: ${userError?.message || "No user found"}`);
       }
 
       const userId = userData.user.id;
