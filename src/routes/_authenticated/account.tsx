@@ -79,6 +79,27 @@ function AccountPage() {
   });
 
   const [connectingPayout, setConnectingPayout] = useState(false);
+  const [resolvingAccount, setResolvingAccount] = useState(false);
+
+  useEffect(() => {
+    if (form.bank_account_number.length === 10 && form.bank_name && banks) {
+      const bank = banks.find((b) => b.name === form.bank_name);
+      if (bank) {
+        setResolvingAccount(true);
+        supabase.functions.invoke("connect-payout-account", {
+          method: "POST",
+          body: { action: "resolve", account_number: form.bank_account_number, bank_code: bank.code }
+        }).then(({ data, error }) => {
+          if (!error && data?.account_name) {
+            setForm((prev) => ({ ...prev, bank_account_name: data.account_name }));
+          }
+          setResolvingAccount(false);
+        });
+      }
+    } else {
+      setResolvingAccount(false);
+    }
+  }, [form.bank_account_number, form.bank_name, banks]);
 
   async function connectPayout(e: React.FormEvent) {
     e.preventDefault();
@@ -249,7 +270,14 @@ function AccountPage() {
               <Input inputMode="numeric" value={form.bank_account_number} onChange={(e) => setForm({ ...form, bank_account_number: e.target.value })} placeholder="0123456789" />
             </Field>
             <Field label="Account name" className="md:col-span-2">
-              <Input value={form.bank_account_name} onChange={(e) => setForm({ ...form, bank_account_name: e.target.value })} placeholder="As shown on your bank statement" />
+              <div className="relative">
+                <Input readOnly={resolvingAccount} value={form.bank_account_name} onChange={(e) => setForm({ ...form, bank_account_name: e.target.value })} placeholder="As shown on your bank statement" />
+                {resolvingAccount && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                    Resolving...
+                  </div>
+                )}
+              </div>
             </Field>
           </div>
           

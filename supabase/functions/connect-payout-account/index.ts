@@ -32,8 +32,25 @@ serve(async (req) => {
     }
 
     if (req.method === "POST") {
+      const body = await req.json();
+
+      if (body.action === "resolve") {
+        const { bank_code, account_number } = body;
+        if (!bank_code || !account_number) throw new Error("Missing bank details for resolution");
+        
+        const response = await fetch(`https://api.paystack.co/bank/resolve?account_number=${account_number}&bank_code=${bank_code}`, {
+          headers: { Authorization: `Bearer ${paystackSecret}` },
+        });
+        const data = await response.json();
+        if (!data.status) throw new Error(data.message || "Failed to resolve account");
+        
+        return new Response(JSON.stringify(data.data), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       // Setup Subaccount
-      const { bank_code, account_number, business_name } = await req.json();
+      const { bank_code, account_number, business_name } = body;
       if (!bank_code || !account_number || !business_name) {
         throw new Error("Missing required fields");
       }
