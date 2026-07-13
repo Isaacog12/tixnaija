@@ -1,7 +1,7 @@
 import React, { useRef } from "react";
 import { format } from "date-fns";
 import { QRCodeCanvas } from "qrcode.react";
-import html2canvas from "html2canvas";
+import { toPng } from "html-to-image";
 import { jsPDF } from "jspdf";
 import { MapPin, Calendar, Download } from "lucide-react";
 import { Button } from "./ui/button";
@@ -20,20 +20,25 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
   const handleDownload = async () => {
     if (!ticketRef.current) return;
     try {
-      const canvas = await html2canvas(ticketRef.current, {
-        scale: 2, // High resolution
-        useCORS: true, // Allow external images (like cover_image_url)
-        backgroundColor: null, // Transparent
+      // Use html-to-image to fully support modern CSS like oklch from Tailwind v4
+      const dataUrl = await toPng(ticketRef.current, {
+        cacheBust: true,
+        pixelRatio: 2,
+        backgroundColor: '#ffffff' // Ensure background isn't transparent so text stays legible
       });
-      const dataUrl = canvas.toDataURL("image/png");
       
+      // Get actual dimensions of the element to scale the PDF correctly
+      const rect = ticketRef.current.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+
       const pdf = new jsPDF({
-        orientation: canvas.width > canvas.height ? "landscape" : "portrait",
+        orientation: width > height ? "landscape" : "portrait",
         unit: "px",
-        format: [canvas.width, canvas.height]
+        format: [width, height]
       });
       
-      pdf.addImage(dataUrl, 'PNG', 0, 0, canvas.width, canvas.height);
+      pdf.addImage(dataUrl, 'PNG', 0, 0, width, height);
       pdf.save(`Ticket_${event.title}_${ticket.ticket_code.split("-")[0]}.pdf`);
       toast.success("Ticket downloaded successfully!");
     } catch (err: any) {
