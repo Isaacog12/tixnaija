@@ -209,8 +209,6 @@ function AccountPage() {
           </div>
         </section>
 
-        </section>
-
         <div className="flex justify-end">
           <Button type="submit" disabled={saving} className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
             {saving ? "Saving…" : "Save profile"}
