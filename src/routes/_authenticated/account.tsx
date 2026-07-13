@@ -9,6 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/account")({
   component: AccountPage,
@@ -60,6 +68,52 @@ function AccountPage() {
       setOrganizerOn(!!data.profile.is_organizer);
     }
   }, [data]);
+
+  const { data: banks } = useQuery({
+    queryKey: ["banks"],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("connect-payout-account", { method: "GET" });
+      if (error) throw error;
+      return (data || []) as { name: string; code: string }[];
+    },
+  });
+
+  const [connectingPayout, setConnectingPayout] = useState(false);
+
+  async function connectPayout(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.bank_name || !form.bank_account_number || !form.bank_account_name) {
+      return toast.error("Please fill in all payout details");
+    }
+    const bank = banks?.find(b => b.name === form.bank_name);
+    if (!bank) return toast.error("Invalid bank selected");
+
+    setConnectingPayout(true);
+    const { data: res, error } = await supabase.functions.invoke("connect-payout-account", {
+      method: "POST",
+      body: {
+        bank_code: bank.code,
+        account_number: form.bank_account_number,
+        business_name: form.bank_account_name,
+      }
+    });
+
+    if (error) {
+      toast.error(error.message);
+    } else if (res?.error) {
+      toast.error(res.error);
+    } else {
+      toast.success("Payout account successfully connected!");
+      // Save the inert profile fields too so they remain visible
+      await supabase.from("profiles").update({
+        bank_name: form.bank_name,
+        bank_account_number: form.bank_account_number,
+        bank_account_name: form.bank_account_name,
+      }).eq("id", data!.userId);
+      qc.invalidateQueries({ queryKey: ["me"] });
+    }
+    setConnectingPayout(false);
+  }
 
   async function toggleOrganizer(next: boolean) {
     if (!data) return;
@@ -155,17 +209,43 @@ function AccountPage() {
           </div>
         </section>
 
+        </section>
+
+        <div className="flex justify-end">
+          <Button type="submit" disabled={saving} className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
+            {saving ? "Saving…" : "Save profile"}
+          </Button>
+        </div>
+      </form>
+
+      {/* Payout Bank Account (Separate Form) */}
+      <form onSubmit={connectPayout} className="mt-6 space-y-6">
         <section className="rounded-2xl border border-border bg-card/60 p-6">
-          <div className="mb-2 flex items-center gap-3">
-            <Landmark className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">Payout bank account</h2>
+          <div className="mb-2 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Landmark className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold">Payout bank account</h2>
+            </div>
+            {data?.profile?.paystack_subaccount_code && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-1 text-xs font-medium text-green-500">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Connected
+              </span>
+            )}
           </div>
           <p className="mb-4 text-sm text-muted-foreground">
-            For future payouts when payments are enabled. Nigerian bank account only.
+            Connect your Nigerian bank account to receive payouts automatically. 15% platform fee applies.
           </p>
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Bank name">
-              <Input value={form.bank_name} onChange={(e) => setForm({ ...form, bank_name: e.target.value })} placeholder="GTBank" />
+              <Select value={form.bank_name} onValueChange={(v) => setForm({ ...form, bank_name: v })}>
+                <SelectTrigger><SelectValue placeholder="Select Bank" /></SelectTrigger>
+                <SelectContent>
+                  {banks?.map((b) => (
+                    <SelectItem key={b.code} value={b.name}>{b.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </Field>
             <Field label="Account number">
               <Input inputMode="numeric" value={form.bank_account_number} onChange={(e) => setForm({ ...form, bank_account_number: e.target.value })} placeholder="0123456789" />
@@ -174,13 +254,13 @@ function AccountPage() {
               <Input value={form.bank_account_name} onChange={(e) => setForm({ ...form, bank_account_name: e.target.value })} placeholder="As shown on your bank statement" />
             </Field>
           </div>
+          
+          <div className="mt-6 flex justify-end">
+            <Button type="submit" disabled={connectingPayout} variant={data?.profile?.paystack_subaccount_code ? "outline" : "default"}>
+              {connectingPayout ? "Connecting…" : data?.profile?.paystack_subaccount_code ? "Update Payout Account" : "Connect Payout Account"}
+            </Button>
+          </div>
         </section>
-
-        <div className="flex justify-end">
-          <Button type="submit" disabled={saving} className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
-            {saving ? "Saving…" : "Save changes"}
-          </Button>
-        </div>
       </form>
     </div>
   );

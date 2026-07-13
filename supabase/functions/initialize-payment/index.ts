@@ -46,18 +46,50 @@ serve(async (req) => {
       });
     }
 
+    const eventId = metadata?.eventId;
+    if (!eventId) {
+      throw new Error("Event ID is missing from metadata");
+    }
+
+    // Fetch organizer's subaccount code
+    const { data: eventData, error: eventError } = await supabase
+      .from("events")
+      .select("organizer_id")
+      .eq("id", eventId)
+      .single();
+
+    if (eventError || !eventData) {
+      throw new Error("Event not found");
+    }
+
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("paystack_subaccount_code")
+      .eq("id", eventData.organizer_id)
+      .single();
+
+    if (profileError || !profileData?.paystack_subaccount_code) {
+      throw new Error("Organizer payout not configured. Cannot process payment.");
+    }
+
+    const subaccount_code = profileData.paystack_subaccount_code;
+
+    const payload: any = {
+      email,
+      amount: Math.round(amount * 100), // convert to kobo
+      metadata,
+      callback_url: `${req.headers.get("origin")}/checkout/verify`,
+      subaccount: subaccount_code,
+      bearer: "subaccount",
+    };
+
     const response = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${paystackSecret}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        email,
-        amount: Math.round(amount * 100), // convert to kobo
-        metadata,
-        callback_url: `${req.headers.get("origin")}/checkout/verify`,
-      }),
+      body: JSON.stringify(payload),
     });
     const data = await response.json();
 

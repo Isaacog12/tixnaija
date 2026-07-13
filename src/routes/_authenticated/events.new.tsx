@@ -62,6 +62,7 @@ function NewEventPage() {
   const [isCheckingRole, setIsCheckingRole] = useState(true);
   const [hasOrganizerRole, setHasOrganizerRole] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [hasPayoutAccount, setHasPayoutAccount] = useState(false);
   
   const [form, setForm] = useState({
     title: "",
@@ -101,6 +102,17 @@ function NewEventPage() {
       if (!error && roles && roles.length > 0) {
         setHasOrganizerRole(true);
       }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("paystack_subaccount_code")
+        .eq("id", userData.user.id)
+        .maybeSingle();
+        
+      if (profile?.paystack_subaccount_code) {
+        setHasPayoutAccount(true);
+      }
+
       setIsCheckingRole(false);
     }
     checkRole();
@@ -149,6 +161,10 @@ function NewEventPage() {
     const parsed = eventSchema.safeParse(form);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Check the event details");
+      return;
+    }
+    if (publish && !hasPayoutAccount) {
+      toast.error("Please connect your payout account in Settings to publish events.");
       return;
     }
     if (tickets.length === 0) {
@@ -407,28 +423,35 @@ function NewEventPage() {
         </section>
 
         {/* Submit */}
-        <div className="flex items-center gap-3 pt-4">
-          <Button
-            type="submit"
-            disabled={busy}
-            onClick={() => setPublish(true)}
-            className="flex-1 gradient-sunset text-primary-foreground shadow-glow hover:opacity-90"
-            size="lg"
-          >
-            {busy && publish ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Publish event
-          </Button>
-          <Button
-            type="submit"
-            disabled={busy}
-            onClick={() => setPublish(false)}
-            variant="outline"
-            className="flex-1"
-            size="lg"
-          >
-            {busy && !publish ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Save as draft
-          </Button>
+        <div>
+          <div className="flex items-center gap-3 pt-4">
+            <Button
+              type="submit"
+              disabled={busy || !hasPayoutAccount}
+              onClick={() => setPublish(true)}
+              className="flex-1 gradient-sunset text-primary-foreground shadow-glow hover:opacity-90"
+              size="lg"
+            >
+              {busy && publish ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Publish event
+            </Button>
+            <Button
+              type="submit"
+              disabled={busy}
+              onClick={() => setPublish(false)}
+              variant="outline"
+              className="flex-1"
+              size="lg"
+            >
+              {busy && !publish ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Save as draft
+            </Button>
+          </div>
+          {!hasPayoutAccount && (
+            <p className="mt-3 text-center text-sm font-medium text-destructive">
+              ⚠️ You must connect your payout account in <Link to="/account" className="underline hover:text-destructive/80">Account Settings</Link> before you can publish an event.
+            </p>
+          )}
         </div>
       </form>
     </div>

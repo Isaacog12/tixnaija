@@ -47,7 +47,18 @@ async function fetchEvent(eventId: string) {
     .order("created_at", { ascending: false });
   if (e3) throw e3;
 
-  return { event, types: types ?? [], promoCodes: promoCodes ?? [] };
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("paystack_subaccount_code")
+    .eq("id", event.organizer_id)
+    .single();
+
+  return { 
+    event, 
+    types: types ?? [], 
+    promoCodes: promoCodes ?? [],
+    hasPayoutAccount: !!profile?.paystack_subaccount_code
+  };
 }
 
 function EditEventPage() {
@@ -84,6 +95,11 @@ function EditEventPage() {
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    if (form.status === "published" && !data?.hasPayoutAccount) {
+      toast.error("Please connect your payout account in Settings to publish events.");
+      return;
+    }
+
     setSaving(true);
     const { error } = await supabase
       .from("events")
@@ -163,9 +179,19 @@ function EditEventPage() {
               <Select value={form.status} onValueChange={(v: typeof form.status) => setForm({ ...form, status: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                  <SelectItem value="draft">Draft (hidden)</SelectItem>
+                  <SelectItem value="published" disabled={!data?.hasPayoutAccount}>
+                    Published {(!data?.hasPayoutAccount) && "(Requires Payout Account)"}
+                  </SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
                 </SelectContent>
               </Select>
+              {!data?.hasPayoutAccount && form.status !== "published" && (
+                <p className="mt-1 text-xs text-destructive">
+                  ⚠️ Connect payout account in settings to publish.
+                </p>
+              )}
             </Field>
           </div>
         </section>
