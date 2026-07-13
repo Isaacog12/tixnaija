@@ -90,8 +90,12 @@ function AccountPage() {
           method: "POST",
           body: { action: "resolve", account_number: form.bank_account_number, bank_code: bank.code }
         }).then(({ data, error }) => {
-          if (!error && data?.account_name) {
+          if (error) {
+            toast.error("Could not resolve account name. Check the account number.");
+            setForm((prev) => ({ ...prev, bank_account_name: "" }));
+          } else if (data?.account_name) {
             setForm((prev) => ({ ...prev, bank_account_name: data.account_name }));
+            toast.success("Account name resolved!");
           }
           setResolvingAccount(false);
         });
