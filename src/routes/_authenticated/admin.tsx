@@ -57,6 +57,13 @@ async function fetchAdminData() {
     .order("created_at", { ascending: false })
     .limit(20);
 
+  // Fetch Contact Messages
+  const { data: messages } = await supabase
+    .from("contact_messages" as any)
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(30);
+
   return {
     stats: {
       users: userCount ?? 0,
@@ -65,6 +72,7 @@ async function fetchAdminData() {
     },
     users: profiles ?? [],
     events: events ?? [],
+    contactMessages: messages ?? [],
   };
 }
 
@@ -184,6 +192,47 @@ function AdminDashboard() {
           </div>
         </section>
       </div>
+
+      {/* Support Messages */}
+      <section className="mt-10 flex flex-col rounded-2xl border border-border bg-card/40 overflow-hidden">
+        <div className="flex items-center justify-between p-4 border-b border-border bg-card/80">
+          <h2 className="font-semibold">Support Messages</h2>
+          <Badge variant="outline" className="font-mono text-xs">{data?.contactMessages.length} total</Badge>
+        </div>
+        <div className="p-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {data?.contactMessages.length === 0 ? (
+            <p className="text-sm text-muted-foreground col-span-full py-4 text-center">No messages yet.</p>
+          ) : (
+            data?.contactMessages.map((msg: any) => (
+              <div key={msg.id} className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col gap-3 transition-colors hover:border-primary/40">
+                <div className="flex justify-between items-start gap-2">
+                  <div className="min-w-0">
+                    <h3 className="font-medium text-sm truncate" title={msg.name}>{msg.name}</h3>
+                    <a href={`mailto:${msg.email}`} className="text-xs text-muted-foreground hover:text-primary transition truncate block" title={msg.email}>
+                      {msg.email}
+                    </a>
+                  </div>
+                  <Badge variant={msg.is_read ? "secondary" : "default"} className="text-[10px] h-5 shrink-0 px-1.5">
+                    {msg.is_read ? "Read" : "New"}
+                  </Badge>
+                </div>
+                
+                <div className="flex-1">
+                  <span className="inline-block px-2 py-0.5 rounded bg-muted/50 text-[10px] font-semibold text-muted-foreground mb-2">
+                    {msg.topic}
+                  </span>
+                  <p className="text-sm text-foreground/90 whitespace-pre-wrap break-words">{msg.message}</p>
+                </div>
+                
+                <div className="mt-1 pt-3 border-t border-border/50 text-[10px] text-muted-foreground flex justify-between items-center gap-2">
+                  <span className="truncate">{new Date(msg.created_at).toLocaleString()}</span>
+                  <a href={`tel:${msg.phone}`} className="hover:text-primary transition shrink-0">{msg.phone}</a>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
     </div>
   );
 }

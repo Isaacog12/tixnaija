@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/contact")({
   component: ContactPage,
@@ -66,9 +67,23 @@ function ContactPage() {
     }
 
     setBusy(true);
-    // Simulate network request — swap with a real endpoint / Supabase edge function when ready
-    await new Promise((r) => setTimeout(r, 1200));
+    
+    const { error } = await supabase.from("contact_messages" as any).insert({
+      name: form.name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim(),
+      topic: form.topic || "Other",
+      message: form.message.trim(),
+    });
+
     setBusy(false);
+
+    if (error) {
+      toast.error("Failed to send message. Please try again.");
+      console.error(error);
+      return;
+    }
+
     setSent(true);
   }
 
