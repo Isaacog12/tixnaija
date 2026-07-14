@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, Copy, MapPin, Plus, QrCode, TrendingUp, Ticket, Zap, Users, BarChart2 } from "lucide-react";
+import { CalendarDays, Copy, MapPin, Plus, QrCode, Ticket, Zap, Users, BarChart2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -144,22 +144,7 @@ function Dashboard() {
                       </div>
                       <span className="rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">Live</span>
                     </div>
-                    <div className="mt-4 flex items-center gap-6 border-t border-border pt-3">
-                      <div>
-                        <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Tickets Sold</p>
-                        <p className="mt-0.5 font-display text-2xl">347</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Revenue</p>
-                        <p className="mt-0.5 font-display text-2xl text-gradient-sunset">₦1.39M</p>
-                      </div>
-                    </div>
                   </div>
-                </div>
-                {/* Floating badge */}
-                <div className="absolute -right-3 -top-3 flex items-center gap-1.5 rounded-full border border-green-500/30 bg-background px-3 py-1.5 text-xs font-semibold text-green-400 shadow-lg">
-                  <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
-                  Live now
                 </div>
               </div>
             </div>
@@ -210,22 +195,7 @@ function Dashboard() {
             </div>
           </div>
 
-          {/* Social proof bar */}
-          <div className="flex flex-wrap items-center justify-center gap-8 rounded-2xl border border-border bg-card/30 px-8 py-5 text-center">
-            {[
-              { icon: TrendingUp, stat: "₦12M+", label: "Tickets sold" },
-              { icon: CalendarDays, stat: "400+", label: "Events created" },
-              { icon: Users, stat: "15k+", label: "Attendees served" },
-            ].map((s) => (
-              <div key={s.label} className="flex items-center gap-3">
-                <s.icon className="h-5 w-5 text-primary shrink-0" />
-                <div className="text-left">
-                  <p className="font-display text-2xl leading-none">{s.stat}</p>
-                  <p className="text-xs text-muted-foreground">{s.label}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+
         </div>
       )}
 
