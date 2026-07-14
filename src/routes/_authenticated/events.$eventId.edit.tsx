@@ -51,7 +51,7 @@ async function fetchEvent(eventId: string) {
     .from("profiles")
     .select("paystack_subaccount_code")
     .eq("id", event.organizer_id)
-    .single();
+    .maybeSingle();
 
   return { 
     event, 
@@ -125,6 +125,16 @@ function EditEventPage() {
   }
 
   async function deleteEvent() {
+    const { count, error: countErr } = await supabase
+      .from("orders")
+      .select("*", { count: "exact", head: true })
+      .eq("event_id", eventId);
+      
+    if (countErr) return toast.error(countErr.message);
+    if (count && count > 0) {
+      return toast.error("Can't delete an event with existing ticket sales — cancel it instead.");
+    }
+
     if (!confirm("Delete this event? This cannot be undone.")) return;
     const { error } = await supabase.from("events").delete().eq("id", eventId);
     if (error) toast.error(error.message);
@@ -477,7 +487,7 @@ function CompTicketsDialog({ eventId, ticketTypes }: { eventId: string, ticketTy
     for (const line of lines) {
       const parts = line.split(",");
       if (parts.length < 2) return toast.error(`Invalid line format: ${line}. Use "Name, Email"`);
-      recipients.push({ name: parts[0].trim(), email: parts[1].trim() });
+      recipients.push(JSON.stringify({ name: parts[0].trim(), email: parts[1].trim() }));
     }
     
     if (recipients.length === 0) return toast.error("Enter at least one recipient");
@@ -550,7 +560,7 @@ function CancelEventDialog({ eventId }: { eventId: string }) {
     setBusy(true);
     const { error } = await supabase.rpc("cancel_event", {
       p_event_id: eventId,
-      p_note: note || null,
+      p_note: note || "",
     });
     setBusy(false);
     if (error) {
@@ -608,8 +618,8 @@ function PostponeEventDialog({ eventId, eventStart, eventEnd }: { eventId: strin
     const { error } = await supabase.rpc("postpone_event", {
       p_event_id: eventId,
       p_new_start: new Date(start).toISOString(),
-      p_new_end: end ? new Date(end).toISOString() : null,
-      p_note: note || null,
+      p_new_end: end ? new Date(end).toISOString() : undefined,
+      p_note: note || "",
     });
     setBusy(false);
     if (error) {

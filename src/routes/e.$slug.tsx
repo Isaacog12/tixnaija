@@ -93,7 +93,7 @@ function EventDetailPage() {
       if (userData?.user) {
         setUserId(userData.user.id);
         setBuyerEmail(userData.user.email || "");
-        const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", userData.user.id).single();
+        const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", userData.user.id).maybeSingle();
         if (profile?.full_name) setBuyerName(profile.full_name);
       }
       return userData?.user ?? null;

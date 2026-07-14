@@ -27,7 +27,7 @@ async function fetchAdminData() {
     .from("profiles")
     .select("is_admin")
     .eq("id", userData.user.id)
-    .single();
+    .maybeSingle();
 
   if (!profile?.is_admin) {
     throw new Error("Unauthorized: Admin access required");
