@@ -19,8 +19,8 @@ async function fetchUpcoming() {
     .select("id, title, slug, city, venue_name, start_datetime, cover_image_url")
     .eq("status", "published")
     .gte("start_datetime", new Date().toISOString())
-    .order("start_datetime", { ascending: true })
-    .limit(6);
+    .order("created_at", { ascending: false })
+    .limit(3);
   if (error) throw error;
   return data ?? [];
 }
