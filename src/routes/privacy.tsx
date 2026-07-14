@@ -93,16 +93,6 @@ function PrivacyPage() {
         {/* Main content */}
         <main className="min-w-0 space-y-1">
 
-          {/* NDPR notice banner */}
-          <div className="flex gap-3 rounded-lg border border-accent/30 bg-accent/5 p-4 mb-10">
-            <span className="font-display text-xl leading-none text-accent shrink-0 mt-0.5">!</span>
-            <p className="text-sm text-accent/90 leading-relaxed">
-              <strong className="text-accent">Legal Notice:</strong> This Privacy Policy is a working draft intended
-              to align with the <strong className="text-accent">Nigeria Data Protection Regulation (NDPR)</strong>.
-              It must be reviewed by a qualified Nigerian lawyer before handling personal data at scale.
-            </p>
-          </div>
-
           {/* Section 1 — Introduction */}
           <section id="intro" className="scroll-mt-8 pb-10 border-b border-border/40">
             <SectionHeading number="01" title="Introduction" />
