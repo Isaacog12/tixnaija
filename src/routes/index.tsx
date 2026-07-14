@@ -249,6 +249,7 @@ function LandingPage() {
             <span className="font-display text-xl leading-none tracking-[0.02em] font-light text-gradient-sunset">NAIJA</span>
           </div>
           <div className="flex gap-4">
+            <Link to="/contact" className="hover:text-primary transition">Contact</Link>
             <Link to="/terms" className="hover:text-primary transition">Terms</Link>
             <Link to="/privacy" className="hover:text-primary transition">Privacy</Link>
           </div>
