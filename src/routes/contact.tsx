@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { SiteNav } from "@/components/site-nav";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -73,20 +74,11 @@ function ContactPage() {
 
   return (
     <div className="min-h-screen">
+      <SiteNav />
       {/* ── Hero ── */}
       <div className="relative overflow-hidden border-b border-border/60">
         <div className="absolute inset-0 gradient-sunset opacity-10 pointer-events-none" />
-        <div className="mx-auto max-w-6xl px-4 py-14 md:py-20">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.25em] text-muted-foreground hover:text-primary transition mb-8"
-          >
-            ← Back to TixNaija
-          </Link>
-          <div className="flex items-baseline gap-0 mb-4">
-            <span className="font-display text-3xl leading-none tracking-[0.02em] text-foreground">TIX</span>
-            <span className="font-display text-3xl leading-none tracking-[0.02em] text-gradient-sunset">NAIJA</span>
-          </div>
+        <div className="mx-auto max-w-6xl px-4 py-12 md:py-16">
           <h1 className="font-display text-5xl md:text-7xl leading-[0.95] mb-3">
             Contact Us
           </h1>
