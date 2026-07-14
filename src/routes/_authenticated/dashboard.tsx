@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, Copy, MapPin, Plus } from "lucide-react";
+import { CalendarDays, Copy, MapPin, Plus, QrCode, TrendingUp, Ticket, Zap, Users, BarChart2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -76,7 +76,9 @@ function Dashboard() {
           <h1 className="font-display text-4xl md:text-5xl">
             Hey {data?.profile?.full_name?.split(" ")[0] || "there"}.
           </h1>
-          <p className="text-muted-foreground">Your event organizer control room.</p>
+          <p className="text-muted-foreground">
+            {isOrganizer ? "Your event organizer control room." : "Good to see you."}
+          </p>
         </div>
         <div className="flex items-center gap-3">
           {isAdmin && (
@@ -84,32 +86,149 @@ function Dashboard() {
               <Link to="/admin">Admin Panel</Link>
             </Button>
           )}
-          {isOrganizer ? (
+          {isOrganizer && (
             <Button asChild size="lg" className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
               <Link to="/events/new">
                 <Plus className="mr-2 h-4 w-4" /> New event
               </Link>
-            </Button>
-          ) : (
-            <Button asChild size="lg" variant="outline">
-              <Link to="/account">Become an organizer</Link>
             </Button>
           )}
         </div>
       </div>
 
       {!isOrganizer && (
-        <div className="mb-8 rounded-2xl border border-primary/30 bg-primary/5 p-6">
-          <h2 className="text-lg font-semibold">Sell tickets on TixNaija</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Turn on organizer mode in your account settings to start creating events, adding
-            ticket tiers, and tracking sales.
-          </p>
-          <Button asChild className="mt-4" variant="secondary">
-            <Link to="/account">Turn on organizer mode</Link>
-          </Button>
+        <div className="space-y-10">
+          {/* Hero CTA */}
+          <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-card/60 p-8 md:p-12">
+            {/* Background gradient blobs */}
+            <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-rose-500/10 blur-3xl" />
+
+            <div className="relative grid gap-10 md:grid-cols-2 md:items-center">
+              <div>
+                <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
+                  <Zap className="h-3 w-3" /> For organizers
+                </span>
+                <h2 className="mt-4 font-display text-4xl leading-tight md:text-5xl">
+                  Start selling<br />
+                  <span className="text-gradient-sunset">in minutes.</span>
+                </h2>
+                <p className="mt-4 text-base text-muted-foreground">
+                  Create your event, set ticket tiers, track sales in real-time, and scan attendees at the door — all in one place.
+                </p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Button asChild size="lg" className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
+                    <Link to="/account">Become an organizer</Link>
+                  </Button>
+                  <Button asChild size="lg" variant="outline">
+                    <Link to="/browse">See live events</Link>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Sample event card mock */}
+              <div className="relative">
+                <div className="rounded-2xl border border-border bg-background/80 shadow-xl overflow-hidden">
+                  <div className="h-36 w-full bg-gradient-to-br from-rose-500/30 via-orange-500/20 to-amber-500/30 relative flex items-end p-4">
+                    <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(135deg, transparent 0 22px, rgba(255,255,255,0.15) 22px 23px)" }} />
+                    <span className="relative font-display text-[10px] uppercase tracking-[0.35em] text-white/70">Admit One</span>
+                  </div>
+                  <div className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-primary font-semibold">Music · Lagos</p>
+                        <h3 className="mt-1 font-display text-xl leading-tight">Afrobeats Live 2025</h3>
+                        <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <CalendarDays className="h-3.5 w-3.5" /> Sat, Aug 23 · 7:00 PM
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">Live</span>
+                    </div>
+                    <div className="mt-4 flex items-center gap-6 border-t border-border pt-3">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Tickets Sold</p>
+                        <p className="mt-0.5 font-display text-2xl">347</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Revenue</p>
+                        <p className="mt-0.5 font-display text-2xl text-gradient-sunset">₦1.39M</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {/* Floating badge */}
+                <div className="absolute -right-3 -top-3 flex items-center gap-1.5 rounded-full border border-green-500/30 bg-background px-3 py-1.5 text-xs font-semibold text-green-400 shadow-lg">
+                  <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+                  Live now
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Feature grid */}
+          <div>
+            <p className="mb-5 text-sm font-semibold uppercase tracking-widest text-muted-foreground">Everything you get</p>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                {
+                  icon: Ticket,
+                  title: "Ticket tiers",
+                  desc: "Create Early Bird, VIP, and General Admission tiers with custom pricing and limits.",
+                  color: "text-primary",
+                  bg: "bg-primary/10",
+                },
+                {
+                  icon: BarChart2,
+                  title: "Live analytics",
+                  desc: "Track sales, revenue, and remaining capacity per tier in real-time.",
+                  color: "text-orange-400",
+                  bg: "bg-orange-400/10",
+                },
+                {
+                  icon: QrCode,
+                  title: "QR scanning",
+                  desc: "Check in attendees instantly at the door with the built-in QR scanner.",
+                  color: "text-rose-400",
+                  bg: "bg-rose-400/10",
+                },
+                {
+                  icon: Users,
+                  title: "Comp tickets",
+                  desc: "Issue free tickets to guests, press, or VIPs directly from your dashboard.",
+                  color: "text-amber-400",
+                  bg: "bg-amber-400/10",
+                },
+              ].map((f) => (
+                <div key={f.title} className="rounded-2xl border border-border bg-card/50 p-5 transition hover:border-primary/30 hover:bg-card/80">
+                  <div className={`inline-flex rounded-xl ${f.bg} p-2.5`}>
+                    <f.icon className={`h-5 w-5 ${f.color}`} />
+                  </div>
+                  <h3 className="mt-3 font-semibold">{f.title}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Social proof bar */}
+          <div className="flex flex-wrap items-center justify-center gap-8 rounded-2xl border border-border bg-card/30 px-8 py-5 text-center">
+            {[
+              { icon: TrendingUp, stat: "₦12M+", label: "Tickets sold" },
+              { icon: CalendarDays, stat: "400+", label: "Events created" },
+              { icon: Users, stat: "15k+", label: "Attendees served" },
+            ].map((s) => (
+              <div key={s.label} className="flex items-center gap-3">
+                <s.icon className="h-5 w-5 text-primary shrink-0" />
+                <div className="text-left">
+                  <p className="font-display text-2xl leading-none">{s.stat}</p>
+                  <p className="text-xs text-muted-foreground">{s.label}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
+
 
       {isLoading && <div className="text-sm text-muted-foreground">Loading your events…</div>}
       {error && <div className="text-sm text-destructive">{(error as Error).message}</div>}
