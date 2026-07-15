@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, Copy, MapPin, Plus, QrCode, Ticket, Zap, Users, BarChart2 } from "lucide-react";
+import { CalendarDays, Copy, MapPin, Plus, QrCode, Ticket, Zap, Users, BarChart2, Clock, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,22 @@ async function fetchMyEvents() {
     .from("profiles")
     .select("is_organizer, is_admin, full_name")
     .eq("id", userId)
+    .maybeSingle();
+
+  // Check admin via user_roles (consistent with the rest of the app)
+  const { data: adminRole } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+
+  // Fetch the user's most recent organizer application
+  const { data: latestApp } = await supabase
+    .from("organizer_applications" as any)
+    .select("status, admin_note, created_at")
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   const { data: events, error } = await supabase
@@ -57,7 +73,13 @@ async function fetchMyEvents() {
     }
   }
 
-  return { profile, events: events ?? [], statsByEvent };
+  return {
+    profile,
+    isAdmin: !!adminRole,
+    latestApp: latestApp as { status: "pending" | "approved" | "rejected"; admin_note: string | null; created_at: string } | null,
+    events: events ?? [],
+    statsByEvent,
+  };
 }
 
 function Dashboard() {
@@ -67,7 +89,8 @@ function Dashboard() {
   });
 
   const isOrganizer = data?.profile?.is_organizer ?? false;
-  const isAdmin = data?.profile?.is_admin ?? false;
+  const isAdmin = data?.isAdmin ?? false;
+  const latestApp = data?.latestApp ?? null;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
@@ -82,9 +105,14 @@ function Dashboard() {
         </div>
         <div className="flex items-center gap-3">
           {isAdmin && (
-            <Button asChild size="lg" variant="outline" className="border-primary/20 text-primary">
-              <Link to="/admin">Admin Panel</Link>
-            </Button>
+            <>
+              <Button asChild size="lg" variant="outline" className="border-primary/20 text-primary">
+                <Link to="/admin">Admin Panel</Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="border-amber-500/30 text-amber-500 hover:bg-amber-500/10">
+                <Link to="/admin/organizer-applications">Applications</Link>
+              </Button>
+            </>
           )}
           {isOrganizer && (
             <Button asChild size="lg" className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
@@ -117,9 +145,26 @@ function Dashboard() {
                   Create your event, set ticket tiers, track sales in real-time, and scan attendees at the door — all in one place.
                 </p>
                 <div className="mt-6 flex flex-wrap gap-3">
-                  <Button asChild size="lg" className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
-                    <Link to="/account">Become an organizer</Link>
-                  </Button>
+                  {latestApp?.status === "pending" ? (
+                    <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-500">
+                      <Clock className="h-4 w-4" />
+                      Application pending review
+                    </div>
+                  ) : latestApp?.status === "rejected" ? (
+                    <div className="flex flex-col gap-2">
+                      <div className="inline-flex items-center gap-2 rounded-full border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm font-medium text-destructive">
+                        <XCircle className="h-4 w-4" />
+                        Application not approved
+                      </div>
+                      <Button asChild size="lg" className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
+                        <Link to="/account">Apply again</Link>
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button asChild size="lg" className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
+                      <Link to="/account">Apply to become an organizer</Link>
+                    </Button>
+                  )}
                   <Button asChild size="lg" variant="outline">
                     <Link to="/browse">See live events</Link>
                   </Button>

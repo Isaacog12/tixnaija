@@ -23,6 +23,7 @@ import { Route as CheckoutVerifyRouteImport } from './routes/checkout.verify'
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/inbox'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedAdminOrganizerApplicationsRouteImport } from './routes/_authenticated/admin.organizer-applications'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedEventsNewRouteImport } from './routes/_authenticated/events.new'
 import { Route as AuthenticatedOrdersOrderIdTicketsRouteImport } from './routes/_authenticated/orders.$orderId.tickets'
@@ -120,6 +121,12 @@ const AuthenticatedEventsEventIdScanRoute =
     path: '/events/$eventId/scan',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminOrganizerApplicationsRoute =
+  AuthenticatedAdminOrganizerApplicationsRouteImport.update({
+    id: '/admin/organizer-applications',
+    path: '/admin/organizer-applications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEventsEventIdEditRoute =
   AuthenticatedEventsEventIdEditRouteImport.update({
     id: '/events/$eventId/edit',
@@ -138,6 +145,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
@@ -158,6 +166,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
@@ -180,6 +189,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/account'
     | '/admin'
+    | '/admin/organizer-applications'
     | '/dashboard'
     | '/inbox'
     | '/checkout/verify'
@@ -222,6 +233,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/account'
     | '/admin'
+    | '/admin/organizer-applications'
     | '/dashboard'
     | '/inbox'
     | '/checkout/verify'
@@ -243,6 +255,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/_authenticated/account'
     | '/_authenticated/admin'
+    | '/_authenticated/admin/organizer-applications'
     | '/_authenticated/dashboard'
     | '/_authenticated/inbox'
     | '/checkout/verify'
@@ -367,6 +380,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/organizer-applications': {
+      id: '/_authenticated/admin/organizer-applications'
+      path: '/admin/organizer-applications'
+      fullPath: '/admin/organizer-applications'
+      preLoaderRoute: typeof AuthenticatedAdminOrganizerApplicationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/account': {
       id: '/_authenticated/account'
       path: '/account'
@@ -408,6 +428,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedAdminOrganizerApplicationsRoute: typeof AuthenticatedAdminOrganizerApplicationsRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
   AuthenticatedEventsNewRoute: typeof AuthenticatedEventsNewRoute
@@ -419,6 +440,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedAdminOrganizerApplicationsRoute: AuthenticatedAdminOrganizerApplicationsRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
   AuthenticatedEventsNewRoute: AuthenticatedEventsNewRoute,

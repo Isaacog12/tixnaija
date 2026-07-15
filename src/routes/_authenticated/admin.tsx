@@ -1,6 +1,6 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Users, Calendar, BarChart3, Search, MoreVertical, Ban, CheckCircle2 } from "lucide-react";
+import { Users, Calendar, BarChart3, Search, MoreVertical, Ban, CheckCircle2, ClipboardList } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/currency";
 import { Input } from "@/components/ui/input";
@@ -23,13 +23,15 @@ async function fetchAdminData() {
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) throw new Error("Not logged in");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", userData.user.id)
+  // Check admin via user_roles (consistent with the rest of the app)
+  const { data: adminRole } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userData.user.id)
+    .eq("role", "admin")
     .maybeSingle();
 
-  if (!profile?.is_admin) {
+  if (!adminRole) {
     throw new Error("Unauthorized: Admin access required");
   }
 
@@ -39,6 +41,12 @@ async function fetchAdminData() {
   
   const { data: orders } = await supabase.from("orders").select("total_kobo").eq("status", "paid");
   const totalRevenueKobo = (orders ?? []).reduce((acc, o) => acc + (o.total_kobo || 0), 0);
+
+  // Pending organizer applications count
+  const { count: pendingAppsCount } = await supabase
+    .from("organizer_applications" as any)
+    .select("*", { count: "exact", head: true })
+    .eq("status", "pending");
 
   // Fetch Users
   const { data: profiles } = await supabase
@@ -69,6 +77,7 @@ async function fetchAdminData() {
       users: userCount ?? 0,
       events: eventCount ?? 0,
       revenueKobo: totalRevenueKobo,
+      pendingApps: pendingAppsCount ?? 0,
     },
     users: profiles ?? [],
     events: events ?? [],
@@ -93,10 +102,24 @@ function AdminDashboard() {
       </div>
 
       {/* Stats row */}
-      <div className="grid gap-4 md:grid-cols-3 mb-10">
+      <div className="grid gap-4 md:grid-cols-4 mb-10">
         <StatCard icon={Users} label="Total Users" value={data?.stats.users.toLocaleString() || "0"} />
         <StatCard icon={Calendar} label="Total Events" value={data?.stats.events.toLocaleString() || "0"} />
         <StatCard icon={BarChart3} label="Total Volume" value={formatNaira(data?.stats.revenueKobo || 0)} className="text-gradient-sunset" />
+        <Link to="/admin/organizer-applications" className="group block">
+          <div className="rounded-2xl border border-amber-500/30 bg-card/60 p-6 flex items-start gap-4 shadow-sm hover:border-amber-500/60 transition">
+            <div className="rounded-xl bg-amber-500/10 p-3 text-amber-500 group-hover:bg-amber-500/20 transition">
+              <ClipboardList className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Pending Applications</p>
+              <h3 className="mt-1 font-display text-3xl text-amber-500">
+                {data?.stats.pendingApps ?? 0}
+              </h3>
+              <p className="mt-0.5 text-xs text-amber-500/70">Review now →</p>
+            </div>
+          </div>
+        </Link>
       </div>
 
       <div className="grid gap-10 lg:grid-cols-2">
