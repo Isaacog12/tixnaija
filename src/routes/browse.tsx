@@ -139,6 +139,8 @@ function BrowsePage() {
                       <img
                         src={ev.cover_image_url}
                         alt={ev.title}
+                        loading="lazy"
+                        decoding="async"
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     )}

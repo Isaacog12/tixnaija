@@ -416,6 +416,8 @@ function EventBody({
               <img
                 src={event.cover_image_url}
                 alt={event.title}
+                fetchPriority="high"
+                decoding="async"
                 className="aspect-[16/10] w-full object-cover"
               />
             ) : (
