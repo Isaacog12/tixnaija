@@ -274,9 +274,9 @@ function AdminDashboard() {
               />
             </div>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto overflow-y-auto max-h-[420px]">
             <table className="w-full text-sm text-left">
-              <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
+              <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm text-xs uppercase text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 font-medium">User</th>
                   <th className="px-4 py-3 font-medium">Roles</th>
