@@ -176,7 +176,7 @@ function HowItWorksPage() {
                     </span>
                     <h3 className="font-semibold text-lg">{step.title}</h3>
                   </div>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{step.body}</p>
+                  <p className="text-foreground/90 text-base leading-relaxed">{step.body}</p>
                 </div>
               </div>
             ))}
@@ -223,7 +223,7 @@ function HowItWorksPage() {
                 </span>
               </div>
               <h3 className="mt-4 font-semibold text-base">{step.title}</h3>
-              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{step.body}</p>
+              <p className="mt-2 text-base text-foreground/90 leading-relaxed">{step.body}</p>
             </div>
           ))}
         </div>
@@ -236,7 +236,7 @@ function HowItWorksPage() {
             </div>
             <div>
               <h3 className="font-semibold text-base">Platform fee breakdown</h3>
-              <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
+              <p className="mt-1 text-base text-foreground/90 leading-relaxed">
                 TixNaija charges <strong className="text-foreground">15%</strong> of each ticket sale.
                 So for a <strong className="text-foreground">₦10,000 ticket</strong>: the buyer pays ₦10,000,
                 TixNaija retains <strong className="text-foreground">₦1,500</strong>, and you receive{" "}
@@ -284,7 +284,7 @@ function HowItWorksPage() {
                 <ShieldCheck className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 {item.q}
               </h3>
-              <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{item.a}</p>
+              <p className="mt-3 text-base text-foreground/90 leading-relaxed">{item.a}</p>
             </div>
           ))}
         </div>
