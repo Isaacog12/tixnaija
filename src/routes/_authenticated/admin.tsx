@@ -1,113 +1,220 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { Users, Calendar, BarChart3, Search, MoreVertical, Ban, CheckCircle2, ClipboardList } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import {
+  Users, Calendar, BarChart3, Search, MoreVertical,
+  Ban, CheckCircle2, ClipboardList, ExternalLink, ShieldOff, ShieldCheck,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/currency";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin")({
+  // Real protection: query user_roles and redirect non-admins cleanly.
   beforeLoad: async () => {
-    // Basic protection: Ensure user is logged in
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      throw redirect({ to: "/auth" });
-    }
-    // Real protection happens in fetchAdminData where RLS enforces is_admin
+    if (!session) throw redirect({ to: "/auth" });
+
+    const { data: adminRole } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", session.user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (!adminRole) throw redirect({ to: "/dashboard" });
   },
   component: AdminDashboard,
 });
 
-async function fetchAdminData() {
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) throw new Error("Not logged in");
+// ── Data fetchers ────────────────────────────────────────────
 
-  // Check admin via user_roles (consistent with the rest of the app)
-  const { data: adminRole } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userData.user.id)
-    .eq("role", "admin")
-    .maybeSingle();
+async function fetchAdminStats() {
+  const [
+    { count: userCount },
+    { count: eventCount },
+    { data: orders },
+    { count: pendingApps },
+  ] = await Promise.all([
+    supabase.from("profiles").select("*", { count: "exact", head: true }),
+    supabase.from("events").select("*", { count: "exact", head: true }),
+    supabase.from("orders").select("total_kobo").eq("status", "paid"),
+    supabase.from("organizer_applications" as any).select("*", { count: "exact", head: true }).eq("status", "pending"),
+  ]);
 
-  if (!adminRole) {
-    throw new Error("Unauthorized: Admin access required");
-  }
-
-  // Fetch High-level Stats
-  const { count: userCount } = await supabase.from("profiles").select("*", { count: "exact", head: true });
-  const { count: eventCount } = await supabase.from("events").select("*", { count: "exact", head: true });
-  
-  const { data: orders } = await supabase.from("orders").select("total_kobo").eq("status", "paid");
-  const totalRevenueKobo = (orders ?? []).reduce((acc, o) => acc + (o.total_kobo || 0), 0);
-
-  // Pending organizer applications count
-  const { count: pendingAppsCount } = await supabase
-    .from("organizer_applications" as any)
-    .select("*", { count: "exact", head: true })
-    .eq("status", "pending");
-
-  // Fetch Users
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, full_name, email:id, is_organizer, is_admin, created_at")
-    .order("created_at", { ascending: false })
-    .limit(20);
-
-  // Note: RLS policies might prevent viewing emails of other users without a service_role key.
-  // In a real prod app, an edge function is used to fetch Auth users. For now, we use profiles.
-
-  // Fetch Events Queue
-  const { data: events } = await supabase
-    .from("events")
-    .select("id, title, status, created_at, profiles(full_name)")
-    .order("created_at", { ascending: false })
-    .limit(20);
-
-  // Fetch Contact Messages
-  const { data: messages } = await supabase
-    .from("contact_messages" as any)
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(30);
-
+  const totalRevenueKobo = (orders ?? []).reduce((acc: number, o: any) => acc + (o.total_kobo || 0), 0);
   return {
-    stats: {
-      users: userCount ?? 0,
-      events: eventCount ?? 0,
-      revenueKobo: totalRevenueKobo,
-      pendingApps: pendingAppsCount ?? 0,
-    },
-    users: profiles ?? [],
-    events: events ?? [],
-    contactMessages: messages ?? [],
+    users: userCount ?? 0,
+    events: eventCount ?? 0,
+    revenueKobo: totalRevenueKobo,
+    pendingApps: pendingApps ?? 0,
   };
 }
 
+async function fetchAdminUsers() {
+  const { data: { session } } = await supabase.auth.getSession();
+  const res = await supabase.functions.invoke("admin-list-users", {
+    headers: { Authorization: `Bearer ${session?.access_token}` },
+  });
+  if (res.error) throw new Error(res.error.message);
+  return (res.data as any).users as {
+    id: string;
+    email: string;
+    full_name: string;
+    created_at: string;
+    suspended: boolean;
+    roles: string[];
+  }[];
+}
+
+async function fetchAdminEvents() {
+  const { data, error } = await supabase
+    .from("events")
+    .select("id, title, status, created_at, organizer_id, profiles!events_organizer_id_fkey(full_name)")
+    .order("created_at", { ascending: false })
+    .limit(30);
+  if (error) throw error;
+  return data ?? [];
+}
+
+async function fetchContactMessages() {
+  const { data, error } = await supabase
+    .from("contact_messages" as any)
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return (data ?? []) as any[];
+}
+
+// ── Main Component ───────────────────────────────────────────
+
 function AdminDashboard() {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["admin-dashboard"],
-    queryFn: fetchAdminData,
+  const qc = useQueryClient();
+  const [userSearch, setUserSearch] = useState("");
+  const [takedownEvent, setTakedownEvent] = useState<{ id: string; title: string } | null>(null);
+
+  const { data: stats } = useQuery({ queryKey: ["admin-stats"], queryFn: fetchAdminStats });
+  const { data: users, isLoading: usersLoading } = useQuery({ queryKey: ["admin-users"], queryFn: fetchAdminUsers });
+  const { data: events, isLoading: eventsLoading } = useQuery({ queryKey: ["admin-events"], queryFn: fetchAdminEvents });
+  const { data: messages } = useQuery({ queryKey: ["admin-contact-messages"], queryFn: fetchContactMessages });
+
+  // ── Mutations ──────────────────────────────────────────────
+
+  const takedownMutation = useMutation({
+    mutationFn: async ({ id, note }: { id: string; note: string }) => {
+      const { error } = await supabase.rpc("admin_cancel_event" as any, {
+        p_event_id: id,
+        p_note: note,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Event has been taken down and buyers notified.");
+      qc.invalidateQueries({ queryKey: ["admin-events"] });
+      qc.invalidateQueries({ queryKey: ["admin-stats"] });
+      setTakedownEvent(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
-  const navigate = useNavigate();
+  const suspendMutation = useMutation({
+    mutationFn: async ({ userId, suspend }: { userId: string; suspend: boolean }) => {
+      const { error } = await supabase.rpc("admin_suspend_user" as any, {
+        p_user_id: userId,
+        p_suspended: suspend,
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      toast.success(vars.suspend ? "User suspended." : "User unsuspended.");
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
-  if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading admin data…</div>;
-  if (error) return <div className="p-8 text-center text-destructive">Error loading data.</div>;
+  const markMessageRead = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase.from("contact_messages" as any) as any)
+        .update({ is_read: true })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-contact-messages"] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // ── Derived ────────────────────────────────────────────────
+
+  const filteredUsers = (users ?? []).filter((u) => {
+    const q = userSearch.toLowerCase();
+    return !q || u.full_name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+  });
+
+  // ── Render ─────────────────────────────────────────────────
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
+      {/* Takedown Confirmation Dialog */}
+      <AlertDialog open={!!takedownEvent} onOpenChange={() => setTakedownEvent(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Take down event?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>&ldquo;{takedownEvent?.title}&rdquo;</strong> will be cancelled immediately.
+              All buyers with valid tickets will be notified. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() =>
+                takedownEvent &&
+                takedownMutation.mutate({
+                  id: takedownEvent.id,
+                  note: "Taken down by platform admin.",
+                })
+              }
+              disabled={takedownMutation.isPending}
+            >
+              {takedownMutation.isPending ? "Taking down…" : "Yes, take down"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Header */}
       <div className="mb-8">
         <h1 className="font-display text-4xl md:text-5xl">Admin Portal</h1>
         <p className="text-muted-foreground mt-1">Platform overview and moderation.</p>
       </div>
 
-      {/* Stats row */}
+      {/* Stats */}
       <div className="grid gap-4 md:grid-cols-4 mb-10">
-        <StatCard icon={Users} label="Total Users" value={data?.stats.users.toLocaleString() || "0"} />
-        <StatCard icon={Calendar} label="Total Events" value={data?.stats.events.toLocaleString() || "0"} />
-        <StatCard icon={BarChart3} label="Total Volume" value={formatNaira(data?.stats.revenueKobo || 0)} className="text-gradient-sunset" />
+        <StatCard icon={Users} label="Total Users" value={stats?.users.toLocaleString() ?? "—"} />
+        <StatCard icon={Calendar} label="Total Events" value={stats?.events.toLocaleString() ?? "—"} />
+        <StatCard icon={BarChart3} label="Total Volume" value={formatNaira(stats?.revenueKobo ?? 0)} className="text-gradient-sunset" />
         <Link to="/admin/organizer-applications" className="group block cursor-pointer">
           <div className="rounded-2xl border border-amber-500/30 bg-card/60 p-6 flex items-start gap-4 shadow-sm hover:border-amber-500/60 transition h-full">
             <div className="rounded-xl bg-amber-500/10 p-3 text-amber-500 group-hover:bg-amber-500/20 transition">
@@ -115,9 +222,7 @@ function AdminDashboard() {
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Pending Applications</p>
-              <h3 className="mt-1 font-display text-3xl text-amber-500">
-                {data?.stats.pendingApps ?? 0}
-              </h3>
+              <h3 className="mt-1 font-display text-3xl text-amber-500">{stats?.pendingApps ?? 0}</h3>
               <p className="mt-0.5 text-xs text-amber-500/70">Review now →</p>
             </div>
           </div>
@@ -131,49 +236,107 @@ function AdminDashboard() {
             <h2 className="font-semibold">Recent Users</h2>
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input placeholder="Search users..." className="h-8 w-48 pl-8 text-xs border-border/50 bg-background/50 focus-visible:ring-1" />
+              <Input
+                placeholder="Search by name or email…"
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                className="h-8 w-52 pl-8 text-xs border-border/50 bg-background/50 focus-visible:ring-1"
+              />
             </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
               <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Name</th>
-                  <th className="px-4 py-3 font-medium">Role</th>
+                  <th className="px-4 py-3 font-medium">User</th>
+                  <th className="px-4 py-3 font-medium">Roles</th>
                   <th className="px-4 py-3 font-medium">Joined</th>
-                  <th className="px-4 py-3"></th>
+                  <th className="px-4 py-3" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
-                {data?.users.map((u) => (
-                  <tr key={u.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-foreground">{u.full_name || "Unknown"}</div>
-                      <div className="text-xs text-muted-foreground font-mono">{u.id.slice(0, 8)}...</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1.5 flex-wrap">
-                        {u.is_admin && <Badge variant="default" className="text-[10px] h-5 px-1.5">Admin</Badge>}
-                        {u.is_organizer && <Badge variant="secondary" className="text-[10px] h-5 px-1.5">Organizer</Badge>}
-                        {!u.is_admin && !u.is_organizer && <span className="text-xs text-muted-foreground">User</span>}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">
-                      {new Date(u.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Button variant="ghost" size="icon" className="h-7 w-7">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
+                {usersLoading ? (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-8 text-center text-xs text-muted-foreground">
+                      Loading users…
                     </td>
                   </tr>
-                ))}
+                ) : filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-8 text-center text-xs text-muted-foreground">
+                      No users found.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredUsers.map((u) => (
+                    <tr key={u.id} className={`hover:bg-muted/30 transition-colors ${u.suspended ? "opacity-50" : ""}`}>
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-foreground">{u.full_name || "Unknown"}</div>
+                        <div className="text-xs text-muted-foreground">{u.email}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1 flex-wrap">
+                          {u.roles.includes("admin") && (
+                            <Badge variant="default" className="text-[10px] h-5 px-1.5">Admin</Badge>
+                          )}
+                          {u.roles.includes("organizer") && (
+                            <Badge variant="secondary" className="text-[10px] h-5 px-1.5">Organizer</Badge>
+                          )}
+                          {!u.roles.includes("admin") && !u.roles.includes("organizer") && (
+                            <span className="text-xs text-muted-foreground">User</span>
+                          )}
+                          {u.suspended && (
+                            <Badge variant="destructive" className="text-[10px] h-5 px-1.5">Suspended</Badge>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">
+                        {new Date(u.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                              <Link to="/dashboard" className="flex items-center gap-2">
+                                <ExternalLink className="h-3.5 w-3.5" />
+                                View full profile
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {u.suspended ? (
+                              <DropdownMenuItem
+                                className="text-green-500 focus:text-green-500"
+                                onClick={() => suspendMutation.mutate({ userId: u.id, suspend: false })}
+                              >
+                                <ShieldCheck className="mr-2 h-3.5 w-3.5" />
+                                Unsuspend user
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => suspendMutation.mutate({ userId: u.id, suspend: true })}
+                              >
+                                <ShieldOff className="mr-2 h-3.5 w-3.5" />
+                                Suspend user
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </section>
 
-        {/* Events Queue */}
+        {/* Event Moderation */}
         <section className="flex flex-col rounded-2xl border border-border bg-card/40 overflow-hidden">
           <div className="flex items-center justify-between p-4 border-b border-border bg-card/80">
             <h2 className="font-semibold">Event Moderation</h2>
@@ -188,27 +351,44 @@ function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
-                {data?.events.map((ev) => (
+                {eventsLoading ? (
+                  <tr>
+                    <td colSpan={3} className="px-4 py-8 text-center text-xs text-muted-foreground">
+                      Loading events…
+                    </td>
+                  </tr>
+                ) : (events ?? []).map((ev: any) => (
                   <tr key={ev.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3">
                       <div className="font-medium text-foreground line-clamp-1">{ev.title}</div>
-                      <div className="text-xs text-muted-foreground line-clamp-1">by {ev.profiles?.full_name || "Unknown"}</div>
+                      <div className="text-xs text-muted-foreground">
+                        by {ev.profiles?.full_name || "Unknown"}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       {ev.status === "published" ? (
                         <span className="inline-flex items-center gap-1 text-green-500 text-xs font-medium">
                           <CheckCircle2 className="h-3 w-3" /> Live
                         </span>
+                      ) : ev.status === "cancelled" ? (
+                        <span className="text-xs text-destructive font-medium">Cancelled</span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-muted-foreground text-xs font-medium">
-                          Draft
-                        </span>
+                        <span className="text-xs text-muted-foreground font-medium capitalize">{ev.status}</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <Button variant="outline" size="sm" className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10">
-                        <Ban className="mr-1.5 h-3 w-3" /> Takedown
-                      </Button>
+                      {ev.status !== "cancelled" ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => setTakedownEvent({ id: ev.id, title: ev.title })}
+                        >
+                          <Ban className="mr-1.5 h-3 w-3" /> Takedown
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/50">—</span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -218,40 +398,64 @@ function AdminDashboard() {
         </section>
       </div>
 
-      {/* Support Messages */}
+      {/* Support / Contact Messages */}
       <section className="mt-10 flex flex-col rounded-2xl border border-border bg-card/40 overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b border-border bg-card/80">
           <h2 className="font-semibold">Support Messages</h2>
-          <Badge variant="outline" className="font-mono text-xs">{data?.contactMessages.length} total</Badge>
+          <Badge variant="outline" className="font-mono text-xs">
+            {(messages ?? []).filter((m) => !m.is_read).length} unread
+          </Badge>
         </div>
         <div className="p-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {data?.contactMessages.length === 0 ? (
+          {(messages ?? []).length === 0 ? (
             <p className="text-sm text-muted-foreground col-span-full py-4 text-center">No messages yet.</p>
           ) : (
-            data?.contactMessages.map((msg: any) => (
-              <div key={msg.id} className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col gap-3 transition-colors hover:border-primary/40">
+            (messages ?? []).map((msg: any) => (
+              <div
+                key={msg.id}
+                className={`rounded-xl border bg-card p-4 shadow-sm flex flex-col gap-3 transition-colors hover:border-primary/40 cursor-pointer ${
+                  msg.is_read ? "border-border opacity-70" : "border-primary/30"
+                }`}
+                onClick={() => !msg.is_read && markMessageRead.mutate(msg.id)}
+                title={msg.is_read ? "" : "Click to mark as read"}
+              >
                 <div className="flex justify-between items-start gap-2">
                   <div className="min-w-0">
-                    <h3 className="font-medium text-sm truncate" title={msg.name}>{msg.name}</h3>
-                    <a href={`mailto:${msg.email}`} className="text-xs text-muted-foreground hover:text-primary transition truncate block" title={msg.email}>
+                    <h3 className="font-medium text-sm truncate">{msg.name}</h3>
+                    <a
+                      href={`mailto:${msg.email}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-xs text-muted-foreground hover:text-primary transition truncate block"
+                    >
                       {msg.email}
                     </a>
                   </div>
-                  <Badge variant={msg.is_read ? "secondary" : "default"} className="text-[10px] h-5 shrink-0 px-1.5">
+                  <Badge
+                    variant={msg.is_read ? "secondary" : "default"}
+                    className="text-[10px] h-5 shrink-0 px-1.5"
+                  >
                     {msg.is_read ? "Read" : "New"}
                   </Badge>
                 </div>
-                
                 <div className="flex-1">
-                  <span className="inline-block px-2 py-0.5 rounded bg-muted/50 text-[10px] font-semibold text-muted-foreground mb-2">
-                    {msg.topic}
-                  </span>
-                  <p className="text-sm text-foreground/90 whitespace-pre-wrap break-words">{msg.message}</p>
+                  {msg.topic && (
+                    <span className="inline-block px-2 py-0.5 rounded bg-muted/50 text-[10px] font-semibold text-muted-foreground mb-2">
+                      {msg.topic}
+                    </span>
+                  )}
+                  <p className="text-sm text-foreground/90 whitespace-pre-wrap break-words line-clamp-4">{msg.message}</p>
                 </div>
-                
                 <div className="mt-1 pt-3 border-t border-border/50 text-[10px] text-muted-foreground flex justify-between items-center gap-2">
                   <span className="truncate">{new Date(msg.created_at).toLocaleString()}</span>
-                  <a href={`tel:${msg.phone}`} className="hover:text-primary transition shrink-0">{msg.phone}</a>
+                  {msg.phone && (
+                    <a
+                      href={`tel:${msg.phone}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="hover:text-primary transition shrink-0"
+                    >
+                      {msg.phone}
+                    </a>
+                  )}
                 </div>
               </div>
             ))
@@ -262,7 +466,17 @@ function AdminDashboard() {
   );
 }
 
-function StatCard({ icon: Icon, label, value, className }: { icon: any; label: string; value: string; className?: string }) {
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  className,
+}: {
+  icon: any;
+  label: string;
+  value: string;
+  className?: string;
+}) {
   return (
     <div className="rounded-2xl border border-border bg-card/60 p-6 flex items-start gap-4 shadow-sm">
       <div className="rounded-xl bg-primary/10 p-3 text-primary">
