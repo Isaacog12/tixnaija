@@ -61,15 +61,12 @@ CREATE POLICY "tickets_admin_view_all" ON public.tickets
     )
   );
 
--- USER_ROLES — admins can read ALL user_roles (needed for role badges)
-CREATE POLICY "user_roles_select_admin" ON public.user_roles
-  FOR SELECT TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.user_roles ur
-      WHERE ur.user_id = auth.uid() AND ur.role = 'admin'
-    )
-  );
+-- USER_ROLES — NOTE: Do NOT add a SELECT policy here that queries user_roles itself.
+-- That causes infinite recursion. The existing user_roles_select_own policy (auth.uid() = user_id)
+-- already allows all admin subqueries like:
+--   EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin')
+-- because the WHERE clause satisfies user_roles_select_own.
+-- Admin bulk user listing is done via the admin-list-users edge function (service role, bypasses RLS).
 
 -- ============================================================
 -- CONTACT_MESSAGES — fix RLS to use user_roles (not profiles.is_admin)
