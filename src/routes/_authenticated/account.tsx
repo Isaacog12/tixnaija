@@ -360,7 +360,7 @@ function AccountPage() {
           <div className="md:col-span-2 mt-4 md:mt-0">
             <OrganizerApplicationCard
               app={myApp ?? null}
-              userEmail={data?.user.email ?? ""}
+              userEmail={data?.email ?? ""}
               profileFullName={data?.profile?.full_name ?? ""}
               profilePhone={data?.profile?.phone ?? ""}
               isOrganizer={myApp?.status === "approved"}
