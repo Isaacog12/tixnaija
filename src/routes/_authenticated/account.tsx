@@ -358,11 +358,12 @@ function AccountPage() {
             </p>
           </div>
           <div className="md:col-span-2 mt-4 md:mt-0">
-            <OrganizerApplicationFlow
+            <OrganizerApplicationCard
               app={myApp ?? null}
               userEmail={data?.user.email ?? ""}
               profileFullName={data?.profile?.full_name ?? ""}
               profilePhone={data?.profile?.phone ?? ""}
+              isOrganizer={myApp?.status === "approved"}
               onSubmitted={() => qc.invalidateQueries({ queryKey: ["my-organizer-application"] })}
             />
           </div>
