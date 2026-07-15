@@ -196,7 +196,7 @@ function EventDetailPage() {
           p_tickets: ticketsPayload,
           p_amount_paid: 0,
           p_payment_reference: `FREE_${Date.now()}_${Math.random().toString(36).substring(7)}`,
-          p_promo_code_id: appliedPromo?.id || null,
+          p_promo_code_id: appliedPromo?.id ?? undefined,
         });
 
         if (checkoutError) {

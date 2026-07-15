@@ -159,7 +159,6 @@ function ScannerPage() {
               onScan={(result) => handleScan(result[0].rawValue)}
               formats={["qr_code"]}
               components={{
-                audio: true, // Play beep on scan
                 finder: true, // Show scanning box
               }}
             />

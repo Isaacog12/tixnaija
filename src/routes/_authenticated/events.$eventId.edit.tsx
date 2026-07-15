@@ -226,7 +226,7 @@ function EditEventPage() {
           <CompTicketsDialog eventId={eventId} ticketTypes={data.types} />
           {data.event.status !== "cancelled" && (
             <>
-              <PostponeEventDialog eventId={eventId} eventStart={data.event.start_datetime} eventEnd={data.event.end_datetime} />
+              <PostponeEventDialog eventId={eventId} eventStart={data.event.start_datetime} eventEnd={data.event.end_datetime ?? undefined} />
               <CancelEventDialog eventId={eventId} />
             </>
           )}
@@ -618,7 +618,7 @@ function PostponeEventDialog({ eventId, eventStart, eventEnd }: { eventId: strin
     const { error } = await supabase.rpc("postpone_event", {
       p_event_id: eventId,
       p_new_start: new Date(start).toISOString(),
-      p_new_end: end ? new Date(end).toISOString() : undefined,
+      p_new_end: end ? new Date(end).toISOString() : null,
       p_note: note || "",
     });
     setBusy(false);
