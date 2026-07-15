@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   Users, Calendar, BarChart3, Search, MoreVertical,
-  Ban, CheckCircle2, ClipboardList, ExternalLink, ShieldOff, ShieldCheck,
+  Ban, CheckCircle2, ClipboardList, ExternalLink, ShieldOff, ShieldCheck, Trash2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/currency";
@@ -180,11 +180,25 @@ function AdminDashboard() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const deleteMessage = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase.from("contact_messages" as any) as any)
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Message deleted.");
+      qc.invalidateQueries({ queryKey: ["admin-contact-messages"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   // ── Derived ────────────────────────────────────────────────
 
   const filteredUsers = (users ?? []).filter((u) => {
     const q = userSearch.toLowerCase();
-    return !q || u.full_name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+    return !q || u.full_name.toLowerCase().includes(q);
   });
 
   // ── Render ─────────────────────────────────────────────────
@@ -436,7 +450,7 @@ function AdminDashboard() {
                 title={msg.is_read ? "" : "Click to mark as read"}
               >
                 <div className="flex justify-between items-start gap-2">
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <h3 className="font-medium text-sm truncate">{msg.name}</h3>
                     <a
                       href={`mailto:${msg.email}`}
@@ -446,12 +460,27 @@ function AdminDashboard() {
                       {msg.email}
                     </a>
                   </div>
-                  <Badge
-                    variant={msg.is_read ? "secondary" : "default"}
-                    className="text-[10px] h-5 shrink-0 px-1.5"
-                  >
-                    {msg.is_read ? "Read" : "New"}
-                  </Badge>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Badge
+                      variant={msg.is_read ? "secondary" : "default"}
+                      className="text-[10px] h-5 px-1.5"
+                    >
+                      {msg.is_read ? "Read" : "New"}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteMessage.mutate(msg.id);
+                      }}
+                      disabled={deleteMessage.isPending}
+                      title="Delete message"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
                 <div className="flex-1">
                   {msg.topic && (
