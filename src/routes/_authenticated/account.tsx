@@ -347,6 +347,30 @@ function AccountPage() {
 
         {/* Payout Bank Account Section */}
         <div className="grid gap-8 md:grid-cols-3">
+          {/* Organizer Application Flow */}
+          <div className="md:col-span-1 mt-8 md:mt-0 pt-8 md:pt-0 border-t md:border-t-0 border-border">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              Organizer Status
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Apply to become a verified organizer to create events and sell tickets.
+            </p>
+          </div>
+          <div className="md:col-span-2 mt-4 md:mt-0">
+            <OrganizerApplicationFlow
+              app={myApp ?? null}
+              userEmail={data?.user.email ?? ""}
+              profileFullName={data?.profile?.full_name ?? ""}
+              profilePhone={data?.profile?.phone ?? ""}
+              onSubmitted={() => qc.invalidateQueries({ queryKey: ["my-organizer-application"] })}
+            />
+          </div>
+
+          <div className="col-span-1 md:col-span-3">
+            <hr className="my-2 border-border" />
+          </div>
+
           <div className="md:col-span-1">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <Landmark className="h-5 w-5 text-primary" />
