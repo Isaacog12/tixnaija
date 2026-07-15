@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Users, Calendar, BarChart3, Search, MoreVertical, Ban, CheckCircle2, ClipboardList } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -91,11 +91,13 @@ function AdminDashboard() {
     queryFn: fetchAdminData,
   });
 
-  if (isLoading) return <div className="mx-auto max-w-7xl px-4 py-10 text-sm text-muted-foreground">Loading admin data…</div>;
-  if (error) return <div className="mx-auto max-w-7xl px-4 py-10 text-sm text-destructive">{(error as Error).message}</div>;
+  const navigate = useNavigate();
+
+  if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading admin data…</div>;
+  if (error) return <div className="p-8 text-center text-destructive">Error loading data.</div>;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10">
+    <div className="mx-auto max-w-7xl px-4 py-8">
       <div className="mb-8">
         <h1 className="font-display text-4xl md:text-5xl">Admin Portal</h1>
         <p className="text-muted-foreground mt-1">Platform overview and moderation.</p>
@@ -106,8 +108,8 @@ function AdminDashboard() {
         <StatCard icon={Users} label="Total Users" value={data?.stats.users.toLocaleString() || "0"} />
         <StatCard icon={Calendar} label="Total Events" value={data?.stats.events.toLocaleString() || "0"} />
         <StatCard icon={BarChart3} label="Total Volume" value={formatNaira(data?.stats.revenueKobo || 0)} className="text-gradient-sunset" />
-        <Link to="/admin/organizer-applications" className="group block">
-          <div className="rounded-2xl border border-amber-500/30 bg-card/60 p-6 flex items-start gap-4 shadow-sm hover:border-amber-500/60 transition">
+        <div onClick={() => navigate({ to: "/admin/organizer-applications" })} className="group block cursor-pointer">
+          <div className="rounded-2xl border border-amber-500/30 bg-card/60 p-6 flex items-start gap-4 shadow-sm hover:border-amber-500/60 transition h-full">
             <div className="rounded-xl bg-amber-500/10 p-3 text-amber-500 group-hover:bg-amber-500/20 transition">
               <ClipboardList className="h-6 w-6" />
             </div>
@@ -119,7 +121,7 @@ function AdminDashboard() {
               <p className="mt-0.5 text-xs text-amber-500/70">Review now →</p>
             </div>
           </div>
-        </Link>
+        </div>
       </div>
 
       <div className="grid gap-10 lg:grid-cols-2">

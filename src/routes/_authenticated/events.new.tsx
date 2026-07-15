@@ -98,7 +98,7 @@ function NewEventPage() {
           .from("user_roles")
           .select("role")
           .eq("user_id", userData.user.id)
-          .eq("role", "organizer")
+          .in("role", ["organizer", "admin"])
           .limit(1),
         supabase
           .from("profiles")
