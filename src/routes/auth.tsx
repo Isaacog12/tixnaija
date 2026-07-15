@@ -86,11 +86,11 @@ function AuthPage() {
         
         {/* The Forms Container - Slides left or right */}
         <div 
-          className={`hidden md:block absolute top-0 h-full w-1/2 transition-transform duration-[800ms] ease-[cubic-bezier(0.65,0,0.35,1)] z-10 bg-card
+          className={`hidden md:block absolute top-0 h-full w-1/2 transition-transform duration-[1000ms] ease-[cubic-bezier(0.16,1,0.3,1)] z-10 bg-card
           ${isSignUp ? "translate-x-0" : "translate-x-full"}`}
         >
           {/* Sign Up Form (Left Side content) */}
-          <div className={`absolute inset-0 flex flex-col justify-center p-12 lg:p-16 transition-all duration-[600ms] delay-100 ${isSignUp ? 'opacity-100 z-20 translate-x-0' : 'opacity-0 z-0 pointer-events-none -translate-x-12'}`}>
+          <div className={`absolute inset-0 flex flex-col justify-center p-12 lg:p-16 transition-all duration-[700ms] delay-100 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSignUp ? 'opacity-100 z-20 translate-x-0' : 'opacity-0 z-0 pointer-events-none -translate-x-12'}`}>
             <Link to="/" className="absolute top-8 left-8 flex items-baseline">
               <span className="font-display text-2xl leading-none tracking-[0.02em]">TIX</span>
               <span className="font-display text-2xl leading-none font-light tracking-[0.02em] text-gradient-sunset">NAIJA</span>
@@ -108,7 +108,7 @@ function AuthPage() {
           </div>
 
           {/* Sign In Form (Right Side content) */}
-          <div className={`absolute inset-0 flex flex-col justify-center p-12 lg:p-16 transition-all duration-[600ms] delay-100 ${!isSignUp ? 'opacity-100 z-20 translate-x-0' : 'opacity-0 z-0 pointer-events-none translate-x-12'}`}>
+          <div className={`absolute inset-0 flex flex-col justify-center p-12 lg:p-16 transition-all duration-[700ms] delay-100 ease-[cubic-bezier(0.16,1,0.3,1)] ${!isSignUp ? 'opacity-100 z-20 translate-x-0' : 'opacity-0 z-0 pointer-events-none translate-x-12'}`}>
             <Link to="/" className="absolute top-8 right-8 flex items-baseline">
               <span className="font-display text-2xl leading-none tracking-[0.02em]">TIX</span>
               <span className="font-display text-2xl leading-none font-light tracking-[0.02em] text-gradient-sunset">NAIJA</span>
@@ -128,7 +128,7 @@ function AuthPage() {
 
         {/* The Illustration Overlay - Slides opposite to the forms */}
         <div 
-          className={`hidden md:block absolute top-0 h-full w-1/2 transition-transform duration-[800ms] ease-[cubic-bezier(0.65,0,0.35,1)] z-20 overflow-hidden shadow-2xl
+          className={`hidden md:block absolute top-0 h-full w-1/2 transition-transform duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] z-20 overflow-hidden shadow-2xl
           ${isSignUp ? "translate-x-full" : "translate-x-0"}`}
         >
           <div className="relative h-full w-full bg-muted">
@@ -136,7 +136,7 @@ function AuthPage() {
             <img 
               src="/auth-illustration.png" 
               alt="Party scene" 
-              className={`absolute inset-0 h-full w-full object-cover transition-transform duration-[1000ms] ${isSignUp ? 'scale-100' : 'scale-110'}`} 
+              className={`absolute inset-0 h-full w-full object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${isSignUp ? 'scale-100' : 'scale-110'}`} 
             />
             {/* Dark/color overlay for text readability */}
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
