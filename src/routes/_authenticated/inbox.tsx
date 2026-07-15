@@ -32,13 +32,41 @@ function InboxPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["messages"] });
+      queryClient.invalidateQueries({ queryKey: ["unread-messages"] });
     },
   });
 
+  const markAllRead = useMutation({
+    mutationFn: async () => {
+      const { error } = await (supabase.from("messages" as any) as any).update({ is_read: true }).eq("is_read", false);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
+      queryClient.invalidateQueries({ queryKey: ["unread-messages"] });
+    },
+  });
+
+  const hasUnread = messages?.some((m: any) => !m.is_read);
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
-      <h1 className="font-display text-4xl">Inbox</h1>
-      <p className="text-muted-foreground mt-2">Your tickets and system messages.</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="font-display text-4xl">Inbox</h1>
+          <p className="text-muted-foreground mt-2">Your tickets and system messages.</p>
+        </div>
+        {hasUnread && (
+          <Button 
+            variant="outline" 
+            onClick={() => markAllRead.mutate()} 
+            disabled={markAllRead.isPending}
+          >
+            <CheckCircle2 className="mr-2 h-4 w-4" />
+            Mark all as read
+          </Button>
+        )}
+      </div>
 
       <div className="mt-8 space-y-4">
         {isLoading ? (
