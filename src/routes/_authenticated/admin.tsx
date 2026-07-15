@@ -108,7 +108,7 @@ function AdminDashboard() {
         <StatCard icon={Users} label="Total Users" value={data?.stats.users.toLocaleString() || "0"} />
         <StatCard icon={Calendar} label="Total Events" value={data?.stats.events.toLocaleString() || "0"} />
         <StatCard icon={BarChart3} label="Total Volume" value={formatNaira(data?.stats.revenueKobo || 0)} className="text-gradient-sunset" />
-        <div onClick={() => { console.log('review now clicked'); window.location.href = "/admin/organizer-applications"; }} className="group block cursor-pointer">
+        <Link to="/admin/organizer-applications" className="group block cursor-pointer">
           <div className="rounded-2xl border border-amber-500/30 bg-card/60 p-6 flex items-start gap-4 shadow-sm hover:border-amber-500/60 transition h-full">
             <div className="rounded-xl bg-amber-500/10 p-3 text-amber-500 group-hover:bg-amber-500/20 transition">
               <ClipboardList className="h-6 w-6" />
@@ -121,7 +121,7 @@ function AdminDashboard() {
               <p className="mt-0.5 text-xs text-amber-500/70">Review now →</p>
             </div>
           </div>
-        </div>
+        </Link>
       </div>
 
       <div className="grid gap-10 lg:grid-cols-2">

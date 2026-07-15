@@ -23,9 +23,9 @@ import { Route as CheckoutVerifyRouteImport } from './routes/checkout.verify'
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/inbox'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
-import { Route as AuthenticatedAdminOrganizerApplicationsRouteImport } from './routes/_authenticated/admin.organizer-applications'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedEventsNewRouteImport } from './routes/_authenticated/events.new'
+import { Route as AuthenticatedAdminOrganizerApplicationsRouteImport } from './routes/_authenticated/admin_.organizer-applications'
 import { Route as AuthenticatedOrdersOrderIdTicketsRouteImport } from './routes/_authenticated/orders.$orderId.tickets'
 import { Route as AuthenticatedEventsEventIdScanRouteImport } from './routes/_authenticated/events.$eventId.scan'
 import { Route as AuthenticatedEventsEventIdEditRouteImport } from './routes/_authenticated/events.$eventId.edit'
@@ -109,6 +109,12 @@ const AuthenticatedEventsNewRoute = AuthenticatedEventsNewRouteImport.update({
   path: '/events/new',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminOrganizerApplicationsRoute =
+  AuthenticatedAdminOrganizerApplicationsRouteImport.update({
+    id: '/admin_/organizer-applications',
+    path: '/admin/organizer-applications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOrdersOrderIdTicketsRoute =
   AuthenticatedOrdersOrderIdTicketsRouteImport.update({
     id: '/orders/$orderId/tickets',
@@ -119,12 +125,6 @@ const AuthenticatedEventsEventIdScanRoute =
   AuthenticatedEventsEventIdScanRouteImport.update({
     id: '/events/$eventId/scan',
     path: '/events/$eventId/scan',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminOrganizerApplicationsRoute =
-  AuthenticatedAdminOrganizerApplicationsRouteImport.update({
-    id: '/admin/organizer-applications',
-    path: '/admin/organizer-applications',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedEventsEventIdEditRoute =
@@ -145,11 +145,11 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
-  '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
   '/e/$slug': typeof ESlugRoute
+  '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/events/$eventId/scan': typeof AuthenticatedEventsEventIdScanRoute
@@ -166,11 +166,11 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
-  '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
   '/e/$slug': typeof ESlugRoute
+  '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/events/$eventId/scan': typeof AuthenticatedEventsEventIdScanRoute
@@ -189,11 +189,11 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
-  '/_authenticated/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
   '/e/$slug': typeof ESlugRoute
+  '/_authenticated/admin_/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/_authenticated/events/new': typeof AuthenticatedEventsNewRoute
   '/_authenticated/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/_authenticated/events/$eventId/scan': typeof AuthenticatedEventsEventIdScanRoute
@@ -212,11 +212,11 @@ export interface FileRouteTypes {
     | '/terms'
     | '/account'
     | '/admin'
-    | '/admin/organizer-applications'
     | '/dashboard'
     | '/inbox'
     | '/checkout/verify'
     | '/e/$slug'
+    | '/admin/organizer-applications'
     | '/events/new'
     | '/events/$eventId/edit'
     | '/events/$eventId/scan'
@@ -233,11 +233,11 @@ export interface FileRouteTypes {
     | '/terms'
     | '/account'
     | '/admin'
-    | '/admin/organizer-applications'
     | '/dashboard'
     | '/inbox'
     | '/checkout/verify'
     | '/e/$slug'
+    | '/admin/organizer-applications'
     | '/events/new'
     | '/events/$eventId/edit'
     | '/events/$eventId/scan'
@@ -255,11 +255,11 @@ export interface FileRouteTypes {
     | '/terms'
     | '/_authenticated/account'
     | '/_authenticated/admin'
-    | '/_authenticated/admin/organizer-applications'
     | '/_authenticated/dashboard'
     | '/_authenticated/inbox'
     | '/checkout/verify'
     | '/e/$slug'
+    | '/_authenticated/admin_/organizer-applications'
     | '/_authenticated/events/new'
     | '/_authenticated/events/$eventId/edit'
     | '/_authenticated/events/$eventId/scan'
@@ -380,13 +380,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/organizer-applications': {
-      id: '/_authenticated/admin/organizer-applications'
-      path: '/admin/organizer-applications'
-      fullPath: '/admin/organizer-applications'
-      preLoaderRoute: typeof AuthenticatedAdminOrganizerApplicationsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/account': {
       id: '/_authenticated/account'
       path: '/account'
@@ -399,6 +392,13 @@ declare module '@tanstack/react-router' {
       path: '/events/new'
       fullPath: '/events/new'
       preLoaderRoute: typeof AuthenticatedEventsNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin_/organizer-applications': {
+      id: '/_authenticated/admin_/organizer-applications'
+      path: '/admin/organizer-applications'
+      fullPath: '/admin/organizer-applications'
+      preLoaderRoute: typeof AuthenticatedAdminOrganizerApplicationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/orders/$orderId/tickets': {
@@ -428,9 +428,9 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
-  AuthenticatedAdminOrganizerApplicationsRoute: typeof AuthenticatedAdminOrganizerApplicationsRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
+  AuthenticatedAdminOrganizerApplicationsRoute: typeof AuthenticatedAdminOrganizerApplicationsRoute
   AuthenticatedEventsNewRoute: typeof AuthenticatedEventsNewRoute
   AuthenticatedEventsEventIdEditRoute: typeof AuthenticatedEventsEventIdEditRoute
   AuthenticatedEventsEventIdScanRoute: typeof AuthenticatedEventsEventIdScanRoute
@@ -440,9 +440,10 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
-  AuthenticatedAdminOrganizerApplicationsRoute: AuthenticatedAdminOrganizerApplicationsRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
+  AuthenticatedAdminOrganizerApplicationsRoute:
+    AuthenticatedAdminOrganizerApplicationsRoute,
   AuthenticatedEventsNewRoute: AuthenticatedEventsNewRoute,
   AuthenticatedEventsEventIdEditRoute: AuthenticatedEventsEventIdEditRoute,
   AuthenticatedEventsEventIdScanRoute: AuthenticatedEventsEventIdScanRoute,

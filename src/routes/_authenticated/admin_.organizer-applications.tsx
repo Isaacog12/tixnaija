@@ -21,7 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 export const Route = createFileRoute(
-  "/_authenticated/admin/organizer-applications"
+  "/_authenticated/admin_/organizer-applications"
 )({
   beforeLoad: async () => {
     const {
