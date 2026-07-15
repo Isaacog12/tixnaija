@@ -72,20 +72,36 @@ async function fetchAdminStats() {
 }
 
 async function fetchAdminUsers() {
-  const { data: { session } } = await supabase.auth.getSession();
-  const res = await supabase.functions.invoke("admin-list-users", {
-    headers: { Authorization: `Bearer ${session?.access_token}` },
-  });
-  if (res.error) throw new Error(res.error.message);
-  return (res.data as any).users as {
-    id: string;
-    email: string;
-    full_name: string;
-    created_at: string;
-    suspended: boolean;
-    roles: string[];
-  }[];
+  // Query all profiles (allowed via profiles_select_admin RLS policy)
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select("id, full_name, created_at, suspended")
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (profilesError) throw profilesError;
+
+  // Query all user_roles (allowed via user_roles_select_admin policy using has_role())
+  const { data: allRoles, error: rolesError } = await supabase
+    .from("user_roles")
+    .select("user_id, role");
+  if (rolesError) throw rolesError;
+
+  // Build a role map: userId -> string[]
+  const roleMap = new Map<string, string[]>();
+  for (const r of allRoles ?? []) {
+    if (!roleMap.has(r.user_id)) roleMap.set(r.user_id, []);
+    roleMap.get(r.user_id)!.push(r.role);
+  }
+
+  return (profiles ?? []).map((p: any) => ({
+    id: p.id as string,
+    full_name: (p.full_name ?? "") as string,
+    created_at: p.created_at as string,
+    suspended: (p.suspended ?? false) as boolean,
+    roles: roleMap.get(p.id) ?? ["attendee"],
+  }));
 }
+
 
 async function fetchAdminEvents() {
   const { data, error } = await supabase
@@ -272,7 +288,7 @@ function AdminDashboard() {
                     <tr key={u.id} className={`hover:bg-muted/30 transition-colors ${u.suspended ? "opacity-50" : ""}`}>
                       <td className="px-4 py-3">
                         <div className="font-medium text-foreground">{u.full_name || "Unknown"}</div>
-                        <div className="text-xs text-muted-foreground">{u.email}</div>
+                        <div className="text-xs text-muted-foreground font-mono">{u.id.slice(0, 8)}…</div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1 flex-wrap">
