@@ -22,7 +22,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const { mode } = Route.useSearch();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"signin" | "signup">(mode ?? "signin");
+  const [isSignUp, setIsSignUp] = useState(mode === "signup");
   const [termsAccepted, setTermsAccepted] = useState(false);
 
   // If already signed in, bounce to dashboard.
@@ -47,62 +47,135 @@ function AuthPage() {
   }, []);
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center px-4 py-10">
-      <div className="pointer-events-none absolute inset-0 gradient-sunset opacity-10" />
-      <div className="relative w-full max-w-md">
-        <Link to="/" className="mb-6 flex items-baseline justify-center">
-          <span className="font-display text-3xl leading-none tracking-[0.02em]">TIX</span>
-          <span className="font-display text-3xl leading-none font-light tracking-[0.02em] text-gradient-sunset">
-            NAIJA
-          </span>
-        </Link>
-
-        <div className="rounded-2xl border border-border bg-card/80 p-6 shadow-glow backdrop-blur">
-          <div className="mb-6">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {tab === "signin" ? "Sign in to TixNaija" : "Create your account"}
+    <div className="relative flex min-h-screen items-center justify-center bg-background/50 p-4 sm:p-8">
+      {/* Background decoration */}
+      <div className="pointer-events-none absolute inset-0 gradient-sunset opacity-5" />
+      
+      {/* Main Container */}
+      <div className="relative w-full max-w-[1000px] h-[650px] bg-card rounded-[2rem] border border-border shadow-2xl overflow-hidden flex flex-col md:flex-row">
+        
+        {/* Mobile View: Just a stacking card that toggles (hidden on md+) */}
+        <div className="md:hidden flex-1 flex flex-col items-center justify-center p-6 w-full h-full overflow-y-auto">
+          <Link to="/" className="mb-8 flex items-baseline justify-center">
+            <span className="font-display text-4xl leading-none tracking-[0.02em]">TIX</span>
+            <span className="font-display text-4xl leading-none font-light tracking-[0.02em] text-gradient-sunset">NAIJA</span>
+          </Link>
+          <div className="w-full max-w-sm">
+            <h1 className="text-2xl font-semibold tracking-tight mb-2">
+              {isSignUp ? "Create Account" : "Sign In"}
             </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {tab === "signin" 
-                ? "Welcome back! Please enter your details." 
-                : "Enter your details to get started."}
+            <p className="text-sm text-muted-foreground mb-6">
+              {isSignUp ? "Enter your details to get started." : "Welcome back! Please enter your details."}
             </p>
-          </div>
-
-          <EmailForm mode={tab} termsAccepted={termsAccepted} setTermsAccepted={setTermsAccepted} />
-
-          <div className="my-6 flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="h-px flex-1 bg-border" />
-            or continue with
-            <span className="h-px flex-1 bg-border" />
-          </div>
-
-          <GoogleButton mode={tab} termsAccepted={termsAccepted} />
-
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            {tab === "signin" ? (
-              <>
-                Don't have an account?{" "}
-                <button
-                  onClick={() => setTab("signup")}
-                  className="font-medium text-primary hover:underline"
-                >
-                  Sign up
-                </button>
-              </>
-            ) : (
-              <>
-                Already have an account?{" "}
-                <button
-                  onClick={() => setTab("signin")}
-                  className="font-medium text-primary hover:underline"
-                >
-                  Sign in
-                </button>
-              </>
-            )}
+            <EmailForm mode={isSignUp ? "signup" : "signin"} termsAccepted={termsAccepted} setTermsAccepted={setTermsAccepted} />
+            <div className="my-6 flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="h-px flex-1 bg-border" /> or continue with <span className="h-px flex-1 bg-border" />
+            </div>
+            <GoogleButton mode={isSignUp ? "signup" : "signin"} termsAccepted={termsAccepted} />
+            <div className="mt-8 text-center text-sm text-muted-foreground">
+              {isSignUp ? (
+                <>Already have an account? <button onClick={() => setIsSignUp(false)} className="font-medium text-primary hover:underline">Sign in</button></>
+              ) : (
+                <>Don't have an account? <button onClick={() => setIsSignUp(true)} className="font-medium text-primary hover:underline">Sign up</button></>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Desktop View: Sliding Panels (hidden on mobile) */}
+        
+        {/* The Forms Container - Slides left or right */}
+        <div 
+          className={`hidden md:block absolute top-0 h-full w-1/2 transition-transform duration-[800ms] ease-[cubic-bezier(0.65,0,0.35,1)] z-10 bg-card
+          ${isSignUp ? "translate-x-0" : "translate-x-full"}`}
+        >
+          {/* Sign Up Form (Left Side content) */}
+          <div className={`absolute inset-0 flex flex-col justify-center p-12 lg:p-16 transition-all duration-[600ms] delay-100 ${isSignUp ? 'opacity-100 z-20 translate-x-0' : 'opacity-0 z-0 pointer-events-none -translate-x-12'}`}>
+            <Link to="/" className="absolute top-8 left-8 flex items-baseline">
+              <span className="font-display text-2xl leading-none tracking-[0.02em]">TIX</span>
+              <span className="font-display text-2xl leading-none font-light tracking-[0.02em] text-gradient-sunset">NAIJA</span>
+            </Link>
+            <h2 className="text-3xl font-display mb-2">Create Account</h2>
+            <p className="text-sm text-muted-foreground mb-8">Enter your details to get started.</p>
+            
+            <EmailForm mode="signup" termsAccepted={termsAccepted} setTermsAccepted={setTermsAccepted} />
+            
+            <div className="my-6 flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="h-px flex-1 bg-border" /> or continue with <span className="h-px flex-1 bg-border" />
+            </div>
+            
+            <GoogleButton mode="signup" termsAccepted={termsAccepted} />
+          </div>
+
+          {/* Sign In Form (Right Side content) */}
+          <div className={`absolute inset-0 flex flex-col justify-center p-12 lg:p-16 transition-all duration-[600ms] delay-100 ${!isSignUp ? 'opacity-100 z-20 translate-x-0' : 'opacity-0 z-0 pointer-events-none translate-x-12'}`}>
+            <Link to="/" className="absolute top-8 right-8 flex items-baseline">
+              <span className="font-display text-2xl leading-none tracking-[0.02em]">TIX</span>
+              <span className="font-display text-2xl leading-none font-light tracking-[0.02em] text-gradient-sunset">NAIJA</span>
+            </Link>
+            <h2 className="text-3xl font-display mb-2">Welcome Back</h2>
+            <p className="text-sm text-muted-foreground mb-8">Please enter your details to sign in.</p>
+            
+            <EmailForm mode="signin" />
+            
+            <div className="my-6 flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="h-px flex-1 bg-border" /> or continue with <span className="h-px flex-1 bg-border" />
+            </div>
+            
+            <GoogleButton mode="signin" />
+          </div>
+        </div>
+
+        {/* The Illustration Overlay - Slides opposite to the forms */}
+        <div 
+          className={`hidden md:block absolute top-0 h-full w-1/2 transition-transform duration-[800ms] ease-[cubic-bezier(0.65,0,0.35,1)] z-20 overflow-hidden shadow-2xl
+          ${isSignUp ? "translate-x-full" : "translate-x-0"}`}
+        >
+          <div className="relative h-full w-full bg-muted">
+            {/* The background image */}
+            <img 
+              src="/auth-illustration.png" 
+              alt="Party scene" 
+              className={`absolute inset-0 h-full w-full object-cover transition-transform duration-[1000ms] ${isSignUp ? 'scale-100' : 'scale-110'}`} 
+            />
+            {/* Dark/color overlay for text readability */}
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+            <div className="absolute inset-0 gradient-sunset mix-blend-multiply opacity-60" />
+            
+            {/* Text & Toggle Button for Sign In (Visible when signing up) */}
+            <div className={`absolute inset-0 flex flex-col items-center justify-center p-12 text-center text-white transition-all duration-[600ms] delay-200 ${isSignUp ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}>
+              <h2 className="font-display text-4xl mb-4">Already a member?</h2>
+              <p className="mb-8 text-white/80 max-w-sm">
+                To keep connected with us and discover more amazing events, please log in with your personal info.
+              </p>
+              <Button 
+                variant="outline" 
+                size="lg"
+                className="rounded-full border-white/50 text-white bg-white/10 backdrop-blur-md hover:bg-white hover:text-black transition-all px-12"
+                onClick={() => setIsSignUp(false)}
+              >
+                Sign In
+              </Button>
+            </div>
+            
+            {/* Text & Toggle Button for Sign Up (Visible when signing in) */}
+            <div className={`absolute inset-0 flex flex-col items-center justify-center p-12 text-center text-white transition-all duration-[600ms] delay-200 ${!isSignUp ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-8 pointer-events-none'}`}>
+              <h2 className="font-display text-4xl mb-4">New here?</h2>
+              <p className="mb-8 text-white/80 max-w-sm">
+                Join thousands of Nigerians discovering and creating the best events across the country.
+              </p>
+              <Button 
+                variant="outline"
+                size="lg"
+                className="rounded-full border-white/50 text-white bg-white/10 backdrop-blur-md hover:bg-white hover:text-black transition-all px-12"
+                onClick={() => setIsSignUp(true)}
+              >
+                Sign Up
+              </Button>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
