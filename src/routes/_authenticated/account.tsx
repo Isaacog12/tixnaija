@@ -438,8 +438,8 @@ function AccountPage() {
                   {connectingPayout
                     ? "Connecting…"
                     : data?.profile?.paystack_subaccount_code
-                    ? "Update Account"
-                    : "Connect Account"}
+                      ? "Update Account"
+                      : "Connect Account"}
                 </Button>
               </div>
             </form>
@@ -742,7 +742,7 @@ function ApplicationForm({
       {/* ID photo upload */}
       <div>
         <Label className="text-sm font-medium">
-          ID Photo (selfie holding a government-issued ID) *
+          ID Photo (selfie holding a government-issued ID)NIN *
         </Label>
         <div className="mt-2 rounded-xl border-2 border-dashed border-border bg-muted/20 p-5">
           <div className="flex flex-col items-center gap-3 text-center">
