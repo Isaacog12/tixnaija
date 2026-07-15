@@ -60,6 +60,9 @@ export function SiteNav() {
           <Link to="/browse" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
             Browse events
           </Link>
+          <Link to="/how-it-works" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+            How it works
+          </Link>
           {user && (
             <Link to="/dashboard" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
               Dashboard
