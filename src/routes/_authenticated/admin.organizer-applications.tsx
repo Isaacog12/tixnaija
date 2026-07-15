@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   CheckCircle2,
   XCircle,
@@ -244,7 +244,13 @@ function ApplicationCard({
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [photoLoading, setPhotoLoading] = useState(false);
   const [photoAttempted, setPhotoAttempted] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  // Expand pending applications by default so action buttons are visible immediately
+  const [expanded, setExpanded] = useState(isPending);
+
+  // Load photo on mount if expanded by default
+  useEffect(() => {
+    if (expanded) loadPhoto();
+  }, []);
 
   async function loadPhoto() {
     if (photoUrl || photoLoading || photoAttempted) return;
