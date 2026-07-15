@@ -92,24 +92,25 @@ function NewEventPage() {
       }
       setUserId(userData.user.id);
 
-      // Live role check directly from DB
-      const { data: roles, error } = await supabase
-        .from("user_roles")
-        .select("*")
-        .eq("user_id", userData.user.id)
-        .eq("role", "organizer");
-      
-      if (!error && roles && roles.length > 0) {
+      // Run both queries in parallel — they don't depend on each other
+      const [rolesResult, profileResult] = await Promise.all([
+        supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userData.user.id)
+          .eq("role", "organizer")
+          .limit(1),
+        supabase
+          .from("profiles")
+          .select("paystack_subaccount_code")
+          .eq("id", userData.user.id)
+          .maybeSingle(),
+      ]);
+
+      if (!rolesResult.error && rolesResult.data && rolesResult.data.length > 0) {
         setHasOrganizerRole(true);
       }
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("paystack_subaccount_code")
-        .eq("id", userData.user.id)
-        .maybeSingle();
-        
-      if (profile?.paystack_subaccount_code) {
+      if (profileResult.data?.paystack_subaccount_code) {
         setHasPayoutAccount(true);
       }
 
@@ -117,34 +118,6 @@ function NewEventPage() {
     }
     checkRole();
   }, []);
-
-  async function becomeOrganizer() {
-    setBusy(true);
-    try {
-      if (!userId) throw new Error("Not signed in");
-      
-      // Grant organizer role
-      const { error: roleErr } = await supabase
-        .from("user_roles")
-        .upsert({ user_id: userId, role: "organizer" }, { onConflict: "user_id,role", ignoreDuplicates: true });
-      
-      if (roleErr) throw new Error("Failed to grant organizer role: " + roleErr.message);
-
-      // Update profiles using the secure RPC
-      await supabase.rpc("set_organizer_status", { is_org: true });
-
-      // Refresh session
-      const { error: refreshErr } = await supabase.auth.refreshSession();
-      if (refreshErr) console.warn("Failed to refresh session:", refreshErr);
-
-      setHasOrganizerRole(true);
-      toast.success("You are now an organizer!");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to become organizer");
-    } finally {
-      setBusy(false);
-    }
-  }
 
   function updateTicket(idx: number, patch: Partial<TicketDraft>) {
     setTickets((prev) => prev.map((t, i) => (i === idx ? { ...t, ...patch } : t)));
@@ -236,8 +209,6 @@ function NewEventPage() {
         status: (publish ? "published" : "draft") as "published" | "draft",
       };
       
-      console.log("DEBUG: Inserting event payload", payload);
-
       const { data: event, error: evErr } = await supabase
         .from("events")
         .insert(payload)
@@ -277,17 +248,16 @@ function NewEventPage() {
   if (!hasOrganizerRole) {
     return (
       <div className="mx-auto max-w-lg px-4 py-24 text-center">
-        <h1 className="font-display text-4xl text-gradient-sunset">Become an Organizer</h1>
+        <h1 className="font-display text-4xl text-gradient-sunset">Organizer Access Required</h1>
         <p className="mt-4 text-muted-foreground">
-          You need an organizer profile to create events. It's free and instant.
+          You need an approved organizer account to create events.
+          Submit an application from your Account Settings page.
         </p>
-        <Button 
-          onClick={becomeOrganizer} 
-          disabled={busy}
+        <Button
+          asChild
           className="mt-8 gradient-sunset text-primary-foreground shadow-glow hover:opacity-90"
         >
-          {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Setup Organizer Profile
+          <Link to="/account">Go to Account Settings</Link>
         </Button>
       </div>
     );
