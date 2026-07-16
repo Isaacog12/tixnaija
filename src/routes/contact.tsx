@@ -11,7 +11,7 @@ export const Route = createFileRoute("/contact")({
   component: ContactPage,
   head: () => ({
     meta: [
-      { title: "Contact Us â€” TixNaija" },
+      { title: "Contact Us — TixNaija" },
       {
         name: "description",
         content:
@@ -90,7 +90,7 @@ function ContactPage() {
   return (
     <div className="min-h-screen">
       <SiteNav />
-      {/* â”€â”€ Hero â”€â”€ */}
+      {/* ── Hero ── */}
       <div className="relative overflow-hidden border-b border-border/60">
         <div className="absolute inset-0 gradient-sunset opacity-10 pointer-events-none" />
         <div className="mx-auto max-w-6xl px-4 py-12 md:py-16">
@@ -104,7 +104,7 @@ function ContactPage() {
         </div>
       </div>
 
-      {/* â”€â”€ Body â”€â”€ */}
+      {/* ── Body ── */}
       <div className="mx-auto max-w-6xl px-4 py-12 md:py-16 grid grid-cols-1 md:grid-cols-[1fr_400px] gap-12 items-start">
 
         <div className="space-y-5">
@@ -190,7 +190,7 @@ function ContactPage() {
           </div>
         </div>
 
-        {/* Right â€” form card */}
+        {/* Right — form card */}
         <div className="rounded-2xl border border-border bg-card/80 p-6 md:p-8 shadow-glow backdrop-blur">
           {sent ? (
             <SuccessState name={form.name} onReset={() => { setSent(false); setForm({ name: "", email: "", phone: "", topic: "", message: "" }); }} />
@@ -259,7 +259,7 @@ function ContactPage() {
                   onChange={(e) => update("topic", e.target.value)}
                   className="w-full rounded-md border border-input bg-input px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 >
-                  <option value="">Select a topicâ€¦</option>
+                  <option value="">Select a topic”¦</option>
                   {TOPICS.map((t) => (
                     <option key={t} value={t}>{t}</option>
                   ))}
@@ -276,7 +276,7 @@ function ContactPage() {
                   rows={5}
                   value={form.message}
                   onChange={(e) => update("message", e.target.value)}
-                  placeholder="Tell us what's going on and we'll be in touchâ€¦"
+                  placeholder="Tell us what's going on and we'll be in touch”¦"
                   required
                   className="w-full rounded-md border border-input bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                 />
@@ -293,7 +293,7 @@ function ContactPage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                     </svg>
-                    Sendingâ€¦
+                    Sending”¦
                   </span>
                 ) : (
                   "Send message"
@@ -321,7 +321,7 @@ function SuccessState({ name, onReset }: { name: string; onReset: () => void }) 
         <h2 className="font-display text-3xl">Message sent!</h2>
         <p className="text-muted-foreground text-sm mt-2 max-w-xs leading-relaxed">
           Thanks{name ? `, ${name.split(" ")[0]}` : ""}! We've received your message and
-          will get back to you within <strong className="text-foreground">1â€“2 business days</strong>.
+          will get back to you within <strong className="text-foreground">1”“2 business days</strong>.
         </p>
       </div>
 

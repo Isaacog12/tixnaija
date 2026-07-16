@@ -5,7 +5,7 @@ export const Route = createFileRoute("/terms")({
   component: TermsPage,
   head: () => ({
     meta: [
-      { title: "Terms of Service â€” TixNaija" },
+      { title: "Terms of Service — TixNaija" },
       {
         name: "description",
         content:
@@ -34,7 +34,7 @@ function TermsPage() {
   return (
     <div className="min-h-screen">
       <SiteNav />
-      {/* â”€â”€ Hero header â”€â”€ */}
+      {/* ── Hero header ── */}
       <div className="relative overflow-hidden border-b border-border/60">
         <div className="absolute inset-0 gradient-sunset opacity-10 pointer-events-none" />
         <div className="mx-auto max-w-6xl px-4 py-12 md:py-16">
@@ -47,7 +47,7 @@ function TermsPage() {
         </div>
       </div>
 
-      {/* â”€â”€ Body: sidebar + content â”€â”€ */}
+      {/* ── Body: sidebar + content ── */}
       <div className="mx-auto max-w-6xl px-4 py-12 md:py-16 grid grid-cols-1 md:grid-cols-[220px_1fr] gap-12">
 
         {/* Sticky sidebar TOC */}
@@ -76,7 +76,7 @@ function TermsPage() {
                 to="/privacy"
                 className="text-xs text-muted-foreground hover:text-primary transition"
               >
-                Privacy Policy â†’
+                Privacy Policy →
               </Link>
             </div>
           </div>
@@ -85,12 +85,12 @@ function TermsPage() {
         {/* Main content */}
         <main className="min-w-0 space-y-1">
 
-          {/* Section 1 â€” Overview */}
+          {/* Section 1 — Overview */}
           <section id="overview" className="scroll-mt-8 pb-10 border-b border-border/40">
             <SectionHeading number="01" title="Overview" />
             <p className="text-muted-foreground leading-relaxed mt-4">
-              Welcome to <strong className="text-foreground">TixNaija</strong>. By accessing or using our platform â€”
-              whether as a ticket buyer, event organizer, or general visitor â€” you agree to be bound by these
+              Welcome to <strong className="text-foreground">TixNaija</strong>. By accessing or using our platform —
+              whether as a ticket buyer, event organizer, or general visitor — you agree to be bound by these
               Terms of Service ("Terms"). If you do not agree, please do not use TixNaija.
             </p>
             <p className="text-muted-foreground leading-relaxed mt-3">
@@ -100,7 +100,7 @@ function TermsPage() {
             </p>
           </section>
 
-          {/* Section 2 â€” Role */}
+          {/* Section 2 — Role */}
           <section id="role" className="scroll-mt-8 py-10 border-b border-border/40">
             <SectionHeading number="02" title="Role of TixNaija" />
             <p className="text-muted-foreground leading-relaxed mt-4">
@@ -114,7 +114,7 @@ function TermsPage() {
             </p>
           </section>
 
-          {/* Section 3 â€” Organizers */}
+          {/* Section 3 — Organizers */}
           <section id="organizers" className="scroll-mt-8 py-10 border-b border-border/40">
             <SectionHeading number="03" title="Organizer Responsibilities" />
             <p className="text-muted-foreground leading-relaxed mt-4">
@@ -122,7 +122,7 @@ function TermsPage() {
             </p>
             <ul className="mt-4 space-y-3">
               {[
-                "Provide accurate, complete, and current event information â€” including date, time, venue, ticket types, and pricing.",
+                "Provide accurate, complete, and current event information — including date, time, venue, ticket types, and pricing.",
                 "Honor all valid tickets purchased through TixNaija at the door without dispute.",
                 "Comply with all applicable Nigerian laws, venue regulations, and public safety guidelines.",
                 "Communicate all event changes (postponements, cancellations, venue changes) to TixNaija and your attendees promptly.",
@@ -137,7 +137,7 @@ function TermsPage() {
             </ul>
           </section>
 
-          {/* Section 4 â€” Buyers */}
+          {/* Section 4 — Buyers */}
           <section id="buyers" className="scroll-mt-8 py-10 border-b border-border/40">
             <SectionHeading number="04" title="Buyer Responsibilities" />
             <p className="text-muted-foreground leading-relaxed mt-4">
@@ -146,7 +146,7 @@ function TermsPage() {
             <ul className="mt-4 space-y-3">
               {[
                 "Provide accurate contact information (name, email, phone) so your tickets and event updates can reach you.",
-                "Review all event details carefully before completing your purchase â€” all sales are final unless the Organizer states otherwise.",
+                "Review all event details carefully before completing your purchase — all sales are final unless the Organizer states otherwise.",
                 "Present your QR ticket code and a valid form of identification at the event entrance for check-in.",
                 "Not resell or transfer tickets in ways that violate the Organizer's stated policy.",
                 "Conduct yourself lawfully and respectfully at all events.",
@@ -159,7 +159,7 @@ function TermsPage() {
             </ul>
           </section>
 
-          {/* Section 5 â€” Refunds */}
+          {/* Section 5 — Refunds */}
           <section id="refunds" className="scroll-mt-8 py-10 border-b border-border/40">
             <SectionHeading number="05" title="Refunds, Cancellations & Postponements" />
             <p className="text-muted-foreground leading-relaxed mt-4">
@@ -178,7 +178,7 @@ function TermsPage() {
             </p>
           </section>
 
-          {/* Section 6 â€” Prohibited */}
+          {/* Section 6 — Prohibited */}
           <section id="prohibited" className="scroll-mt-8 py-10 border-b border-border/40">
             <SectionHeading number="06" title="Prohibited Conduct" />
             <p className="text-muted-foreground leading-relaxed mt-4">
@@ -204,7 +204,7 @@ function TermsPage() {
             </p>
           </section>
 
-          {/* Section 7 â€” Liability */}
+          {/* Section 7 — Liability */}
           <section id="liability" className="scroll-mt-8 py-10 border-b border-border/40">
             <SectionHeading number="07" title="Limitation of Liability" />
             <p className="text-muted-foreground leading-relaxed mt-4">
@@ -231,12 +231,12 @@ function TermsPage() {
             </p>
           </section>
 
-          {/* Section 8 â€” Termination */}
+          {/* Section 8 — Termination */}
           <section id="termination" className="scroll-mt-8 py-10 border-b border-border/40">
             <SectionHeading number="08" title="Account Termination" />
             <p className="text-muted-foreground leading-relaxed mt-4">
-              TixNaija reserves the right to suspend, restrict, or permanently terminate any account â€”
-              whether Organizer or Buyer â€” that:
+              TixNaija reserves the right to suspend, restrict, or permanently terminate any account —
+              whether Organizer or Buyer — that:
             </p>
             <ul className="mt-4 space-y-3">
               {[
@@ -257,7 +257,7 @@ function TermsPage() {
             </p>
           </section>
 
-          {/* Section 9 â€” Governing Law */}
+          {/* Section 9 — Governing Law */}
           <section id="governing" className="scroll-mt-8 py-10 border-b border-border/40">
             <SectionHeading number="09" title="Governing Law" />
             <p className="text-muted-foreground leading-relaxed mt-4">
@@ -272,7 +272,7 @@ function TermsPage() {
             </p>
           </section>
 
-          {/* Section 10 â€” Changes */}
+          {/* Section 10 — Changes */}
           <section id="changes" className="scroll-mt-8 py-10">
             <SectionHeading number="10" title="Changes to These Terms" />
             <p className="text-muted-foreground leading-relaxed mt-4">
@@ -297,7 +297,7 @@ function TermsPage() {
                 to="/privacy"
                 className="shrink-0 text-xs font-semibold uppercase tracking-[0.2em] text-primary hover:underline"
               >
-                View Privacy Policy â†’
+                View Privacy Policy →
               </Link>
             </div>
           </section>

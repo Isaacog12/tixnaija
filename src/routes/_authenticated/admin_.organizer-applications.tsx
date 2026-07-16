@@ -143,7 +143,7 @@ function OrganizerApplicationsPage() {
   if (isLoading)
     return (
       <div className="mx-auto max-w-4xl px-4 py-10 text-sm text-muted-foreground">
-        Loading applicationsâ€¦
+        Loading applications”¦
       </div>
     );
   if (error)
@@ -274,7 +274,7 @@ function ApplicationCard({
 
   return (
     <div className="rounded-2xl border border-border bg-card/60 shadow-sm overflow-hidden transition hover:border-primary/30">
-      {/* Header row â€” always visible */}
+      {/* Header row — always visible */}
       <button
         onClick={toggle}
         className="w-full flex items-start justify-between gap-4 p-5 text-left"
@@ -344,7 +344,7 @@ function ApplicationCard({
             </div>
             {photoLoading && (
               <div className="flex h-40 items-center justify-center rounded-xl border border-border bg-muted/20 text-xs text-muted-foreground">
-                Loading photoâ€¦
+                Loading photo”¦
               </div>
             )}
             {photoUrl && (
@@ -375,12 +375,12 @@ function ApplicationCard({
             </div>
           )}
 
-          {/* Action area â€” only for pending */}
+          {/* Action area — only for pending */}
           {isPending && (
             <div className="border-t border-border pt-4 space-y-3">
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                  Internal note (optional â€” sent to applicant on rejection, visible on approval)
+                  Internal note (optional — sent to applicant on rejection, visible on approval)
                 </label>
                 <Textarea
                   value={note}

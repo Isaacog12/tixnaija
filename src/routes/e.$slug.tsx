@@ -23,7 +23,7 @@ export const Route = createFileRoute("/e/$slug")({
   component: EventDetailPage,
   head: ({ params }: { params: { slug: string } }) => ({
     meta: [
-      { title: `${params.slug} â€” TixNaija` },
+      { title: `${params.slug} — TixNaija` },
       { name: "description", content: "Buy tickets to this event on TixNaija." },
     ],
   }),
@@ -413,7 +413,7 @@ function EventDetailPage() {
                 <div>
                   <p className="text-sm font-semibold">Attendee names</p>
                   <p className="text-xs text-muted-foreground">
-                    Add a name for each ticket (optional â€” blanks use your name).
+                    Add a name for each ticket (optional — blanks use your name).
                   </p>
                 </div>
                 {items.map((it) => (
@@ -637,7 +637,7 @@ function EventBody({
             <div className="mt-5 flex items-baseline justify-between border-t border-border pt-4">
               <span className="text-sm text-muted-foreground">Total</span>
               <span className="font-display text-3xl text-gradient-sunset">
-                {totalKobo ? formatNaira(totalKobo) : "â€”"}
+                {totalKobo ? formatNaira(totalKobo) : "—"}
               </span>
             </div>
             <Button

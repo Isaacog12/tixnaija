@@ -142,7 +142,7 @@ function Dashboard() {
                   <span className="text-gradient-sunset">in minutes.</span>
                 </h2>
                 <p className="mt-4 text-base text-muted-foreground">
-                  Create your event, set ticket tiers, track sales in real-time, and scan attendees at the door â€” all in one place.
+                  Create your event, set ticket tiers, track sales in real-time, and scan attendees at the door — all in one place.
                 </p>
                 <div className="mt-6 flex flex-wrap gap-3">
                   {latestApp?.status === "pending" ? (
@@ -245,7 +245,7 @@ function Dashboard() {
       )}
 
 
-      {isLoading && <div className="text-sm text-muted-foreground">Loading your eventsâ€¦</div>}
+      {isLoading && <div className="text-sm text-muted-foreground">Loading your events”¦</div>}
       {error && <div className="text-sm text-destructive">{(error as Error).message}</div>}
 
       {isOrganizer && data && data.events.length === 0 && (

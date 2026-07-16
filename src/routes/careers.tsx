@@ -19,7 +19,7 @@ function CareersPage() {
   return (
     <div className="min-h-screen">
       <SiteNav />
-      {/* â”€â”€ Hero header â”€â”€ */}
+      {/* ── Hero header ── */}
       <div className="relative overflow-hidden border-b border-border/60">
         <div className="absolute inset-0 gradient-sunset opacity-10 pointer-events-none" />
         <div className="mx-auto max-w-4xl px-4 py-12 md:py-16">
@@ -32,7 +32,7 @@ function CareersPage() {
         </div>
       </div>
 
-      {/* â”€â”€ Body â”€â”€ */}
+      {/* ── Body ── */}
       <div className="mx-auto max-w-4xl px-4 py-12 md:py-16">
         <main className="space-y-12">
           
@@ -57,7 +57,7 @@ function CareersPage() {
             </div>
             
             <div className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-6">
-              <p className="font-semibold text-foreground mb-2">Currently not hiring â€” check back as we grow.</p>
+              <p className="font-semibold text-foreground mb-2">Currently not hiring — check back as we grow.</p>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 We are not actively hiring for these positions right now. If you'd like to express interest for future opportunities, you can reach out via our <Link to="/contact" className="text-primary hover:underline">Contact page</Link> or email us at <a href="mailto:tixnaijaapp@gmail.com" className="text-primary hover:underline">tixnaijaapp@gmail.com</a>.
               </p>
@@ -77,7 +77,7 @@ function CareersPage() {
                   Anyone can apply to host and sell tickets to their own events. Manage your listings and keep the majority of your ticket revenue.
                 </p>
                 <div className="mt-4">
-                  <Link to="/how-it-works" className="text-xs uppercase tracking-[0.2em] text-primary hover:underline font-semibold">Learn how to organize â†’</Link>
+                  <Link to="/how-it-works" className="text-xs uppercase tracking-[0.2em] text-primary hover:underline font-semibold">Learn how to organize →</Link>
                 </div>
               </div>
 

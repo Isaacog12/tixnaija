@@ -10,11 +10,11 @@ export const Route = createFileRoute("/how-it-works")({
   component: HowItWorksPage,
   head: () => ({
     meta: [
-      { title: "How It Works â€” TixNaija" },
+      { title: "How It Works — TixNaija" },
       {
         name: "description",
         content:
-          "Learn how to buy tickets, sell tickets, and manage events on TixNaija â€” Nigeria's fastest ticket platform. Step-by-step guide for buyers and organizers.",
+          "Learn how to buy tickets, sell tickets, and manage events on TixNaija — Nigeria's fastest ticket platform. Step-by-step guide for buyers and organizers.",
       },
     ],
   }),
@@ -24,7 +24,7 @@ const BUYER_STEPS = [
   {
     icon: UserPlus,
     title: "Create a free account",
-    body: "Sign up with your email in under 30 seconds. No subscription, no hidden fees â€” your account is always free.",
+    body: "Sign up with your email in under 30 seconds. No subscription, no hidden fees — your account is always free.",
   },
   {
     icon: Search,
@@ -34,7 +34,7 @@ const BUYER_STEPS = [
   {
     icon: CreditCard,
     title: "Pay securely with Paystack",
-    body: "Complete your purchase with cards, bank transfers, or USSD â€” powered by Paystack. Your payment is encrypted and secure.",
+    body: "Complete your purchase with cards, bank transfers, or USSD — powered by Paystack. Your payment is encrypted and secure.",
   },
   {
     icon: QrCode,
@@ -44,7 +44,7 @@ const BUYER_STEPS = [
   {
     icon: ScanLine,
     title: "Show up and scan in",
-    body: "At the event, the organizer scans your QR code at the door. No printing needed â€” your phone screen is your ticket.",
+    body: "At the event, the organizer scans your QR code at the door. No printing needed — your phone screen is your ticket.",
   },
 ];
 
@@ -62,7 +62,7 @@ const ORGANIZER_STEPS = [
   {
     icon: Ticket,
     title: "Publish and share",
-    body: "Hit Publish and your event goes live instantly. Share your unique event link on WhatsApp, Instagram, X â€” anywhere your audience is.",
+    body: "Hit Publish and your event goes live instantly. Share your unique event link on WhatsApp, Instagram, X — anywhere your audience is.",
   },
   {
     icon: BarChart3,
@@ -92,7 +92,7 @@ const FAQ = [
   },
   {
     q: "Can I issue complimentary tickets?",
-    a: "Yes. Organizers can issue comp tickets to specific people directly from the event management dashboard â€” no payment required.",
+    a: "Yes. Organizers can issue comp tickets to specific people directly from the event management dashboard — no payment required.",
   },
   {
     q: "What happens if I need to cancel or postpone an event?",
@@ -113,7 +113,7 @@ function HowItWorksPage() {
     <div className="min-h-screen">
       <SiteNav />
 
-      {/* â”€â”€ Hero â”€â”€ */}
+      {/* ── Hero ── */}
       <div className="relative overflow-hidden border-b border-border/60">
         <div className="absolute inset-0 gradient-sunset opacity-10 pointer-events-none" />
         <div className="mx-auto max-w-6xl px-4 py-14 md:py-20">
@@ -127,7 +127,7 @@ function HowItWorksPage() {
             How TixNaija works
           </h1>
           <p className="text-muted-foreground text-base md:text-lg max-w-xl leading-relaxed">
-            Whether you're going out or putting on a show â€” here's everything you
+            Whether you're going out or putting on a show — here's everything you
             need to know to get started in minutes.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -147,13 +147,13 @@ function HowItWorksPage() {
         </div>
       </div>
 
-      {/* â”€â”€ Buyers Section â”€â”€ */}
+      {/* ── Buyers Section ── */}
       <section id="buyers" className="scroll-mt-20 mx-auto max-w-6xl px-4 py-16 md:py-20">
         <div className="flex items-baseline gap-4 mb-10">
           <span className="font-display text-5xl leading-none text-gradient-sunset">01</span>
           <div className="flex flex-col gap-1">
             <h2 className="font-display text-3xl md:text-4xl leading-tight">For Ticket Buyers</h2>
-            <p className="text-sm text-muted-foreground">Find your event, pay, show up â€” that's it.</p>
+            <p className="text-sm text-muted-foreground">Find your event, pay, show up — that's it.</p>
           </div>
         </div>
 
@@ -198,13 +198,13 @@ function HowItWorksPage() {
         <div className="h-px bg-border" />
       </div>
 
-      {/* â”€â”€ Organizers Section â”€â”€ */}
+      {/* ── Organizers Section ── */}
       <section id="organizers" className="scroll-mt-20 mx-auto max-w-6xl px-4 py-16 md:py-20">
         <div className="flex items-baseline gap-4 mb-10">
           <span className="font-display text-5xl leading-none text-gradient-sunset">02</span>
           <div className="flex flex-col gap-1">
             <h2 className="font-display text-3xl md:text-4xl leading-tight">For Event Organizers</h2>
-            <p className="text-sm text-muted-foreground">Set up, sell out, get paid â€” no listing fees.</p>
+            <p className="text-sm text-muted-foreground">Set up, sell out, get paid — no listing fees.</p>
           </div>
         </div>
 
@@ -240,7 +240,7 @@ function HowItWorksPage() {
                 TixNaija charges <strong className="text-foreground">15%</strong> of each ticket sale.
                 So for a <strong className="text-foreground">â‚¦10,000 ticket</strong>: the buyer pays â‚¦10,000,
                 TixNaija retains <strong className="text-foreground">â‚¦1,500</strong>, and you receive{" "}
-                <strong className="text-foreground">â‚¦8,500</strong> â€” settled directly to your bank account.
+                <strong className="text-foreground">â‚¦8,500</strong> — settled directly to your bank account.
               </p>
             </div>
           </div>
@@ -268,7 +268,7 @@ function HowItWorksPage() {
         <div className="h-px bg-border" />
       </div>
 
-      {/* â”€â”€ FAQ â”€â”€ */}
+      {/* ── FAQ ── */}
       <section className="mx-auto max-w-6xl px-4 py-16 md:py-20">
         <div className="flex items-baseline gap-4 mb-10">
           <span className="font-display text-5xl leading-none text-gradient-sunset">03</span>
@@ -290,7 +290,7 @@ function HowItWorksPage() {
         </div>
       </section>
 
-      {/* â”€â”€ CTA Banner â”€â”€ */}
+      {/* ── CTA Banner ── */}
       <section className="mx-auto max-w-6xl px-4 pb-24">
         <div className="relative overflow-hidden rounded-2xl border border-primary/30 p-8 md:p-14">
           <div className="absolute inset-0 gradient-sunset opacity-90" />
@@ -335,7 +335,7 @@ function HowItWorksPage() {
             <Link to="/privacy" className="hover:text-primary transition">Privacy</Link>
             <Link to="/careers" className="hover:text-primary transition">Careers</Link>
           </div>
-          <p>Â© {new Date().getFullYear()} â€” Buy tickets. Turn up. Repeat.</p>
+          <p>Â© {new Date().getFullYear()} — Buy tickets. Turn up. Repeat.</p>
         </div>
       </footer>
     </div>
