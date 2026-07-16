@@ -297,7 +297,7 @@ function ApplicationCard({
             <p className="mt-0.5 text-xs text-muted-foreground">
               Applied {new Date(app.created_at).toLocaleDateString("en-NG", { dateStyle: "medium" })}
               {app.reviewed_at && (
-                <> Â· Reviewed {new Date(app.reviewed_at).toLocaleDateString("en-NG", { dateStyle: "medium" })}</>
+                <> · Reviewed {new Date(app.reviewed_at).toLocaleDateString("en-NG", { dateStyle: "medium" })}</>
               )}
             </p>
           </div>

@@ -84,11 +84,11 @@ const ORGANIZER_STEPS = [
 const FAQ = [
   {
     q: "How much does TixNaija charge?",
-    a: "TixNaija charges a 15% platform fee on each ticket sold. For example, if you sell a ticket for â‚¦5,000, you receive â‚¦4,250 and TixNaija retains â‚¦750. Paystack's processing fee (typically 1.5% + â‚¦100, capped at â‚¦2,000) is charged separately at checkout.",
+    a: "TixNaija charges a 15% platform fee on each ticket sold. For example, if you sell a ticket for ₦5,000, you receive ₦4,250 and TixNaija retains ₦750. Paystack's processing fee (typically 1.5% + ₦100, capped at ₦2,000) is charged separately at checkout.",
   },
   {
     q: "Are free events supported?",
-    a: "Yes! You can create events with â‚¦0 tickets at no charge. Free tickets go through the same QR delivery system so you can still scan attendees at the door.",
+    a: "Yes! You can create events with ₦0 tickets at no charge. Free tickets go through the same QR delivery system so you can still scan attendees at the door.",
   },
   {
     q: "Can I issue complimentary tickets?",
@@ -238,9 +238,9 @@ function HowItWorksPage() {
               <h3 className="font-semibold text-base">Platform fee breakdown</h3>
               <p className="mt-1 text-base text-foreground/90 leading-relaxed">
                 TixNaija charges <strong className="text-foreground">15%</strong> of each ticket sale.
-                So for a <strong className="text-foreground">â‚¦10,000 ticket</strong>: the buyer pays â‚¦10,000,
-                TixNaija retains <strong className="text-foreground">â‚¦1,500</strong>, and you receive{" "}
-                <strong className="text-foreground">â‚¦8,500</strong> — settled directly to your bank account.
+                So for a <strong className="text-foreground">₦10,000 ticket</strong>: the buyer pays ₦10,000,
+                TixNaija retains <strong className="text-foreground">₦1,500</strong>, and you receive{" "}
+                <strong className="text-foreground">₦8,500</strong> — settled directly to your bank account.
               </p>
             </div>
           </div>
@@ -335,7 +335,7 @@ function HowItWorksPage() {
             <Link to="/privacy" className="hover:text-primary transition">Privacy</Link>
             <Link to="/careers" className="hover:text-primary transition">Careers</Link>
           </div>
-          <p>Â© {new Date().getFullYear()} — Buy tickets. Turn up. Repeat.</p>
+          <p>© {new Date().getFullYear()} — Buy tickets. Turn up. Repeat.</p>
         </div>
       </footer>
     </div>

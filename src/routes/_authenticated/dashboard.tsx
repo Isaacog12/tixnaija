@@ -181,10 +181,10 @@ function Dashboard() {
                   <div className="p-4">
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className="text-xs uppercase tracking-widest text-primary font-semibold">Music Â· Lagos</p>
+                        <p className="text-xs uppercase tracking-widest text-primary font-semibold">Music · Lagos</p>
                         <h3 className="mt-1 font-display text-xl leading-tight">Afrobeats Live 2025</h3>
                         <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <CalendarDays className="h-3.5 w-3.5" /> Sat, Aug 23 Â· 7:00 PM
+                          <CalendarDays className="h-3.5 w-3.5" /> Sat, Aug 23 · 7:00 PM
                         </p>
                       </div>
                       <span className="rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">Live</span>
