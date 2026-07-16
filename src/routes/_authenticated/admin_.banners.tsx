@@ -46,8 +46,8 @@ function AdminBannersPage() {
   const { data: banners, isLoading } = useQuery({
     queryKey: ["admin-banners"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sponsored_banners" as any)
+      const { data, error } = await (supabase as any)
+        .from("sponsored_banners")
         .select("*")
         .order("display_order", { ascending: true })
         .order("created_at", { ascending: false });
