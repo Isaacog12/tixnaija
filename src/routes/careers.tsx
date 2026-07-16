@@ -5,7 +5,7 @@ export const Route = createFileRoute("/careers")({
   component: CareersPage,
   head: () => ({
     meta: [
-      { title: "Opportunities â€” TixNaija" },
+      { title: "Opportunities TixNaija" },
       {
         name: "description",
         content:
