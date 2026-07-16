@@ -44,7 +44,7 @@ async function fetchEvents(q: string) {
     if (safe) {
       const like = `%${safe}%`;
       query = query.or(
-        `title.ilike.${like},description.ilike.${like},city.ilike.${like},venue_name.ilike.${like},category.ilike.${like}`,
+        `title.ilike.${like},description.ilike.${like},city.ilike.${like},venue_name.ilike.${like},category::text.ilike.${like}`,
       );
     }
   }
