@@ -47,7 +47,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminDashboard,
 });
 
-// ── Data fetchers ────────────────────────────────────────────
+// â”€â”€ Data fetchers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function fetchAdminStats() {
   const [
@@ -123,7 +123,7 @@ async function fetchContactMessages() {
   return (data ?? []) as any[];
 }
 
-// ── Main Component ───────────────────────────────────────────
+// â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function AdminDashboard() {
   const qc = useQueryClient();
@@ -135,7 +135,7 @@ function AdminDashboard() {
   const { data: events, isLoading: eventsLoading } = useQuery({ queryKey: ["admin-events"], queryFn: fetchAdminEvents });
   const { data: messages } = useQuery({ queryKey: ["admin-contact-messages"], queryFn: fetchContactMessages });
 
-  // ── Mutations ──────────────────────────────────────────────
+  // â”€â”€ Mutations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const takedownMutation = useMutation({
     mutationFn: async ({ id, note }: { id: string; note: string }) => {
@@ -194,14 +194,14 @@ function AdminDashboard() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  // ── Derived ────────────────────────────────────────────────
+  // â”€â”€ Derived â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const filteredUsers = (users ?? []).filter((u) => {
     const q = userSearch.toLowerCase();
     return !q || u.full_name.toLowerCase().includes(q);
   });
 
-  // ── Render ─────────────────────────────────────────────────
+  // â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
@@ -228,7 +228,7 @@ function AdminDashboard() {
               }
               disabled={takedownMutation.isPending}
             >
-              {takedownMutation.isPending ? "Taking down…" : "Yes, take down"}
+              {takedownMutation.isPending ? "Taking downâ€¦" : "Yes, take down"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -242,8 +242,8 @@ function AdminDashboard() {
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-4 mb-10">
-        <StatCard icon={Users} label="Total Users" value={stats?.users.toLocaleString() ?? "—"} />
-        <StatCard icon={Calendar} label="Total Events" value={stats?.events.toLocaleString() ?? "—"} />
+        <StatCard icon={Users} label="Total Users" value={stats?.users.toLocaleString() ?? "â€”"} />
+        <StatCard icon={Calendar} label="Total Events" value={stats?.events.toLocaleString() ?? "â€”"} />
         <StatCard icon={BarChart3} label="Total Volume" value={formatNaira(stats?.revenueKobo ?? 0)} className="text-gradient-sunset" />
         <Link to="/admin/organizer-applications" className="group block cursor-pointer">
           <div className="rounded-2xl border border-amber-500/30 bg-card/60 p-6 flex items-start gap-4 shadow-sm hover:border-amber-500/60 transition h-full">
@@ -253,7 +253,7 @@ function AdminDashboard() {
             <div>
               <p className="text-sm font-medium text-muted-foreground">Pending Applications</p>
               <h3 className="mt-1 font-display text-3xl text-amber-500">{stats?.pendingApps ?? 0}</h3>
-              <p className="mt-0.5 text-xs text-amber-500/70">Review now →</p>
+              <p className="mt-0.5 text-xs text-amber-500/70">Review now â†’</p>
             </div>
           </div>
         </Link>
@@ -267,7 +267,7 @@ function AdminDashboard() {
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
-                placeholder="Search by name or email…"
+                placeholder="Search by name or emailâ€¦"
                 value={userSearch}
                 onChange={(e) => setUserSearch(e.target.value)}
                 className="h-8 w-52 pl-8 text-xs border-border/50 bg-background/50 focus-visible:ring-1"
@@ -288,7 +288,7 @@ function AdminDashboard() {
                 {usersLoading ? (
                   <tr>
                     <td colSpan={4} className="px-4 py-8 text-center text-xs text-muted-foreground">
-                      Loading users…
+                      Loading usersâ€¦
                     </td>
                   </tr>
                 ) : filteredUsers.length === 0 ? (
@@ -302,21 +302,21 @@ function AdminDashboard() {
                     <tr key={u.id} className={`hover:bg-muted/30 transition-colors ${u.suspended ? "opacity-50" : ""}`}>
                       <td className="px-4 py-3">
                         <div className="font-medium text-foreground">{u.full_name || "Unknown"}</div>
-                        <div className="text-xs text-muted-foreground font-mono">{u.id.slice(0, 8)}…</div>
+                        <div className="text-xs text-muted-foreground font-mono">{u.id.slice(0, 8)}â€¦</div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1 flex-wrap">
                           {u.roles.includes("admin") && (
-                            <Badge variant="default" className="text-[10px] h-5 px-1.5">Admin</Badge>
+                            <Badge variant="default" className="text-xs h-5 px-1.5">Admin</Badge>
                           )}
                           {u.roles.includes("organizer") && (
-                            <Badge variant="secondary" className="text-[10px] h-5 px-1.5">Organizer</Badge>
+                            <Badge variant="secondary" className="text-xs h-5 px-1.5">Organizer</Badge>
                           )}
                           {!u.roles.includes("admin") && !u.roles.includes("organizer") && (
                             <span className="text-xs text-muted-foreground">User</span>
                           )}
                           {u.suspended && (
-                            <Badge variant="destructive" className="text-[10px] h-5 px-1.5">Suspended</Badge>
+                            <Badge variant="destructive" className="text-xs h-5 px-1.5">Suspended</Badge>
                           )}
                         </div>
                       </td>
@@ -384,7 +384,7 @@ function AdminDashboard() {
                 {eventsLoading ? (
                   <tr>
                     <td colSpan={3} className="px-4 py-8 text-center text-xs text-muted-foreground">
-                      Loading events…
+                      Loading eventsâ€¦
                     </td>
                   </tr>
                 ) : (events ?? []).map((ev: any) => (
@@ -417,7 +417,7 @@ function AdminDashboard() {
                           <Ban className="mr-1.5 h-3 w-3" /> Takedown
                         </Button>
                       ) : (
-                        <span className="text-xs text-muted-foreground/50">—</span>
+                        <span className="text-xs text-muted-foreground/50">â€”</span>
                       )}
                     </td>
                   </tr>
@@ -463,7 +463,7 @@ function AdminDashboard() {
                   <div className="flex items-center gap-1.5 shrink-0">
                     <Badge
                       variant={msg.is_read ? "secondary" : "default"}
-                      className="text-[10px] h-5 px-1.5"
+                      className="text-xs h-5 px-1.5"
                     >
                       {msg.is_read ? "Read" : "New"}
                     </Badge>
@@ -484,13 +484,13 @@ function AdminDashboard() {
                 </div>
                 <div className="flex-1">
                   {msg.topic && (
-                    <span className="inline-block px-2 py-0.5 rounded bg-muted/50 text-[10px] font-semibold text-muted-foreground mb-2">
+                    <span className="inline-block px-2 py-0.5 rounded bg-muted/50 text-xs font-semibold text-muted-foreground mb-2">
                       {msg.topic}
                     </span>
                   )}
                   <p className="text-sm text-foreground/90 whitespace-pre-wrap break-words line-clamp-4">{msg.message}</p>
                 </div>
-                <div className="mt-1 pt-3 border-t border-border/50 text-[10px] text-muted-foreground flex justify-between items-center gap-2">
+                <div className="mt-1 pt-3 border-t border-border/50 text-xs text-muted-foreground flex justify-between items-center gap-2">
                   <span className="truncate">{new Date(msg.created_at).toLocaleString()}</span>
                   {msg.phone && (
                     <a

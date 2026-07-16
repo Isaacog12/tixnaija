@@ -82,7 +82,7 @@
   --secondary-foreground: oklch(0.97 0.02 80);
 
   --muted: oklch(0.22 0.02 40);
-  --muted-foreground: oklch(0.72 0.03 70);
+  --muted-foreground: oklch(0.80 0.03 70);
 
   --accent: oklch(0.85 0.15 85);          /* warm gold */
   --accent-foreground: oklch(0.14 0.02 40);

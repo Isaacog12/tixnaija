@@ -198,7 +198,7 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
             />
           </div>
           
-          <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
+          <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
             {ticket.ticket_code.split("-")[0]}
           </p>
         </div>

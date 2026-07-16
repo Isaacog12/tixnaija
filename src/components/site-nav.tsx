@@ -80,7 +80,7 @@ export function SiteNav() {
                 <Link to="/inbox">
                   <Mail className="h-5 w-5 text-muted-foreground" />
                   {unreadCount > 0 && (
-                    <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                    <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                       {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
                   )}

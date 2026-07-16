@@ -143,7 +143,7 @@ function OrganizerApplicationsPage() {
   if (isLoading)
     return (
       <div className="mx-auto max-w-4xl px-4 py-10 text-sm text-muted-foreground">
-        Loading applications…
+        Loading applicationsâ€¦
       </div>
     );
   if (error)
@@ -274,7 +274,7 @@ function ApplicationCard({
 
   return (
     <div className="rounded-2xl border border-border bg-card/60 shadow-sm overflow-hidden transition hover:border-primary/30">
-      {/* Header row — always visible */}
+      {/* Header row â€” always visible */}
       <button
         onClick={toggle}
         className="w-full flex items-start justify-between gap-4 p-5 text-left"
@@ -289,7 +289,7 @@ function ApplicationCard({
                 {app.full_name}
               </span>
               <span
-                className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold capitalize ${statusColors[app.status]}`}
+                className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold capitalize ${statusColors[app.status]}`}
               >
                 {app.status}
               </span>
@@ -297,7 +297,7 @@ function ApplicationCard({
             <p className="mt-0.5 text-xs text-muted-foreground">
               Applied {new Date(app.created_at).toLocaleDateString("en-NG", { dateStyle: "medium" })}
               {app.reviewed_at && (
-                <> · Reviewed {new Date(app.reviewed_at).toLocaleDateString("en-NG", { dateStyle: "medium" })}</>
+                <> Â· Reviewed {new Date(app.reviewed_at).toLocaleDateString("en-NG", { dateStyle: "medium" })}</>
               )}
             </p>
           </div>
@@ -344,7 +344,7 @@ function ApplicationCard({
             </div>
             {photoLoading && (
               <div className="flex h-40 items-center justify-center rounded-xl border border-border bg-muted/20 text-xs text-muted-foreground">
-                Loading photo…
+                Loading photoâ€¦
               </div>
             )}
             {photoUrl && (
@@ -375,12 +375,12 @@ function ApplicationCard({
             </div>
           )}
 
-          {/* Action area — only for pending */}
+          {/* Action area â€” only for pending */}
           {isPending && (
             <div className="border-t border-border pt-4 space-y-3">
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                  Internal note (optional — sent to applicant on rejection, visible on approval)
+                  Internal note (optional â€” sent to applicant on rejection, visible on approval)
                 </label>
                 <Textarea
                   value={note}
@@ -432,7 +432,7 @@ function InfoRow({
     <div className="flex items-start gap-2">
       <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
       <div className="min-w-0">
-        <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+        <div className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
           {label}
         </div>
         {isLink ? (

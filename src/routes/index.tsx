@@ -34,7 +34,7 @@ const VALUE_PROPS = [
   },
   {
     title: "Pay with Paystack",
-    body: "Cards, transfers, USSD — the payment methods Naija actually uses.",
+    body: "Cards, transfers, USSD â€” the payment methods Naija actually uses.",
   },
   {
     title: "Sell tickets in minutes",
@@ -56,7 +56,7 @@ function LandingPage() {
         <div className="mx-auto max-w-6xl px-4 pt-16 pb-20 md:pt-24 md:pb-28">
           <div className="mx-auto max-w-3xl text-center">
             <div className="inline-flex flex-col items-center gap-2">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.35em] text-primary">
+              <span className="text-xs font-semibold uppercase tracking-[0.35em] text-primary">
                 Naija's Ticket Hub
               </span>
               <span aria-hidden className="h-px w-16 gradient-sunset" />
@@ -81,7 +81,7 @@ function LandingPage() {
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search events, artists, cities…"
+                placeholder="Search events, artists, citiesâ€¦"
                 className="border-0 bg-transparent shadow-none focus-visible:ring-0"
               />
               <Button type="submit" className="gradient-sunset text-primary-foreground hover:opacity-90">
@@ -104,7 +104,7 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* Value props — editorial numeral treatment, no decorative icons */}
+      {/* Value props â€” editorial numeral treatment, no decorative icons */}
       <section className="mx-auto max-w-6xl px-4 pb-20">
         <div className="grid gap-px overflow-hidden border border-border bg-border md:grid-cols-3">
           {VALUE_PROPS.map(({ title, body }, i) => (
@@ -155,7 +155,7 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* Coming up — real published events */}
+      {/* Coming up â€” real published events */}
       <section className="mx-auto max-w-6xl px-4 pb-24">
         <div className="mb-6 flex items-end justify-between">
           <div>
@@ -167,12 +167,12 @@ function LandingPage() {
             </p>
           </div>
           <Link to="/browse" className="text-xs uppercase tracking-[0.2em] text-primary hover:underline">
-            Browse all →
+            Browse all â†’
           </Link>
         </div>
 
         {upcoming.isLoading && (
-          <div className="text-sm text-muted-foreground">Loading events…</div>
+          <div className="text-sm text-muted-foreground">Loading eventsâ€¦</div>
         )}
 
         {upcoming.data && upcoming.data.length === 0 && (
@@ -257,7 +257,7 @@ function LandingPage() {
             <Link to="/privacy" className="hover:text-primary transition">Privacy</Link>
             <Link to="/careers" className="hover:text-primary transition">Careers</Link>
           </div>
-          <p>© {new Date().getFullYear()} — Buy tickets. Turn up. Repeat.</p>
+          <p>Â© {new Date().getFullYear()} â€” Buy tickets. Turn up. Repeat.</p>
         </div>
       </footer>
     </div>

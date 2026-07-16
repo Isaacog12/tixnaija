@@ -23,7 +23,7 @@ export const Route = createFileRoute("/e/$slug")({
   component: EventDetailPage,
   head: ({ params }: { params: { slug: string } }) => ({
     meta: [
-      { title: `${params.slug} — TixNaija` },
+      { title: `${params.slug} â€” TixNaija` },
       { name: "description", content: "Buy tickets to this event on TixNaija." },
     ],
   }),
@@ -310,7 +310,7 @@ function EventDetailPage() {
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-background/95 backdrop-blur md:hidden">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
             <div className="min-w-0">
-              <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
+              <p className="text-xs uppercase tracking-widest text-muted-foreground">
                 {totalCount ? `${totalCount} ticket${totalCount === 1 ? "" : "s"}` : "No tickets yet"}
               </p>
               <p className="truncate font-display text-xl leading-none">
@@ -413,12 +413,12 @@ function EventDetailPage() {
                 <div>
                   <p className="text-sm font-semibold">Attendee names</p>
                   <p className="text-xs text-muted-foreground">
-                    Add a name for each ticket (optional — blanks use your name).
+                    Add a name for each ticket (optional â€” blanks use your name).
                   </p>
                 </div>
                 {items.map((it) => (
                   <div key={it.type.id} className="space-y-2">
-                    <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                    <p className="text-xs uppercase tracking-widest text-muted-foreground">
                       {it.type.name}
                     </p>
                     {Array.from({ length: it.count }).map((_, idx) => (
@@ -518,7 +518,7 @@ function EventBody({
                   <span className="font-display text-2xl leading-none text-foreground/80 md:text-3xl">
                     {event.title}
                   </span>
-                  <span className="font-display text-[11px] uppercase tracking-[0.35em] text-primary">
+                  <span className="font-display text-xs uppercase tracking-[0.35em] text-primary">
                     Admit One
                   </span>
                 </div>
@@ -527,7 +527,7 @@ function EventBody({
           </div>
 
           <div className="mt-6">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.35em] text-primary">
+            <span className="text-xs font-semibold uppercase tracking-[0.35em] text-primary">
               {event.category}
             </span>
             <h1 className="mt-2 font-display text-4xl leading-[0.95] md:text-6xl">{event.title}</h1>
@@ -601,7 +601,7 @@ function EventBody({
                         <p className="mt-1 font-display text-2xl text-gradient-sunset">
                           {t.price_kobo === 0 ? "Free" : formatNaira(t.price_kobo)}
                         </p>
-                        <p className="mt-1 text-[11px] uppercase tracking-widest text-muted-foreground">
+                        <p className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">
                           {statusText}
                         </p>
                       </div>
@@ -637,7 +637,7 @@ function EventBody({
             <div className="mt-5 flex items-baseline justify-between border-t border-border pt-4">
               <span className="text-sm text-muted-foreground">Total</span>
               <span className="font-display text-3xl text-gradient-sunset">
-                {totalKobo ? formatNaira(totalKobo) : "—"}
+                {totalKobo ? formatNaira(totalKobo) : "â€”"}
               </span>
             </div>
             <Button

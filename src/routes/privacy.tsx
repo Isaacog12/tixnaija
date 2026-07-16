@@ -5,7 +5,7 @@ export const Route = createFileRoute("/privacy")({
   component: PrivacyPage,
   head: () => ({
     meta: [
-      { title: "Privacy Policy — TixNaija" },
+      { title: "Privacy Policy â€” TixNaija" },
       {
         name: "description",
         content:
@@ -34,7 +34,7 @@ function PrivacyPage() {
   return (
     <div className="min-h-screen">
       <SiteNav />
-      {/* ── Hero header ── */}
+      {/* â”€â”€ Hero header â”€â”€ */}
       <div className="relative overflow-hidden border-b border-border/60">
         <div className="absolute inset-0 gradient-sunset opacity-10 pointer-events-none" />
         <div className="mx-auto max-w-6xl px-4 py-12 md:py-16">
@@ -47,13 +47,13 @@ function PrivacyPage() {
         </div>
       </div>
 
-      {/* ── Body ── */}
+      {/* â”€â”€ Body â”€â”€ */}
       <div className="mx-auto max-w-6xl px-4 py-12 md:py-16 grid grid-cols-1 md:grid-cols-[220px_1fr] gap-12">
 
         {/* Sticky sidebar TOC */}
         <aside className="hidden md:block">
           <div className="sticky top-8">
-            <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-4 font-semibold">
+            <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-4 font-semibold">
               Contents
             </p>
             <nav className="flex flex-col gap-1">
@@ -63,7 +63,7 @@ function PrivacyPage() {
                   href={`#${s.id}`}
                   className="flex items-center gap-2.5 rounded px-2 py-1.5 text-sm text-muted-foreground hover:text-primary hover:bg-primary/5 transition group"
                 >
-                  <span className="font-display text-[11px] text-muted-foreground/50 group-hover:text-primary/60 w-5 shrink-0">
+                  <span className="font-display text-xs text-muted-foreground/50 group-hover:text-primary/60 w-5 shrink-0">
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   {s.label}
@@ -76,7 +76,7 @@ function PrivacyPage() {
                 to="/terms"
                 className="text-xs text-muted-foreground hover:text-primary transition"
               >
-                Terms of Service →
+                Terms of Service â†’
               </Link>
             </div>
           </div>
@@ -85,13 +85,13 @@ function PrivacyPage() {
         {/* Main content */}
         <main className="min-w-0 space-y-1">
 
-          {/* Section 1 — Introduction */}
+          {/* Section 1 â€” Introduction */}
           <section id="intro" className="scroll-mt-8 pb-10 border-b border-border/40">
             <SectionHeading number="01" title="Introduction" />
             <p className="text-muted-foreground leading-relaxed mt-4">
               <strong className="text-foreground">TixNaija</strong> respects your privacy and is committed to protecting
               your personal data. This Privacy Policy explains how we collect, use, store, and protect information you
-              provide when using our platform — whether as a ticket buyer, event organizer, or visitor.
+              provide when using our platform â€” whether as a ticket buyer, event organizer, or visitor.
             </p>
             <p className="text-muted-foreground leading-relaxed mt-3">
               This policy is informed by the <strong className="text-foreground">Nigeria Data Protection Regulation (NDPR)</strong>
@@ -100,7 +100,7 @@ function PrivacyPage() {
             </p>
           </section>
 
-          {/* Section 2 — Data Collected */}
+          {/* Section 2 â€” Data Collected */}
           <section id="data-collected" className="scroll-mt-8 py-10 border-b border-border/40">
             <SectionHeading number="02" title="Data We Collect" />
             <p className="text-muted-foreground leading-relaxed mt-4">
@@ -111,7 +111,7 @@ function PrivacyPage() {
               {[
                 {
                   role: "Buyers & Attendees",
-                  data: "Full name, email address, and phone number — used to generate, deliver, and validate your tickets.",
+                  data: "Full name, email address, and phone number â€” used to generate, deliver, and validate your tickets.",
                 },
                 {
                   role: "Event Organizers",
@@ -119,7 +119,7 @@ function PrivacyPage() {
                 },
                 {
                   role: "All Users",
-                  data: "Basic usage data such as IP address, browser type, and pages visited — collected in anonymized form to improve platform performance.",
+                  data: "Basic usage data such as IP address, browser type, and pages visited â€” collected in anonymized form to improve platform performance.",
                 },
               ].map(({ role, data }) => (
                 <div key={role} className="rounded-lg border border-border bg-card/60 p-4">
@@ -130,7 +130,7 @@ function PrivacyPage() {
             </div>
           </section>
 
-          {/* Section 3 — Payments */}
+          {/* Section 3 â€” Payments */}
           <section id="payments" className="scroll-mt-8 py-10 border-b border-border/40">
             <SectionHeading number="03" title="Payment Processing" />
             <p className="text-muted-foreground leading-relaxed mt-4">
@@ -153,7 +153,7 @@ function PrivacyPage() {
             </p>
           </section>
 
-          {/* Section 4 — Why */}
+          {/* Section 4 â€” Why */}
           <section id="why" className="scroll-mt-8 py-10 border-b border-border/40">
             <SectionHeading number="04" title="Why We Collect Data" />
             <p className="text-muted-foreground leading-relaxed mt-4">
@@ -163,7 +163,7 @@ function PrivacyPage() {
               {[
                 "To generate, deliver, and validate your QR-coded event tickets.",
                 "To process payouts to event organizers after successful ticket sales.",
-                "To send critical event notifications — including cancellations, postponements, or venue changes.",
+                "To send critical event notifications â€” including cancellations, postponements, or venue changes.",
                 "To provide customer support and respond to inquiries or disputes.",
                 "To detect and prevent fraudulent activity on the platform.",
                 "To comply with our legal and regulatory obligations under Nigerian law.",
@@ -180,7 +180,7 @@ function PrivacyPage() {
             </p>
           </section>
 
-          {/* Section 5 — Cookies */}
+          {/* Section 5 â€” Cookies */}
           <section id="cookies" className="scroll-mt-8 py-10 border-b border-border/40">
             <SectionHeading number="05" title="Cookies & Analytics" />
             <p className="text-muted-foreground leading-relaxed mt-4">
@@ -191,7 +191,7 @@ function PrivacyPage() {
               {[
                 {
                   name: "Essential Cookies",
-                  desc: "Required for the platform to function — managing your session, authentication state, and security tokens.",
+                  desc: "Required for the platform to function â€” managing your session, authentication state, and security tokens.",
                 },
                 {
                   name: "Analytical Cookies",
@@ -213,7 +213,7 @@ function PrivacyPage() {
             </p>
           </section>
 
-          {/* Section 6 — Sharing */}
+          {/* Section 6 â€” Sharing */}
           <section id="sharing" className="scroll-mt-8 py-10 border-b border-border/40">
             <SectionHeading number="06" title="Data Sharing" />
             <p className="text-muted-foreground leading-relaxed mt-4">
@@ -221,10 +221,10 @@ function PrivacyPage() {
             </p>
             <ul className="mt-4 space-y-3">
               {[
-                "With the Event Organizer — your name and contact details are shared so the organizer can manage check-in, notify you of updates, and resolve disputes.",
-                "With Paystack — your transaction details are processed under Paystack's data governance framework.",
-                "With Supabase — our backend infrastructure provider, which stores your data securely under their data processing terms.",
-                "With law enforcement or regulatory authorities — only when required by a valid court order or Nigerian regulatory directive.",
+                "With the Event Organizer â€” your name and contact details are shared so the organizer can manage check-in, notify you of updates, and resolve disputes.",
+                "With Paystack â€” your transaction details are processed under Paystack's data governance framework.",
+                "With Supabase â€” our backend infrastructure provider, which stores your data securely under their data processing terms.",
+                "With law enforcement or regulatory authorities â€” only when required by a valid court order or Nigerian regulatory directive.",
               ].map((item, i) => (
                 <li key={i} className="flex gap-3 text-sm text-muted-foreground">
                   <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
@@ -234,7 +234,7 @@ function PrivacyPage() {
             </ul>
           </section>
 
-          {/* Section 7 — Retention */}
+          {/* Section 7 â€” Retention */}
           <section id="retention" className="scroll-mt-8 py-10 border-b border-border/40">
             <SectionHeading number="07" title="Data Retention" />
             <p className="text-muted-foreground leading-relaxed mt-4">
@@ -248,7 +248,7 @@ function PrivacyPage() {
             </p>
           </section>
 
-          {/* Section 8 — Rights */}
+          {/* Section 8 â€” Rights */}
           <section id="rights" className="scroll-mt-8 py-10 border-b border-border/40">
             <SectionHeading number="08" title="Your NDPR Rights" />
             <p className="text-muted-foreground leading-relaxed mt-4">
@@ -276,7 +276,7 @@ function PrivacyPage() {
             </p>
           </section>
 
-          {/* Section 9 — Security */}
+          {/* Section 9 â€” Security */}
           <section id="security" className="scroll-mt-8 py-10 border-b border-border/40">
             <SectionHeading number="09" title="Security" />
             <p className="text-muted-foreground leading-relaxed mt-4">
@@ -301,7 +301,7 @@ function PrivacyPage() {
             </p>
           </section>
 
-          {/* Section 10 — Contact */}
+          {/* Section 10 â€” Contact */}
           <section id="contact" className="scroll-mt-8 py-10">
             <SectionHeading number="10" title="Contact Us" />
             <p className="text-muted-foreground leading-relaxed mt-4">
@@ -323,7 +323,7 @@ function PrivacyPage() {
                   to="/terms"
                   className="text-xs font-semibold uppercase tracking-[0.2em] text-primary hover:underline"
                 >
-                  Terms of Service →
+                  Terms of Service â†’
                 </Link>
               </div>
             </div>
