@@ -28,6 +28,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedEventsNewRouteImport } from './routes/_authenticated/events.new'
 import { Route as AuthenticatedAdminOrganizerApplicationsRouteImport } from './routes/_authenticated/admin_.organizer-applications'
+import { Route as AuthenticatedAdminBannersRouteImport } from './routes/_authenticated/admin_.banners'
 import { Route as AuthenticatedOrdersOrderIdTicketsRouteImport } from './routes/_authenticated/orders.$orderId.tickets'
 import { Route as AuthenticatedEventsEventIdScanRouteImport } from './routes/_authenticated/events.$eventId.scan'
 import { Route as AuthenticatedEventsEventIdEditRouteImport } from './routes/_authenticated/events.$eventId.edit'
@@ -127,6 +128,12 @@ const AuthenticatedAdminOrganizerApplicationsRoute =
     path: '/admin/organizer-applications',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminBannersRoute =
+  AuthenticatedAdminBannersRouteImport.update({
+    id: '/admin_/banners',
+    path: '/admin/banners',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOrdersOrderIdTicketsRoute =
   AuthenticatedOrdersOrderIdTicketsRouteImport.update({
     id: '/orders/$orderId/tickets',
@@ -163,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/inbox': typeof AuthenticatedInboxRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
   '/e/$slug': typeof ESlugRoute
+  '/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
@@ -186,6 +194,7 @@ export interface FileRoutesByTo {
   '/inbox': typeof AuthenticatedInboxRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
   '/e/$slug': typeof ESlugRoute
+  '/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
@@ -211,6 +220,7 @@ export interface FileRoutesById {
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
   '/e/$slug': typeof ESlugRoute
+  '/_authenticated/admin_/banners': typeof AuthenticatedAdminBannersRoute
   '/_authenticated/admin_/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/_authenticated/events/new': typeof AuthenticatedEventsNewRoute
   '/_authenticated/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
@@ -236,6 +246,7 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/checkout/verify'
     | '/e/$slug'
+    | '/admin/banners'
     | '/admin/organizer-applications'
     | '/events/new'
     | '/events/$eventId/edit'
@@ -259,6 +270,7 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/checkout/verify'
     | '/e/$slug'
+    | '/admin/banners'
     | '/admin/organizer-applications'
     | '/events/new'
     | '/events/$eventId/edit'
@@ -283,6 +295,7 @@ export interface FileRouteTypes {
     | '/_authenticated/inbox'
     | '/checkout/verify'
     | '/e/$slug'
+    | '/_authenticated/admin_/banners'
     | '/_authenticated/admin_/organizer-applications'
     | '/_authenticated/events/new'
     | '/_authenticated/events/$eventId/edit'
@@ -441,6 +454,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminOrganizerApplicationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin_/banners': {
+      id: '/_authenticated/admin_/banners'
+      path: '/admin/banners'
+      fullPath: '/admin/banners'
+      preLoaderRoute: typeof AuthenticatedAdminBannersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/orders/$orderId/tickets': {
       id: '/_authenticated/orders/$orderId/tickets'
       path: '/orders/$orderId/tickets'
@@ -470,6 +490,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
+  AuthenticatedAdminBannersRoute: typeof AuthenticatedAdminBannersRoute
   AuthenticatedAdminOrganizerApplicationsRoute: typeof AuthenticatedAdminOrganizerApplicationsRoute
   AuthenticatedEventsNewRoute: typeof AuthenticatedEventsNewRoute
   AuthenticatedEventsEventIdEditRoute: typeof AuthenticatedEventsEventIdEditRoute
@@ -482,6 +503,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
+  AuthenticatedAdminBannersRoute: AuthenticatedAdminBannersRoute,
   AuthenticatedAdminOrganizerApplicationsRoute:
     AuthenticatedAdminOrganizerApplicationsRoute,
   AuthenticatedEventsNewRoute: AuthenticatedEventsNewRoute,

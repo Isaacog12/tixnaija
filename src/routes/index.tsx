@@ -25,6 +25,24 @@ async function fetchUpcoming() {
   return data ?? [];
 }
 
+async function fetchBanners() {
+  const { data, error } = await supabase
+    .from("sponsored_banners" as any)
+    .select("*")
+    .eq("is_active", true)
+    .order("display_order", { ascending: true })
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  
+  // Filter client side for dates since RLS handles some of it, but just to be safe
+  const now = new Date();
+  return (data ?? []).filter((b: any) => {
+    if (b.starts_at && new Date(b.starts_at) > now) return false;
+    if (b.ends_at && new Date(b.ends_at) < now) return false;
+    return true;
+  });
+}
+
 const CATEGORIES = ["Concerts", "Comedy", "Conferences", "Church", "Campus", "Parties"];
 
 const VALUE_PROPS = [
@@ -46,10 +64,49 @@ function LandingPage() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const upcoming = useQuery({ queryKey: ["home-upcoming"], queryFn: fetchUpcoming });
+  const banners = useQuery({ queryKey: ["home-banners"], queryFn: fetchBanners });
+
+  const handleBannerClick = async (banner: any) => {
+    // Fire and forget click increment
+    supabase.rpc("increment_banner_click" as any, { banner_id: banner.id }).then();
+    
+    if (banner.link_url) {
+      if (banner.link_url.startsWith("http")) {
+        window.open(banner.link_url, "_blank", "noopener,noreferrer");
+      } else {
+        navigate({ to: banner.link_url });
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen">
       <SiteNav />
+
+      {/* Banners Section */}
+      {banners.data && banners.data.length > 0 && (
+        <div className="mx-auto max-w-6xl px-4 pt-6">
+          <div className="flex gap-4 overflow-x-auto pb-4 snap-x no-scrollbar">
+            {banners.data.map((banner: any) => (
+              <div 
+                key={banner.id}
+                onClick={() => handleBannerClick(banner)}
+                className={`relative h-48 sm:h-64 min-w-[80vw] sm:min-w-[600px] shrink-0 rounded-2xl overflow-hidden snap-center group shadow-md ${banner.link_url ? "cursor-pointer" : ""}`}
+              >
+                <img 
+                  src={banner.image_url} 
+                  alt={banner.title} 
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 ring-1 ring-inset ring-black/10 rounded-2xl pointer-events-none" />
+                <div className="absolute top-3 right-3 px-2 py-1 bg-black/40 backdrop-blur-md text-white/90 text-[10px] font-semibold tracking-wider uppercase rounded-md pointer-events-none">
+                  Sponsored
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Hero */}
       <section className="relative">

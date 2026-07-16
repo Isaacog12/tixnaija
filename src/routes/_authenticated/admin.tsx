@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   Users, Calendar, BarChart3, Search, MoreVertical,
-  Ban, CheckCircle2, ClipboardList, ExternalLink, ShieldOff, ShieldCheck, Trash2,
+  Ban, CheckCircle2, ClipboardList, ExternalLink, ShieldOff, ShieldCheck, Trash2, Image as ImageIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/currency";
@@ -241,7 +241,7 @@ function AdminDashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4 mb-10">
+      <div className="grid gap-4 md:grid-cols-5 mb-10">
         <StatCard icon={Users} label="Total Users" value={stats?.users.toLocaleString() ?? "—"} />
         <StatCard icon={Calendar} label="Total Events" value={stats?.events.toLocaleString() ?? "—"} />
         <StatCard icon={BarChart3} label="Total Volume" value={formatNaira(stats?.revenueKobo ?? 0)} className="text-gradient-sunset" />
@@ -251,9 +251,21 @@ function AdminDashboard() {
               <ClipboardList className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Pending Applications</p>
+              <p className="text-sm font-medium text-muted-foreground">Applications</p>
               <h3 className="mt-1 font-display text-3xl text-amber-500">{stats?.pendingApps ?? 0}</h3>
               <p className="mt-0.5 text-xs text-amber-500/70">Review now →</p>
+            </div>
+          </div>
+        </Link>
+        <Link to="/admin/banners" className="group block cursor-pointer">
+          <div className="rounded-2xl border border-primary/30 bg-card/60 p-6 flex items-start gap-4 shadow-sm hover:border-primary/60 transition h-full">
+            <div className="rounded-xl bg-primary/10 p-3 text-primary group-hover:bg-primary/20 transition">
+              <ImageIcon className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Banners</p>
+              <h3 className="mt-1 font-display text-3xl text-foreground">Ads</h3>
+              <p className="mt-0.5 text-xs text-primary">Manage slots →</p>
             </div>
           </div>
         </Link>
