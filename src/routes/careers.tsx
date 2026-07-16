@@ -35,7 +35,7 @@ function CareersPage() {
       {/* ── Body ── */}
       <div className="mx-auto max-w-4xl px-4 py-12 md:py-16">
         <main className="space-y-12">
-          
+
           {/* Section 1 */}
           <section>
             <h2 className="font-display text-3xl text-gradient-sunset mb-6">Work with us directly</h2>
@@ -46,7 +46,6 @@ function CareersPage() {
               {[
                 "Customer Support",
                 "Social Media / Content Manager",
-                "Business Development / Partnerships",
                 "Community Moderator",
                 "Developers (Frontend / Backend)"
               ].map((role, i) => (
@@ -55,7 +54,7 @@ function CareersPage() {
                 </div>
               ))}
             </div>
-            
+
             <div className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-6">
               <p className="font-semibold text-foreground mb-2">Currently not hiring — check back as we grow.</p>
               <p className="text-sm text-muted-foreground leading-relaxed">
@@ -115,7 +114,7 @@ function CareersPage() {
 
         </main>
       </div>
-      
+
       {/* Footer (Simplified matching contact page without footer, wait, I will not include the footer block here to match contact/terms pages unless needed, but wait! The prompt says: "confirm: the navbar does NOT show a Careers link, the footer DOES show one, and visiting /careers directly works and displays correctly". Wait, if I don't put a footer on the careers page, is that okay? Yes, contact.tsx and terms.tsx don't have footers. BUT wait! If I just look at contact.tsx again... I should check if they REALLY don't have footers. */}
     </div>
   );
