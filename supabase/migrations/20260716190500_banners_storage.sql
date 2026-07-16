@@ -16,8 +16,8 @@ to authenticated
 with check ( 
     bucket_id = 'banners' AND 
     EXISTS (
-        SELECT 1 FROM public.profiles
-        WHERE profiles.id = auth.uid() AND profiles.role = 'admin'
+        SELECT 1 FROM public.user_roles
+        WHERE user_roles.user_id = auth.uid() AND user_roles.role = 'admin'
     )
 );
 
@@ -28,8 +28,8 @@ to authenticated
 using ( 
     bucket_id = 'banners' AND 
     EXISTS (
-        SELECT 1 FROM public.profiles
-        WHERE profiles.id = auth.uid() AND profiles.role = 'admin'
+        SELECT 1 FROM public.user_roles
+        WHERE user_roles.user_id = auth.uid() AND user_roles.role = 'admin'
     )
 );
 
@@ -39,7 +39,7 @@ to authenticated
 using ( 
     bucket_id = 'banners' AND 
     EXISTS (
-        SELECT 1 FROM public.profiles
-        WHERE profiles.id = auth.uid() AND profiles.role = 'admin'
+        SELECT 1 FROM public.user_roles
+        WHERE user_roles.user_id = auth.uid() AND user_roles.role = 'admin'
     )
 );

@@ -26,8 +26,8 @@ CREATE POLICY "Admins can manage banners" ON public.sponsored_banners
     FOR ALL
     USING (
         EXISTS (
-            SELECT 1 FROM public.profiles
-            WHERE profiles.id = auth.uid() AND profiles.role = 'admin'
+            SELECT 1 FROM public.user_roles
+            WHERE user_roles.user_id = auth.uid() AND user_roles.role = 'admin'
         )
     );
 
