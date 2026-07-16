@@ -62,12 +62,46 @@ async function fetchEventBySlug(slug: string) {
   return { event, types: (types ?? []) as TicketType[] };
 }
 
+async function fetchSimilarEvents(eventId: string, city: string | null, category: string) {
+  const { data, error } = await supabase
+    .from("events")
+    .select("id, title, slug, city, venue_name, start_datetime, cover_image_url, category")
+    .eq("status", "published")
+    .gte("start_datetime", new Date().toISOString())
+    .neq("id", eventId)
+    .order("start_datetime", { ascending: true })
+    .limit(20);
+    
+  if (error) throw error;
+  if (!data || data.length === 0) return [];
+  
+  const scored = data.map(ev => {
+    let score = 0;
+    if (city && ev.city === city) score += 2;
+    if (category && ev.category === category) score += 1;
+    return { ...ev, score };
+  });
+  
+  scored.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime();
+  });
+  
+  return scored.slice(0, 4);
+}
+
 function EventDetailPage() {
   const { slug } = Route.useParams();
   const navigate = useNavigate();
   const { data, isLoading, isError } = useQuery({
     queryKey: ["public-event", slug],
     queryFn: () => fetchEventBySlug(slug),
+  });
+
+  const { data: similarEvents } = useQuery({
+    queryKey: ["similar-events", data?.event?.id],
+    queryFn: () => fetchSimilarEvents(data!.event.id, data!.event.city, data!.event.category),
+    enabled: !!data?.event,
   });
 
   const [qty, setQty] = useState<Record<string, number>>({});
@@ -248,7 +282,12 @@ function EventDetailPage() {
       <SiteNav />
 
       {isLoading ? <EventSkeleton /> : isError || !data ? <EventMissing /> : (
-        <EventBody event={data.event} types={data.types} qty={qty} setCount={setCount} onCheckout={onCheckout} totalCount={totalCount} totalKobo={totalKobo} />
+        <>
+          <EventBody event={data.event} types={data.types} qty={qty} setCount={setCount} onCheckout={onCheckout} totalCount={totalCount} totalKobo={totalKobo} />
+          {similarEvents && similarEvents.length > 0 && (
+            <SimilarEvents events={similarEvents} />
+          )}
+        </>
       )}
 
       {/* Sticky mobile buy bar */}
@@ -597,5 +636,65 @@ function EventMissing() {
         <Link to="/">Back to events</Link>
       </Button>
     </div>
+  );
+}
+
+function SimilarEvents({ events }: { events: any[] }) {
+  if (!events || events.length === 0) return null;
+  
+  return (
+    <section className="mx-auto max-w-6xl px-4 py-16 md:py-24 border-t border-border/40 mt-12 md:mt-20">
+      <h2 className="font-display text-3xl md:text-4xl mb-8">You might also like</h2>
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {events.map((ev) => (
+          <Link
+            key={ev.id}
+            to="/e/$slug"
+            params={{ slug: ev.slug }}
+            className="group flex flex-col overflow-hidden rounded-2xl bg-card/60 transition-all hover:-translate-y-1 hover:shadow-glow border border-border/50 hover:border-primary/30"
+          >
+            <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary">
+              {ev.cover_image_url && (
+                <img
+                  src={ev.cover_image_url}
+                  alt={ev.title}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              )}
+              {ev.city && (
+                <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/80 px-2.5 py-1 text-xs font-medium backdrop-blur-md">
+                  <MapPin className="h-3 w-3 text-primary" />
+                  {ev.city}
+                </div>
+              )}
+            </div>
+            
+            <div className="flex flex-1 flex-col p-5">
+              <div className="mb-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary">
+                <Calendar className="h-3.5 w-3.5" />
+                {new Date(ev.start_datetime).toLocaleString("en-NG", {
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit"
+                })}
+              </div>
+              
+              <h3 className="font-display text-lg leading-tight group-hover:text-primary line-clamp-2">
+                {ev.title}
+              </h3>
+              
+              {ev.venue_name && (
+                <p className="mt-2 text-sm text-muted-foreground line-clamp-1">
+                  {ev.venue_name}
+                </p>
+              )}
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
