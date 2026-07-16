@@ -155,22 +155,22 @@ function ContactPage() {
               {
                 label: "Buyers & Attendees",
                 desc: "Missing ticket? Wrong details? We'll sort it fast.",
-                icon: "ðŸŽŸï¸",
+                icon: "🎟️",
               },
               {
                 label: "Event Organizers",
                 desc: "Questions about payouts, listings, or check-in tools.",
-                icon: "ðŸŽ¤",
+                icon: "🎤",
               },
               {
                 label: "Refunds",
-                desc: "Event cancelled? We'll guide you through the process.",
-                icon: "ðŸ’¸",
+                desc: "Please note that all ticket sales are final and non-refundable.",
+                icon: "🚫",
               },
               {
                 label: "Fraud Reports",
                 desc: "Spotted a fake event? Report it and we'll investigate.",
-                icon: "ðŸš¨",
+                icon: "🚨",
               },
             ].map(({ label, desc, icon }) => (
               <div
@@ -259,7 +259,7 @@ function ContactPage() {
                   onChange={(e) => update("topic", e.target.value)}
                   className="w-full rounded-md border border-input bg-input px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 >
-                  <option value="">Select a topic”¦</option>
+                  <option value="">Select a topic...</option>
                   {TOPICS.map((t) => (
                     <option key={t} value={t}>{t}</option>
                   ))}
@@ -276,7 +276,7 @@ function ContactPage() {
                   rows={5}
                   value={form.message}
                   onChange={(e) => update("message", e.target.value)}
-                  placeholder="Tell us what's going on and we'll be in touch”¦"
+                  placeholder="Tell us what's going on and we'll be in touch..."
                   required
                   className="w-full rounded-md border border-input bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                 />
@@ -293,7 +293,7 @@ function ContactPage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                     </svg>
-                    Sending”¦
+                    Sending...
                   </span>
                 ) : (
                   "Send message"
@@ -321,7 +321,7 @@ function SuccessState({ name, onReset }: { name: string; onReset: () => void }) 
         <h2 className="font-display text-3xl">Message sent!</h2>
         <p className="text-muted-foreground text-sm mt-2 max-w-xs leading-relaxed">
           Thanks{name ? `, ${name.split(" ")[0]}` : ""}! We've received your message and
-          will get back to you within <strong className="text-foreground">1”“2 business days</strong>.
+          will get back to you within <strong className="text-foreground">1-2 business days</strong>.
         </p>
       </div>
 
