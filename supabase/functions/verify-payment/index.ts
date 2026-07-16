@@ -50,6 +50,10 @@ serve(async (req) => {
       p_amount_paid: verifyData.data.amount,
       p_payment_reference: reference,
       p_promo_code_id: metadata.promoCodeId || null,
+      p_is_gift: metadata.isGift || false,
+      p_recipient_name: metadata.recipientName || null,
+      p_recipient_email: metadata.recipientEmail || null,
+      p_gift_message: metadata.giftMessage || null,
     });
     if (checkoutError) {
       console.error("Supabase checkout error:", checkoutError);

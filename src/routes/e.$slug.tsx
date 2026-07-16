@@ -109,6 +109,13 @@ function EventDetailPage() {
   const [buyerName, setBuyerName] = useState("");
   const [buyerEmail, setBuyerEmail] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
+  
+  // Gift details
+  const [isGift, setIsGift] = useState(false);
+  const [recipientName, setRecipientName] = useState("");
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [giftMessage, setGiftMessage] = useState("");
+
   // attendee names keyed by ticketTypeId -> array of names (one per ticket in that tier)
   const [attendeeNames, setAttendeeNames] = useState<Record<string, string[]>>({});
   const [checkoutBusy, setCheckoutBusy] = useState(false);
@@ -231,6 +238,10 @@ function EventDetailPage() {
           p_amount_paid: 0,
           p_payment_reference: `FREE_${Date.now()}_${Math.random().toString(36).substring(7)}`,
           p_promo_code_id: appliedPromo?.id ?? undefined,
+          p_is_gift: isGift,
+          p_recipient_name: isGift ? recipientName : null,
+          p_recipient_email: isGift ? recipientEmail : null,
+          p_gift_message: isGift ? giftMessage : null,
         });
 
         if (checkoutError) {
@@ -255,6 +266,10 @@ function EventDetailPage() {
         buyerPhone: buyerPhone || null,
         tickets: ticketsPayload,
         promoCodeId: appliedPromo?.id || null,
+        isGift,
+        recipientName: isGift ? recipientName : null,
+        recipientEmail: isGift ? recipientEmail : null,
+        giftMessage: isGift ? giftMessage : null,
       };
 
       const { data: initData, error: initErr } = await supabase.functions.invoke("initialize-payment", {
@@ -335,6 +350,36 @@ function EventDetailPage() {
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number (Optional)</Label>
               <Input id="phone" type="tel" value={buyerPhone} onChange={(e) => setBuyerPhone(e.target.value)} placeholder="08012345678" />
+            </div>
+
+            <div className="space-y-4 border-t border-border pt-4">
+              <div className="flex items-center gap-2">
+                <input 
+                  type="checkbox" 
+                  id="is-gift" 
+                  className="mt-0.5"
+                  checked={isGift}
+                  onChange={(e) => setIsGift(e.target.checked)}
+                />
+                <Label htmlFor="is-gift" className="text-sm font-semibold">Buy as a gift</Label>
+              </div>
+
+              {isGift && (
+                <div className="space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="recipientName">Recipient Name</Label>
+                    <Input id="recipientName" required={isGift} value={recipientName} onChange={(e) => setRecipientName(e.target.value)} placeholder="Gift recipient's full name" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="recipientEmail">Recipient Email</Label>
+                    <Input id="recipientEmail" type="email" required={isGift} value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)} placeholder="Where to send the tickets" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="giftMessage">Gift Message (Optional)</Label>
+                    <Input id="giftMessage" value={giftMessage} onChange={(e) => setGiftMessage(e.target.value)} placeholder="Happy Birthday!" />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2 border-t border-border pt-4">
