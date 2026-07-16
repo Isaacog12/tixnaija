@@ -22,6 +22,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ESlugRouteImport } from './routes/e.$slug'
 import { Route as CheckoutVerifyRouteImport } from './routes/checkout.verify'
+import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/inbox'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -97,6 +98,11 @@ const CheckoutVerifyRoute = CheckoutVerifyRouteImport.update({
   path: '/checkout/verify',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedTicketsRoute = AuthenticatedTicketsRouteImport.update({
+  id: '/tickets',
+  path: '/tickets',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedInboxRoute = AuthenticatedInboxRouteImport.update({
   id: '/inbox',
   path: '/inbox',
@@ -168,6 +174,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inbox': typeof AuthenticatedInboxRoute
+  '/tickets': typeof AuthenticatedTicketsRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
   '/e/$slug': typeof ESlugRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
@@ -192,6 +199,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inbox': typeof AuthenticatedInboxRoute
+  '/tickets': typeof AuthenticatedTicketsRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
   '/e/$slug': typeof ESlugRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
@@ -218,6 +226,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
+  '/_authenticated/tickets': typeof AuthenticatedTicketsRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
   '/e/$slug': typeof ESlugRoute
   '/_authenticated/admin_/banners': typeof AuthenticatedAdminBannersRoute
@@ -244,6 +253,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/inbox'
+    | '/tickets'
     | '/checkout/verify'
     | '/e/$slug'
     | '/admin/banners'
@@ -268,6 +278,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/inbox'
+    | '/tickets'
     | '/checkout/verify'
     | '/e/$slug'
     | '/admin/banners'
@@ -293,6 +304,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
     | '/_authenticated/inbox'
+    | '/_authenticated/tickets'
     | '/checkout/verify'
     | '/e/$slug'
     | '/_authenticated/admin_/banners'
@@ -412,6 +424,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutVerifyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/tickets': {
+      id: '/_authenticated/tickets'
+      path: '/tickets'
+      fullPath: '/tickets'
+      preLoaderRoute: typeof AuthenticatedTicketsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/inbox': {
       id: '/_authenticated/inbox'
       path: '/inbox'
@@ -490,6 +509,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
+  AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRoute
   AuthenticatedAdminBannersRoute: typeof AuthenticatedAdminBannersRoute
   AuthenticatedAdminOrganizerApplicationsRoute: typeof AuthenticatedAdminOrganizerApplicationsRoute
   AuthenticatedEventsNewRoute: typeof AuthenticatedEventsNewRoute
@@ -503,6 +523,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
+  AuthenticatedTicketsRoute: AuthenticatedTicketsRoute,
   AuthenticatedAdminBannersRoute: AuthenticatedAdminBannersRoute,
   AuthenticatedAdminOrganizerApplicationsRoute:
     AuthenticatedAdminOrganizerApplicationsRoute,
@@ -534,3 +555,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

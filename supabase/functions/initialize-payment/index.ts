@@ -54,12 +54,18 @@ serve(async (req) => {
     // Fetch organizer's subaccount code
     const { data: eventData, error: eventError } = await supabase
       .from("events")
-      .select("organizer_id")
+      .select("organizer_id, start_datetime, end_datetime")
       .eq("id", eventId)
       .single();
 
     if (eventError || !eventData) {
       throw new Error("Event not found");
+    }
+
+    const start = new Date(eventData.start_datetime);
+    const end = eventData.end_datetime ? new Date(eventData.end_datetime) : start;
+    if (end < new Date()) {
+      throw new Error("This event has ended. Tickets are no longer available for purchase.");
     }
 
     const { data: profileData, error: profileError } = await supabase

@@ -306,7 +306,12 @@ function EventDetailPage() {
       )}
 
       {/* Sticky mobile buy bar */}
-      {data && data.event.status !== "cancelled" && (
+      {data && data.event.status !== "cancelled" && (() => {
+        const start = new Date(data.event.start_datetime);
+        const end = data.event.end_datetime ? new Date(data.event.end_datetime) : start;
+        const isPastEvent = end < new Date();
+        if (isPastEvent) return null;
+        return (
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-background/95 backdrop-blur md:hidden">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
             <div className="min-w-0">
@@ -327,7 +332,8 @@ function EventDetailPage() {
             </Button>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Checkout Dialog */}
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
@@ -478,6 +484,9 @@ function EventBody({
   totalKobo: number;
 }) {
   const start = new Date(event.start_datetime);
+  const end = event.end_datetime ? new Date(event.end_datetime) : start;
+  const now = new Date();
+  const isPastEvent = end < now;
 
   return (
     <div className="mx-auto max-w-6xl px-4 pt-6 md:pt-10">
@@ -487,7 +496,13 @@ function EventBody({
           <p className="text-sm mt-1">{event.organizer_note || "This event has been cancelled by the organizer. Ticket holders have been notified regarding refunds."}</p>
         </div>
       )}
-      {event.postponed_at && event.status !== "cancelled" && (
+      {isPastEvent && event.status !== "cancelled" && (
+        <div className="mb-8 rounded-xl border border-muted-foreground/30 bg-muted/20 p-4 text-muted-foreground">
+          <h2 className="font-semibold text-lg">Event Ended</h2>
+          <p className="text-sm mt-1">This event has already ended. Tickets are no longer available for purchase.</p>
+        </div>
+      )}
+      {event.postponed_at && event.status !== "cancelled" && !isPastEvent && (
         <div className="mb-8 rounded-xl border border-amber-500/50 bg-amber-500/10 p-4 text-amber-600 dark:text-amber-400">
           <h2 className="font-semibold text-lg">Event Postponed</h2>
           <p className="text-sm mt-1">{event.organizer_note || "This event has been postponed to a new date. Previously purchased tickets remain valid."}</p>
@@ -578,11 +593,12 @@ function EventBody({
                 const isEnded = salesEnd && now >= salesEnd;
                 const remaining = Math.max(0, t.quantity_available - t.quantity_sold);
                 const soldOut = remaining === 0;
-                const unavailable = !isStarted || isEnded || soldOut || event.status === "cancelled";
+                const unavailable = !isStarted || isEnded || soldOut || event.status === "cancelled" || isPastEvent;
                 const count = qty[t.id] ?? 0;
                 
                 let statusText = `${remaining} left`;
                 if (event.status === "cancelled") statusText = "Sales closed";
+                else if (isPastEvent) statusText = "Event ended";
                 else if (!isStarted) statusText = "Sales not started";
                 else if (isEnded) statusText = "Sales ended";
                 else if (soldOut) statusText = "Sold out";

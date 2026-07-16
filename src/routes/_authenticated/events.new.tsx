@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { ArrowLeft, ImagePlus, Plus, Trash2, Loader2 } from "lucide-react";
+import { ArrowLeft, ImagePlus, Plus, Trash2, Loader2, Check, Calendar, MapPin, ChevronRight, ChevronLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,8 +33,8 @@ const CATEGORIES = [
   { value: "other", label: "Other" },
 ] as const;
 
-const eventSchema = z.object({
-  title: z.string().trim().min(3, "Title is too short").max(120),
+const detailsSchema = z.object({
+  title: z.string().trim().min(3, "Title must be at least 3 characters").max(120),
   description: z.string().trim().max(4000).optional(),
   category: z.enum(["music", "comedy", "conference", "church", "campus", "party", "sport", "other"]),
   venue_name: z.string().trim().max(120).optional(),
@@ -57,13 +57,15 @@ function emptyTicket(): TicketDraft {
   return { name: "", price_naira: "", quantity_available: "", max_per_order: "10", description: "" };
 }
 
+const STEPS = ["Details", "Cover Image", "Tickets", "Review"];
+
 function NewEventPage() {
   const navigate = useNavigate();
   const [isCheckingRole, setIsCheckingRole] = useState(true);
   const [hasOrganizerRole, setHasOrganizerRole] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
   const [hasPayoutAccount, setHasPayoutAccount] = useState(false);
   
+  const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -77,10 +79,10 @@ function NewEventPage() {
   });
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string>("");
+  const [isDraggingCover, setIsDraggingCover] = useState(false);
   const [tickets, setTickets] = useState<TicketDraft[]>([
     { name: "Regular", price_naira: "5000", quantity_available: "100", max_per_order: "10", description: "" },
   ]);
-  const [publish, setPublish] = useState(true);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -90,30 +92,16 @@ function NewEventPage() {
         setIsCheckingRole(false);
         return;
       }
-      setUserId(userData.user.id);
-
-      // Run both queries in parallel — they don't depend on each other
       const [rolesResult, profileResult] = await Promise.all([
-        supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", userData.user.id)
-          .in("role", ["organizer", "admin"])
-          .limit(1),
-        supabase
-          .from("profiles")
-          .select("paystack_subaccount_code")
-          .eq("id", userData.user.id)
-          .maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", userData.user.id).in("role", ["organizer", "admin"]).limit(1),
+        supabase.from("profiles").select("paystack_subaccount_code").eq("id", userData.user.id).maybeSingle(),
       ]);
-
       if (!rolesResult.error && rolesResult.data && rolesResult.data.length > 0) {
         setHasOrganizerRole(true);
       }
       if (profileResult.data?.paystack_subaccount_code) {
         setHasPayoutAccount(true);
       }
-
       setIsCheckingRole(false);
     }
     checkRole();
@@ -123,110 +111,106 @@ function NewEventPage() {
     setTickets((prev) => prev.map((t, i) => (i === idx ? { ...t, ...patch } : t)));
   }
 
+  function handleCoverDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setIsDraggingCover(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      onPickCover(e.dataTransfer.files[0]);
+    }
+  }
+
   function onPickCover(f: File | null) {
     setCoverFile(f);
     if (f) setCoverPreview(URL.createObjectURL(f));
     else setCoverPreview("");
   }
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    const parsed = eventSchema.safeParse(form);
-    if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? "Check the event details");
-      return;
+  function nextStep() {
+    if (step === 1) {
+      const parsed = detailsSchema.safeParse(form);
+      if (!parsed.success) {
+        toast.error(parsed.error.issues[0]?.message ?? "Check the event details");
+        return;
+      }
     }
+    if (step === 3) {
+      if (tickets.length === 0) {
+        toast.error("Add at least one ticket type");
+        return;
+      }
+      for (let i = 0; i < tickets.length; i++) {
+        const t = tickets[i];
+        if (!t.name.trim()) return toast.error(`Ticket #${i + 1}: name required`);
+        const price = Number(t.price_naira);
+        const qty = Number(t.quantity_available);
+        const max = Number(t.max_per_order || "10");
+        if (Number.isNaN(price) || price < 0) return toast.error(`Ticket #${i + 1}: invalid price`);
+        if (!Number.isInteger(qty) || qty < 1) return toast.error(`Ticket #${i + 1}: quantity must be ≥ 1`);
+        if (!Number.isInteger(max) || max < 1) return toast.error(`Ticket #${i + 1}: max per order must be ≥ 1`);
+      }
+    }
+    setStep((s) => Math.min(s + 1, 4));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function prevStep() {
+    setStep((s) => Math.max(s - 1, 1));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function submit(publish: boolean) {
     if (publish && !hasPayoutAccount) {
       toast.error("Please connect your payout account in Settings to publish events.");
       return;
     }
-    if (tickets.length === 0) {
-      toast.error("Add at least one ticket type");
-      return;
-    }
-    const parsedTickets: {
-      name: string;
-      price_kobo: number;
-      quantity_available: number;
-      max_per_order: number;
-      description: string | null;
-      sort_order: number;
-    }[] = [];
-    for (let i = 0; i < tickets.length; i++) {
-      const t = tickets[i];
-      if (!t.name.trim()) return toast.error(`Ticket #${i + 1}: name required`);
-      const price = Number(t.price_naira);
-      const qty = Number(t.quantity_available);
-      const max = Number(t.max_per_order || "10");
-      if (Number.isNaN(price) || price < 0) return toast.error(`Ticket #${i + 1}: invalid price`);
-      if (!Number.isInteger(qty) || qty < 1) return toast.error(`Ticket #${i + 1}: quantity must be ≥ 1`);
-      if (!Number.isInteger(max) || max < 1) return toast.error(`Ticket #${i + 1}: max per order must be ≥ 1`);
-      parsedTickets.push({
-        name: t.name.trim(),
-        price_kobo: nairaToKobo(price),
-        quantity_available: qty,
-        max_per_order: max,
-        description: t.description.trim() || null,
-        sort_order: i,
-      });
-    }
-
     setBusy(true);
     try {
-      // Re-fetch user ID to be 100% sure we are using the current session
       const { data: userData } = await supabase.auth.getUser();
       const currentUserId = userData.user?.id;
       if (!currentUserId) throw new Error("Not signed in");
 
-      // Upload cover if any
       let coverUrl: string | null = null;
       if (coverFile) {
         const ext = coverFile.name.split(".").pop() ?? "jpg";
         const path = `${currentUserId}/${crypto.randomUUID()}.${ext}`;
-        const { error: upErr } = await supabase.storage
-          .from("event-covers")
-          .upload(path, coverFile, { cacheControl: "3600", upsert: false });
+        const { error: upErr } = await supabase.storage.from("event-covers").upload(path, coverFile, { cacheControl: "3600", upsert: false });
         if (upErr) throw new Error(`Failed to upload cover: ${upErr.message}`);
         const { data: pub } = supabase.storage.from("event-covers").getPublicUrl(path);
         coverUrl = pub.publicUrl;
       }
 
-      const slug = slugify(parsed.data.title);
-      
+      const slug = slugify(form.title);
       const payload = {
         organizer_id: currentUserId,
-        title: parsed.data.title,
+        title: form.title,
         slug,
-        description: parsed.data.description || null,
-        category: parsed.data.category,
+        description: form.description || null,
+        category: form.category,
         cover_image_url: coverUrl,
-        venue_name: parsed.data.venue_name || null,
-        address: parsed.data.address || null,
-        city: parsed.data.city,
-        state: parsed.data.state || null,
-        start_datetime: new Date(parsed.data.start_datetime).toISOString(),
-        end_datetime: parsed.data.end_datetime ? new Date(parsed.data.end_datetime).toISOString() : null,
+        venue_name: form.venue_name || null,
+        address: form.address || null,
+        city: form.city,
+        state: form.state || null,
+        start_datetime: new Date(form.start_datetime).toISOString(),
+        end_datetime: form.end_datetime ? new Date(form.end_datetime).toISOString() : null,
         status: (publish ? "published" : "draft") as "published" | "draft",
       };
       
-      const { data: event, error: evErr } = await supabase
-        .from("events")
-        .insert(payload)
-        .select("id")
-        .single();
-      
-      if (evErr) {
-        console.error("Event insert failed", evErr);
-        throw new Error(`Database error on events: ${evErr.message || evErr.details || evErr.hint}`);
-      }
+      const { data: event, error: evErr } = await supabase.from("events").insert(payload).select("id").single();
+      if (evErr) throw new Error(`Database error: ${evErr.message}`);
 
-      const { error: ttErr } = await supabase.from("ticket_types").insert(
-        parsedTickets.map((t) => ({ event_id: event.id, ...t })),
-      );
-      if (ttErr) {
-        console.error("Ticket types insert failed", ttErr);
-        throw new Error(`Database error on tickets: ${ttErr.message}`);
-      }
+      const parsedTickets = tickets.map((t, i) => ({
+        event_id: event.id,
+        name: t.name.trim(),
+        price_kobo: nairaToKobo(Number(t.price_naira)),
+        quantity_available: Number(t.quantity_available),
+        max_per_order: Number(t.max_per_order),
+        description: t.description.trim() || null,
+        sort_order: i,
+      }));
+
+      const { error: ttErr } = await supabase.from("ticket_types").insert(parsedTickets);
+      if (ttErr) throw new Error(`Ticket error: ${ttErr.message}`);
 
       toast.success(publish ? "Event published! 🎉" : "Event saved as draft");
       navigate({ to: "/dashboard" });
@@ -238,200 +222,328 @@ function NewEventPage() {
   }
 
   if (isCheckingRole) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <div className="flex min-h-[50vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
   }
 
   if (!hasOrganizerRole) {
     return (
       <div className="mx-auto max-w-lg px-4 py-24 text-center">
         <h1 className="font-display text-4xl text-gradient-sunset">Organizer Access Required</h1>
-        <p className="mt-4 text-muted-foreground">
-          You need an approved organizer account to create events.
-          Submit an application from your Account Settings page.
-        </p>
-        <Button
-          asChild
-          className="mt-8 gradient-sunset text-primary-foreground shadow-glow hover:opacity-90"
-        >
-          <Link to="/account">Go to Account Settings</Link>
-        </Button>
+        <p className="mt-4 text-muted-foreground">You need an approved organizer account to create events. Submit an application from your Account Settings page.</p>
+        <Button asChild className="mt-8 gradient-sunset text-primary-foreground shadow-glow hover:opacity-90"><Link to="/account">Go to Account Settings</Link></Button>
       </div>
     );
   }
 
+  const livePreview = (
+    <div className="group flex flex-col overflow-hidden rounded-2xl bg-card/60 transition-all border border-border/50 max-w-sm mx-auto shadow-glow">
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary">
+        {coverPreview ? (
+          <img src={coverPreview} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+        ) : (
+          <div className="flex h-full items-center justify-center text-muted-foreground font-display text-2xl opacity-50 bg-gradient-to-br from-secondary to-background">No Cover Image</div>
+        )}
+        {form.city && (
+          <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/80 px-2.5 py-1 text-xs font-medium backdrop-blur-md z-20">
+            <MapPin className="h-3 w-3 text-primary" />
+            {form.city}
+          </div>
+        )}
+      </div>
+      <div className="flex flex-1 flex-col p-5">
+        <div className="mb-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary">
+          <Calendar className="h-3.5 w-3.5" />
+          {form.start_datetime ? new Date(form.start_datetime).toLocaleString("en-NG", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "Date TBD"}
+        </div>
+        <h3 className="font-display text-xl leading-tight line-clamp-2 mb-2 group-hover:text-primary transition-colors">
+          {form.title || "Your Event Title"}
+        </h3>
+        {form.venue_name && (
+          <p className="text-sm text-muted-foreground line-clamp-1 mb-4">{form.venue_name}</p>
+        )}
+        <div className="mt-auto pt-4 flex items-center justify-between border-t border-border/50">
+          <div className="text-xs text-muted-foreground">Tickets from</div>
+          <div className="font-display text-lg text-gradient-sunset">
+            {tickets.length ? formatNaira(Math.min(...tickets.map(t => Number(t.price_naira || 0) * 100))) : "Free"}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      <Button asChild variant="ghost" size="sm" className="mb-4 -ml-2">
-        <Link to="/dashboard">
-          <ArrowLeft className="mr-1 h-4 w-4" /> Back to dashboard
-        </Link>
+    <div className="mx-auto max-w-4xl px-4 py-10 pb-32">
+      <Button asChild variant="ghost" size="sm" className="mb-8 -ml-2 text-muted-foreground hover:text-foreground">
+        <Link to="/dashboard"><ArrowLeft className="mr-1 h-4 w-4" /> Back to dashboard</Link>
       </Button>
 
-      <h1 className="font-display text-4xl md:text-5xl">Create event</h1>
-      <p className="text-muted-foreground">Fill it in, publish, and start selling.</p>
+      <div className="mb-12">
+        <h1 className="font-display text-4xl md:text-5xl text-gradient-sunset">Create Event</h1>
+        <p className="text-muted-foreground mt-2">Follow the steps to get your event published and ready for sales.</p>
+      </div>
 
-      <form onSubmit={submit} className="mt-8 space-y-6">
-        {/* Cover */}
-        <section className="rounded-2xl border border-border bg-card/60 p-6">
-          <h2 className="mb-4 text-lg font-semibold">Cover image</h2>
-          <label
-            className="relative flex h-52 cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border bg-secondary/40 transition hover:border-primary/50"
-            style={coverPreview ? { backgroundImage: `url(${coverPreview})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
-          >
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => onPickCover(e.target.files?.[0] ?? null)}
-            />
-            {!coverPreview && (
-              <div className="text-center text-sm text-muted-foreground">
-                <ImagePlus className="mx-auto mb-2 h-8 w-8" />
-                Tap to upload a cover image
+      {/* Stepper */}
+      <div className="mb-12 flex items-center w-full max-w-2xl mx-auto px-4">
+        {STEPS.map((label, idx) => {
+          const stepNum = idx + 1;
+          const isActive = stepNum === step;
+          const isPast = stepNum < step;
+          const isLast = idx === STEPS.length - 1;
+          return (
+            <div key={label} className={`flex items-center ${isLast ? "" : "flex-1"}`}>
+              <div className="flex flex-col items-center gap-2 relative">
+                <div className={`flex h-10 w-10 items-center justify-center rounded-full border-2 font-bold transition-all duration-500 ${isActive ? "border-primary bg-primary text-primary-foreground shadow-glow scale-110" : isPast ? "border-primary bg-primary/20 text-primary" : "border-border bg-card text-muted-foreground"}`}>
+                  {isPast ? <Check className="h-5 w-5" /> : stepNum}
+                </div>
+                <span className={`absolute -bottom-6 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.15em] transition-colors duration-300 ${isActive ? "text-primary" : isPast ? "text-foreground" : "text-muted-foreground/60"}`}>
+                  {label}
+                </span>
               </div>
-            )}
-          </label>
-        </section>
-
-        {/* Details */}
-        <section className="rounded-2xl border border-border bg-card/60 p-6">
-          <h2 className="mb-4 text-lg font-semibold">Details</h2>
-          <div className="grid gap-4">
-            <Field label="Event title">
-              <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Detty December Concert 2026" />
-            </Field>
-            <Field label="Description">
-              <Textarea rows={5} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Line-up, dress code, what to expect…" />
-            </Field>
-            <Field label="Category">
-              <Select value={form.category} onValueChange={(v: typeof form.category) => setForm({ ...form, category: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </Field>
-          </div>
-        </section>
-
-        {/* Location & Time */}
-        <section className="rounded-2xl border border-border bg-card/60 p-6">
-          <h2 className="mb-4 text-lg font-semibold">Where & When</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Venue name (optional)">
-              <Input value={form.venue_name} onChange={(e) => setForm({ ...form, venue_name: e.target.value })} placeholder="Eko Hotel" />
-            </Field>
-            <div className="hidden sm:block" />
-            <Field label="Address (optional)">
-              <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="1415 Adetokunbo Ademola St" />
-            </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="City">
-                <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Lagos" />
-              </Field>
-              <Field label="State (optional)">
-                <Input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} placeholder="LA" />
-              </Field>
+              {!isLast && <div className={`h-[2px] flex-1 mx-2 sm:mx-4 rounded-full transition-colors duration-500 ${isPast ? "bg-primary/50" : "bg-border"}`} />}
             </div>
-            <Field label="Starts at">
-              <Input type="datetime-local" value={form.start_datetime} onChange={(e) => setForm({ ...form, start_datetime: e.target.value })} />
-            </Field>
-            <Field label="Ends at (optional)">
-              <Input type="datetime-local" value={form.end_datetime} onChange={(e) => setForm({ ...form, end_datetime: e.target.value })} />
-            </Field>
-          </div>
-        </section>
+          );
+        })}
+      </div>
 
-        {/* Tickets */}
-        <section className="rounded-2xl border border-border bg-card/60 p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Tickets</h2>
-            <Button type="button" variant="outline" size="sm" onClick={() => setTickets([...tickets, emptyTicket()])}>
-              <Plus className="mr-1 h-4 w-4" /> Add tier
-            </Button>
+      <div className="min-h-[400px]">
+        {/* STEP 1: DETAILS */}
+        {step === 1 && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+            <section className="rounded-3xl border border-border bg-card/40 p-6 md:p-8 shadow-sm backdrop-blur-sm">
+              <h2 className="mb-6 font-display text-2xl">Event Details</h2>
+              <div className="grid gap-6">
+                <Field label="Event title" required>
+                  <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Detty December Concert 2026" className="text-lg py-6" />
+                </Field>
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <Field label="Category" required>
+                    <Select value={form.category} onValueChange={(v: typeof form.category) => setForm({ ...form, category: v })}>
+                      <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+                      <SelectContent>{CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </Field>
+                </div>
+                <Field label="Description">
+                  <Textarea rows={6} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Tell people what to expect: line-up, dress code, schedule..." className="resize-none" />
+                </Field>
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-border bg-card/40 p-6 md:p-8 shadow-sm backdrop-blur-sm">
+              <h2 className="mb-6 font-display text-2xl">Where & When</h2>
+              <div className="grid gap-6 sm:grid-cols-2">
+                <Field label="Venue name (optional)">
+                  <Input value={form.venue_name} onChange={(e) => setForm({ ...form, venue_name: e.target.value })} placeholder="e.g. Eko Hotel" className="h-11" />
+                </Field>
+                <Field label="Address (optional)">
+                  <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="e.g. 1415 Adetokunbo Ademola St" className="h-11" />
+                </Field>
+                <Field label="City" required>
+                  <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Lagos" className="h-11" />
+                </Field>
+                <Field label="State (optional)">
+                  <Input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} placeholder="LA" className="h-11" />
+                </Field>
+                <Field label="Starts at" required>
+                  <Input type="datetime-local" value={form.start_datetime} onChange={(e) => setForm({ ...form, start_datetime: e.target.value })} className="h-11" />
+                </Field>
+                <Field label="Ends at (optional)">
+                  <Input type="datetime-local" value={form.end_datetime} onChange={(e) => setForm({ ...form, end_datetime: e.target.value })} className="h-11" />
+                </Field>
+              </div>
+            </section>
           </div>
-          <div className="space-y-4">
-            {tickets.map((t, i) => (
-              <div key={i} className="relative rounded-xl border border-border bg-background/50 p-4 pt-8">
-                {tickets.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-2 top-2 h-7 w-7 text-muted-foreground hover:text-destructive"
-                    onClick={() => setTickets(tickets.filter((_, idx) => idx !== i))}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+        )}
+
+        {/* STEP 2: COVER IMAGE */}
+        {step === 2 && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <section className="rounded-3xl border border-border bg-card/40 p-6 md:p-8 shadow-sm backdrop-blur-sm">
+              <div className="mb-6">
+                <h2 className="font-display text-2xl">Cover Image</h2>
+                <p className="text-muted-foreground mt-1 text-sm">Upload a high-quality image to make your event stand out. Recommended ratio is 16:9 or 4:3.</p>
+              </div>
+              <label
+                onDragOver={(e) => { e.preventDefault(); setIsDraggingCover(true); }}
+                onDragLeave={() => setIsDraggingCover(false)}
+                onDrop={handleCoverDrop}
+                className={`relative flex min-h-[300px] md:min-h-[400px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition-all duration-300 ${isDraggingCover ? "border-primary bg-primary/10" : coverPreview ? "border-border bg-secondary/20 hover:border-primary/50" : "border-border bg-secondary/40 hover:border-primary/50 hover:bg-secondary/60"}`}
+                style={coverPreview ? { backgroundImage: `url(${coverPreview})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
+              >
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => onPickCover(e.target.files?.[0] ?? null)} />
+                {!coverPreview && (
+                  <div className="text-center p-6">
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-background shadow-sm">
+                      <ImagePlus className="h-8 w-8 text-primary" />
+                    </div>
+                    <p className="text-lg font-medium">Click to upload or drag and drop</p>
+                    <p className="mt-1 text-sm text-muted-foreground">JPG, PNG, WEBP up to 5MB</p>
+                  </div>
                 )}
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Ticket name">
-                    <Input value={t.name} onChange={(e) => updateTicket(i, { name: e.target.value })} placeholder="VIP, Early Bird…" />
-                  </Field>
-                  <Field label="Price (₦) - 0 for free">
-                    <Input type="number" min="0" value={t.price_naira} onChange={(e) => updateTicket(i, { price_naira: e.target.value })} placeholder="5000" />
-                  </Field>
-                  <Field label="Total quantity available">
-                    <Input type="number" min="1" value={t.quantity_available} onChange={(e) => updateTicket(i, { quantity_available: e.target.value })} placeholder="100" />
-                  </Field>
-                  <Field label="Max per order">
-                    <Input type="number" min="1" value={t.max_per_order} onChange={(e) => updateTicket(i, { max_per_order: e.target.value })} placeholder="10" />
-                  </Field>
-                  <div className="sm:col-span-2">
-                    <Field label="Description (optional)">
-                      <Input value={t.description} onChange={(e) => updateTicket(i, { description: e.target.value })} placeholder="Includes drinks and backstage access" />
-                    </Field>
+                {coverPreview && (
+                  <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity hover:opacity-100 flex items-center justify-center backdrop-blur-sm">
+                    <p className="text-white font-medium flex items-center gap-2"><ImagePlus className="h-5 w-5" /> Change cover image</p>
+                  </div>
+                )}
+              </label>
+            </section>
+          </div>
+        )}
+
+        {/* STEP 3: TICKETS */}
+        {step === 3 && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <section className="rounded-3xl border border-border bg-card/40 p-6 md:p-8 shadow-sm backdrop-blur-sm">
+              <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="font-display text-2xl">Ticket Types</h2>
+                  <p className="text-muted-foreground mt-1 text-sm">Add the different tickets you want to sell. Set price to 0 for free events.</p>
+                </div>
+                <Button type="button" onClick={() => setTickets([...tickets, emptyTicket()])} className="shrink-0 bg-secondary text-secondary-foreground hover:bg-secondary/80">
+                  <Plus className="mr-2 h-4 w-4" /> Add Ticket Tier
+                </Button>
+              </div>
+
+              <div className="space-y-6">
+                {tickets.map((t, i) => (
+                  <div key={i} className="relative rounded-2xl border border-primary/20 bg-background/50 p-5 pt-8 shadow-sm transition-all hover:border-primary/40 group">
+                    <div className="absolute -top-3 left-4 bg-background px-2 text-xs font-bold uppercase tracking-widest text-primary">
+                      Tier {i + 1}
+                    </div>
+                    {tickets.length > 1 && (
+                      <Button
+                        type="button" variant="ghost" size="icon"
+                        className="absolute right-3 top-3 h-8 w-8 text-muted-foreground opacity-50 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 transition-opacity"
+                        onClick={() => setTickets(tickets.filter((_, idx) => idx !== i))}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <div className="grid gap-5 sm:grid-cols-12">
+                      <div className="sm:col-span-5">
+                        <Field label="Ticket name" required>
+                          <Input value={t.name} onChange={(e) => updateTicket(i, { name: e.target.value })} placeholder="e.g. VIP, Early Bird" className="h-11" />
+                        </Field>
+                      </div>
+                      <div className="sm:col-span-3">
+                        <Field label="Price (₦)" required>
+                          <Input type="number" min="0" value={t.price_naira} onChange={(e) => updateTicket(i, { price_naira: e.target.value })} placeholder="0 for free" className="h-11" />
+                        </Field>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <Field label="Available" required>
+                          <Input type="number" min="1" value={t.quantity_available} onChange={(e) => updateTicket(i, { quantity_available: e.target.value })} placeholder="100" className="h-11" />
+                        </Field>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <Field label="Max/Order">
+                          <Input type="number" min="1" value={t.max_per_order} onChange={(e) => updateTicket(i, { max_per_order: e.target.value })} placeholder="10" className="h-11" />
+                        </Field>
+                      </div>
+                      <div className="sm:col-span-12">
+                        <Field label="Description (optional)">
+                          <Input value={t.description} onChange={(e) => updateTicket(i, { description: e.target.value })} placeholder="What does this ticket include? e.g. Includes drinks and backstage access" className="h-11" />
+                        </Field>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+        )}
+
+        {/* STEP 4: REVIEW */}
+        {step === 4 && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <section className="rounded-3xl border border-border bg-card/40 p-6 md:p-8 shadow-sm backdrop-blur-sm">
+              <div className="mb-8 text-center">
+                <h2 className="font-display text-3xl">Ready to go live?</h2>
+                <p className="text-muted-foreground mt-2">Review how your event will appear to buyers.</p>
+              </div>
+
+              <div className="grid md:grid-cols-[1fr_auto_1fr] gap-10 items-center max-w-4xl mx-auto">
+                {/* Details Summary */}
+                <div className="space-y-6 bg-secondary/30 p-6 rounded-2xl border border-border/50">
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Event Name</h4>
+                    <p className="font-display text-2xl">{form.title}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Timing</h4>
+                    <p className="font-medium text-primary">
+                      {form.start_datetime ? new Date(form.start_datetime).toLocaleString("en-NG", { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : "Not set"}
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Location</h4>
+                    <p className="font-medium">{[form.venue_name, form.city].filter(Boolean).join(", ")}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Tickets ({tickets.length})</h4>
+                    <div className="space-y-2">
+                      {tickets.map((t, i) => (
+                        <div key={i} className="flex justify-between items-center bg-background/60 p-2 px-3 rounded-md text-sm border border-border/50">
+                          <span className="font-medium">{t.name}</span>
+                          <span className="font-bold">{t.price_naira === "0" ? "Free" : formatNaira(Number(t.price_naira) * 100)}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </section>
 
-        {/* Submit */}
-        <div>
-          <div className="flex items-center gap-3 pt-4">
-            <Button
-              type="submit"
-              disabled={busy || !hasPayoutAccount}
-              onClick={() => setPublish(true)}
-              className="flex-1 gradient-sunset text-primary-foreground shadow-glow hover:opacity-90"
-              size="lg"
-            >
-              {busy && publish ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Publish event
+                <div className="hidden md:block w-px h-full bg-border/50" />
+
+                {/* Preview Card */}
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 text-center">Live Card Preview</h4>
+                  {livePreview}
+                </div>
+              </div>
+
+              {!hasPayoutAccount && (
+                <div className="mt-8 rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-center text-destructive">
+                  <p className="font-medium">⚠️ Payout Account Missing</p>
+                  <p className="text-sm mt-1">You must connect your payout account in <Link to="/account" className="underline hover:text-destructive/80 font-bold">Account Settings</Link> before you can publish.</p>
+                </div>
+              )}
+            </section>
+          </div>
+        )}
+      </div>
+
+      {/* Navigation Footer */}
+      <div className="mt-8 flex items-center justify-between border-t border-border/50 pt-6">
+        <Button variant="ghost" onClick={prevStep} disabled={step === 1} className="text-muted-foreground hover:text-foreground">
+          <ChevronLeft className="mr-2 h-4 w-4" /> Back
+        </Button>
+        
+        {step < 4 ? (
+          <Button onClick={nextStep} size="lg" className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90 min-w-[120px]">
+            Continue <ChevronRight className="ml-2 h-4 w-4" />
+          </Button>
+        ) : (
+          <div className="flex gap-3">
+            <Button disabled={busy} onClick={() => submit(false)} variant="outline" size="lg" className="bg-background">
+              Save Draft
             </Button>
-            <Button
-              type="submit"
-              disabled={busy}
-              onClick={() => setPublish(false)}
-              variant="outline"
-              className="flex-1"
-              size="lg"
-            >
-              {busy && !publish ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Save as draft
+            <Button disabled={busy || !hasPayoutAccount} onClick={() => submit(true)} size="lg" className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90 min-w-[140px]">
+              {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Publish Now
             </Button>
           </div>
-          {!hasPayoutAccount && (
-            <p className="mt-3 text-center text-sm font-medium text-destructive">
-              ⚠️ You must connect your payout account in <Link to="/account" className="underline hover:text-destructive/80">Account Settings</Link> before you can publish an event.
-            </p>
-          )}
-        </div>
-      </form>
+        )}
+      </div>
     </div>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5">
-      <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</Label>
+    <div className="space-y-2">
+      <Label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+        {label} {required && <span className="text-primary">*</span>}
+      </Label>
       {children}
     </div>
   );

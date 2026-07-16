@@ -16,13 +16,21 @@ export const Route = createFileRoute("/")({
 async function fetchUpcoming() {
   const { data, error } = await supabase
     .from("events")
-    .select("id, title, slug, city, venue_name, start_datetime, cover_image_url")
+    .select("id, title, slug, city, venue_name, start_datetime, end_datetime, cover_image_url")
     .eq("status", "published")
-    .gte("start_datetime", new Date().toISOString())
-    .order("created_at", { ascending: false })
-    .limit(3);
+    .gte("start_datetime", new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString())
+    .order("start_datetime", { ascending: true })
+    .limit(20);
   if (error) throw error;
-  return data ?? [];
+
+  const now = new Date();
+  const validEvents = (data ?? []).filter(ev => {
+    const start = new Date(ev.start_datetime);
+    const end = ev.end_datetime ? new Date(ev.end_datetime) : start;
+    return end >= now;
+  });
+
+  return validEvents.slice(0, 3);
 }
 
 async function fetchBanners() {

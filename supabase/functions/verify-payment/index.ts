@@ -39,6 +39,24 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Fetch event dates to block past events
+    const { data: eventData, error: eventError } = await supabase
+      .from("events")
+      .select("start_datetime, end_datetime")
+      .eq("id", metadata.eventId)
+      .single();
+
+    if (eventError || !eventData) {
+      throw new Error("Event not found");
+    }
+
+    const start = new Date(eventData.start_datetime);
+    const end = eventData.end_datetime ? new Date(eventData.end_datetime) : start;
+    if (end < new Date()) {
+      throw new Error("This event has ended. Tickets are no longer available for purchase.");
+    }
+
     // 3. Process the checkout using the updated RPC function
     const { data: orderId, error: checkoutError } = await supabase.rpc('process_checkout', {
       p_event_id: metadata.eventId,

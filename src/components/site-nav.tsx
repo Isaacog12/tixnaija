@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { LogOut, LayoutDashboard, User as UserIcon, Mail } from "lucide-react";
+import { LogOut, LayoutDashboard, User as UserIcon, Mail, Ticket as TicketIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -64,9 +64,14 @@ export function SiteNav() {
             How it works
           </Link>
           {user && (
-            <Link to="/dashboard" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-              Dashboard
-            </Link>
+            <>
+              <Link to="/tickets" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                Tickets
+              </Link>
+              <Link to="/dashboard" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                Organizer Dashboard
+              </Link>
+            </>
           )}
           <Link to="/contact" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
             Contact
@@ -99,8 +104,13 @@ export function SiteNav() {
                 <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
+                  <Link to="/tickets">
+                    <TicketIcon className="mr-2 h-4 w-4" /> Tickets
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link to="/dashboard">
-                    <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+                    <LayoutDashboard className="mr-2 h-4 w-4" /> Organizer Dashboard
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>

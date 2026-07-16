@@ -29,12 +29,12 @@ export const Route = createFileRoute("/browse")({
 async function fetchEvents(q: string) {
   let query = supabase
     .from("events")
-    .select("id, title, slug, city, venue_name, start_datetime, cover_image_url, description")
-    .eq("status", "published")
-    // Allow events from yesterday to show up, useful for testing
-    .gte("start_datetime", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+    .select("id, title, slug, city, venue_name, start_datetime, end_datetime, cover_image_url, description, status, category")
+    .in("status", ["published", "cancelled"])
+    // Fetch from a bit in the past, then rigorously filter out anything that has ended.
+    .gte("start_datetime", new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString())
     .order("start_datetime", { ascending: true })
-    .limit(60);
+    .limit(100);
 
   const cleaned = q.trim();
   if (cleaned) {
@@ -44,7 +44,7 @@ async function fetchEvents(q: string) {
     if (safe) {
       const like = `%${safe}%`;
       query = query.or(
-        `title.ilike.${like},description.ilike.${like},city.ilike.${like},venue_name.ilike.${like}`,
+        `title.ilike.${like},description.ilike.${like},city.ilike.${like},venue_name.ilike.${like},category.ilike.${like}`,
       );
     }
   }
@@ -52,9 +52,16 @@ async function fetchEvents(q: string) {
   const { data, error } = await query;
   if (error) throw error;
 
+  const now = new Date();
+  const validEvents = (data ?? []).filter(ev => {
+    const start = new Date(ev.start_datetime);
+    const end = ev.end_datetime ? new Date(ev.end_datetime) : start;
+    // We only want Live or Upcoming events. Meaning it hasn't ended yet.
+    return end >= now;
+  });
 
   // Fetch min price per event
-  const ids = (data ?? []).map((e) => e.id);
+  const ids = validEvents.map((e) => e.id);
   let minPrice: Record<string, number> = {};
   if (ids.length) {
     const { data: tts } = await supabase
@@ -67,7 +74,7 @@ async function fetchEvents(q: string) {
       }
     }
   }
-  return { events: data ?? [], minPrice };
+  return { events: validEvents, minPrice };
 }
 
 function BrowsePage() {
@@ -127,13 +134,10 @@ function BrowsePage() {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-8">
             {query.data.events.map((ev) => {
               const min = query.data.minPrice[ev.id];
-              return (
-                <Link
-                  key={ev.id}
-                  to="/e/$slug"
-                  params={{ slug: ev.slug }}
-                  className="group flex flex-col overflow-hidden rounded-2xl bg-card/60 transition-all hover:-translate-y-1 hover:shadow-glow border border-border/50 hover:border-primary/30"
-                >
+              const isCancelled = ev.status === 'cancelled';
+              
+              const CardInner = (
+                <>
                   <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary">
                     {ev.cover_image_url && (
                       <img
@@ -141,11 +145,18 @@ function BrowsePage() {
                         alt={ev.title}
                         loading="lazy"
                         decoding="async"
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        className={`h-full w-full object-cover transition-transform duration-500 ${!isCancelled ? "group-hover:scale-105" : "opacity-75 grayscale"}`}
                       />
                     )}
+                    {isCancelled && (
+                      <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] flex items-center justify-center z-10">
+                        <div className="rounded-full bg-destructive px-4 py-1.5 text-sm font-bold text-destructive-foreground shadow-lg">
+                          Cancelled
+                        </div>
+                      </div>
+                    )}
                     {ev.city && (
-                      <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/80 px-2.5 py-1 text-xs font-medium backdrop-blur-md">
+                      <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/80 px-2.5 py-1 text-xs font-medium backdrop-blur-md z-20">
                         <MapPin className="h-3 w-3 text-primary" />
                         {ev.city}
                       </div>
@@ -163,7 +174,7 @@ function BrowsePage() {
                       })}
                     </div>
                     
-                    <h3 className="font-display text-xl leading-tight group-hover:text-primary line-clamp-2 mb-2">
+                    <h3 className={`font-display text-xl leading-tight line-clamp-2 mb-2 ${!isCancelled ? "group-hover:text-primary" : "text-muted-foreground line-through"}`}>
                       {ev.title}
                     </h3>
                     
@@ -175,11 +186,33 @@ function BrowsePage() {
                     
                     <div className="mt-auto pt-4 flex items-center justify-between border-t border-border/50">
                       <div className="text-xs text-muted-foreground">Tickets from</div>
-                      <div className="font-display text-lg text-gradient-sunset">
+                      <div className={`font-display text-lg ${isCancelled ? "text-muted-foreground" : "text-gradient-sunset"}`}>
                         {min !== undefined ? formatNaira(min) : "Free"}
                       </div>
                     </div>
                   </div>
+                </>
+              );
+
+              if (isCancelled) {
+                return (
+                  <div
+                    key={ev.id}
+                    className="flex flex-col overflow-hidden rounded-2xl bg-card/40 border border-border/50 opacity-80"
+                  >
+                    {CardInner}
+                  </div>
+                );
+              }
+
+              return (
+                <Link
+                  key={ev.id}
+                  to="/e/$slug"
+                  params={{ slug: ev.slug }}
+                  className="group flex flex-col overflow-hidden rounded-2xl bg-card/60 transition-all hover:-translate-y-1 hover:shadow-glow border border-border/50 hover:border-primary/30"
+                >
+                  {CardInner}
                 </Link>
               );
             })}
