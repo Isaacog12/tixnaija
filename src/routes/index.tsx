@@ -255,6 +255,7 @@ function LandingPage() {
             <Link to="/contact" className="hover:text-primary transition">Contact</Link>
             <Link to="/terms" className="hover:text-primary transition">Terms</Link>
             <Link to="/privacy" className="hover:text-primary transition">Privacy</Link>
+            <Link to="/careers" className="hover:text-primary transition">Careers</Link>
           </div>
           <p>© {new Date().getFullYear()} — Buy tickets. Turn up. Repeat.</p>
         </div>
