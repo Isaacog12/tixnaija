@@ -103,19 +103,19 @@ function Dashboard() {
             {isOrganizer ? "Your event organizer control room." : "Good to see you."}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex w-full flex-col sm:w-auto sm:flex-row sm:items-center gap-3">
           {isAdmin && (
             <>
-              <Button asChild size="lg" variant="outline" className="border-primary/20 text-primary">
+              <Button asChild size="lg" variant="outline" className="w-full sm:w-auto border-primary/20 text-primary">
                 <Link to="/admin">Admin Panel</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="border-amber-500/30 text-amber-500 hover:bg-amber-500/10">
+              <Button asChild size="lg" variant="outline" className="w-full sm:w-auto border-amber-500/30 text-amber-500 hover:bg-amber-500/10">
                 <Link to="/admin/organizer-applications">Applications</Link>
               </Button>
             </>
           )}
           {isOrganizer && (
-            <Button asChild size="lg" className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
+            <Button asChild size="lg" className="w-full sm:w-auto gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
               <Link to="/events/new">
                 <Plus className="mr-2 h-4 w-4" /> New event
               </Link>
@@ -142,9 +142,9 @@ function Dashboard() {
                   <span className="text-gradient-sunset">in minutes.</span>
                 </h2>
                 <p className="mt-4 text-base text-muted-foreground">
-                  Create your event, set ticket tiers, track sales in real-time, and scan attendees at the door — all in one place.
+                  Create your event, set ticket tiers, track sales in real-time, and scan attendees at the door.
                 </p>
-                <div className="mt-6 flex flex-wrap gap-3">
+                <div className="mt-6 flex flex-col sm:flex-row flex-wrap gap-3">
                   {latestApp?.status === "pending" ? (
                     <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-500">
                       <Clock className="h-4 w-4" />
@@ -249,7 +249,7 @@ function Dashboard() {
       {error && <div className="text-sm text-destructive">{(error as Error).message}</div>}
 
       {isOrganizer && data && data.events.length === 0 && (
-        <div className="border border-dashed border-border bg-card/40 p-12">
+        <div className="border border-dashed border-border bg-card/40 p-6 md:p-12">
           <div className="flex items-baseline gap-4">
             <span className="font-display text-6xl leading-none text-gradient-sunset">00</span>
             <span className="h-px flex-1 bg-border" />
@@ -286,7 +286,9 @@ function Dashboard() {
                         <h3 className="text-xl font-semibold leading-tight group-hover:text-primary">
                           {ev.title}
                         </h3>
-                        <StatusBadge status={ev.status} />
+                        <div className="shrink-0">
+                          <StatusBadge status={ev.status} />
+                        </div>
                       </div>
                       <div className="mt-3 flex flex-wrap gap-4 text-sm text-muted-foreground">
                         <span className="inline-flex items-center gap-1.5">
@@ -304,7 +306,7 @@ function Dashboard() {
                       </div>
                     </div>
                     
-                    <div className="mt-6 flex items-center gap-8 border-t border-border pt-4">
+                    <div className="mt-6 flex flex-wrap items-center gap-4 sm:gap-8 border-t border-border pt-4">
                       <div>
                         <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Tickets Sold</div>
                         <div className="mt-1 font-display text-2xl">{stats.sold}</div>
@@ -320,7 +322,7 @@ function Dashboard() {
                 </Link>
                 
                 {ev.status === "published" && (
-                  <div className="flex flex-row items-center justify-between gap-3 border-t border-border bg-background/40 p-5 md:w-48 md:flex-col md:items-stretch md:justify-center md:border-t-0 md:border-l">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border bg-background/40 p-5 md:w-48 md:flex-col md:items-stretch md:justify-center md:border-t-0 md:border-l">
                     <Button asChild variant="outline" className="w-full text-primary hover:text-primary">
                       <Link to="/events/$eventId/scan" params={{ eventId: ev.id }}>
                         Scan Tickets
