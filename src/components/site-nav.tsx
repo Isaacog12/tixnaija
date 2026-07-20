@@ -46,9 +46,6 @@ export function SiteNav() {
       <Link to="/browse" className="text-sm font-medium text-muted-foreground transition-all hover:text-foreground px-3 py-2 rounded-md hover:bg-accent/40" activeProps={{ className: "text-foreground bg-accent/40" }}>
         Browse
       </Link>
-      <Link to="/how-it-works" className="text-sm font-medium text-muted-foreground transition-all hover:text-foreground px-3 py-2 rounded-md hover:bg-accent/40" activeProps={{ className: "text-foreground bg-accent/40" }}>
-        How it works
-      </Link>
       {user && (
         <>
           <Link to="/tickets" className="text-sm font-medium text-muted-foreground transition-all hover:text-foreground px-3 py-2 rounded-md hover:bg-accent/40" activeProps={{ className: "text-foreground bg-accent/40" }}>
@@ -59,6 +56,9 @@ export function SiteNav() {
           </Link>
         </>
       )}
+      <Link to="/how-it-works" className="text-sm font-medium text-muted-foreground transition-all hover:text-foreground px-3 py-2 rounded-md hover:bg-accent/40" activeProps={{ className: "text-foreground bg-accent/40" }}>
+        How it works
+      </Link>
       <Link to="/contact" className="text-sm font-medium text-muted-foreground transition-all hover:text-foreground px-3 py-2 rounded-md hover:bg-accent/40" activeProps={{ className: "text-foreground bg-accent/40" }}>
         Contact
       </Link>
