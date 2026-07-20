@@ -39,10 +39,9 @@ async function fetchEvents(q: string) {
   const cleaned = q.trim();
   if (cleaned) {
     // Escape characters that break PostgREST's .or() and ILIKE pattern:
-    // commas separate filters, parens group them, % and _ are wildcards.
-    const safe = cleaned.replace(/[,()%_*]/g, " ").replace(/\s+/g, " ").trim();
+    const safe = cleaned.replace(/[,()%_*"]/g, " ").replace(/\s+/g, " ").trim();
     if (safe) {
-      const like = `%${safe}%`;
+      const like = `"%${safe}%"`;
       query = query.or(
         `title.ilike.${like},description.ilike.${like},city.ilike.${like},venue_name.ilike.${like},category::text.ilike.${like}`,
       );
@@ -52,13 +51,7 @@ async function fetchEvents(q: string) {
   const { data, error } = await query;
   if (error) throw error;
 
-  const now = new Date();
-  const validEvents = (data ?? []).filter(ev => {
-    const start = new Date(ev.start_datetime);
-    const end = ev.end_datetime ? new Date(ev.end_datetime) : start;
-    // We only want Live or Upcoming events. Meaning it hasn't ended yet.
-    return end >= now;
-  });
+  const validEvents = data ?? [];
 
   // Fetch min price per event
   const ids = validEvents.map((e) => e.id);
@@ -89,8 +82,8 @@ function BrowsePage() {
   return (
     <div className="min-h-screen">
       <SiteNav />
-      <section className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-md">
-        <div className="mx-auto max-w-6xl px-4 py-4 md:py-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <section className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur-md">
+        <div className="mx-auto max-w-6xl px-4 py-3 sm:py-4 md:py-6 flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
           <div>
             <h1 className="font-display text-2xl md:text-3xl">Browse events</h1>
             <p className="text-sm text-muted-foreground hidden md:block">Discover what's happening across Nigeria.</p>
@@ -108,9 +101,9 @@ function BrowsePage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Search events, artists, cities…"
-              className="h-8 border-0 bg-transparent px-2 shadow-none focus-visible:ring-0 text-sm"
+              className="h-8 md:h-9 border-0 bg-transparent px-2 shadow-none focus-visible:ring-0 text-sm"
             />
-            <Button type="submit" size="sm" className="rounded-full gradient-sunset text-primary-foreground hover:opacity-90 shrink-0">
+            <Button type="submit" size="sm" className="rounded-full gradient-sunset text-primary-foreground hover:opacity-90 shrink-0 h-8 md:h-9">
               Search
             </Button>
           </form>
@@ -131,14 +124,14 @@ function BrowsePage() {
           </div>
         )}
         {query.data && query.data.events.length > 0 && (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-8">
+          <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-6 sm:mt-8">
             {query.data.events.map((ev) => {
               const min = query.data.minPrice[ev.id];
               const isCancelled = ev.status === 'cancelled';
               
               const CardInner = (
                 <>
-                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary">
+                  <div className="relative aspect-[16/9] sm:aspect-[4/3] w-full overflow-hidden bg-secondary">
                     {ev.cover_image_url && (
                       <img
                         src={ev.cover_image_url}
