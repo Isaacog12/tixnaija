@@ -38,12 +38,9 @@ const detailsSchema = z.object({
   title: z.string().trim().min(3, "Title must be at least 3 characters").max(120),
   description: z.string().trim().max(4000).optional(),
   category: z.enum(["music", "comedy", "conference", "church", "campus", "party", "sport", "other"]),
-  venue_name: z.string().trim().max(120).optional(),
-  address: z.string().trim().max(200).optional(),
+  venue_name: z.string().trim().min(2, "Venue name is required").max(120),
   city: z.string().trim().min(2, "City is required").max(60),
-  state: z.string().trim().max(60).optional(),
   start_datetime: z.string().min(1, "Pick a start date & time"),
-  end_datetime: z.string().optional(),
 });
 
 interface TicketDraft {
@@ -72,11 +69,8 @@ function NewEventPage() {
     description: "",
     category: "music" as (typeof CATEGORIES)[number]["value"],
     venue_name: "",
-    address: "",
     city: "",
-    state: "",
     start_datetime: "",
-    end_datetime: "",
     is_free: false,
   });
   const [coverFile, setCoverFile] = useState<File | null>(null);
@@ -189,12 +183,12 @@ function NewEventPage() {
         description: form.description || null,
         category: form.category,
         cover_image_url: coverUrl,
-        venue_name: form.venue_name || null,
-        address: form.address || null,
+        venue_name: form.venue_name,
+        address: null,
         city: form.city,
-        state: form.state || null,
+        state: null,
         start_datetime: new Date(form.start_datetime).toISOString(),
-        end_datetime: form.end_datetime ? new Date(form.end_datetime).toISOString() : null,
+        end_datetime: null,
         status: (publish ? "published" : "draft") as "published" | "draft",
       };
       
@@ -348,23 +342,14 @@ function NewEventPage() {
             <section className="rounded-3xl border border-border bg-card/40 p-6 md:p-8 shadow-sm backdrop-blur-sm">
               <h2 className="mb-6 font-display text-2xl">Where & When</h2>
               <div className="grid gap-6 sm:grid-cols-2">
-                <Field label="Venue name (optional)">
+                <Field label="Venue name" required>
                   <Input value={form.venue_name} onChange={(e) => setForm({ ...form, venue_name: e.target.value })} placeholder="e.g. Eko Hotel" className="h-11" />
-                </Field>
-                <Field label="Address (optional)">
-                  <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="e.g. 1415 Adetokunbo Ademola St" className="h-11" />
                 </Field>
                 <Field label="City" required>
                   <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Lagos" className="h-11" />
                 </Field>
-                <Field label="State (optional)">
-                  <Input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} placeholder="LA" className="h-11" />
-                </Field>
                 <Field label="Starts at" required>
                   <Input type="datetime-local" value={form.start_datetime} onChange={(e) => setForm({ ...form, start_datetime: e.target.value })} className="h-11" />
-                </Field>
-                <Field label="Ends at (optional)">
-                  <Input type="datetime-local" value={form.end_datetime} onChange={(e) => setForm({ ...form, end_datetime: e.target.value })} className="h-11" />
                 </Field>
               </div>
             </section>
