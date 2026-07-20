@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Instagram } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/contact")({
@@ -146,6 +147,21 @@ function ContactPage() {
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-semibold">Email</p>
                 <p className="text-sm font-semibold text-foreground group-hover:text-primary transition">tixnaijaapp@gmail.com</p>
+              </div>
+            </a>
+
+            <a
+              href="https://www.instagram.com/tixnaija/"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-4 rounded-lg border border-border bg-card/60 p-4 transition hover:border-primary/50 hover:bg-card group"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full gradient-sunset shadow-glow text-primary-foreground">
+                <Instagram className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-semibold">Instagram</p>
+                <p className="text-sm font-semibold text-foreground group-hover:text-primary transition">@tixnaija</p>
               </div>
             </a>
           </div>
