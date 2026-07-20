@@ -31,8 +31,6 @@ async function fetchEvents(q: string) {
     .from("events")
     .select("id, title, slug, city, venue_name, start_datetime, end_datetime, cover_image_url, description, status, category")
     .in("status", ["published", "cancelled"])
-    // Fetch from a bit in the past, then rigorously filter out anything that has ended.
-    .gte("start_datetime", new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString())
     .order("start_datetime", { ascending: true })
     .limit(100);
 
@@ -46,6 +44,9 @@ async function fetchEvents(q: string) {
         `title.ilike.${like},description.ilike.${like},city.ilike.${like},venue_name.ilike.${like}`,
       );
     }
+  } else {
+    // If NO search query, only show upcoming/live events
+    query = query.gte("start_datetime", new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString());
   }
 
   const { data, error } = await query;
