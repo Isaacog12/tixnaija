@@ -484,7 +484,8 @@ function EventBody({
   totalKobo: number;
 }) {
   const start = new Date(event.start_datetime);
-  const end = event.end_datetime ? new Date(event.end_datetime) : start;
+  // If no end time is provided, assume the event lasts for 24 hours so tickets can still be sold
+  const end = event.end_datetime ? new Date(event.end_datetime) : new Date(start.getTime() + 24 * 60 * 60 * 1000);
   const now = new Date();
   const isPastEvent = end < now;
 
