@@ -12,6 +12,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { CookieBanner } from "@/components/cookie-banner";
+import { GlobalLoader } from "@/components/global-loader";
 import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
@@ -151,6 +152,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <GlobalLoader />
       <Outlet />
       <Toaster position="top-center" richColors />
       <CookieBanner />

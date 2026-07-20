@@ -60,6 +60,13 @@
   --gradient-ember: radial-gradient(circle at 20% 20%, oklch(0.72 0.19 55 / 0.35), transparent 60%),
                     radial-gradient(circle at 80% 90%, oklch(0.55 0.22 15 / 0.35), transparent 55%);
   --shadow-glow: 0 20px 60px -20px oklch(0.63 0.24 30 / 0.55);
+
+  --animate-loader-progress: loader-progress 1.5s infinite linear;
+  @keyframes loader-progress {
+    0% { transform: translateX(-100%) scaleX(0.2); }
+    50% { transform: translateX(0) scaleX(0.5); }
+    100% { transform: translateX(100%) scaleX(0.2); }
+  }
 }
 
 :root {
