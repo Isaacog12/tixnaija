@@ -353,12 +353,13 @@ function AccountPage() {
               Payout Account
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Connect your Nigerian bank account to receive event payouts
-              automatically.
+              Connect the Nigerian bank account where you want to receive your payouts from ticket sales. Funds are automatically routed here.
             </p>
-            <p className="mt-4 text-xs font-medium text-muted-foreground bg-primary/10 text-primary px-3 py-2 rounded-md">
-              A 15% platform fee applies to all ticket sales.
-            </p>
+            <div className="mt-4 space-y-2">
+              <p className="text-xs font-medium text-primary bg-primary/10 px-3 py-2 rounded-md leading-relaxed">
+                <strong>Important:</strong> Your payouts from ticket sales will be sent directly to this exact bank account. A 15% platform fee applies.
+              </p>
+            </div>
           </div>
           <div className="md:col-span-2">
             <form
@@ -402,6 +403,9 @@ function AccountPage() {
                     }
                     placeholder="0123456789"
                   />
+                  <p className="text-[11px] text-muted-foreground mt-1.5 leading-snug">
+                    Your payouts will be sent to this exact account number.
+                  </p>
                 </Field>
                 <Field label="Account name" className="sm:col-span-2">
                   <div className="relative">
