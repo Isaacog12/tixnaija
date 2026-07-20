@@ -16,8 +16,8 @@ export const Route = createFileRoute("/")({
 async function fetchUpcoming() {
   const { data, error } = await supabase
     .from("events")
-    .select("id, title, slug, city, venue_name, start_datetime, end_datetime, cover_image_url")
-    .eq("status", "published")
+    .select("id, title, slug, city, venue_name, start_datetime, end_datetime, cover_image_url, status")
+    .in("status", ["published", "cancelled"])
     .gte("start_datetime", new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString())
     .order("start_datetime", { ascending: true })
     .limit(20);
@@ -257,30 +257,39 @@ function LandingPage() {
 
         {upcoming.data && upcoming.data.length > 0 && (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-8">
-            {upcoming.data.map((ev) => (
-              <Link
-                key={ev.id}
-                to="/e/$slug"
-                params={{ slug: ev.slug }}
-                className="group flex flex-col overflow-hidden rounded-2xl bg-card/60 transition-all hover:-translate-y-1 hover:shadow-glow border border-border/50 hover:border-primary/30"
-              >
-                <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary">
-                  {ev.cover_image_url && (
-                    <img
-                      src={ev.cover_image_url}
-                      alt={ev.title}
-                      loading="lazy"
-                      decoding="async"
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  )}
-                  {ev.city && (
-                    <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/80 px-2.5 py-1 text-xs font-medium backdrop-blur-md">
-                      <MapPin className="h-3 w-3 text-primary" />
-                      {ev.city}
-                    </div>
-                  )}
-                </div>
+            {upcoming.data.map((ev) => {
+              const isCancelled = ev.status === 'cancelled';
+              return (
+                <Link
+                  key={ev.id}
+                  to="/e/$slug"
+                  params={{ slug: ev.slug }}
+                  className="group flex flex-col overflow-hidden rounded-2xl bg-card/60 transition-all hover:-translate-y-1 hover:shadow-glow border border-border/50 hover:border-primary/30"
+                >
+                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary">
+                    {ev.cover_image_url && (
+                      <img
+                        src={ev.cover_image_url}
+                        alt={ev.title}
+                        loading="lazy"
+                        decoding="async"
+                        className={`h-full w-full object-cover transition-transform duration-500 ${!isCancelled ? "group-hover:scale-105" : "opacity-75 grayscale"}`}
+                      />
+                    )}
+                    {isCancelled && (
+                      <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] flex items-center justify-center z-10">
+                        <div className="rounded-full bg-destructive px-4 py-1.5 text-sm font-bold text-destructive-foreground shadow-lg">
+                          Cancelled
+                        </div>
+                      </div>
+                    )}
+                    {ev.city && (
+                      <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/80 px-2.5 py-1 text-xs font-medium backdrop-blur-md z-20">
+                        <MapPin className="h-3 w-3 text-primary" />
+                        {ev.city}
+                      </div>
+                    )}
+                  </div>
                 
                 <div className="flex flex-1 flex-col p-5">
                   <div className="mb-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary">
@@ -304,7 +313,7 @@ function LandingPage() {
                   )}
                 </div>
               </Link>
-            ))}
+            )})}
           </div>
         )}
       </section>
