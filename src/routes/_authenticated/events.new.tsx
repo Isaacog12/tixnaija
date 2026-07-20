@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { slugify } from "@/lib/slug";
 import { nairaToKobo, formatNaira } from "@/lib/currency";
 
@@ -76,6 +77,7 @@ function NewEventPage() {
     state: "",
     start_datetime: "",
     end_datetime: "",
+    is_free: false,
   });
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string>("");
@@ -315,13 +317,27 @@ function NewEventPage() {
                 <Field label="Event title" required>
                   <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Detty December Concert 2026" className="text-lg py-6" />
                 </Field>
-                <div className="grid gap-6 sm:grid-cols-2">
+                <div className="grid gap-6 sm:grid-cols-2 items-end">
                   <Field label="Category" required>
                     <Select value={form.category} onValueChange={(v: typeof form.category) => setForm({ ...form, category: v })}>
-                      <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
                       <SelectContent>{CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
                     </Select>
                   </Field>
+                  <div className="flex items-center justify-between rounded-lg border border-border p-4 bg-background/50 h-11 mb-0 mt-auto">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm font-semibold">Free Event</Label>
+                    </div>
+                    <Switch 
+                      checked={form.is_free} 
+                      onCheckedChange={(c) => {
+                        setForm({ ...form, is_free: c });
+                        if (c) {
+                          setTickets(prev => prev.map(t => ({ ...t, price_naira: "0" })));
+                        }
+                      }} 
+                    />
+                  </div>
                 </div>
                 <Field label="Description">
                   <Textarea rows={6} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Tell people what to expect: line-up, dress code, schedule..." className="resize-none" />
@@ -397,9 +413,11 @@ function NewEventPage() {
               <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h2 className="font-display text-2xl">Ticket Types</h2>
-                  <p className="text-muted-foreground mt-1 text-sm">Add the different tickets you want to sell. Set price to 0 for free events.</p>
+                  <p className="text-muted-foreground mt-1 text-sm">
+                    {form.is_free ? "Add the different tickets you want to offer. Since this is a free event, the price is automatically set to 0." : "Add the different tickets you want to sell. Set price to 0 for free events."}
+                  </p>
                 </div>
-                <Button type="button" onClick={() => setTickets([...tickets, emptyTicket()])} className="shrink-0 bg-secondary text-secondary-foreground hover:bg-secondary/80">
+                <Button type="button" onClick={() => setTickets([...tickets, { ...emptyTicket(), price_naira: form.is_free ? "0" : "" }])} className="shrink-0 bg-secondary text-secondary-foreground hover:bg-secondary/80">
                   <Plus className="mr-2 h-4 w-4" /> Add Ticket Tier
                 </Button>
               </div>
@@ -420,16 +438,18 @@ function NewEventPage() {
                       </Button>
                     )}
                     <div className="grid gap-5 sm:grid-cols-12">
-                      <div className="sm:col-span-5">
+                      <div className={form.is_free ? "sm:col-span-8" : "sm:col-span-5"}>
                         <Field label="Ticket name" required>
                           <Input value={t.name} onChange={(e) => updateTicket(i, { name: e.target.value })} placeholder="e.g. VIP, Early Bird" className="h-11" />
                         </Field>
                       </div>
-                      <div className="sm:col-span-3">
-                        <Field label="Price (₦)" required>
-                          <Input type="number" min="0" value={t.price_naira} onChange={(e) => updateTicket(i, { price_naira: e.target.value })} placeholder="0 for free" className="h-11" />
-                        </Field>
-                      </div>
+                      {!form.is_free && (
+                        <div className="sm:col-span-3">
+                          <Field label="Price (₦)" required>
+                            <Input type="number" min="0" value={t.price_naira} onChange={(e) => updateTicket(i, { price_naira: e.target.value })} placeholder="0 for free" className="h-11" />
+                          </Field>
+                        </div>
+                      )}
                       <div className="sm:col-span-2">
                         <Field label="Available" required>
                           <Input type="number" min="1" value={t.quantity_available} onChange={(e) => updateTicket(i, { quantity_available: e.target.value })} placeholder="100" className="h-11" />
