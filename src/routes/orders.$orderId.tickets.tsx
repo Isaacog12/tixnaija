@@ -18,8 +18,25 @@ export const Route = createFileRoute("/orders/$orderId/tickets")({
 });
 
 async function fetchOrderTickets(orderId: string, guestEmail?: string, guestAccessCode?: string) {
-  // Fetch order and event — works for logged-in users via RLS,
-  // and for guests if they supply the correct buyer_email.
+  // If guest mode: check email and accessCode match via RPC
+  if (guestEmail && guestAccessCode) {
+    const { data, error } = await supabase.rpc("get_guest_order_full" as any, {
+      p_order_id: orderId,
+      p_email: guestEmail.toLowerCase(),
+      p_access_code: guestAccessCode,
+    });
+    
+    if (error || !data) {
+      throw notFound();
+    }
+    
+    return { order: data.order, tickets: data.tickets || [], isGuest: true };
+  } else if (guestEmail) {
+    // Missing access code
+    throw notFound();
+  }
+
+  // Fetch order and event for logged-in users via RLS
   const query = supabase
     .from("orders")
     .select(`*, events(*)`)
@@ -28,20 +45,6 @@ async function fetchOrderTickets(orderId: string, guestEmail?: string, guestAcce
   const { data: order, error: orderErr } = await query.single();
 
   if (orderErr || !order) {
-    // For guests: verify email matches before throwing notFound
-    throw notFound();
-  }
-
-  // If guest mode: check email and accessCode match
-  if (guestEmail && guestAccessCode) {
-    if (
-      order.buyer_email?.toLowerCase() !== guestEmail.toLowerCase() ||
-      (order as any).access_code !== guestAccessCode
-    ) {
-      throw notFound();
-    }
-  } else if (guestEmail) {
-    // Missing access code
     throw notFound();
   }
 
@@ -60,7 +63,7 @@ async function fetchOrderTickets(orderId: string, guestEmail?: string, guestAcce
     throw ticketsErr;
   }
 
-  return { order, tickets: tickets || [], isGuest: !!(guestEmail) };
+  return { order, tickets: tickets || [], isGuest: false };
 }
 
 function OrderTicketsPage() {
