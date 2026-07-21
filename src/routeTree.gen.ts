@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as MyTicketsRouteImport } from './routes/my-tickets'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FaqRouteImport } from './routes/faq'
@@ -28,12 +29,10 @@ import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
+import { Route as OrdersOrderIdTicketsRouteImport } from './routes/orders.$orderId.tickets'
 import { Route as AuthenticatedEventsNewRouteImport } from './routes/_authenticated/events.new'
 import { Route as AuthenticatedAdminOrganizerApplicationsRouteImport } from './routes/_authenticated/admin_.organizer-applications'
 import { Route as AuthenticatedAdminBannersRouteImport } from './routes/_authenticated/admin_.banners'
-import { Route as AuthenticatedOrdersOrderIdTicketsRouteImport } from './routes/_authenticated/orders.$orderId.tickets'
-import { Route as MyTicketsRouteImport } from './routes/my-tickets'
-import { Route as OrdersOrderIdTicketsRouteImport } from './routes/orders.$orderId.tickets'
 import { Route as AuthenticatedEventsEventIdScanRouteImport } from './routes/_authenticated/events.$eventId.scan'
 import { Route as AuthenticatedEventsEventIdEditRouteImport } from './routes/_authenticated/events.$eventId.edit'
 
@@ -50,6 +49,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyTicketsRoute = MyTicketsRouteImport.update({
+  id: '/my-tickets',
+  path: '/my-tickets',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HowItWorksRoute = HowItWorksRouteImport.update({
@@ -131,6 +135,11 @@ const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const OrdersOrderIdTicketsRoute = OrdersOrderIdTicketsRouteImport.update({
+  id: '/orders/$orderId/tickets',
+  path: '/orders/$orderId/tickets',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedEventsNewRoute = AuthenticatedEventsNewRouteImport.update({
   id: '/events/new',
   path: '/events/new',
@@ -148,23 +157,6 @@ const AuthenticatedAdminBannersRoute =
     path: '/admin/banners',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedOrdersOrderIdTicketsRoute =
-  AuthenticatedOrdersOrderIdTicketsRouteImport.update({
-    id: '/_authenticated/orders/$orderId/tickets',
-    path: '/orders/$orderId/tickets',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const MyTicketsRoute = MyTicketsRouteImport.update({
-  id: '/my-tickets',
-  path: '/my-tickets',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OrdersOrderIdTicketsRoute = OrdersOrderIdTicketsRouteImport.update({
-  id: '/orders/$orderId/tickets',
-  path: '/orders/$orderId/tickets',
-  getParentRoute: () => rootRouteImport,
-} as any)
-
 const AuthenticatedEventsEventIdScanRoute =
   AuthenticatedEventsEventIdScanRouteImport.update({
     id: '/events/$eventId/scan',
@@ -187,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/how-it-works': typeof HowItWorksRoute
+  '/my-tickets': typeof MyTicketsRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
@@ -200,10 +193,9 @@ export interface FileRoutesByFullPath {
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
+  '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/events/$eventId/scan': typeof AuthenticatedEventsEventIdScanRoute
-  '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
-  '/my-tickets': typeof MyTicketsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -214,6 +206,7 @@ export interface FileRoutesByTo {
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/how-it-works': typeof HowItWorksRoute
+  '/my-tickets': typeof MyTicketsRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
@@ -227,10 +220,9 @@ export interface FileRoutesByTo {
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
+  '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/events/$eventId/scan': typeof AuthenticatedEventsEventIdScanRoute
-  '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
-  '/my-tickets': typeof MyTicketsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -243,6 +235,7 @@ export interface FileRoutesById {
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/how-it-works': typeof HowItWorksRoute
+  '/my-tickets': typeof MyTicketsRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
@@ -256,11 +249,9 @@ export interface FileRoutesById {
   '/_authenticated/admin_/banners': typeof AuthenticatedAdminBannersRoute
   '/_authenticated/admin_/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/_authenticated/events/new': typeof AuthenticatedEventsNewRoute
+  '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
   '/_authenticated/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/_authenticated/events/$eventId/scan': typeof AuthenticatedEventsEventIdScanRoute
-  '/_authenticated/orders/$orderId/tickets': typeof AuthenticatedOrdersOrderIdTicketsRoute
-  '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
-  '/my-tickets': typeof MyTicketsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -270,8 +261,10 @@ export interface FileRouteTypes {
     | '/browse'
     | '/careers'
     | '/contact'
+    | '/faq'
     | '/forgot-password'
     | '/how-it-works'
+    | '/my-tickets'
     | '/privacy'
     | '/reset-password'
     | '/terms'
@@ -285,11 +278,9 @@ export interface FileRouteTypes {
     | '/admin/banners'
     | '/admin/organizer-applications'
     | '/events/new'
+    | '/orders/$orderId/tickets'
     | '/events/$eventId/edit'
     | '/events/$eventId/scan'
-    | '/orders/$orderId/tickets'
-    | '/my-tickets'
-    | '/faq'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -300,6 +291,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/forgot-password'
     | '/how-it-works'
+    | '/my-tickets'
     | '/privacy'
     | '/reset-password'
     | '/terms'
@@ -313,11 +305,9 @@ export interface FileRouteTypes {
     | '/admin/banners'
     | '/admin/organizer-applications'
     | '/events/new'
+    | '/orders/$orderId/tickets'
     | '/events/$eventId/edit'
     | '/events/$eventId/scan'
-    | '/orders/$orderId/tickets'
-    | '/my-tickets'
-    | '/faq'
   id:
     | '__root__'
     | '/'
@@ -326,8 +316,10 @@ export interface FileRouteTypes {
     | '/browse'
     | '/careers'
     | '/contact'
+    | '/faq'
     | '/forgot-password'
     | '/how-it-works'
+    | '/my-tickets'
     | '/privacy'
     | '/reset-password'
     | '/terms'
@@ -341,9 +333,9 @@ export interface FileRouteTypes {
     | '/_authenticated/admin_/banners'
     | '/_authenticated/admin_/organizer-applications'
     | '/_authenticated/events/new'
+    | '/orders/$orderId/tickets'
     | '/_authenticated/events/$eventId/edit'
     | '/_authenticated/events/$eventId/scan'
-    | '/_authenticated/orders/$orderId/tickets'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -356,12 +348,12 @@ export interface RootRouteChildren {
   FaqRoute: typeof FaqRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   HowItWorksRoute: typeof HowItWorksRoute
+  MyTicketsRoute: typeof MyTicketsRoute
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
   CheckoutVerifyRoute: typeof CheckoutVerifyRoute
   ESlugRoute: typeof ESlugRoute
-  MyTicketsRoute: typeof MyTicketsRoute
   OrdersOrderIdTicketsRoute: typeof OrdersOrderIdTicketsRoute
 }
 
@@ -388,6 +380,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/my-tickets': {
+      id: '/my-tickets'
+      path: '/my-tickets'
+      fullPath: '/my-tickets'
+      preLoaderRoute: typeof MyTicketsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/how-it-works': {
       id: '/how-it-works'
       path: '/how-it-works'
@@ -402,18 +401,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/contact': {
-      id: '/contact'
-      path: '/contact'
-      fullPath: '/contact'
-      preLoaderRoute: typeof ContactRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/faq': {
       id: '/faq'
       path: '/faq'
       fullPath: '/faq'
       preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/careers': {
@@ -500,6 +499,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/orders/$orderId/tickets': {
+      id: '/orders/$orderId/tickets'
+      path: '/orders/$orderId/tickets'
+      fullPath: '/orders/$orderId/tickets'
+      preLoaderRoute: typeof OrdersOrderIdTicketsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/events/new': {
       id: '/_authenticated/events/new'
       path: '/events/new'
@@ -519,13 +525,6 @@ declare module '@tanstack/react-router' {
       path: '/admin/banners'
       fullPath: '/admin/banners'
       preLoaderRoute: typeof AuthenticatedAdminBannersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/orders/$orderId/tickets': {
-      id: '/_authenticated/orders/$orderId/tickets'
-      path: '/orders/$orderId/tickets'
-      fullPath: '/orders/$orderId/tickets'
-      preLoaderRoute: typeof AuthenticatedOrdersOrderIdTicketsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/events/$eventId/scan': {
@@ -556,7 +555,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEventsNewRoute: typeof AuthenticatedEventsNewRoute
   AuthenticatedEventsEventIdEditRoute: typeof AuthenticatedEventsEventIdEditRoute
   AuthenticatedEventsEventIdScanRoute: typeof AuthenticatedEventsEventIdScanRoute
-  AuthenticatedOrdersOrderIdTicketsRoute: typeof AuthenticatedOrdersOrderIdTicketsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -571,8 +569,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEventsNewRoute: AuthenticatedEventsNewRoute,
   AuthenticatedEventsEventIdEditRoute: AuthenticatedEventsEventIdEditRoute,
   AuthenticatedEventsEventIdScanRoute: AuthenticatedEventsEventIdScanRoute,
-  AuthenticatedOrdersOrderIdTicketsRoute:
-    AuthenticatedOrdersOrderIdTicketsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -588,12 +584,12 @@ const rootRouteChildren: RootRouteChildren = {
   FaqRoute: FaqRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   HowItWorksRoute: HowItWorksRoute,
+  MyTicketsRoute: MyTicketsRoute,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
   CheckoutVerifyRoute: CheckoutVerifyRoute,
   ESlugRoute: ESlugRoute,
-  MyTicketsRoute: MyTicketsRoute,
   OrdersOrderIdTicketsRoute: OrdersOrderIdTicketsRoute,
 }
 export const routeTree = rootRouteImport
