@@ -128,6 +128,7 @@ function EventDetailPage() {
   const [appliedPromo, setAppliedPromo] = useState<{ id: string; discount_type: string; discount_value: number } | null>(null);
   const [validatingPromo, setValidatingPromo] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [accessCode, setAccessCode] = useState("");
 
   // Pre-fill user data if logged in
   useQuery({
@@ -229,7 +230,14 @@ function EventDetailPage() {
         attendee_names: (attendeeNames[i.type.id] ?? []).slice(0, i.count),
       }));
 
+      if (!userId && (!accessCode || accessCode.trim().length < 4)) {
+        toast.error("Please create a 4-6 digit Access PIN for your tickets.");
+        setIsCheckingOut(false);
+        return;
+      }
+
       if (totalKobo === 0) {
+
         // Handle free tickets locally
         const { data: orderId, error: checkoutError } = await supabase.rpc('process_checkout', {
           p_event_id: data!.event.id,
@@ -245,6 +253,7 @@ function EventDetailPage() {
           p_recipient_name: isGift ? recipientName : null,
           p_recipient_email: isGift ? recipientEmail : null,
           p_gift_message: isGift ? giftMessage : null,
+          p_access_code: !userId ? accessCode.trim() : null,
         });
 
         if (checkoutError) {
@@ -273,6 +282,7 @@ function EventDetailPage() {
         recipientName: isGift ? recipientName : null,
         recipientEmail: isGift ? recipientEmail : null,
         giftMessage: isGift ? giftMessage : null,
+        accessCode: !userId ? accessCode.trim() : undefined,
       };
 
       const { data: initData, error: initErr } = await supabase.functions.invoke("initialize-payment", {
@@ -372,6 +382,35 @@ function EventDetailPage() {
                 />
                 <Label htmlFor="is-gift" className="text-sm font-semibold">Buy as a gift</Label>
               </div>
+
+              {!userId && (
+                <div className="space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-4 mt-6">
+                  <div className="flex gap-3">
+                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
+                      <span className="text-xs font-bold">!</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Guest Checkout</p>
+                      <p className="text-xs text-muted-foreground">
+                        Since you aren't logged in, please create a short PIN (4-6 digits) so you can access your tickets later.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="accessCode">Access PIN</Label>
+                    <Input
+                      id="accessCode"
+                      type="text"
+                      maxLength={10}
+                      required
+                      value={accessCode}
+                      onChange={(e) => setAccessCode(e.target.value)}
+                      placeholder="e.g. 12345"
+                      className="max-w-[200px]"
+                    />
+                  </div>
+                </div>
+              )}
 
               {isGift && (
                 <div className="space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-4">

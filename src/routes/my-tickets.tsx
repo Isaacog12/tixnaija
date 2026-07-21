@@ -39,20 +39,22 @@ interface GuestOrder {
 
 function GuestTicketsPage() {
   const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState("");
+  const [accessCode, setAccessCode] = useState("");
+  const [submitted, setSubmitted] = useState({ email: "", accessCode: "" });
   const [orders, setOrders] = useState<GuestOrder[] | null>(null);
 
   const lookup = useMutation({
-    mutationFn: async (emailVal: string) => {
+    mutationFn: async ({ emailVal, accessCodeVal }: { emailVal: string, accessCodeVal: string }) => {
       const { data, error } = await supabase.rpc("get_guest_orders" as any, {
         p_email: emailVal.trim().toLowerCase(),
+        p_access_code: accessCodeVal.trim(),
       });
       if (error) throw error;
       return (data ?? []) as GuestOrder[];
     },
     onSuccess: (data, variables) => {
       setOrders(data);
-      setSubmitted(variables);
+      setSubmitted({ email: variables.emailVal, accessCode: variables.accessCodeVal });
     },
     onError: () => {
       setOrders([]);
@@ -61,8 +63,8 @@ function GuestTicketsPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email.trim()) return;
-    lookup.mutate(email.trim());
+    if (!email.trim() || !accessCode.trim()) return;
+    lookup.mutate({ emailVal: email.trim(), accessCodeVal: accessCode.trim() });
   }
 
   return (
@@ -86,36 +88,52 @@ function GuestTicketsPage() {
       {/* Lookup form */}
       <section className="mx-auto max-w-lg px-4 py-10">
         <form onSubmit={handleSubmit} className="rounded-2xl border border-border bg-card/50 p-6 space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="guest-email" className="text-sm font-medium">
-              Email Address
-            </Label>
-            <div className="flex gap-2">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="guest-email" className="text-sm font-medium">
+                Email Address
+              </Label>
               <Input
                 id="guest-email"
                 type="email"
                 placeholder="nneka@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="flex-1"
                 required
               />
-              <Button
-                type="submit"
-                className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90 shrink-0"
-                disabled={lookup.isPending || !email.trim()}
-              >
-                {lookup.isPending ? (
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-3.5 w-3.5 rounded-full border-2 border-primary-foreground/50 border-t-primary-foreground animate-spin" />
-                    Checking…
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1.5">
-                    <Search className="h-4 w-4" /> Find tickets
-                  </span>
-                )}
-              </Button>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="access-code" className="text-sm font-medium">
+                Access PIN
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  id="access-code"
+                  type="text"
+                  placeholder="e.g. 12345"
+                  value={accessCode}
+                  onChange={(e) => setAccessCode(e.target.value)}
+                  className="flex-1"
+                  required
+                />
+                <Button
+                  type="submit"
+                  className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90 shrink-0"
+                  disabled={lookup.isPending || !email.trim() || !accessCode.trim()}
+                >
+                  {lookup.isPending ? (
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-3.5 w-3.5 rounded-full border-2 border-primary-foreground/50 border-t-primary-foreground animate-spin" />
+                      Checking…
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1.5">
+                      <Search className="h-4 w-4" /> Find tickets
+                    </span>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -133,7 +151,7 @@ function GuestTicketsPage() {
                 <Mail className="mx-auto h-10 w-10 text-muted-foreground/40" />
                 <h3 className="mt-4 font-semibold">No tickets found</h3>
                 <p className="mt-1 text-sm text-muted-foreground max-w-xs mx-auto">
-                  No paid orders found for <strong>{submitted}</strong>. Check your spelling or try another email.
+                  No paid orders found for <strong>{submitted.email}</strong> with that PIN. Check your spelling or try another email.
                 </p>
                 <p className="mt-3 text-xs text-muted-foreground">
                   Also check your inbox — your ticket QR codes were emailed to you at checkout.
@@ -143,7 +161,7 @@ function GuestTicketsPage() {
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
                   Found <strong className="text-foreground">{orders.length}</strong> order
-                  {orders.length !== 1 ? "s" : ""} for <strong className="text-foreground">{submitted}</strong>
+                  {orders.length !== 1 ? "s" : ""} for <strong className="text-foreground">{submitted.email}</strong>
                 </p>
                 {orders.map((order) => (
                   <div
@@ -198,7 +216,7 @@ function GuestTicketsPage() {
                           <Link
                             to="/orders/$orderId/tickets"
                             params={{ orderId: order.id }}
-                            search={{ email: submitted }}
+                            search={{ email: submitted.email, accessCode: submitted.accessCode }}
                           >
                             <QrCode className="mr-1.5 h-3.5 w-3.5" />
                             View &amp; Download Tickets

@@ -13,10 +13,11 @@ export const Route = createFileRoute("/orders/$orderId/tickets")({
   component: OrderTicketsPage,
   validateSearch: (search: Record<string, unknown>) => ({
     email: typeof search.email === "string" ? search.email : undefined,
+    accessCode: typeof search.accessCode === "string" ? search.accessCode : undefined,
   }),
 });
 
-async function fetchOrderTickets(orderId: string, guestEmail?: string) {
+async function fetchOrderTickets(orderId: string, guestEmail?: string, guestAccessCode?: string) {
   // Fetch order and event — works for logged-in users via RLS,
   // and for guests if they supply the correct buyer_email.
   const query = supabase
@@ -31,8 +32,16 @@ async function fetchOrderTickets(orderId: string, guestEmail?: string) {
     throw notFound();
   }
 
-  // If guest mode: check email matches
-  if (guestEmail && order.buyer_email?.toLowerCase() !== guestEmail.toLowerCase()) {
+  // If guest mode: check email and accessCode match
+  if (guestEmail && guestAccessCode) {
+    if (
+      order.buyer_email?.toLowerCase() !== guestEmail.toLowerCase() ||
+      order.access_code !== guestAccessCode
+    ) {
+      throw notFound();
+    }
+  } else if (guestEmail) {
+    // Missing access code
     throw notFound();
   }
 
@@ -56,11 +65,11 @@ async function fetchOrderTickets(orderId: string, guestEmail?: string) {
 
 function OrderTicketsPage() {
   const { orderId } = Route.useParams();
-  const { email: guestEmail } = useSearch({ from: "/orders/$orderId/tickets" });
+  const { email: guestEmail, accessCode: guestAccessCode } = useSearch({ from: "/orders/$orderId/tickets" });
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["order-tickets", orderId, guestEmail],
-    queryFn: () => fetchOrderTickets(orderId, guestEmail),
+    queryKey: ["order-tickets", orderId, guestEmail, guestAccessCode],
+    queryFn: () => fetchOrderTickets(orderId, guestEmail, guestAccessCode),
   });
 
   return (
