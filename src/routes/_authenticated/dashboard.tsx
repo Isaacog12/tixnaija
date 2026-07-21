@@ -356,6 +356,7 @@ function StatusBadge({ status }: { status: string }) {
     draft: { label: "Draft", className: "bg-muted text-muted-foreground" },
     published: { label: "Live", className: "bg-primary/20 text-primary" },
     cancelled: { label: "Cancelled", className: "bg-destructive/20 text-destructive" },
+    postponed: { label: "Postponed", className: "bg-amber-500/20 text-amber-500" },
     completed: { label: "Ended", className: "bg-secondary text-secondary-foreground" },
   };
   const cfg = map[status] ?? map.draft;

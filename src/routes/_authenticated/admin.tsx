@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   Users, Calendar, BarChart3, Search, MoreVertical,
-  Ban, CheckCircle2, ClipboardList, ExternalLink, ShieldOff, ShieldCheck, Trash2, Image as ImageIcon,
+  Ban, CheckCircle2, ClipboardList, ExternalLink, ShieldOff, ShieldCheck, Trash2, Image as ImageIcon, RefreshCcw,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/currency";
@@ -28,6 +28,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/_authenticated/admin")({
   // Real protection: query user_roles and redirect non-admins cleanly.
@@ -123,6 +124,20 @@ async function fetchContactMessages() {
   return (data ?? []) as any[];
 }
 
+async function fetchRefundRequests() {
+  const { data, error } = await (supabase as any)
+    .from("refund_requests")
+    .select(`
+      id, reason, other_reason, status, admin_note, created_at,
+      buyer_email, buyer_name,
+      events(title, slug)
+    `)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return (data ?? []) as any[];
+}
+
 // ── Main Component ───────────────────────────────────────────
 
 function AdminDashboard() {
@@ -134,6 +149,7 @@ function AdminDashboard() {
   const { data: users, isLoading: usersLoading } = useQuery({ queryKey: ["admin-users"], queryFn: fetchAdminUsers });
   const { data: events, isLoading: eventsLoading } = useQuery({ queryKey: ["admin-events"], queryFn: fetchAdminEvents });
   const { data: messages } = useQuery({ queryKey: ["admin-contact-messages"], queryFn: fetchContactMessages });
+  const { data: refunds, isLoading: refundsLoading } = useQuery({ queryKey: ["admin-refund-requests"], queryFn: fetchRefundRequests });
 
   // ── Mutations ──────────────────────────────────────────────
 
@@ -190,6 +206,22 @@ function AdminDashboard() {
     onSuccess: () => {
       toast.success("Message deleted.");
       qc.invalidateQueries({ queryKey: ["admin-contact-messages"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const updateRefundMutation = useMutation({
+    mutationFn: async ({ id, status, admin_note }: { id: string; status: string; admin_note?: string }) => {
+      const { error } = await (supabase as any)
+        .from("refund_requests")
+        .update({ status, admin_note: admin_note || null, updated_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      const labels: Record<string, string> = { approved: "approved", rejected: "rejected", processed: "marked as processed" };
+      toast.success(`Refund request ${labels[vars.status] ?? vars.status}.`);
+      qc.invalidateQueries({ queryKey: ["admin-refund-requests"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -516,6 +548,127 @@ function AdminDashboard() {
                 </div>
               </div>
             ))
+          )}
+        </div>
+      </section>
+      {/* Refund Requests */}
+      <section className="mt-10 flex flex-col rounded-2xl border border-border bg-card/40 overflow-hidden">
+        <div className="flex items-center justify-between p-4 border-b border-border bg-card/80">
+          <div>
+            <h2 className="font-semibold">Refund Requests</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Submitted by buyers via My Tickets page</p>
+          </div>
+          <Badge variant="outline" className="font-mono text-xs">
+            {(refunds ?? []).filter((r: any) => r.status === "pending").length} pending
+          </Badge>
+        </div>
+        <div className="overflow-x-auto">
+          {refundsLoading ? (
+            <p className="p-6 text-sm text-muted-foreground">Loading refund requests…</p>
+          ) : (refunds ?? []).length === 0 ? (
+            <div className="p-8 text-center">
+              <RefreshCcw className="mx-auto h-8 w-8 text-muted-foreground/30" />
+              <p className="mt-3 text-sm text-muted-foreground">No refund requests yet.</p>
+            </div>
+          ) : (
+            <table className="w-full text-sm text-left">
+              <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Buyer</th>
+                  <th className="px-4 py-3 font-medium">Event</th>
+                  <th className="px-4 py-3 font-medium">Reason</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Date</th>
+                  <th className="px-4 py-3 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/50">
+                {(refunds ?? []).map((r: any) => (
+                  <tr key={r.id} className="hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-sm">{r.buyer_name || "Unknown"}</div>
+                      <div className="text-xs text-muted-foreground">{r.buyer_email}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      {r.events ? (
+                        <Link
+                          to="/e/$slug"
+                          params={{ slug: r.events.slug }}
+                          className="text-primary hover:underline text-xs font-medium line-clamp-2"
+                        >
+                          {r.events.title}
+                        </Link>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Unknown event</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="capitalize text-xs">{r.reason}</span>
+                      {r.other_reason && (
+                        <p className="mt-1 text-xs text-muted-foreground line-clamp-2" title={r.other_reason}>
+                          {r.other_reason}
+                        </p>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {r.status === "pending" && (
+                        <Badge variant="outline" className="text-amber-500 border-amber-500/40 bg-amber-500/10 text-xs">Pending</Badge>
+                      )}
+                      {r.status === "approved" && (
+                        <Badge variant="outline" className="text-green-500 border-green-500/40 bg-green-500/10 text-xs">Approved</Badge>
+                      )}
+                      {r.status === "rejected" && (
+                        <Badge variant="outline" className="text-destructive border-destructive/40 bg-destructive/10 text-xs">Rejected</Badge>
+                      )}
+                      {r.status === "processed" && (
+                        <Badge variant="secondary" className="text-xs">Processed</Badge>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
+                      {new Date(r.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3">
+                      {r.status === "pending" && (
+                        <div className="flex gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs text-green-500 border-green-500/30 hover:bg-green-500/10"
+                            disabled={updateRefundMutation.isPending}
+                            onClick={() => updateRefundMutation.mutate({ id: r.id, status: "approved" })}
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+                            disabled={updateRefundMutation.isPending}
+                            onClick={() => updateRefundMutation.mutate({ id: r.id, status: "rejected" })}
+                          >
+                            Reject
+                          </Button>
+                        </div>
+                      )}
+                      {r.status === "approved" && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="h-7 text-xs"
+                          disabled={updateRefundMutation.isPending}
+                          onClick={() => updateRefundMutation.mutate({ id: r.id, status: "processed" })}
+                        >
+                          Mark Processed
+                        </Button>
+                      )}
+                      {(r.status === "rejected" || r.status === "processed") && (
+                        <span className="text-xs text-muted-foreground/50">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
       </section>

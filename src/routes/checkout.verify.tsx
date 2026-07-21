@@ -83,11 +83,18 @@ function VerifyCheckoutPage() {
             ) : (
               <>
                 <p className="mt-2 text-muted-foreground">
-                  Since you checked out as a guest, please create an account or log in with the email you used to view your tickets.
+                  Your tickets were emailed to you. You can also view and download them right here — no account needed.
                 </p>
-                <Button asChild className="mt-8 w-full gradient-sunset" size="lg">
-                  <Link to="/auth">Create Account or Log in</Link>
+                <Button asChild className="mt-6 w-full gradient-sunset shadow-glow" size="lg">
+                  <Link to="/my-tickets">View My Tickets</Link>
                 </Button>
+                <p className="mt-4 text-xs text-muted-foreground">
+                  Want everything in one place?{" "}
+                  <Link to="/auth" search={{ mode: "signup" }} className="text-primary hover:underline">
+                    Create a free account
+                  </Link>
+                  {" "}with the email you used at checkout.
+                </p>
               </>
             )}
           </>

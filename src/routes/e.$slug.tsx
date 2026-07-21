@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Calendar, MapPin, Minus, Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -21,13 +21,8 @@ import {
 export const Route = createFileRoute("/e/$slug")({
   ssr: false,
   component: EventDetailPage,
-  head: ({ params }: { params: { slug: string } }) => ({
-    meta: [
-      { title: `${params.slug} — TixNaija` },
-      { name: "description", content: "Buy tickets to this event on TixNaija." },
-    ],
-  }),
 });
+
 
 type TicketType = {
   id: string;
@@ -97,6 +92,14 @@ function EventDetailPage() {
     queryKey: ["public-event", slug],
     queryFn: () => fetchEventBySlug(slug),
   });
+
+  // Update page title when event data loads
+  useEffect(() => {
+    if (data?.event?.title) {
+      document.title = `${data.event.title} — TixNaija`;
+    }
+    return () => { document.title = "TixNaija — Nigerian event tickets, sold fast"; };
+  }, [data?.event?.title]);
 
   const { data: similarEvents } = useQuery({
     queryKey: ["similar-events", data?.event?.id],
@@ -249,8 +252,8 @@ function EventDetailPage() {
         }
 
         if (!userId) {
-          toast.success("Free ticket claimed! Please sign up or log in to view your tickets.", { duration: 6000 });
-          navigate({ to: "/auth" });
+          toast.success("Free ticket claimed! View your ticket using the email you provided.", { duration: 6000 });
+          navigate({ to: "/my-tickets" });
         } else {
           toast.success("Free ticket claimed successfully!");
           navigate({ to: "/inbox" });

@@ -32,6 +32,8 @@ import { Route as AuthenticatedEventsNewRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAdminOrganizerApplicationsRouteImport } from './routes/_authenticated/admin_.organizer-applications'
 import { Route as AuthenticatedAdminBannersRouteImport } from './routes/_authenticated/admin_.banners'
 import { Route as AuthenticatedOrdersOrderIdTicketsRouteImport } from './routes/_authenticated/orders.$orderId.tickets'
+import { Route as MyTicketsRouteImport } from './routes/my-tickets'
+import { Route as OrdersOrderIdTicketsRouteImport } from './routes/orders.$orderId.tickets'
 import { Route as AuthenticatedEventsEventIdScanRouteImport } from './routes/_authenticated/events.$eventId.scan'
 import { Route as AuthenticatedEventsEventIdEditRouteImport } from './routes/_authenticated/events.$eventId.edit'
 
@@ -148,10 +150,21 @@ const AuthenticatedAdminBannersRoute =
   } as any)
 const AuthenticatedOrdersOrderIdTicketsRoute =
   AuthenticatedOrdersOrderIdTicketsRouteImport.update({
-    id: '/orders/$orderId/tickets',
+    id: '/_authenticated/orders/$orderId/tickets',
     path: '/orders/$orderId/tickets',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const MyTicketsRoute = MyTicketsRouteImport.update({
+  id: '/my-tickets',
+  path: '/my-tickets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersOrderIdTicketsRoute = OrdersOrderIdTicketsRouteImport.update({
+  id: '/orders/$orderId/tickets',
+  path: '/orders/$orderId/tickets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
 const AuthenticatedEventsEventIdScanRoute =
   AuthenticatedEventsEventIdScanRouteImport.update({
     id: '/events/$eventId/scan',
@@ -189,7 +202,8 @@ export interface FileRoutesByFullPath {
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/events/$eventId/scan': typeof AuthenticatedEventsEventIdScanRoute
-  '/orders/$orderId/tickets': typeof AuthenticatedOrdersOrderIdTicketsRoute
+  '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
+  '/my-tickets': typeof MyTicketsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -215,7 +229,8 @@ export interface FileRoutesByTo {
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/events/$eventId/scan': typeof AuthenticatedEventsEventIdScanRoute
-  '/orders/$orderId/tickets': typeof AuthenticatedOrdersOrderIdTicketsRoute
+  '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
+  '/my-tickets': typeof MyTicketsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -244,6 +259,8 @@ export interface FileRoutesById {
   '/_authenticated/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/_authenticated/events/$eventId/scan': typeof AuthenticatedEventsEventIdScanRoute
   '/_authenticated/orders/$orderId/tickets': typeof AuthenticatedOrdersOrderIdTicketsRoute
+  '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
+  '/my-tickets': typeof MyTicketsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -271,6 +288,8 @@ export interface FileRouteTypes {
     | '/events/$eventId/edit'
     | '/events/$eventId/scan'
     | '/orders/$orderId/tickets'
+    | '/my-tickets'
+    | '/faq'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -297,6 +316,8 @@ export interface FileRouteTypes {
     | '/events/$eventId/edit'
     | '/events/$eventId/scan'
     | '/orders/$orderId/tickets'
+    | '/my-tickets'
+    | '/faq'
   id:
     | '__root__'
     | '/'
@@ -340,6 +361,8 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   CheckoutVerifyRoute: typeof CheckoutVerifyRoute
   ESlugRoute: typeof ESlugRoute
+  MyTicketsRoute: typeof MyTicketsRoute
+  OrdersOrderIdTicketsRoute: typeof OrdersOrderIdTicketsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -570,6 +593,8 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   CheckoutVerifyRoute: CheckoutVerifyRoute,
   ESlugRoute: ESlugRoute,
+  MyTicketsRoute: MyTicketsRoute,
+  OrdersOrderIdTicketsRoute: OrdersOrderIdTicketsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
