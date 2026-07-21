@@ -612,7 +612,7 @@ function PostponeEventDialog({ eventId, eventStart, eventEnd }: { eventId: strin
     const { error } = await supabase.rpc("postpone_event", {
       p_event_id: eventId,
       p_new_start: new Date(start).toISOString(),
-      p_new_end: end ? new Date(end).toISOString() : null,
+      p_new_end: end ? new Date(end).toISOString() : undefined,
       p_note: note || "",
     });
     setBusy(false);

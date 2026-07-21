@@ -232,7 +232,7 @@ function EventDetailPage() {
 
       if (!userId && (!accessCode || accessCode.trim().length < 4)) {
         toast.error("Please create a 4-6 digit Access PIN for your tickets.");
-        setIsCheckingOut(false);
+        setCheckoutBusy(false);
         return;
       }
 

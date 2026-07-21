@@ -11,7 +11,7 @@ import { Ticket, ArrowLeft } from "lucide-react";
 // guests can reach it from /my-tickets with ?email=... query param.
 export const Route = createFileRoute("/orders/$orderId/tickets")({
   component: OrderTicketsPage,
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { email?: string; accessCode?: string } => ({
     email: typeof search.email === "string" ? search.email : undefined,
     accessCode: typeof search.accessCode === "string" ? search.accessCode : undefined,
   }),
@@ -36,7 +36,7 @@ async function fetchOrderTickets(orderId: string, guestEmail?: string, guestAcce
   if (guestEmail && guestAccessCode) {
     if (
       order.buyer_email?.toLowerCase() !== guestEmail.toLowerCase() ||
-      order.access_code !== guestAccessCode
+      (order as any).access_code !== guestAccessCode
     ) {
       throw notFound();
     }
