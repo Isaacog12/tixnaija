@@ -28,6 +28,7 @@ as $$
       select jsonb_agg(
         jsonb_build_object(
           'id', t.id,
+          'ticket_code', t.ticket_code,
           'attendee_name', t.attendee_name,
           'status', t.status,
           'order_items', jsonb_build_object(
