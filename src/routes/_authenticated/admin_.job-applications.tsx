@@ -52,6 +52,7 @@ interface JobApp {
   status: JobAppStatus;
   admin_note: string | null;
   created_at: string;
+  is_registered_user: boolean;
 }
 
 const TABS: { key: JobAppStatus; label: string }[] = [
@@ -71,10 +72,7 @@ const STATUS_COLORS: Record<JobAppStatus, string> = {
 // ── Data fetchers ─────────────────────────────────────────────
 
 async function fetchJobApplications(): Promise<Record<JobAppStatus, JobApp[]>> {
-  const { data, error } = await (supabase as any)
-    .from("job_applications")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const { data, error } = await supabase.rpc("admin_get_job_applications" as any);
 
   if (error) throw error;
 
@@ -115,10 +113,11 @@ function JobApplicationsPage() {
       status: JobAppStatus;
       adminNote: string;
     }) => {
-      const { error } = await (supabase as any)
-        .from("job_applications")
-        .update({ status, admin_note: adminNote || null })
-        .eq("id", id);
+      const { error } = await supabase.rpc("admin_update_job_application" as any, {
+        p_id: id,
+        p_status: status,
+        p_admin_note: adminNote || null,
+      });
       if (error) throw error;
     },
     onSuccess: (_, vars) => {
@@ -269,7 +268,14 @@ function ApplicationCard({
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-foreground">{app.full_name}</span>
+              <div className="flex flex-col gap-2 md:flex-row md:items-center">
+                <h3 className="font-display text-xl">{app.full_name}</h3>
+                {app.is_registered_user && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/10 px-2 py-0.5 text-xs font-medium text-violet-500 border border-violet-500/20 w-fit">
+                    Registered user
+                  </span>
+                )}
+              </div>
               <span
                 className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold capitalize ${STATUS_COLORS[app.status]}`}
               >

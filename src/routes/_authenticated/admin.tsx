@@ -144,6 +144,8 @@ function AdminDashboard() {
   const qc = useQueryClient();
   const [userSearch, setUserSearch] = useState("");
   const [takedownEvent, setTakedownEvent] = useState<{ id: string; title: string } | null>(null);
+  const [revokeUser, setRevokeUser] = useState<{ id: string; name: string } | null>(null);
+  const [revokeReason, setRevokeReason] = useState("");
 
   const { data: stats } = useQuery({ queryKey: ["admin-stats"], queryFn: fetchAdminStats });
   const { data: users, isLoading: usersLoading } = useQuery({ queryKey: ["admin-users"], queryFn: fetchAdminUsers });
@@ -180,6 +182,23 @@ function AdminDashboard() {
     },
     onSuccess: (_, vars) => {
       toast.success(vars.suspend ? "User suspended." : "User unsuspended.");
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const revokeMutation = useMutation({
+    mutationFn: async ({ userId, reason }: { userId: string; reason: string }) => {
+      const { error } = await supabase.rpc("admin_revoke_organizer" as any, {
+        p_user_id: userId,
+        p_reason: reason || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Organizer access revoked.");
+      setRevokeUser(null);
+      setRevokeReason("");
       qc.invalidateQueries({ queryKey: ["admin-users"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -261,6 +280,42 @@ function AdminDashboard() {
               disabled={takedownMutation.isPending}
             >
               {takedownMutation.isPending ? "Taking down”¦" : "Yes, take down"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Revoke Organizer Dialog */}
+      <AlertDialog open={!!revokeUser} onOpenChange={() => { setRevokeUser(null); setRevokeReason(""); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revoke Organizer Access?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to revoke organizer access for <strong>{revokeUser?.name}</strong>?
+              They will no longer be able to access the organizer dashboard or create new events.
+              Their existing events will remain live unless you take them down manually.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Input
+              placeholder="Optional reason for revocation..."
+              value={revokeReason}
+              onChange={(e) => setRevokeReason(e.target.value)}
+              className="text-sm"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              onClick={(e) => {
+                e.preventDefault();
+                if (!revokeUser) return;
+                revokeMutation.mutate({ userId: revokeUser.id, reason: revokeReason });
+              }}
+              disabled={revokeMutation.isPending}
+            >
+              {revokeMutation.isPending ? "Revoking..." : "Revoke Access"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -394,6 +449,15 @@ function AdminDashboard() {
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
+                            {u.roles.includes("organizer") && (
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => setRevokeUser({ id: u.id, name: u.full_name || "Unknown" })}
+                              >
+                                <ShieldOff className="mr-2 h-3.5 w-3.5" />
+                                Revoke Organizer Access
+                              </DropdownMenuItem>
+                            )}
                             {u.suspended ? (
                               <DropdownMenuItem
                                 className="text-green-500 focus:text-green-500"
