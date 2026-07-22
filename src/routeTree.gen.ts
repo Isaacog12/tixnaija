@@ -18,13 +18,13 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CareersRouteImport } from './routes/careers'
-import { Route as CareersApplyRouteImport } from './routes/careers_.apply'
 import { Route as BrowseRouteImport } from './routes/browse'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ESlugRouteImport } from './routes/e.$slug'
 import { Route as CheckoutVerifyRouteImport } from './routes/checkout.verify'
+import { Route as CareersApplyRouteImport } from './routes/careers_.apply'
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/inbox'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -83,11 +83,6 @@ const CareersRoute = CareersRouteImport.update({
   path: '/careers',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CareersApplyRoute = CareersApplyRouteImport.update({
-  id: '/careers_/apply',
-  path: '/careers/apply',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const BrowseRoute = BrowseRouteImport.update({
   id: '/browse',
   path: '/browse',
@@ -115,6 +110,11 @@ const ESlugRoute = ESlugRouteImport.update({
 const CheckoutVerifyRoute = CheckoutVerifyRouteImport.update({
   id: '/checkout/verify',
   path: '/checkout/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CareersApplyRoute = CareersApplyRouteImport.update({
+  id: '/careers_/apply',
+  path: '/careers/apply',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedTicketsRoute = AuthenticatedTicketsRouteImport.update({
@@ -188,7 +188,6 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
   '/careers': typeof CareersRoute
-  '/careers/apply': typeof CareersApplyRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -202,11 +201,12 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/tickets': typeof AuthenticatedTicketsRoute
+  '/careers/apply': typeof CareersApplyRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
   '/e/$slug': typeof ESlugRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
-  '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/admin/job-applications': typeof AuthenticatedAdminJobApplicationsRoute
+  '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
@@ -217,7 +217,6 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
   '/careers': typeof CareersRoute
-  '/careers/apply': typeof CareersApplyRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -231,11 +230,12 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/tickets': typeof AuthenticatedTicketsRoute
+  '/careers/apply': typeof CareersApplyRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
   '/e/$slug': typeof ESlugRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
-  '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/admin/job-applications': typeof AuthenticatedAdminJobApplicationsRoute
+  '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
@@ -248,7 +248,6 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
   '/careers': typeof CareersRoute
-  '/careers/apply': typeof CareersApplyRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -262,11 +261,12 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/_authenticated/tickets': typeof AuthenticatedTicketsRoute
+  '/careers_/apply': typeof CareersApplyRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
   '/e/$slug': typeof ESlugRoute
   '/_authenticated/admin_/banners': typeof AuthenticatedAdminBannersRoute
-  '/_authenticated/admin_/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/_authenticated/admin_/job-applications': typeof AuthenticatedAdminJobApplicationsRoute
+  '/_authenticated/admin_/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/_authenticated/events/new': typeof AuthenticatedEventsNewRoute
   '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
   '/_authenticated/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
@@ -279,7 +279,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/browse'
     | '/careers'
-    | '/careers/apply'
     | '/contact'
     | '/faq'
     | '/forgot-password'
@@ -293,11 +292,12 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/inbox'
     | '/tickets'
+    | '/careers/apply'
     | '/checkout/verify'
     | '/e/$slug'
     | '/admin/banners'
-    | '/admin/organizer-applications'
     | '/admin/job-applications'
+    | '/admin/organizer-applications'
     | '/events/new'
     | '/orders/$orderId/tickets'
     | '/events/$eventId/edit'
@@ -308,7 +308,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/browse'
     | '/careers'
-    | '/careers/apply'
     | '/contact'
     | '/faq'
     | '/forgot-password'
@@ -322,11 +321,12 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/inbox'
     | '/tickets'
+    | '/careers/apply'
     | '/checkout/verify'
     | '/e/$slug'
     | '/admin/banners'
-    | '/admin/organizer-applications'
     | '/admin/job-applications'
+    | '/admin/organizer-applications'
     | '/events/new'
     | '/orders/$orderId/tickets'
     | '/events/$eventId/edit'
@@ -338,7 +338,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/browse'
     | '/careers'
-    | '/careers/apply'
     | '/contact'
     | '/faq'
     | '/forgot-password'
@@ -352,11 +351,12 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/inbox'
     | '/_authenticated/tickets'
+    | '/careers_/apply'
     | '/checkout/verify'
     | '/e/$slug'
     | '/_authenticated/admin_/banners'
-    | '/_authenticated/admin_/organizer-applications'
     | '/_authenticated/admin_/job-applications'
+    | '/_authenticated/admin_/organizer-applications'
     | '/_authenticated/events/new'
     | '/orders/$orderId/tickets'
     | '/_authenticated/events/$eventId/edit'
@@ -369,7 +369,6 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BrowseRoute: typeof BrowseRoute
   CareersRoute: typeof CareersRoute
-  CareersApplyRoute: typeof CareersApplyRoute
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -378,6 +377,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
+  CareersApplyRoute: typeof CareersApplyRoute
   CheckoutVerifyRoute: typeof CheckoutVerifyRoute
   ESlugRoute: typeof ESlugRoute
   OrdersOrderIdTicketsRoute: typeof OrdersOrderIdTicketsRoute
@@ -490,6 +490,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutVerifyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/careers_/apply': {
+      id: '/careers_/apply'
+      path: '/careers/apply'
+      fullPath: '/careers/apply'
+      preLoaderRoute: typeof CareersApplyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/tickets': {
       id: '/_authenticated/tickets'
       path: '/tickets'
@@ -553,13 +560,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminJobApplicationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/careers_/apply': {
-      id: '/careers_/apply'
-      path: '/careers/apply'
-      fullPath: '/careers/apply'
-      preLoaderRoute: typeof CareersApplyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated/admin_/banners': {
       id: '/_authenticated/admin_/banners'
       path: '/admin/banners'
@@ -591,8 +591,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
   AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRoute
   AuthenticatedAdminBannersRoute: typeof AuthenticatedAdminBannersRoute
-  AuthenticatedAdminOrganizerApplicationsRoute: typeof AuthenticatedAdminOrganizerApplicationsRoute
   AuthenticatedAdminJobApplicationsRoute: typeof AuthenticatedAdminJobApplicationsRoute
+  AuthenticatedAdminOrganizerApplicationsRoute: typeof AuthenticatedAdminOrganizerApplicationsRoute
   AuthenticatedEventsNewRoute: typeof AuthenticatedEventsNewRoute
   AuthenticatedEventsEventIdEditRoute: typeof AuthenticatedEventsEventIdEditRoute
   AuthenticatedEventsEventIdScanRoute: typeof AuthenticatedEventsEventIdScanRoute
@@ -605,9 +605,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
   AuthenticatedTicketsRoute: AuthenticatedTicketsRoute,
   AuthenticatedAdminBannersRoute: AuthenticatedAdminBannersRoute,
+  AuthenticatedAdminJobApplicationsRoute:
+    AuthenticatedAdminJobApplicationsRoute,
   AuthenticatedAdminOrganizerApplicationsRoute:
     AuthenticatedAdminOrganizerApplicationsRoute,
-  AuthenticatedAdminJobApplicationsRoute: AuthenticatedAdminJobApplicationsRoute,
   AuthenticatedEventsNewRoute: AuthenticatedEventsNewRoute,
   AuthenticatedEventsEventIdEditRoute: AuthenticatedEventsEventIdEditRoute,
   AuthenticatedEventsEventIdScanRoute: AuthenticatedEventsEventIdScanRoute,
@@ -622,7 +623,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BrowseRoute: BrowseRoute,
   CareersRoute: CareersRoute,
-  CareersApplyRoute: CareersApplyRoute,
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
@@ -631,6 +631,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
+  CareersApplyRoute: CareersApplyRoute,
   CheckoutVerifyRoute: CheckoutVerifyRoute,
   ESlugRoute: ESlugRoute,
   OrdersOrderIdTicketsRoute: OrdersOrderIdTicketsRoute,

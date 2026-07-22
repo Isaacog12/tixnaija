@@ -26,7 +26,7 @@ const searchSchema = z.object({
   role: z.string().optional(),
 });
 
-export const Route = createFileRoute("/careers/apply")({
+export const Route = createFileRoute("/careers_/apply")({
   ssr: false,
   validateSearch: searchSchema,
   component: ApplyPage,
