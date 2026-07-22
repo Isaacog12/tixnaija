@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteNav } from "@/components/site-nav";
+import { Briefcase, MessageSquare, Users } from "lucide-react";
 
 export const Route = createFileRoute("/careers")({
   component: CareersPage,
   head: () => ({
     meta: [
-      { title: "Opportunities TixNaija" },
+      { title: "Opportunities — TixNaija" },
       {
         name: "description",
         content:
@@ -14,6 +15,27 @@ export const Route = createFileRoute("/careers")({
     ],
   }),
 });
+
+const OPEN_ROLES = [
+  {
+    title: "Customer Support",
+    icon: MessageSquare,
+    description:
+      "Be the first point of contact for attendees and event organisers. Help resolve ticket issues, answer queries, and make sure every experience on TixNaija is smooth.",
+  },
+  {
+    title: "Social Media / Content Manager",
+    icon: Users,
+    description:
+      "Own TixNaija's voice on Instagram, X, and TikTok. Create content that gets people excited about events, grows our audience, and builds the brand.",
+  },
+  {
+    title: "Business Development / Partnerships",
+    icon: Briefcase,
+    description:
+      "Identify and onboard new event organisers, venues, and strategic partners. You'll be key to expanding TixNaija's footprint across Nigeria.",
+  },
+] as const;
 
 function CareersPage() {
   return (
@@ -36,30 +58,45 @@ function CareersPage() {
       <div className="mx-auto max-w-4xl px-4 py-12 md:py-16">
         <main className="space-y-12">
 
-          {/* Section 1 */}
+          {/* Section 1 — Open Roles */}
           <section>
-            <h2 className="font-display text-3xl text-gradient-sunset mb-6">Work with us directly</h2>
-            <p className="text-muted-foreground leading-relaxed mb-6">
-              As the platform grows, we might formally hire for these roles:
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {[
-                "Customer Support",
-                "Social Media / Content Manager",
-                "Community Moderator",
-                "Developers (Frontend / Backend)"
-              ].map((role, i) => (
-                <div key={i} className="rounded-lg border border-border bg-card/60 p-5">
-                  <h3 className="font-semibold text-sm">{role}</h3>
-                </div>
-              ))}
+            <div className="flex items-center gap-3 mb-2">
+              <h2 className="font-display text-3xl text-gradient-sunset">Work with us directly</h2>
+              <span className="inline-flex items-center rounded-full bg-green-500/10 border border-green-500/20 px-2.5 py-0.5 text-xs font-semibold text-green-500 uppercase tracking-wider">
+                Now Hiring
+              </span>
             </div>
+            <p className="text-muted-foreground leading-relaxed mb-8">
+              We're growing and actively looking for talented people to join the team. If any of these roles sound like you, we'd love to hear from you.
+            </p>
 
-            <div className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-6">
-              <p className="font-semibold text-foreground mb-2">Currently not hiring — check back as we grow.</p>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                We are not actively hiring for these positions right now. If you'd like to express interest for future opportunities, you can reach out via our <Link to="/contact" className="text-primary hover:underline">Contact page</Link> or email us at <a href="mailto:tixnaijaapp@gmail.com" className="text-primary hover:underline">tixnaijaapp@gmail.com</a>.
-              </p>
+            <div className="flex flex-col gap-5">
+              {OPEN_ROLES.map((role) => {
+                const Icon = role.icon;
+                return (
+                  <div
+                    key={role.title}
+                    className="group rounded-2xl border border-border bg-card/60 p-6 flex flex-col sm:flex-row sm:items-center gap-5 transition hover:border-primary/40 hover:bg-card/80"
+                  >
+                    <div className="flex-shrink-0 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary/20 transition">
+                      <Icon className="h-6 w-6" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground text-base mb-1">{role.title}</h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{role.description}</p>
+                    </div>
+                    <div className="flex-shrink-0">
+                      <Link
+                        to="/careers/apply"
+                        search={{ role: role.title }}
+                        className="inline-flex items-center justify-center rounded-xl gradient-sunset px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90 whitespace-nowrap"
+                      >
+                        Apply Now
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </section>
 
@@ -82,7 +119,7 @@ function CareersPage() {
 
               <div className="rounded-lg border border-border bg-card/60 p-6 relative overflow-hidden">
                 <div className="absolute top-4 right-4 bg-muted text-muted-foreground text-xs uppercase tracking-wider px-2 py-1 rounded-full font-semibold">Coming Soon</div>
-                <h3 className="font-semibold text-lg mb-2">Promoters & Affiliates</h3>
+                <h3 className="font-semibold text-lg mb-2">Promoters &amp; Affiliates</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed pr-16">
                   Earn commission by promoting events. (Our referral and affiliate system is currently under development).
                 </p>
@@ -114,8 +151,6 @@ function CareersPage() {
 
         </main>
       </div>
-
-      {/* Footer (Simplified matching contact page without footer, wait, I will not include the footer block here to match contact/terms pages unless needed, but wait! The prompt says: "confirm: the navbar does NOT show a Careers link, the footer DOES show one, and visiting /careers directly works and displays correctly". Wait, if I don't put a footer on the careers page, is that okay? Yes, contact.tsx and terms.tsx don't have footers. BUT wait! If I just look at contact.tsx again... I should check if they REALLY don't have footers. */}
     </div>
   );
 }
