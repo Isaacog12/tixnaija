@@ -12,7 +12,7 @@ as $$
 declare
   v_app public.job_applications%rowtype;
   v_user_id uuid;
-  v_title text;
+  v_title text; 
   v_body text;
 begin
   -- Must be admin
