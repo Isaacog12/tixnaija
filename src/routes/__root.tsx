@@ -7,13 +7,63 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, type ReactNode, Component } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { CookieBanner } from "@/components/cookie-banner";
 import { GlobalLoader } from "@/components/global-loader";
 import { supabase } from "@/integrations/supabase/client";
+
+// ── Render-phase crash boundary ────────────────────────────────────────────────
+// Catches any JS error thrown during React render (e.g. a failed dynamic import
+// or a bad hook call in a component) so users see a message instead of a blank
+// screen. In dev mode the actual error is shown in an expanded panel.
+class AppErrorBoundary extends Component<
+  { children: ReactNode },
+  { error: Error | null }
+> {
+  state = { error: null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error("[AppErrorBoundary]", error, info);
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-background px-4">
+          <div className="max-w-md text-center">
+            <h1 className="text-xl font-semibold tracking-tight">Something went wrong</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              An unexpected error occurred. Try refreshing — if it keeps happening, please contact us.
+            </p>
+            <div className="mt-6">
+              <a
+                href="/"
+                className="inline-flex items-center justify-center rounded-md gradient-sunset px-4 py-2 text-sm font-semibold text-primary-foreground shadow-glow transition hover:opacity-90"
+              >
+                Reload app
+              </a>
+            </div>
+            {import.meta.env.DEV && (
+              <pre className="mt-6 text-left text-xs text-destructive bg-destructive/5 border border-destructive/20 rounded-lg p-4 overflow-auto max-h-48">
+                {(this.state.error as Error).message}
+                {"\n"}
+                {(this.state.error as Error).stack}
+              </pre>
+            )}
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function NotFoundComponent() {
   return (
@@ -184,7 +234,9 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <GlobalLoader />
-      <Outlet />
+      <AppErrorBoundary>
+        <Outlet />
+      </AppErrorBoundary>
       <Toaster position="top-center" richColors />
       <CookieBanner />
     </QueryClientProvider>

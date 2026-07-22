@@ -18,6 +18,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CareersRouteImport } from './routes/careers'
+import { Route as CareersApplyRouteImport } from './routes/careers.apply'
 import { Route as BrowseRouteImport } from './routes/browse'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -32,6 +33,7 @@ import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticate
 import { Route as OrdersOrderIdTicketsRouteImport } from './routes/orders.$orderId.tickets'
 import { Route as AuthenticatedEventsNewRouteImport } from './routes/_authenticated/events.new'
 import { Route as AuthenticatedAdminOrganizerApplicationsRouteImport } from './routes/_authenticated/admin_.organizer-applications'
+import { Route as AuthenticatedAdminJobApplicationsRouteImport } from './routes/_authenticated/admin_.job-applications'
 import { Route as AuthenticatedAdminBannersRouteImport } from './routes/_authenticated/admin_.banners'
 import { Route as AuthenticatedEventsEventIdScanRouteImport } from './routes/_authenticated/events.$eventId.scan'
 import { Route as AuthenticatedEventsEventIdEditRouteImport } from './routes/_authenticated/events.$eventId.edit'
@@ -79,6 +81,11 @@ const ContactRoute = ContactRouteImport.update({
 const CareersRoute = CareersRouteImport.update({
   id: '/careers',
   path: '/careers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CareersApplyRoute = CareersApplyRouteImport.update({
+  id: '/careers/apply',
+  path: '/careers/apply',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BrowseRoute = BrowseRouteImport.update({
@@ -151,6 +158,12 @@ const AuthenticatedAdminOrganizerApplicationsRoute =
     path: '/admin/organizer-applications',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminJobApplicationsRoute =
+  AuthenticatedAdminJobApplicationsRouteImport.update({
+    id: '/admin_/job-applications',
+    path: '/admin/job-applications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminBannersRoute =
   AuthenticatedAdminBannersRouteImport.update({
     id: '/admin_/banners',
@@ -175,6 +188,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
   '/careers': typeof CareersRoute
+  '/careers/apply': typeof CareersApplyRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -192,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/e/$slug': typeof ESlugRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
+  '/admin/job-applications': typeof AuthenticatedAdminJobApplicationsRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
@@ -202,6 +217,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
   '/careers': typeof CareersRoute
+  '/careers/apply': typeof CareersApplyRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -219,6 +235,7 @@ export interface FileRoutesByTo {
   '/e/$slug': typeof ESlugRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
+  '/admin/job-applications': typeof AuthenticatedAdminJobApplicationsRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
@@ -231,6 +248,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
   '/careers': typeof CareersRoute
+  '/careers/apply': typeof CareersApplyRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -248,6 +266,7 @@ export interface FileRoutesById {
   '/e/$slug': typeof ESlugRoute
   '/_authenticated/admin_/banners': typeof AuthenticatedAdminBannersRoute
   '/_authenticated/admin_/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
+  '/_authenticated/admin_/job-applications': typeof AuthenticatedAdminJobApplicationsRoute
   '/_authenticated/events/new': typeof AuthenticatedEventsNewRoute
   '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
   '/_authenticated/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
@@ -260,6 +279,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/browse'
     | '/careers'
+    | '/careers/apply'
     | '/contact'
     | '/faq'
     | '/forgot-password'
@@ -277,6 +297,7 @@ export interface FileRouteTypes {
     | '/e/$slug'
     | '/admin/banners'
     | '/admin/organizer-applications'
+    | '/admin/job-applications'
     | '/events/new'
     | '/orders/$orderId/tickets'
     | '/events/$eventId/edit'
@@ -287,6 +308,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/browse'
     | '/careers'
+    | '/careers/apply'
     | '/contact'
     | '/faq'
     | '/forgot-password'
@@ -304,6 +326,7 @@ export interface FileRouteTypes {
     | '/e/$slug'
     | '/admin/banners'
     | '/admin/organizer-applications'
+    | '/admin/job-applications'
     | '/events/new'
     | '/orders/$orderId/tickets'
     | '/events/$eventId/edit'
@@ -315,6 +338,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/browse'
     | '/careers'
+    | '/careers/apply'
     | '/contact'
     | '/faq'
     | '/forgot-password'
@@ -332,6 +356,7 @@ export interface FileRouteTypes {
     | '/e/$slug'
     | '/_authenticated/admin_/banners'
     | '/_authenticated/admin_/organizer-applications'
+    | '/_authenticated/admin_/job-applications'
     | '/_authenticated/events/new'
     | '/orders/$orderId/tickets'
     | '/_authenticated/events/$eventId/edit'
@@ -344,6 +369,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BrowseRoute: typeof BrowseRoute
   CareersRoute: typeof CareersRoute
+  CareersApplyRoute: typeof CareersApplyRoute
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -520,6 +546,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminOrganizerApplicationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin_/job-applications': {
+      id: '/_authenticated/admin_/job-applications'
+      path: '/admin/job-applications'
+      fullPath: '/admin/job-applications'
+      preLoaderRoute: typeof AuthenticatedAdminJobApplicationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/careers/apply': {
+      id: '/careers/apply'
+      path: '/careers/apply'
+      fullPath: '/careers/apply'
+      preLoaderRoute: typeof CareersApplyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin_/banners': {
       id: '/_authenticated/admin_/banners'
       path: '/admin/banners'
@@ -552,6 +592,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRoute
   AuthenticatedAdminBannersRoute: typeof AuthenticatedAdminBannersRoute
   AuthenticatedAdminOrganizerApplicationsRoute: typeof AuthenticatedAdminOrganizerApplicationsRoute
+  AuthenticatedAdminJobApplicationsRoute: typeof AuthenticatedAdminJobApplicationsRoute
   AuthenticatedEventsNewRoute: typeof AuthenticatedEventsNewRoute
   AuthenticatedEventsEventIdEditRoute: typeof AuthenticatedEventsEventIdEditRoute
   AuthenticatedEventsEventIdScanRoute: typeof AuthenticatedEventsEventIdScanRoute
@@ -566,6 +607,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminBannersRoute: AuthenticatedAdminBannersRoute,
   AuthenticatedAdminOrganizerApplicationsRoute:
     AuthenticatedAdminOrganizerApplicationsRoute,
+  AuthenticatedAdminJobApplicationsRoute: AuthenticatedAdminJobApplicationsRoute,
   AuthenticatedEventsNewRoute: AuthenticatedEventsNewRoute,
   AuthenticatedEventsEventIdEditRoute: AuthenticatedEventsEventIdEditRoute,
   AuthenticatedEventsEventIdScanRoute: AuthenticatedEventsEventIdScanRoute,
@@ -580,6 +622,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BrowseRoute: BrowseRoute,
   CareersRoute: CareersRoute,
+  CareersApplyRoute: CareersApplyRoute,
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,

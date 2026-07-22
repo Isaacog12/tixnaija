@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { SiteNav } from "@/components/site-nav";
 import { Briefcase, MessageSquare, Users } from "lucide-react";
 
@@ -86,13 +86,12 @@ function CareersPage() {
                       <p className="text-sm text-muted-foreground leading-relaxed">{role.description}</p>
                     </div>
                     <div className="flex-shrink-0">
-                      <Link
-                        to="/careers/apply"
-                        search={{ role: role.title }}
+                      <a
+                        href={`/careers/apply?role=${encodeURIComponent(role.title)}`}
                         className="inline-flex items-center justify-center rounded-xl gradient-sunset px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90 whitespace-nowrap"
                       >
                         Apply Now
-                      </Link>
+                      </a>
                     </div>
                   </div>
                 );
@@ -115,14 +114,6 @@ function CareersPage() {
                 <div className="mt-4">
                   <Link to="/how-it-works" className="text-xs uppercase tracking-[0.2em] text-primary hover:underline font-semibold">Learn how to organize →</Link>
                 </div>
-              </div>
-
-              <div className="rounded-lg border border-border bg-card/60 p-6 relative overflow-hidden">
-                <div className="absolute top-4 right-4 bg-muted text-muted-foreground text-xs uppercase tracking-wider px-2 py-1 rounded-full font-semibold">Coming Soon</div>
-                <h3 className="font-semibold text-lg mb-2">Promoters &amp; Affiliates</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed pr-16">
-                  Earn commission by promoting events. (Our referral and affiliate system is currently under development).
-                </p>
               </div>
 
               <div className="rounded-lg border border-border bg-card/60 p-6">
