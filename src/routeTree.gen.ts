@@ -18,7 +18,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CareersRouteImport } from './routes/careers'
-import { Route as CareersApplyRouteImport } from './routes/careers.apply'
+import { Route as CareersApplyRouteImport } from './routes/careers_.apply'
 import { Route as BrowseRouteImport } from './routes/browse'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -84,7 +84,7 @@ const CareersRoute = CareersRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const CareersApplyRoute = CareersApplyRouteImport.update({
-  id: '/careers/apply',
+  id: '/careers_/apply',
   path: '/careers/apply',
   getParentRoute: () => rootRouteImport,
 } as any)
