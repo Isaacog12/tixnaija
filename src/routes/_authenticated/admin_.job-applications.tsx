@@ -12,11 +12,23 @@ import {
   ChevronUp,
   Clock,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute(
   "/_authenticated/admin_/job-applications"
@@ -133,6 +145,18 @@ function JobApplicationsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc("admin_delete_job_application" as any, { p_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Application deleted.");
+      qc.invalidateQueries({ queryKey: ["admin-job-applications"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   if (isLoading)
     return (
       <div className="mx-auto max-w-4xl px-4 py-10 text-sm text-muted-foreground">
@@ -203,6 +227,8 @@ function JobApplicationsPage() {
               onUpdateStatus={(id, status, adminNote) =>
                 updateMutation.mutate({ id, status, adminNote })
               }
+              onDelete={(id) => deleteMutation.mutate(id)}
+              isDeleting={deleteMutation.isPending}
             />
           ))}
         </div>
@@ -217,10 +243,14 @@ function ApplicationCard({
   app,
   isActioning,
   onUpdateStatus,
+  onDelete,
+  isDeleting,
 }: {
   app: JobApp;
   isActioning: boolean;
   onUpdateStatus: (id: string, status: JobAppStatus, adminNote: string) => void;
+  onDelete: (id: string) => void;
+  isDeleting: boolean;
 }) {
   const [expanded, setExpanded] = useState(app.status === "new");
   const [note, setNote] = useState(app.admin_note ?? "");
@@ -380,19 +410,50 @@ function ApplicationCard({
               />
             </div>
 
-            <Button
-              onClick={handleSave}
-              disabled={isActioning || selectedStatus === app.status && note === (app.admin_note ?? "")}
-              className="gradient-sunset text-primary-foreground font-semibold"
-            >
-              {isActioning ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Saving…
-                </span>
-              ) : (
-                "Save changes"
-              )}
-            </Button>
+            <div className="flex justify-between items-center mt-4">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete application?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete <strong>{app.full_name}</strong>'s application and any associated data.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onDelete(app.id);
+                      }}
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? "Deleting..." : "Delete"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              <Button
+                onClick={handleSave}
+                disabled={isActioning || selectedStatus === app.status && note === (app.admin_note ?? "")}
+                className="gradient-sunset text-primary-foreground font-semibold"
+              >
+                {isActioning ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Saving…
+                  </span>
+                ) : (
+                  "Save changes"
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       )}
