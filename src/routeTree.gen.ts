@@ -553,8 +553,8 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminJobApplicationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/careers/apply': {
-      id: '/careers/apply'
+    '/careers_/apply': {
+      id: '/careers_/apply'
       path: '/careers/apply'
       fullPath: '/careers/apply'
       preLoaderRoute: typeof CareersApplyRouteImport
