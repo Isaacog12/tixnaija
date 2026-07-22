@@ -107,7 +107,7 @@ async function fetchAdminUsers() {
 async function fetchAdminEvents() {
   const { data, error } = await supabase
     .from("events")
-    .select("id, title, status, created_at, organizer_id, profiles!events_organizer_id_fkey(full_name)")
+    .select("id, title, status, created_at, organizer_id, start_datetime, end_datetime, profiles!events_organizer_id_fkey(full_name)")
     .order("created_at", { ascending: false })
     .limit(30);
   if (error) throw error;
@@ -516,12 +516,14 @@ function AdminDashboard() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      {ev.status === "published" ? (
+                      {ev.status === "cancelled" ? (
+                        <span className="text-xs text-destructive font-medium">Cancelled</span>
+                      ) : new Date(ev.end_datetime || ev.start_datetime) < new Date() ? (
+                        <span className="text-xs text-muted-foreground font-medium">Ended</span>
+                      ) : ev.status === "published" ? (
                         <span className="inline-flex items-center gap-1 text-green-500 text-xs font-medium">
                           <CheckCircle2 className="h-3 w-3" /> Live
                         </span>
-                      ) : ev.status === "cancelled" ? (
-                        <span className="text-xs text-destructive font-medium">Cancelled</span>
                       ) : (
                         <span className="text-xs text-muted-foreground font-medium capitalize">{ev.status}</span>
                       )}
