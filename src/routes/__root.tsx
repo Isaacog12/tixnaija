@@ -176,8 +176,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "TixNaija — Nigerian event tickets, sold fast" },
       { name: "twitter:description", content: "Discover concerts, comedy shows, conferences and parties across Nigeria. Buy tickets and get an instant QR code from TixNaija." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/17b326b8-1a1a-4d1e-bc3b-84034788fc9e/id-preview-34b380a2--71ce14f9-6aac-4f6d-b07d-7d28edaf34b6.lovable.app-1783687480763.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/17b326b8-1a1a-4d1e-bc3b-84034788fc9e/id-preview-34b380a2--71ce14f9-6aac-4f6d-b07d-7d28edaf34b6.lovable.app-1783687480763.png" },
+      { property: "og:image", content: "/preview.jpg" },
+      { name: "twitter:image", content: "/preview.jpg" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
