@@ -57,7 +57,7 @@ async function fetchEvents(q: string, category: string) {
   const { data, error } = await query;
   if (error) throw error;
 
-  const validEvents = data ?? [];
+  const validEvents: any[] = data ?? [];
 
   const ids = validEvents.map((e) => e.id);
   let minPrice: Record<string, number> = {};
