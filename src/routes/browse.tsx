@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, Calendar, MapPin, Sparkles, SlidersHorizontal, Flame } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
