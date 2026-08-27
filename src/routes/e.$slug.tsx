@@ -93,13 +93,86 @@ function EventDetailPage() {
     queryFn: () => fetchEventBySlug(slug),
   });
 
-  // Update page title when event data loads
+  // Update page title, SEO meta tags, and Schema.org when event data loads
   useEffect(() => {
-    if (data?.event?.title) {
-      document.title = `${data.event.title} — TixNaija`;
+    if (!data?.event) return;
+    
+    const event = data.event;
+    const previousTitle = document.title;
+    document.title = `${event.title} — TixNaija`;
+    
+    // Create/update OpenGraph tags dynamically
+    const updateMeta = (property: string, content: string, isName = false) => {
+      const attr = isName ? 'name' : 'property';
+      let tag = document.querySelector(`meta[${attr}="${property}"]`);
+      if (!tag) {
+        tag = document.createElement("meta");
+        tag.setAttribute(attr, property);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute("content", content);
+    };
+
+    updateMeta("og:title", `${event.title} — TixNaija`);
+    updateMeta("og:description", event.description || "Get tickets on TixNaija.");
+    if (event.cover_image_url) {
+      updateMeta("og:image", event.cover_image_url);
+      updateMeta("twitter:image", event.cover_image_url, true);
     }
-    return () => { document.title = "TixNaija — Nigerian event tickets, sold fast"; };
-  }, [data?.event?.title]);
+    
+    // Inject Schema.org JSON-LD for Events
+    const schemaScript = document.createElement('script');
+    schemaScript.type = 'application/ld+json';
+    schemaScript.id = 'event-schema';
+    
+    // Find min price for schema
+    const minPrice = data.types?.length > 0 
+      ? Math.min(...data.types.map((t: any) => t.price_kobo)) / 100 
+      : 0;
+
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "Event",
+      "name": event.title,
+      "startDate": event.start_datetime,
+      "endDate": event.end_datetime || event.start_datetime,
+      "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+      "eventStatus": event.status === "cancelled" ? "https://schema.org/EventCancelled" : "https://schema.org/EventScheduled",
+      "location": {
+        "@type": "Place",
+        "name": event.venue_name || "TBA",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": event.city || "Nigeria",
+          "addressCountry": "NG"
+        }
+      },
+      "image": [event.cover_image_url || "https://tixnaija.com/preview.jpg"],
+      "description": event.description || "Event tickets on TixNaija",
+      "offers": {
+        "@type": "Offer",
+        "url": `https://tixnaija.com/e/${event.slug}`,
+        "price": minPrice,
+        "priceCurrency": "NGN",
+        "availability": "https://schema.org/InStock",
+        "validFrom": new Date().toISOString()
+      },
+      "organizer": {
+        "@type": "Organization",
+        "name": "TixNaija",
+        "url": "https://tixnaija.com"
+      }
+    };
+    
+    schemaScript.textContent = JSON.stringify(schema);
+    document.head.appendChild(schemaScript);
+
+    return () => { 
+      document.title = previousTitle; 
+      const existingScript = document.getElementById('event-schema');
+      if (existingScript) existingScript.remove();
+    };
+  }, [data?.event, data?.types]);
 
   const { data: similarEvents } = useQuery({
     queryKey: ["similar-events", data?.event?.id],
