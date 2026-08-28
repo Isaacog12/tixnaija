@@ -54,10 +54,9 @@ serve(async (req) => {
 
     const start = new Date(eventData.start_datetime);
     const end = eventData.end_datetime ? new Date(eventData.end_datetime) : start;
-    // Temporarily disable the end date check to process a stuck order
-    // if (end < new Date()) {
-    //   throw new Error("This event has ended. Tickets are no longer available for purchase.");
-    // }
+    if (end < new Date()) {
+      throw new Error("This event has ended. Tickets are no longer available for purchase.");
+    }
     // Check if order already exists
     const { data: existingOrder } = await supabase
       .from("orders")
@@ -79,7 +78,7 @@ serve(async (req) => {
       p_buyer_email: metadata.buyerEmail,
       p_buyer_phone: metadata.buyerPhone || null,
       p_tickets: metadata.tickets,
-      p_amount_paid: reference === "T987067415698804" ? 50000 : verifyData.data.amount,
+      p_amount_paid: verifyData.data.amount,
       p_payment_reference: reference,
       p_promo_code_id: metadata.promoCodeId || null,
       p_is_gift: metadata.isGift || false,
