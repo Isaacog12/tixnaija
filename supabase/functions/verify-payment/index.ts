@@ -91,6 +91,10 @@ serve(async (req) => {
       console.error("Supabase checkout error:", checkoutError);
       throw new Error(`Database error: ${checkoutError.message}`);
     }
+
+    // Send ticket confirmation email
+    await supabase.functions.invoke("send-ticket-confirmation", { body: { orderId } });
+
     return new Response(JSON.stringify({ success: true, order_id: orderId }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
