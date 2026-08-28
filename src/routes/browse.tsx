@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { formatNaira } from "@/lib/currency";
 
-const searchSchema = z.object({ 
+const searchSchema = z.object({
   q: z.string().optional(),
   c: z.string().optional()
 });
@@ -80,10 +80,10 @@ const CATEGORIES = ["All", "Concerts", "Comedy", "Conferences", "Parties", "Chur
 function BrowsePage() {
   const { q, c } = Route.useSearch();
   const navigate = useNavigate();
-  
+
   const [searchInput, setSearchInput] = useState(q ?? "");
   const [activeCategory, setActiveCategory] = useState(c ?? "All");
-  
+
   // Update state if URL changes externally
   useEffect(() => {
     setSearchInput(q ?? "");
@@ -97,30 +97,30 @@ function BrowsePage() {
 
   const handleSearch = (e?: React.FormEvent) => {
     e?.preventDefault();
-    navigate({ 
-      to: "/browse", 
-      search: { 
+    navigate({
+      to: "/browse",
+      search: {
         q: searchInput.trim() || undefined,
         c: activeCategory === "All" ? undefined : activeCategory
-      } 
+      }
     });
   };
 
   const handleCategoryClick = (cat: string) => {
     setActiveCategory(cat);
-    navigate({ 
-      to: "/browse", 
-      search: { 
+    navigate({
+      to: "/browse",
+      search: {
         q: searchInput.trim() || undefined,
         c: cat === "All" ? undefined : cat
-      } 
+      }
     });
   };
 
   return (
     <div className="min-h-screen bg-background">
       <SiteNav />
-      
+
       {/* Premium Hero Section */}
       <section className="relative overflow-hidden border-b border-border bg-card/30 pb-8 pt-12 md:pt-16 md:pb-12">
         {/* Abstract Background Elements */}
@@ -134,7 +134,7 @@ function BrowsePage() {
             <Sparkles className="h-4 w-4 text-primary" />
             <span>Discover the best experiences</span>
           </div>
-          
+
           <h1 className="font-display text-4xl md:text-5xl lg:text-6xl tracking-tight mb-4">
             Find your next <span className="text-gradient-sunset">vibe.</span>
           </h1>
@@ -168,11 +168,10 @@ function BrowsePage() {
                 <button
                   key={cat}
                   onClick={() => handleCategoryClick(cat)}
-                  className={`shrink-0 snap-start rounded-full px-5 py-2 text-sm font-medium transition-all duration-300 ${
-                    activeCategory === cat
+                  className={`shrink-0 snap-start rounded-full px-5 py-2 text-sm font-medium transition-all duration-300 ${activeCategory === cat
                       ? "bg-primary text-primary-foreground shadow-glow scale-105"
                       : "bg-card border border-border/50 text-muted-foreground hover:bg-secondary hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   {cat}
                 </button>
@@ -242,7 +241,7 @@ function BrowsePage() {
             {query.data.events.map((ev) => {
               const min = query.data.minPrice[ev.id];
               const isCancelled = ev.status === 'cancelled';
-              
+
               const CardInner = (
                 <div className="flex h-full flex-col">
                   {/* Image Header */}
@@ -258,7 +257,7 @@ function BrowsePage() {
                     ) : (
                       <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-purple-500/20" />
                     )}
-                    
+
                     {/* Dark gradient overlay for text legibility if needed, or just let badges float */}
                     <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
@@ -285,7 +284,7 @@ function BrowsePage() {
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Content Body */}
                   <div className="flex flex-1 flex-col p-5 bg-card/80 backdrop-blur-sm">
                     <div className="mb-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary">
@@ -298,11 +297,11 @@ function BrowsePage() {
                         minute: "2-digit"
                       })}
                     </div>
-                    
+
                     <h3 className={`font-display text-xl leading-tight line-clamp-2 mb-2 transition-colors ${!isCancelled ? "group-hover:text-primary" : "text-muted-foreground line-through"}`}>
                       {ev.title}
                     </h3>
-                    
+
                     {ev.venue_name && (
                       <p className="text-sm text-muted-foreground line-clamp-1 mt-auto">
                         {ev.venue_name}

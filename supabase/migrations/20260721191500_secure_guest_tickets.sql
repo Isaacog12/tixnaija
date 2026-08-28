@@ -124,7 +124,7 @@ begin
     v_ticket_type_id := (v_item->>'ticketTypeId')::uuid;
     v_count := (v_item->>'count')::integer;
 
-    select price_kobo into v_ticket_type from public.ticket_types where id = v_ticket_type_id;
+    select * into v_ticket_type from public.ticket_types where id = v_ticket_type_id;
 
     -- Update sold count
     update public.ticket_types 
