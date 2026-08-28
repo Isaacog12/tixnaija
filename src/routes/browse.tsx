@@ -50,7 +50,7 @@ async function fetchEvents(q: string, category: string) {
     query = query.gte("start_datetime", new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString());
   }
 
-  if (category && category !== "all") {
+  if (category && category.toLowerCase() !== "all") {
     query = query.eq("category", category.toLowerCase());
   }
 
