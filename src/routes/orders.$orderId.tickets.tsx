@@ -5,7 +5,7 @@ import { TicketStub } from "@/components/ticket-stub";
 import { SiteNav } from "@/components/site-nav";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Ticket, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Ticket, ArrowLeft, Check } from "lucide-react";
 import { formatNaira } from "@/lib/currency";
 
 // This route is intentionally NOT under _authenticated —
@@ -96,7 +96,7 @@ function OrderTicketsPage() {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500/10">
-                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  <Check className="h-5 w-5 text-green-500" />
                 </div>
                 <span className="text-sm font-medium text-green-600 dark:text-green-500">Order Confirmed</span>
               </div>

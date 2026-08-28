@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Ticket, Mail, Clock, CheckCircle2, QrCode, Bell, ChevronDown, ChevronUp } from "lucide-react";
+import { Ticket, Mail, Clock, CheckCircle, QrCode, Bell, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -135,7 +135,7 @@ function InboxPage() {
             onClick={() => markAllRead.mutate()} 
             disabled={markAllRead.isPending}
           >
-            <CheckCircle2 className="mr-2 h-4 w-4" />
+            <CheckCircle className="mr-2 h-4 w-4" />
             Mark all as read
           </Button>
         )}

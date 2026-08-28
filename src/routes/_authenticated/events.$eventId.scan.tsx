@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SiteNav } from "@/components/site-nav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2, XCircle, AlertTriangle, ArrowLeft } from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/events/$eventId/scan")({
   component: ScannerPage,
@@ -167,7 +167,7 @@ function ScannerPage() {
               {scanResult.status === "loading" && (
                 <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full" />
               )}
-              {scanResult.status === "success" && <CheckCircle2 className="w-24 h-24 text-green-500 animate-in zoom-in" />}
+              {scanResult.status === "success" && <CheckCircle className="w-24 h-24 text-green-500 animate-in zoom-in" />}
               {scanResult.status === "warning" && <AlertTriangle className="w-24 h-24 text-yellow-500 animate-in zoom-in" />}
               {scanResult.status === "error" && <XCircle className="w-24 h-24 text-red-500 animate-in zoom-in" />}
             </div>

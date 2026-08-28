@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import {
-  CheckCircle2,
+  CheckCircle,
   XCircle,
   Clock,
   ExternalLink,
@@ -396,7 +396,7 @@ function ApplicationCard({
                   disabled={isActioning}
                   className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                 >
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  <CheckCircle className="mr-2 h-4 w-4" />
                   Approve
                 </Button>
                 <Button

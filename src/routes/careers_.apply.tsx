@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   UploadCloud,
   FileText,
-  CheckCircle2,
+  CheckCircle,
   X,
   ChevronLeft,
   Loader2,
@@ -197,7 +197,7 @@ function ApplyPage() {
         <div className="mx-auto max-w-lg px-4 py-24 text-center">
           <div className="flex justify-center mb-6">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-500/10 text-green-500">
-              <CheckCircle2 className="h-10 w-10" />
+              <CheckCircle className="h-10 w-10" />
             </div>
           </div>
           <h1 className="font-display text-4xl mb-4">Application sent!</h1>

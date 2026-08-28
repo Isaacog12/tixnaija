@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, CheckCircle, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { SiteNav } from "@/components/site-nav";
@@ -68,7 +68,7 @@ function VerifyCheckoutPage() {
 
         {status === "success" && (
           <>
-            <CheckCircle2 className="mb-6 h-16 w-16 text-green-500" />
+            <CheckCircle className="mb-6 h-16 w-16 text-green-500" />
             <h1 className="font-display text-3xl">Payment Successful!</h1>
             
             {userId ? (

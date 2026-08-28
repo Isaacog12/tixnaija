@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   Users, Calendar, BarChart3, Search, MoreVertical,
-  Ban, CheckCircle2, ClipboardList, ExternalLink, ShieldOff, ShieldCheck, Trash2, Image as ImageIcon, RefreshCcw, Briefcase,
+  Ban, CheckCircle, ClipboardList, ExternalLink, ShieldOff, ShieldCheck, Trash2, Image as ImageIcon, RefreshCcw, Briefcase,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/currency";
@@ -522,7 +522,7 @@ function AdminDashboard() {
                         <span className="text-xs text-muted-foreground font-medium">Ended</span>
                       ) : ev.status === "published" ? (
                         <span className="inline-flex items-center gap-1 text-green-500 text-xs font-medium">
-                          <CheckCircle2 className="h-3 w-3" /> Live
+                          <CheckCircle className="h-3 w-3" /> Live
                         </span>
                       ) : (
                         <span className="text-xs text-muted-foreground font-medium capitalize">{ev.status}</span>

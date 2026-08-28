@@ -51,7 +51,7 @@ async function fetchEvents(q: string, category: string) {
   }
 
   if (category && category.toLowerCase() !== "all") {
-    query = query.eq("category", category.toLowerCase());
+    query = query.eq("category", category.toLowerCase() as any);
   }
 
   const { data, error } = await query;

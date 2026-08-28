@@ -8,7 +8,7 @@ import {
   ShieldCheck,
   User as UserIcon,
   Clock,
-  CheckCircle2,
+  CheckCircle,
   XCircle,
   Upload,
   Loader2,
@@ -370,7 +370,7 @@ function AccountPage() {
                 <h3 className="font-medium text-foreground">Bank Details</h3>
                 {data?.profile?.paystack_subaccount_code && (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-1 text-xs font-medium text-green-500">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    <CheckCircle className="h-3.5 w-3.5" />
                     Connected
                   </span>
                 )}
@@ -480,7 +480,7 @@ function OrganizerApplicationCard({
     return (
       <div className="rounded-2xl border border-green-500/30 bg-green-500/5 p-6 shadow-sm flex items-start gap-4">
         <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-green-500/15 text-green-500">
-          <CheckCircle2 className="h-5 w-5" />
+          <CheckCircle className="h-5 w-5" />
         </div>
         <div>
           <h3 className="font-semibold text-green-500">You're an approved organizer</h3>
