@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import React, { useState, useEffect } from "react";
-import { Search, Calendar, MapPin, Sparkles, SlidersHorizontal, Flame } from "lucide-react";
+import { Search, Calendar, MapPin, Compass, SlidersHorizontal, Flame } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteNav } from "@/components/site-nav";
@@ -131,7 +131,7 @@ function BrowsePage() {
 
         <div className="relative z-10 mx-auto max-w-6xl px-4 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-border/50 bg-background/50 px-3 py-1 mb-6 text-sm backdrop-blur-md">
-            <Sparkles className="h-4 w-4 text-primary" />
+            <Compass className="h-4 w-4 text-primary" />
             <span>Discover the best experiences</span>
           </div>
 

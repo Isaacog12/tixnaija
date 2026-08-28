@@ -5,7 +5,8 @@ import { TicketStub } from "@/components/ticket-stub";
 import { SiteNav } from "@/components/site-nav";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Ticket, ArrowLeft } from "lucide-react";
+import { Ticket, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { formatNaira } from "@/lib/currency";
 
 // This route is intentionally NOT under _authenticated —
 // guests can reach it from /my-tickets with ?email=... query param.
@@ -78,24 +79,45 @@ function OrderTicketsPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteNav />
-      <div className="mx-auto max-w-4xl px-4 py-10 pb-32">
-        {/* Back link for guests */}
-        {guestEmail && (
-          <div className="mb-6">
-            <Button asChild variant="ghost" size="sm" className="-ml-2">
+      
+      {/* Order Summary Header / Hero */}
+      <section className="bg-card border-b border-border shadow-sm mb-10 pt-8 pb-8 relative overflow-hidden">
+        <div className="absolute inset-0 z-0 bg-gradient-to-r from-primary/5 to-transparent opacity-50" />
+        <div className="mx-auto max-w-4xl px-4 relative z-10">
+          {guestEmail && (
+            <Button asChild variant="ghost" size="sm" className="-ml-2 mb-4">
               <Link to="/my-tickets">
                 <ArrowLeft className="mr-1 h-4 w-4" /> Back to My Tickets
               </Link>
             </Button>
-          </div>
-        )}
+          )}
 
-        <div className="mb-10 text-center">
-          <h1 className="font-display text-4xl mb-2">Your Tickets</h1>
-          <p className="text-muted-foreground">
-            Have these ready to scan at the door. You can also download them for offline use.
-          </p>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500/10">
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                </div>
+                <span className="text-sm font-medium text-green-600 dark:text-green-500">Order Confirmed</span>
+              </div>
+              <h1 className="font-display text-4xl mb-1">Your Tickets</h1>
+              <p className="text-muted-foreground text-sm">
+                Have these ready to scan at the door, or download them for offline use.
+              </p>
+            </div>
+
+            {data && data.order && (
+              <div className="bg-background/80 backdrop-blur-md rounded-xl p-4 border border-border/50 shadow-sm md:text-right">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Total Paid</p>
+                <p className="text-2xl font-bold font-mono">{formatNaira(data.order.total_kobo)}</p>
+                <p className="text-xs text-muted-foreground mt-1">Order #{data.order.id.split("-")[0]}</p>
+              </div>
+            )}
+          </div>
         </div>
+      </section>
+
+      <div className="mx-auto max-w-4xl px-4 pb-32">
 
         {isLoading ? (
           <div className="space-y-8">
@@ -119,14 +141,19 @@ function OrderTicketsPage() {
           </div>
         ) : (
           <div className="space-y-12">
-            {data.tickets.map((ticket: any) => (
-              <TicketStub
-                key={ticket.id}
-                ticket={ticket}
-                event={data.order.events}
-                order={data.order}
-                ticketType={ticket.order_items.ticket_types}
-              />
+            {data.tickets.map((ticket: any, index: number) => (
+              <div 
+                key={ticket.id} 
+                className="animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-both"
+                style={{ animationDelay: `${index * 150}ms` }}
+              >
+                <TicketStub
+                  ticket={ticket}
+                  event={data.order.events}
+                  order={data.order}
+                  ticketType={ticket.order_items.ticket_types}
+                />
+              </div>
             ))}
 
             {/* Upsell for guests */}

@@ -72,63 +72,65 @@ function GuestTicketsPage() {
       <SiteNav />
 
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-border/50 bg-card/20 py-14 md:py-20">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.08),transparent_60%)]" />
+      <section className="relative overflow-hidden border-b border-border bg-card/30 py-14 md:py-20">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.05),transparent_60%)]" />
         <div className="relative mx-auto max-w-2xl px-4 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl gradient-sunset shadow-glow">
-            <Ticket className="h-7 w-7 text-primary-foreground" />
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-background border border-border/50 shadow-sm backdrop-blur-sm">
+            <Ticket className="h-8 w-8 text-primary" />
           </div>
-          <h1 className="font-display text-4xl md:text-5xl">View Your Tickets</h1>
-          <p className="mt-3 text-base text-muted-foreground">
-            Enter the email you used at checkout — no account needed.
+          <h1 className="font-display text-4xl md:text-5xl tracking-tight font-semibold">Find Your Tickets</h1>
+          <p className="mt-4 text-lg text-muted-foreground">
+            Enter the email address you used at checkout to retrieve your tickets. No account needed.
           </p>
         </div>
       </section>
 
       {/* Lookup form */}
-      <section className="mx-auto max-w-lg px-4 py-10">
-        <form onSubmit={handleSubmit} className="rounded-2xl border border-border bg-card/50 p-6 space-y-4">
-          <div className="space-y-4">
+      <section className="mx-auto max-w-lg px-4 py-12">
+        <form onSubmit={handleSubmit} className="rounded-3xl border border-border/80 bg-card/60 backdrop-blur-sm p-6 sm:p-8 shadow-xl shadow-black/5 dark:shadow-primary/5 space-y-6">
+          <div className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="guest-email" className="text-sm font-medium">
+              <Label htmlFor="guest-email" className="text-sm font-semibold">
                 Email Address
               </Label>
               <Input
                 id="guest-email"
                 type="email"
-                placeholder="nneka@email.com"
+                placeholder="e.g. nneka@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                className="h-12 text-base bg-background"
                 required
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="access-code" className="text-sm font-medium">
+              <Label htmlFor="access-code" className="text-sm font-semibold">
                 Access PIN
               </Label>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Input
                   id="access-code"
                   type="text"
                   placeholder="e.g. 12345"
                   value={accessCode}
                   onChange={(e) => setAccessCode(e.target.value)}
-                  className="flex-1"
+                  className="flex-1 h-12 text-base bg-background font-mono"
                   required
                 />
                 <Button
                   type="submit"
-                  className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90 shrink-0"
+                  size="lg"
+                  className="h-12 w-full sm:w-auto px-8 font-semibold text-primary-foreground shadow-md hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
                   disabled={lookup.isPending || !email.trim() || !accessCode.trim()}
                 >
                   {lookup.isPending ? (
-                    <span className="flex items-center gap-1.5">
-                      <span className="h-3.5 w-3.5 rounded-full border-2 border-primary-foreground/50 border-t-primary-foreground animate-spin" />
+                    <span className="flex items-center gap-2">
+                      <span className="h-4 w-4 rounded-full border-2 border-primary-foreground/50 border-t-primary-foreground animate-spin" />
                       Checking…
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-2">
                       <Search className="h-4 w-4" /> Find tickets
                     </span>
                   )}
@@ -137,9 +139,9 @@ function GuestTicketsPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-border/60 bg-background/40 p-3 text-xs text-muted-foreground">
-            <strong className="text-foreground">Privacy note:</strong> We only show tickets
-            purchased with this exact email address. We never share your data.
+          <div className="rounded-xl border border-border/40 bg-muted/20 p-4 text-xs text-muted-foreground text-center">
+            <strong className="text-foreground">Privacy Note:</strong> We only show tickets
+            purchased with this exact email address. Your data is secure.
           </div>
         </form>
 
@@ -166,60 +168,60 @@ function GuestTicketsPage() {
                 {orders.map((order) => (
                   <div
                     key={order.id}
-                    className="group flex flex-col sm:flex-row overflow-hidden rounded-2xl border border-border/50 bg-card/60 hover:border-primary/30 hover:shadow-glow transition-all"
+                    className="group flex flex-col sm:flex-row overflow-hidden rounded-2xl border border-border/80 bg-card/60 backdrop-blur-sm shadow-sm hover:shadow-xl hover:shadow-primary/5 hover:border-primary/30 transition-all duration-300 hover:-translate-y-1"
                   >
                     {/* Cover */}
-                    <div className="h-36 sm:h-auto sm:w-40 shrink-0 bg-secondary overflow-hidden">
+                    <div className="h-40 sm:h-auto sm:w-48 shrink-0 bg-secondary overflow-hidden relative">
                       {order.event_cover ? (
                         <img
                           src={order.event_cover}
                           alt={order.event_title}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                         />
                       ) : (
-                        <div className="h-full w-full flex items-center justify-center opacity-30">
-                          <Ticket className="h-8 w-8" />
+                        <div className="h-full w-full flex items-center justify-center opacity-30 bg-gradient-to-br from-primary/20 to-primary/5">
+                          <Ticket className="h-10 w-10" />
                         </div>
                       )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </div>
 
                     {/* Info */}
-                    <div className="flex flex-1 flex-col justify-between p-5">
+                    <div className="flex flex-1 flex-col justify-between p-6">
                       <div>
-                        <div className="mb-1 flex items-center gap-1.5 text-xs font-medium text-primary">
-                          <Calendar className="h-3.5 w-3.5" />
+                        <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-primary uppercase tracking-wider">
+                          <Calendar className="h-4 w-4" />
                           {new Date(order.event_start).toLocaleString("en-NG", {
                             dateStyle: "medium",
                             timeStyle: "short",
                           })}
                         </div>
-                        <h3 className="font-display text-xl leading-tight group-hover:text-primary">
+                        <h3 className="font-display text-2xl leading-tight group-hover:text-primary transition-colors">
                           {order.event_title}
                         </h3>
                         {order.event_city && (
-                          <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-                            <MapPin className="h-3.5 w-3.5" />
+                          <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground font-medium">
+                            <MapPin className="h-4 w-4" />
                             {order.event_city}
                           </p>
                         )}
                       </div>
-                      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/50 pt-4">
+                      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-border/40 pt-4">
                         <div className="text-sm text-muted-foreground">
-                          Paid <strong className="text-foreground">{formatNaira(order.total_kobo)}</strong>
+                          Paid <strong className="text-foreground text-base">{formatNaira(order.total_kobo)}</strong>
                         </div>
                         <Button
                           asChild
-                          variant="outline"
-                          size="sm"
-                          className="group-hover:border-primary/50 group-hover:text-primary"
+                          variant="default"
+                          className="shadow-sm group-hover:shadow-md transition-shadow"
                         >
                           <Link
                             to="/orders/$orderId/tickets"
                             params={{ orderId: order.id }}
                             search={{ email: submitted.email, accessCode: submitted.accessCode }}
                           >
-                            <QrCode className="mr-1.5 h-3.5 w-3.5" />
-                            View &amp; Download Tickets
+                            <QrCode className="mr-2 h-4 w-4" />
+                            View Tickets
                           </Link>
                         </Button>
                       </div>
@@ -228,14 +230,14 @@ function GuestTicketsPage() {
                 ))}
 
                 {/* Upsell to create account */}
-                <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 text-sm text-muted-foreground">
-                  <strong className="text-foreground">Want easier access?</strong> Create a free account
-                  with this email to see all your tickets in one place, request refunds, and get inbox notifications.
-                  <div className="mt-3">
-                    <Button asChild size="sm" className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
-                      <Link to="/auth" search={{ mode: "signup" }}>Create free account</Link>
-                    </Button>
+                <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-sm text-muted-foreground">
+                    <strong className="text-foreground block text-base mb-1">Want easier access?</strong>
+                    Create a free account to see all your tickets in one place and easily request refunds.
                   </div>
+                  <Button asChild size="sm" className="shrink-0 bg-background text-foreground border border-border/50 hover:bg-muted">
+                    <Link to="/auth" search={{ mode: "signup" }}>Create Free Account</Link>
+                  </Button>
                 </div>
               </div>
             )}

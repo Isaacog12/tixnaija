@@ -262,23 +262,29 @@ function TicketsPage() {
       {error && <div className="text-sm text-destructive">{(error as Error).message}</div>}
 
       {tickets && tickets.length === 0 ? (
-        <div className="border border-dashed border-border bg-card/40 p-12 text-center rounded-2xl">
-          <TicketIcon className="mx-auto h-12 w-12 text-muted-foreground/50" />
-          <h3 className="mt-4 font-display text-2xl">No tickets yet</h3>
-          <p className="mt-1 text-sm text-muted-foreground max-w-md mx-auto">
+        <div className="border border-dashed border-border/80 bg-card/20 p-12 text-center rounded-3xl mt-8">
+          <TicketIcon className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
+          <h3 className="font-display text-2xl font-medium">No tickets yet</h3>
+          <p className="mt-2 text-muted-foreground max-w-md mx-auto">
             You haven't purchased any tickets. Discover events happening near you.
           </p>
-          <Button asChild className="mt-6 gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
+          <Button asChild size="lg" className="mt-8 shadow-sm hover:shadow-md transition-all">
             <Link to="/browse">Browse events</Link>
           </Button>
         </div>
       ) : (
         tickets && (
-          <Tabs defaultValue="upcoming" className="w-full">
-            <TabsList className="mb-6 grid w-full max-w-md grid-cols-3">
-              <TabsTrigger value="upcoming">Upcoming ({upcoming.length})</TabsTrigger>
-              <TabsTrigger value="live">Live ({live.length})</TabsTrigger>
-              <TabsTrigger value="past">Past ({past.length})</TabsTrigger>
+          <Tabs defaultValue="upcoming" className="w-full mt-6">
+            <TabsList className="mb-8 inline-flex h-12 items-center justify-center rounded-full bg-muted/50 p-1 text-muted-foreground">
+              <TabsTrigger value="upcoming" className="rounded-full px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all">
+                Upcoming ({upcoming.length})
+              </TabsTrigger>
+              <TabsTrigger value="live" className="rounded-full px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all">
+                Live ({live.length})
+              </TabsTrigger>
+              <TabsTrigger value="past" className="rounded-full px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all">
+                Past ({past.length})
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="upcoming">
@@ -328,7 +334,7 @@ function EventList({ events, emptyMessage, type }: { events: any[]; emptyMessage
         {events.map((ev) => (
           <div
             key={ev.id}
-            className="group flex flex-col overflow-hidden rounded-2xl bg-card/60 transition-all hover:-translate-y-1 hover:shadow-glow border border-border/50 hover:border-primary/30"
+            className="group flex flex-col overflow-hidden rounded-2xl bg-card/60 backdrop-blur-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 border border-border/80 hover:border-primary/30"
           >
             <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary">
               {ev.cover_image_url && (
@@ -336,43 +342,46 @@ function EventList({ events, emptyMessage, type }: { events: any[]; emptyMessage
                   src={ev.cover_image_url}
                   alt={ev.title}
                   loading="lazy"
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
               )}
               {ev.status === 'cancelled' && (
-                <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center">
-                  <Badge variant="destructive" className="text-sm px-3 py-1">Cancelled</Badge>
+                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+                  <Badge variant="destructive" className="text-sm px-4 py-1.5 font-semibold">Cancelled</Badge>
                 </div>
               )}
               {ev.status === 'postponed' && (
-                <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center">
-                  <Badge className="text-sm px-3 py-1 bg-amber-500 text-white border-0">Postponed</Badge>
+                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+                  <Badge className="text-sm px-4 py-1.5 bg-amber-500 text-white font-semibold border-0">Postponed</Badge>
                 </div>
               )}
-              <div className="absolute left-3 top-3 flex gap-2">
+              
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              
+              <div className="absolute left-3 top-3 flex gap-2 z-10">
                 {ev.city && (
-                  <div className="inline-flex items-center gap-1 rounded-full bg-background/80 px-2.5 py-1 text-xs font-medium backdrop-blur-md">
-                    <MapPin className="h-3 w-3 text-primary" />
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-background/90 px-3 py-1 text-xs font-semibold backdrop-blur-md border border-border/50 text-foreground">
+                    <MapPin className="h-3.5 w-3.5 text-primary" />
                     {ev.city}
                   </div>
                 )}
                 {type === "live" && ev.status !== 'cancelled' && (
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-green-500/90 px-2.5 py-1 text-xs font-semibold text-white shadow-sm animate-pulse">
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-green-500/95 px-3 py-1 text-xs font-bold text-white shadow-sm animate-pulse border border-green-600/50">
                     <div className="h-1.5 w-1.5 rounded-full bg-white" />
                     Live now
                   </div>
                 )}
                 {type === "past" && (
-                  <div className="inline-flex items-center gap-1 rounded-full bg-background/80 px-2.5 py-1 text-xs font-medium backdrop-blur-md">
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-background/90 px-3 py-1 text-xs font-semibold backdrop-blur-md border border-border/50 text-muted-foreground">
                     Ended
                   </div>
                 )}
               </div>
             </div>
             
-            <div className="flex flex-1 flex-col p-5">
-              <div className="mb-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary">
-                <Calendar className="h-3.5 w-3.5" />
+            <div className="flex flex-1 flex-col p-6">
+              <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-primary uppercase tracking-wider">
+                <Calendar className="h-4 w-4" />
                 {new Date(ev.start_datetime).toLocaleString("en-NG", {
                   month: "short",
                   day: "numeric",
@@ -381,23 +390,23 @@ function EventList({ events, emptyMessage, type }: { events: any[]; emptyMessage
                 })}
               </div>
               
-              <h3 className="font-display text-xl leading-tight group-hover:text-primary line-clamp-2 mb-2">
+              <h3 className="font-display text-2xl leading-tight group-hover:text-primary transition-colors line-clamp-2 mb-2">
                 {ev.title}
               </h3>
               
               {ev.venue_name && (
-                <p className="text-sm text-muted-foreground line-clamp-1 mb-4">
+                <p className="text-sm text-muted-foreground font-medium line-clamp-1 mb-4">
                   {ev.venue_name}
                 </p>
               )}
               
-              <div className="mt-auto pt-4 flex flex-col gap-2 border-t border-border/50">
-                <div className="text-sm text-muted-foreground flex justify-between items-center">
+              <div className="mt-auto pt-5 flex flex-col gap-3 border-t border-border/40">
+                <div className="text-sm text-muted-foreground flex justify-between items-center font-medium">
                   <span>{ev.tickets.length} ticket{ev.tickets.length !== 1 ? 's' : ''}</span>
                 </div>
-                <Button asChild variant="outline" className="w-full justify-between group-hover:border-primary/50 group-hover:text-primary">
+                <Button asChild variant="outline" className="w-full justify-between hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors">
                   <Link to="/e/$slug" params={{ slug: ev.slug }}>
-                    View Event <QrCode className="h-4 w-4" />
+                    View Event <QrCode className="h-4 w-4 ml-2" />
                   </Link>
                 </Button>
 
@@ -406,7 +415,7 @@ function EventList({ events, emptyMessage, type }: { events: any[]; emptyMessage
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 text-xs gap-1.5"
+                    className="w-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 text-xs gap-1.5 font-medium mt-1"
                     onClick={() =>
                       setRefundTarget({ event: ev, ticketId: ev.tickets[0]?.id })
                     }
