@@ -53,7 +53,7 @@ serve(async (req) => {
     }
 
     const start = new Date(eventData.start_datetime);
-    const end = eventData.end_datetime ? new Date(eventData.end_datetime) : start;
+    const end = eventData.end_datetime ? new Date(eventData.end_datetime) : new Date(start.getTime() + 24 * 60 * 60 * 1000);
     if (end < new Date()) {
       throw new Error("This event has ended. Tickets are no longer available for purchase.");
     }
