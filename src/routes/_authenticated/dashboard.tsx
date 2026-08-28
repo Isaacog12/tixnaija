@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, Copy, MapPin, Plus, QrCode, Ticket, Zap, Users, BarChart2, Clock, XCircle } from "lucide-react";
+import { CalendarDays, Copy, MapPin, Plus, QrCode, Ticket, Zap, Users, BarChart2, Clock, XCircle, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatNaira } from "@/lib/currency";
+import { motion } from "framer-motion";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -22,7 +23,6 @@ async function fetchMyEvents() {
     .eq("id", userId)
     .maybeSingle();
 
-  // Check admin via user_roles (consistent with the rest of the app)
   const { data: adminRole } = await supabase
     .from("user_roles")
     .select("role")
@@ -30,7 +30,6 @@ async function fetchMyEvents() {
     .eq("role", "admin")
     .maybeSingle();
 
-  // Fetch the user's most recent organizer application
   const { data: latestApp } = await supabase
     .from("organizer_applications" as any)
     .select("status, admin_note, created_at")
@@ -45,7 +44,6 @@ async function fetchMyEvents() {
     .order("start_datetime", { ascending: true });
   if (error) throw error;
 
-  // Fetch ticket stats per event
   const eventIds = (events ?? []).map((e) => e.id);
   let statsByEvent: Record<string, { sold: number; revenueKobo: number }> = {};
   if (eventIds.length) {
@@ -82,6 +80,19 @@ async function fetchMyEvents() {
   };
 }
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+};
+
 function Dashboard() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["my-events"],
@@ -93,227 +104,296 @@ function Dashboard() {
   const latestApp = data?.latestApp ?? null;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
-      <div className="mb-8 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+    <div className="mx-auto max-w-6xl px-4 py-12 md:py-20 min-h-screen">
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end"
+      >
         <div>
-          <h1 className="font-display text-4xl md:text-5xl">
-            Hey {data?.profile?.full_name?.split(" ")[0] || "there"}.
+          <h1 className="font-display text-5xl md:text-6xl tracking-tight mb-2">
+            Hey <span className="text-gradient-sunset">{data?.profile?.full_name?.split(" ")[0] || "there"}</span>.
           </h1>
-          <p className="text-muted-foreground">
-            {isOrganizer ? "Your event organizer control room." : "Good to see you."}
+          <p className="text-muted-foreground text-lg">
+            {isOrganizer ? "Welcome back to your command center." : "Ready to discover your next experience?"}
           </p>
         </div>
-        <div className="flex w-full flex-col sm:w-auto sm:flex-row sm:items-center gap-3">
+        <div className="flex w-full flex-col sm:w-auto sm:flex-row sm:items-center gap-3 shrink-0">
           {isAdmin && (
             <>
-              <Button asChild size="lg" variant="outline" className="w-full sm:w-auto border-primary/20 text-primary">
+              <Button asChild size="lg" variant="outline" className="w-full sm:w-auto border-primary/20 text-primary shadow-sm hover:bg-primary/5">
                 <Link to="/admin">Admin Panel</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="w-full sm:w-auto border-amber-500/30 text-amber-500 hover:bg-amber-500/10">
-                <Link to="/admin/organizer-applications">Applications</Link>
+              <Button asChild size="lg" variant="outline" className="w-full sm:w-auto border-amber-500/30 text-amber-500 hover:bg-amber-500/10 shadow-sm">
+                <Link to="/admin/organizer-applications">Review Applications</Link>
               </Button>
             </>
           )}
           {isOrganizer && (
-            <Button asChild size="lg" className="w-full sm:w-auto gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
+            <Button asChild size="lg" className="w-full sm:w-auto gradient-sunset text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all">
               <Link to="/events/new">
-                <Plus className="mr-2 h-4 w-4" /> New event
+                <Plus className="mr-2 h-5 w-5" /> New Event
               </Link>
             </Button>
           )}
         </div>
-      </div>
+      </motion.div>
 
-      {!isOrganizer && (
-        <div className="space-y-10">
+      {!isOrganizer && !isLoading && (
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          className="space-y-12"
+        >
           {/* Hero CTA */}
-          <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-card/60 p-8 md:p-12">
+          <motion.div variants={itemVariants} className="relative overflow-hidden rounded-[2rem] border border-primary/20 bg-card p-8 md:p-16 shadow-2xl shadow-primary/5">
             {/* Background gradient blobs */}
-            <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-rose-500/10 blur-3xl" />
+            <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-primary/10 blur-3xl animate-pulse" />
+            <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-rose-500/10 blur-3xl animate-pulse" style={{ animationDelay: "2s" }} />
 
-            <div className="relative grid gap-10 md:grid-cols-2 md:items-center">
+            <div className="relative grid gap-12 lg:grid-cols-2 lg:items-center">
               <div>
-                <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
-                  <Zap className="h-3 w-3" /> For organizers
+                <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary mb-6 shadow-sm">
+                  <Zap className="h-3.5 w-3.5" /> For creators
                 </span>
-                <h2 className="mt-4 font-display text-4xl leading-tight md:text-5xl">
+                <h2 className="font-display text-5xl leading-tight md:text-6xl tracking-tight mb-6">
                   Start selling<br />
                   <span className="text-gradient-sunset">in minutes.</span>
                 </h2>
-                <p className="mt-4 text-base text-muted-foreground">
-                  Create your event, set ticket tiers, track sales in real-time, and scan attendees at the door.
+                <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-md">
+                  Create your event, set ticket tiers, track sales in real-time, and scan attendees seamlessly at the door.
                 </p>
-                <div className="mt-6 flex flex-col sm:flex-row flex-wrap gap-3">
+                
+                <div className="flex flex-col sm:flex-row flex-wrap gap-4">
                   {latestApp?.status === "pending" ? (
-                    <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-500">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-5 py-3 text-sm font-semibold text-amber-500">
                       <Clock className="h-4 w-4" />
                       Application pending review
                     </div>
                   ) : latestApp?.status === "rejected" ? (
-                    <div className="flex flex-col gap-2">
-                      <div className="inline-flex items-center gap-2 rounded-full border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm font-medium text-destructive">
+                    <div className="flex flex-col gap-3">
+                      <div className="inline-flex items-center gap-2 rounded-full border border-destructive/30 bg-destructive/10 px-5 py-3 text-sm font-semibold text-destructive">
                         <XCircle className="h-4 w-4" />
                         Application not approved
                       </div>
-                      <Button asChild size="lg" className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
+                      <Button asChild size="lg" className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90 w-fit">
                         <Link to="/account">Apply again</Link>
                       </Button>
                     </div>
                   ) : (
-                    <Button asChild size="lg" className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
-                      <Link to="/account">Apply to become an organizer</Link>
+                    <Button asChild size="lg" className="gradient-sunset text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all text-base px-8">
+                      <Link to="/account">Become an Organizer</Link>
                     </Button>
                   )}
-                  <Button asChild size="lg" variant="outline">
-                    <Link to="/browse">See live events</Link>
+                  <Button asChild size="lg" variant="outline" className="border-border/60 hover:bg-secondary text-base px-8 group">
+                    <Link to="/browse">
+                      Explore events <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </Link>
                   </Button>
                 </div>
               </div>
 
               {/* Sample event card mock */}
-              <div className="relative">
-                <div className="rounded-2xl border border-border bg-background/80 shadow-xl overflow-hidden">
-                  <div className="h-36 w-full bg-gradient-to-br from-rose-500/30 via-orange-500/20 to-amber-500/30 relative flex items-end p-4">
+              <motion.div 
+                whileHover={{ scale: 1.02, rotate: 1 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="relative mx-auto w-full max-w-sm lg:max-w-md"
+              >
+                <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-purple-500/20 rounded-[2rem] blur-xl transform translate-y-4 -z-10" />
+                <div className="rounded-[2rem] border border-border/60 bg-background/90 backdrop-blur-xl shadow-2xl overflow-hidden">
+                  <div className="h-48 w-full bg-gradient-to-br from-rose-500 via-orange-500 to-amber-500 relative flex items-end p-6">
                     <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(135deg, transparent 0 22px, rgba(255,255,255,0.15) 22px 23px)" }} />
-                    <span className="relative font-display text-xs uppercase tracking-[0.35em] text-white/70">Admit One</span>
+                    <span className="relative font-display text-sm uppercase tracking-[0.4em] text-white/90 drop-shadow-md">Admit One</span>
                   </div>
-                  <div className="p-4">
-                    <div className="flex items-start justify-between">
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-4">
                       <div>
-                        <p className="text-xs uppercase tracking-widest text-primary font-semibold">Music · Lagos</p>
-                        <h3 className="mt-1 font-display text-xl leading-tight">Afrobeats Live 2025</h3>
-                        <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <CalendarDays className="h-3.5 w-3.5" /> Sat, Aug 23 · 7:00 PM
-                        </p>
+                        <p className="text-xs uppercase tracking-widest text-primary font-bold mb-1.5">Music · Lagos</p>
+                        <h3 className="font-display text-2xl leading-tight">Afrobeats Live 2025</h3>
                       </div>
-                      <span className="rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">Live</span>
+                      <span className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary border border-primary/20">Live</span>
                     </div>
+                    <p className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
+                      <CalendarDays className="h-4 w-4" /> Sat, Aug 23 · 7:00 PM
+                    </p>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Feature grid */}
-          <div>
-            <p className="mb-5 text-sm font-semibold uppercase tracking-widest text-muted-foreground">Everything you get</p>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <motion.div variants={itemVariants}>
+            <div className="flex items-center gap-4 mb-8">
+              <h3 className="font-display text-2xl">Toolkit</h3>
+              <div className="h-px flex-1 bg-border/60" />
+            </div>
+            
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 {
                   icon: Ticket,
-                  title: "Ticket tiers",
-                  desc: "Create Early Bird, VIP, and General Admission tiers with custom pricing and limits.",
+                  title: "Ticket Tiers",
+                  desc: "Create Early Bird, VIP, and GA tiers with custom pricing.",
                   color: "text-primary",
                   bg: "bg-primary/10",
+                  border: "hover:border-primary/40",
+                  shadow: "hover:shadow-primary/10"
                 },
                 {
                   icon: BarChart2,
-                  title: "Live analytics",
-                  desc: "Track sales, revenue, and remaining capacity per tier in real-time.",
+                  title: "Live Analytics",
+                  desc: "Track sales, revenue, and capacity in real-time.",
                   color: "text-orange-400",
                   bg: "bg-orange-400/10",
+                  border: "hover:border-orange-400/40",
+                  shadow: "hover:shadow-orange-400/10"
                 },
                 {
                   icon: QrCode,
-                  title: "QR scanning",
-                  desc: "Check in attendees instantly at the door with the built-in QR scanner.",
+                  title: "QR Scanning",
+                  desc: "Check in attendees instantly with our built-in scanner.",
                   color: "text-rose-400",
                   bg: "bg-rose-400/10",
+                  border: "hover:border-rose-400/40",
+                  shadow: "hover:shadow-rose-400/10"
                 },
                 {
                   icon: Users,
-                  title: "Comp tickets",
-                  desc: "Issue free tickets to guests, press, or VIPs directly from your dashboard.",
+                  title: "Comp Tickets",
+                  desc: "Issue free tickets to guests, press, or VIPs easily.",
                   color: "text-amber-400",
                   bg: "bg-amber-400/10",
+                  border: "hover:border-amber-400/40",
+                  shadow: "hover:shadow-amber-400/10"
                 },
               ].map((f) => (
-                <div key={f.title} className="rounded-2xl border border-border bg-card/50 p-5 transition hover:border-primary/30 hover:bg-card/80">
-                  <div className={`inline-flex rounded-xl ${f.bg} p-2.5`}>
-                    <f.icon className={`h-5 w-5 ${f.color}`} />
+                <motion.div 
+                  key={f.title}
+                  whileHover={{ y: -5 }}
+                  className={`rounded-[1.5rem] border border-border/60 bg-card p-6 transition-all duration-300 ${f.border} hover:shadow-xl ${f.shadow}`}
+                >
+                  <div className={`inline-flex rounded-2xl ${f.bg} p-3 mb-4`}>
+                    <f.icon className={`h-6 w-6 ${f.color}`} />
                   </div>
-                  <h3 className="mt-3 font-semibold">{f.title}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
-                </div>
+                  <h3 className="font-semibold text-lg mb-2">{f.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                </motion.div>
               ))}
             </div>
-          </div>
+          </motion.div>
+        </motion.div>
+      )}
 
-
+      {isLoading && (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-8">
+           {[1, 2, 3].map((i) => (
+             <div key={i} className="animate-pulse rounded-[2rem] bg-card border border-border/40 overflow-hidden shadow-sm h-[400px]">
+               <div className="h-48 bg-muted/60" />
+               <div className="p-6 space-y-4">
+                 <div className="h-5 w-2/3 bg-muted/80 rounded-md" />
+                 <div className="h-4 w-1/3 bg-muted/80 rounded-md" />
+                 <div className="pt-6 mt-6 border-t border-border/40 flex justify-between">
+                   <div className="h-10 w-24 bg-muted/80 rounded-lg" />
+                   <div className="h-10 w-24 bg-muted/80 rounded-lg" />
+                 </div>
+               </div>
+             </div>
+           ))}
         </div>
       )}
 
-
-      {isLoading && <div className="text-sm text-muted-foreground">Loading your events”¦</div>}
-      {error && <div className="text-sm text-destructive">{(error as Error).message}</div>}
+      {error && (
+        <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-8 text-center text-destructive max-w-2xl mx-auto mt-8">
+          <XCircle className="h-10 w-10 mx-auto mb-4 opacity-50" />
+          <h3 className="font-medium text-lg mb-1">Failed to load dashboard</h3>
+          <p className="text-destructive/80">{(error as Error).message}</p>
+        </div>
+      )}
 
       {isOrganizer && data && data.events.length === 0 && (
-        <div className="border border-dashed border-border bg-card/40 p-6 md:p-12">
-          <div className="flex items-baseline gap-4">
-            <span className="font-display text-6xl leading-none text-gradient-sunset">00</span>
-            <span className="h-px flex-1 bg-border" />
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center justify-center rounded-[2.5rem] border border-dashed border-border/60 bg-card/40 py-24 px-6 text-center shadow-sm max-w-4xl mx-auto mt-8"
+        >
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-secondary/50 mb-8 relative">
+            <div className="absolute inset-0 bg-primary/10 rounded-full animate-ping opacity-20" />
+            <Ticket className="h-12 w-12 text-muted-foreground/50" />
           </div>
-          <h3 className="mt-6 font-display text-3xl">No events yet</h3>
-          <p className="mt-1 max-w-md text-sm text-muted-foreground">
-            Create your first event and start selling tickets in minutes.
+          <h3 className="font-display text-4xl mb-4">No events yet</h3>
+          <p className="max-w-md text-muted-foreground text-lg mb-8 leading-relaxed">
+            Your dashboard is looking a little empty. Create your first event and start selling tickets globally.
           </p>
-          <Button asChild className="mt-6 gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
+          <Button asChild size="lg" className="gradient-sunset text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all text-base px-8 h-14 rounded-full">
             <Link to="/events/new">
-              <Plus className="mr-2 h-4 w-4" /> Create your first event
+              <Plus className="mr-2 h-5 w-5" /> Create your first event
             </Link>
           </Button>
-        </div>
+        </motion.div>
       )}
 
       {isOrganizer && data && data.events.length > 0 && (
-        <div className="flex flex-col gap-4">
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          className="grid gap-6 mt-8"
+        >
           {data.events.map((ev) => {
             const stats = data.statsByEvent[ev.id] ?? { sold: 0, revenueKobo: 0 };
             return (
-              <div
+              <motion.div
+                variants={itemVariants}
                 key={ev.id}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card/60 transition hover:border-primary/50 md:flex-row"
+                className="group flex flex-col overflow-hidden rounded-[2rem] border border-border/60 bg-card shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/30 md:flex-row"
               >
                 <Link to="/events/$eventId/edit" params={{ eventId: ev.id }} className="flex flex-1 flex-col md:flex-row">
                   <div
-                    className="h-48 w-full shrink-0 bg-secondary bg-cover bg-center md:h-auto md:w-64"
-                    style={ev.cover_image_url ? { backgroundImage: `url(${ev.cover_image_url})` } : undefined}
-                  />
-                  <div className="flex flex-1 flex-col justify-between p-5 md:p-6">
+                    className="h-56 w-full shrink-0 bg-secondary bg-cover bg-center md:h-auto md:w-72 relative overflow-hidden"
+                  >
+                    {ev.cover_image_url ? (
+                       <img src={ev.cover_image_url} alt={ev.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-purple-500/20" />
+                    )}
+                  </div>
+                  <div className="flex flex-1 flex-col justify-between p-6 md:p-8">
                     <div>
-                      <div className="flex items-start justify-between gap-3">
-                        <h3 className="text-xl font-semibold leading-tight group-hover:text-primary">
+                      <div className="flex items-start justify-between gap-4">
+                        <h3 className="text-2xl font-display leading-tight group-hover:text-primary transition-colors">
                           {ev.title}
                         </h3>
                         <div className="shrink-0">
                           <StatusBadge status={ev.status} />
                         </div>
                       </div>
-                      <div className="mt-3 flex flex-wrap gap-4 text-sm text-muted-foreground">
-                        <span className="inline-flex items-center gap-1.5">
-                          <CalendarDays className="h-4 w-4" />
+                      <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground font-medium">
+                        <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5">
+                          <CalendarDays className="h-4 w-4 text-primary" />
                           {new Date(ev.start_datetime).toLocaleString("en-NG", {
                             dateStyle: "medium",
                             timeStyle: "short",
                           })}
                         </span>
                         {ev.city && (
-                          <span className="inline-flex items-center gap-1.5">
-                            <MapPin className="h-4 w-4" /> {ev.city}
+                          <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5">
+                            <MapPin className="h-4 w-4 text-primary" /> {ev.city}
                           </span>
                         )}
                       </div>
                     </div>
                     
-                    <div className="mt-6 flex flex-wrap items-center gap-4 sm:gap-8 border-t border-border pt-4">
+                    <div className="mt-8 flex flex-wrap items-center gap-6 sm:gap-12 border-t border-border/60 pt-6">
                       <div>
-                        <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Tickets Sold</div>
-                        <div className="mt-1 font-display text-2xl">{stats.sold}</div>
+                        <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Tickets Sold</div>
+                        <div className="font-display text-3xl">{stats.sold}</div>
                       </div>
                       <div>
-                        <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Revenue</div>
-                        <div className="mt-1 font-display text-2xl text-gradient-sunset">
+                        <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Revenue</div>
+                        <div className="font-display text-3xl text-gradient-sunset">
                           {formatNaira(stats.revenueKobo)}
                         </div>
                       </div>
@@ -322,30 +402,30 @@ function Dashboard() {
                 </Link>
                 
                 {ev.status === "published" && (
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border bg-background/40 p-5 md:w-48 md:flex-col md:items-stretch md:justify-center md:border-t-0 md:border-l">
-                    <Button asChild variant="outline" className="w-full text-primary hover:text-primary">
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3 border-t border-border/60 bg-background/50 p-6 md:w-56 md:flex-col md:items-stretch md:justify-center md:border-t-0 md:border-l">
+                    <Button asChild className="w-full rounded-xl bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary h-12 shadow-none font-semibold">
                       <Link to="/events/$eventId/scan" params={{ eventId: ev.id }}>
-                        Scan Tickets
+                        <QrCode className="mr-2 h-5 w-5" /> Scan Tickets
                       </Link>
                     </Button>
                     <Button
                       type="button"
-                      variant="secondary"
-                      className="w-full"
+                      variant="outline"
+                      className="w-full rounded-xl h-12 font-medium hover:bg-secondary"
                       onClick={() => {
                         const url = `${window.location.origin}/e/${ev.slug}`;
                         navigator.clipboard.writeText(url);
-                        toast.success("Public link copied");
+                        toast.success("Public link copied", { icon: <Copy className="h-4 w-4" /> });
                       }}
                     >
                       <Copy className="mr-2 h-4 w-4" /> Copy link
                     </Button>
                   </div>
                 )}
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       )}
     </div>
   );
@@ -353,12 +433,12 @@ function Dashboard() {
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; className: string }> = {
-    draft: { label: "Draft", className: "bg-muted text-muted-foreground" },
-    published: { label: "Live", className: "bg-primary/20 text-primary" },
-    cancelled: { label: "Cancelled", className: "bg-destructive/20 text-destructive" },
-    postponed: { label: "Postponed", className: "bg-amber-500/20 text-amber-500" },
-    completed: { label: "Ended", className: "bg-secondary text-secondary-foreground" },
+    draft: { label: "Draft", className: "bg-muted text-muted-foreground border-transparent" },
+    published: { label: "Live", className: "bg-primary/10 text-primary border-primary/20" },
+    cancelled: { label: "Cancelled", className: "bg-destructive/10 text-destructive border-destructive/20" },
+    postponed: { label: "Postponed", className: "bg-amber-500/10 text-amber-500 border-amber-500/20" },
+    completed: { label: "Ended", className: "bg-secondary text-secondary-foreground border-transparent" },
   };
   const cfg = map[status] ?? map.draft;
-  return <Badge className={cfg.className} variant="secondary">{cfg.label}</Badge>;
+  return <Badge className={`font-bold tracking-wide uppercase px-3 py-1 border ${cfg.className}`} variant="outline">{cfg.label}</Badge>;
 }

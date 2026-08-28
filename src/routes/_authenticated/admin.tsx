@@ -28,10 +28,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-
+import { motion, AnimatePresence } from "framer-motion";
 
 export const Route = createFileRoute("/_authenticated/admin")({
-  // Real protection: query user_roles and redirect non-admins cleanly.
   beforeLoad: async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw redirect({ to: "/auth" });
@@ -47,8 +46,6 @@ export const Route = createFileRoute("/_authenticated/admin")({
   },
   component: AdminDashboard,
 });
-
-// ── Data fetchers ────────────────────────────────────────────
 
 async function fetchAdminStats() {
   const [
@@ -73,7 +70,6 @@ async function fetchAdminStats() {
 }
 
 async function fetchAdminUsers() {
-  // Query all profiles (allowed via profiles_select_admin RLS policy)
   const { data: profiles, error: profilesError } = await supabase
     .from("profiles")
     .select("id, full_name, created_at, suspended")
@@ -81,13 +77,11 @@ async function fetchAdminUsers() {
     .limit(100);
   if (profilesError) throw profilesError;
 
-  // Query all user_roles (allowed via user_roles_select_admin policy using has_role())
   const { data: allRoles, error: rolesError } = await supabase
     .from("user_roles")
     .select("user_id, role");
   if (rolesError) throw rolesError;
 
-  // Build a role map: userId -> string[]
   const roleMap = new Map<string, string[]>();
   for (const r of allRoles ?? []) {
     if (!roleMap.has(r.user_id)) roleMap.set(r.user_id, []);
@@ -102,7 +96,6 @@ async function fetchAdminUsers() {
     roles: roleMap.get(p.id) ?? ["attendee"],
   }));
 }
-
 
 async function fetchAdminEvents() {
   const { data, error } = await supabase
@@ -138,7 +131,18 @@ async function fetchRefundRequests() {
   return (data ?? []) as any[];
 }
 
-// ── Main Component ───────────────────────────────────────────
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.05 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 400, damping: 30 } }
+};
 
 function AdminDashboard() {
   const qc = useQueryClient();
@@ -152,8 +156,6 @@ function AdminDashboard() {
   const { data: events, isLoading: eventsLoading } = useQuery({ queryKey: ["admin-events"], queryFn: fetchAdminEvents });
   const { data: messages } = useQuery({ queryKey: ["admin-contact-messages"], queryFn: fetchContactMessages });
   const { data: refunds, isLoading: refundsLoading } = useQuery({ queryKey: ["admin-refund-requests"], queryFn: fetchRefundRequests });
-
-  // ── Mutations ──────────────────────────────────────────────
 
   const takedownMutation = useMutation({
     mutationFn: async ({ id, note }: { id: string; note: string }) => {
@@ -245,31 +247,26 @@ function AdminDashboard() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  // ── Derived ────────────────────────────────────────────────
-
   const filteredUsers = (users ?? []).filter((u) => {
     const q = userSearch.toLowerCase();
     return !q || u.full_name.toLowerCase().includes(q);
   });
 
-  // ── Render ─────────────────────────────────────────────────
-
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
-      {/* Takedown Confirmation Dialog */}
+    <div className="mx-auto max-w-7xl px-4 py-8 min-h-screen">
       <AlertDialog open={!!takedownEvent} onOpenChange={() => setTakedownEvent(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-3xl border-destructive/20 shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Take down event?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="font-display text-2xl text-destructive">Take down event?</AlertDialogTitle>
+            <AlertDialogDescription className="text-base text-foreground/80 mt-2">
               <strong>&ldquo;{takedownEvent?.title}&rdquo;</strong> will be cancelled immediately.
               All buyers with valid tickets will be notified. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="mt-6">
+            <AlertDialogCancel className="rounded-xl h-12">Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl h-12 font-bold"
               onClick={() =>
                 takedownEvent &&
                 takedownMutation.mutate({
@@ -285,15 +282,13 @@ function AdminDashboard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Revoke Organizer Dialog */}
       <AlertDialog open={!!revokeUser} onOpenChange={() => { setRevokeUser(null); setRevokeReason(""); }}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-3xl border-destructive/20 shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Revoke Organizer Access?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="font-display text-2xl text-destructive">Revoke Organizer Access?</AlertDialogTitle>
+            <AlertDialogDescription className="text-base text-foreground/80 mt-2">
               Are you sure you want to revoke organizer access for <strong>{revokeUser?.name}</strong>?
               They will no longer be able to access the organizer dashboard or create new events.
-              Their existing events will remain live unless you take them down manually.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
@@ -301,13 +296,13 @@ function AdminDashboard() {
               placeholder="Optional reason for revocation..."
               value={revokeReason}
               onChange={(e) => setRevokeReason(e.target.value)}
-              className="text-sm"
+              className="text-base rounded-xl h-12 border-border/60"
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-xl h-12">Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-xl h-12 font-bold"
               onClick={(e) => {
                 e.preventDefault();
                 if (!revokeUser) return;
@@ -321,158 +316,152 @@ function AdminDashboard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="font-display text-4xl md:text-5xl">Admin Portal</h1>
-        <p className="text-muted-foreground mt-1">Platform overview and moderation.</p>
-      </div>
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-10"
+      >
+        <h1 className="font-display text-4xl md:text-5xl tracking-tight mb-2">Admin Portal</h1>
+        <p className="text-muted-foreground text-lg">Platform overview and moderation.</p>
+      </motion.div>
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-6 mb-10">
-        <StatCard icon={Users} label="Total Users" value={stats?.users.toLocaleString() ?? "—"} />
-        <StatCard icon={Calendar} label="Total Events" value={stats?.events.toLocaleString() ?? "—"} />
-        <StatCard icon={BarChart3} label="Total Volume" value={formatNaira(stats?.revenueKobo ?? 0)} className="text-gradient-sunset" />
-        <Link to="/admin/organizer-applications" className="group block cursor-pointer">
-          <div className="rounded-2xl border border-amber-500/30 bg-card/60 p-6 flex items-start gap-4 shadow-sm hover:border-amber-500/60 transition h-full">
-            <div className="rounded-xl bg-amber-500/10 p-3 text-amber-500 group-hover:bg-amber-500/20 transition">
-              <ClipboardList className="h-6 w-6" />
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+        className="grid gap-6 md:grid-cols-2 lg:grid-cols-6 mb-12"
+      >
+        <StatCard icon={Users} label="Total Users" value={stats?.users.toLocaleString() ?? "—"} delay={0} className="lg:col-span-1" />
+        <StatCard icon={Calendar} label="Total Events" value={stats?.events.toLocaleString() ?? "—"} delay={0.1} className="lg:col-span-1" />
+        <StatCard icon={BarChart3} label="Total Volume" value={formatNaira(stats?.revenueKobo ?? 0)} className="text-gradient-sunset lg:col-span-2" delay={0.2} />
+        
+        <motion.div variants={itemVariants} className="lg:col-span-1">
+          <Link to="/admin/organizer-applications" className="group block cursor-pointer h-full">
+            <div className="rounded-3xl border border-amber-500/30 bg-card p-6 flex flex-col justify-between shadow-sm hover:border-amber-500/60 hover:shadow-amber-500/10 transition-all h-full">
+              <div className="flex items-start justify-between">
+                <div className="rounded-2xl bg-amber-500/10 p-3 text-amber-500 group-hover:bg-amber-500/20 transition-colors">
+                  <ClipboardList className="h-6 w-6" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <p className="text-sm font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Applications</p>
+                <h3 className="font-display text-4xl text-amber-500 mb-1">{stats?.pendingApps ?? 0}</h3>
+                <p className="text-sm font-medium text-amber-500/80 group-hover:text-amber-500 transition-colors">Review now &rarr;</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Applications</p>
-              <h3 className="mt-1 font-display text-3xl text-amber-500">{stats?.pendingApps ?? 0}</h3>
-              <p className="mt-0.5 text-xs text-amber-500/70">Review now →</p>
+          </Link>
+        </motion.div>
+        
+        <motion.div variants={itemVariants} className="lg:col-span-1">
+          <Link to="/admin/banners" className="group block cursor-pointer h-full">
+            <div className="rounded-3xl border border-primary/30 bg-card p-6 flex flex-col justify-between shadow-sm hover:border-primary/60 hover:shadow-primary/10 transition-all h-full">
+              <div className="flex items-start justify-between">
+                <div className="rounded-2xl bg-primary/10 p-3 text-primary group-hover:bg-primary/20 transition-colors">
+                  <ImageIcon className="h-6 w-6" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <p className="text-sm font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Banners</p>
+                <h3 className="font-display text-4xl text-foreground mb-1">Ads</h3>
+                <p className="text-sm font-medium text-primary/80 group-hover:text-primary transition-colors">Manage slots &rarr;</p>
+              </div>
             </div>
-          </div>
-        </Link>
-        <Link to="/admin/job-applications" className="group block cursor-pointer">
-          <div className="rounded-2xl border border-violet-500/30 bg-card/60 p-6 flex items-start gap-4 shadow-sm hover:border-violet-500/60 transition h-full">
-            <div className="rounded-xl bg-violet-500/10 p-3 text-violet-500 group-hover:bg-violet-500/20 transition">
-              <Briefcase className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Job CVs</p>
-              <h3 className="mt-1 font-display text-3xl text-violet-500">New</h3>
-              <p className="mt-0.5 text-xs text-violet-500/70">Review now →</p>
-            </div>
-          </div>
-        </Link>
-        <Link to="/admin/banners" className="group block cursor-pointer">
-          <div className="rounded-2xl border border-primary/30 bg-card/60 p-6 flex items-start gap-4 shadow-sm hover:border-primary/60 transition h-full">
-            <div className="rounded-xl bg-primary/10 p-3 text-primary group-hover:bg-primary/20 transition">
-              <ImageIcon className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Banners</p>
-              <h3 className="mt-1 font-display text-3xl text-foreground">Ads</h3>
-              <p className="mt-0.5 text-xs text-primary">Manage slots →</p>
-            </div>
-          </div>
-        </Link>
-      </div>
+          </Link>
+        </motion.div>
+      </motion.div>
 
-      <div className="grid gap-10 lg:grid-cols-2">
-        {/* Users Table */}
-        <section className="flex flex-col rounded-2xl border border-border bg-card/40 overflow-hidden">
-          <div className="flex items-center justify-between p-4 border-b border-border bg-card/80">
-            <h2 className="font-semibold">Recent Users</h2>
+      <div className="grid gap-8 lg:grid-cols-2">
+        <motion.section 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3 }}
+          className="flex flex-col rounded-3xl border border-border/60 bg-card shadow-sm overflow-hidden h-[600px]"
+        >
+          <div className="flex items-center justify-between p-6 border-b border-border/40 bg-card/50 backdrop-blur-sm z-10">
+            <h2 className="font-display text-2xl">Recent Users</h2>
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by name or email”¦"
+                placeholder="Search users..."
                 value={userSearch}
                 onChange={(e) => setUserSearch(e.target.value)}
-                className="h-8 w-52 pl-8 text-xs border-border/50 bg-background/50 focus-visible:ring-1"
+                className="h-10 w-full sm:w-64 pl-9 rounded-xl border-border/60 bg-background/50 focus-visible:ring-primary/20 transition-all"
               />
             </div>
           </div>
-          <div className="overflow-x-auto overflow-y-auto max-h-[420px]">
+          <div className="overflow-x-auto overflow-y-auto flex-1">
             <table className="w-full text-sm text-left">
-              <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm text-xs uppercase text-muted-foreground">
+              <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-md text-xs uppercase font-bold tracking-wider text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3 font-medium">User</th>
-                  <th className="px-4 py-3 font-medium">Roles</th>
-                  <th className="px-4 py-3 font-medium">Joined</th>
-                  <th className="px-4 py-3" />
+                  <th className="px-6 py-4">User</th>
+                  <th className="px-6 py-4">Roles</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/50">
+              <tbody className="divide-y divide-border/40">
                 {usersLoading ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-xs text-muted-foreground">
-                      Loading users”¦
-                    </td>
+                    <td colSpan={3} className="px-6 py-12 text-center text-muted-foreground">Loading users”¦</td>
                   </tr>
                 ) : filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-xs text-muted-foreground">
-                      No users found.
-                    </td>
+                    <td colSpan={3} className="px-6 py-12 text-center text-muted-foreground">No users found.</td>
                   </tr>
                 ) : (
                   filteredUsers.map((u) => (
-                    <tr key={u.id} className={`hover:bg-muted/30 transition-colors ${u.suspended ? "opacity-50" : ""}`}>
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-foreground">{u.full_name || "Unknown"}</div>
-                        <div className="text-xs text-muted-foreground font-mono">{u.id.slice(0, 8)}”¦</div>
+                    <tr key={u.id} className={`hover:bg-muted/30 transition-colors ${u.suspended ? "opacity-50 grayscale" : ""}`}>
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-foreground text-base mb-1">{u.full_name || "Unknown"}</div>
+                        <div className="text-xs text-muted-foreground font-mono bg-secondary/50 inline-block px-2 py-0.5 rounded">{u.id.slice(0, 8)}”¦</div>
+                        <div className="text-xs text-muted-foreground mt-1">Joined {new Date(u.created_at).toLocaleDateString()}</div>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-1 flex-wrap">
-                          {u.roles.includes("admin") && (
-                            <Badge variant="default" className="text-xs h-5 px-1.5">Admin</Badge>
-                          )}
-                          {u.roles.includes("organizer") && (
-                            <Badge variant="secondary" className="text-xs h-5 px-1.5">Organizer</Badge>
-                          )}
-                          {!u.roles.includes("admin") && !u.roles.includes("organizer") && (
-                            <span className="text-xs text-muted-foreground">User</span>
-                          )}
-                          {u.suspended && (
-                            <Badge variant="destructive" className="text-xs h-5 px-1.5">Suspended</Badge>
-                          )}
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2 flex-wrap">
+                          {u.roles.includes("admin") && <Badge className="uppercase tracking-wider text-[10px] font-bold">Admin</Badge>}
+                          {u.roles.includes("organizer") && <Badge variant="secondary" className="uppercase tracking-wider text-[10px] font-bold border-border/50">Organizer</Badge>}
+                          {!u.roles.includes("admin") && !u.roles.includes("organizer") && <span className="text-xs text-muted-foreground font-medium">User</span>}
+                          {u.suspended && <Badge variant="destructive" className="uppercase tracking-wider text-[10px] font-bold">Suspended</Badge>}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">
-                        {new Date(u.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-6 py-4 text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-secondary">
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
+                          <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-xl border-border/50 p-2">
+                            <DropdownMenuItem asChild className="rounded-xl px-3 py-2 cursor-pointer focus:bg-secondary">
                               <Link to="/dashboard" className="flex items-center gap-2">
-                                <ExternalLink className="h-3.5 w-3.5" />
-                                View full profile
+                                <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-medium">View full profile</span>
                               </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
+                            <DropdownMenuSeparator className="mx-2" />
                             {u.roles.includes("organizer") && (
                               <DropdownMenuItem
-                                className="text-destructive focus:text-destructive"
+                                className="text-destructive focus:text-destructive focus:bg-destructive/10 rounded-xl px-3 py-2 cursor-pointer"
                                 onClick={() => setRevokeUser({ id: u.id, name: u.full_name || "Unknown" })}
                               >
-                                <ShieldOff className="mr-2 h-3.5 w-3.5" />
-                                Revoke Organizer Access
+                                <ShieldOff className="mr-2 h-4 w-4" />
+                                <span className="font-medium">Revoke Organizer</span>
                               </DropdownMenuItem>
                             )}
                             {u.suspended ? (
                               <DropdownMenuItem
-                                className="text-green-500 focus:text-green-500"
+                                className="text-green-500 focus:text-green-500 focus:bg-green-500/10 rounded-xl px-3 py-2 cursor-pointer"
                                 onClick={() => suspendMutation.mutate({ userId: u.id, suspend: false })}
                               >
-                                <ShieldCheck className="mr-2 h-3.5 w-3.5" />
-                                Unsuspend user
+                                <ShieldCheck className="mr-2 h-4 w-4" />
+                                <span className="font-medium">Unsuspend user</span>
                               </DropdownMenuItem>
                             ) : (
                               <DropdownMenuItem
-                                className="text-destructive focus:text-destructive"
+                                className="text-destructive focus:text-destructive focus:bg-destructive/10 rounded-xl px-3 py-2 cursor-pointer"
                                 onClick={() => suspendMutation.mutate({ userId: u.id, suspend: true })}
                               >
-                                <ShieldOff className="mr-2 h-3.5 w-3.5" />
-                                Suspend user
+                                <ShieldOff className="mr-2 h-4 w-4" />
+                                <span className="font-medium">Suspend user</span>
                               </DropdownMenuItem>
                             )}
                           </DropdownMenuContent>
@@ -484,62 +473,62 @@ function AdminDashboard() {
               </tbody>
             </table>
           </div>
-        </section>
+        </motion.section>
 
-        {/* Event Moderation */}
-        <section className="flex flex-col rounded-2xl border border-border bg-card/40 overflow-hidden">
-          <div className="flex items-center justify-between p-4 border-b border-border bg-card/80">
-            <h2 className="font-semibold">Event Moderation</h2>
+        <motion.section 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.4 }}
+          className="flex flex-col rounded-3xl border border-border/60 bg-card shadow-sm overflow-hidden h-[600px]"
+        >
+          <div className="flex items-center justify-between p-6 border-b border-border/40 bg-card/50 backdrop-blur-sm z-10">
+            <h2 className="font-display text-2xl">Event Moderation</h2>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto flex-1">
             <table className="w-full text-sm text-left">
-              <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
+              <thead className="sticky top-0 bg-muted/80 backdrop-blur-md text-xs uppercase font-bold tracking-wider text-muted-foreground z-10">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Event</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Action</th>
+                  <th className="px-6 py-4">Event</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/50">
+              <tbody className="divide-y divide-border/40">
                 {eventsLoading ? (
                   <tr>
-                    <td colSpan={3} className="px-4 py-8 text-center text-xs text-muted-foreground">
-                      Loading events”¦
-                    </td>
+                    <td colSpan={3} className="px-6 py-12 text-center text-muted-foreground">Loading events”¦</td>
                   </tr>
                 ) : (events ?? []).map((ev: any) => (
                   <tr key={ev.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-foreground line-clamp-1">{ev.title}</div>
-                      <div className="text-xs text-muted-foreground">
+                    <td className="px-6 py-4">
+                      <div className="font-semibold text-foreground text-base mb-1 line-clamp-1">{ev.title}</div>
+                      <div className="text-xs text-muted-foreground font-medium">
                         by {ev.profiles?.full_name || "Unknown"}
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-6 py-4">
                       {ev.status === "cancelled" ? (
-                        <span className="text-xs text-destructive font-medium">Cancelled</span>
+                        <Badge variant="destructive" className="uppercase tracking-wider text-[10px] font-bold">Cancelled</Badge>
                       ) : new Date(ev.end_datetime || ev.start_datetime) < new Date() ? (
-                        <span className="text-xs text-muted-foreground font-medium">Ended</span>
+                        <Badge variant="secondary" className="uppercase tracking-wider text-[10px] font-bold border-border/50">Ended</Badge>
                       ) : ev.status === "published" ? (
-                        <span className="inline-flex items-center gap-1 text-green-500 text-xs font-medium">
-                          <CheckCircle className="h-3 w-3" /> Live
-                        </span>
+                        <Badge variant="outline" className="uppercase tracking-wider text-[10px] font-bold text-green-500 border-green-500/40 bg-green-500/10">Live</Badge>
                       ) : (
-                        <span className="text-xs text-muted-foreground font-medium capitalize">{ev.status}</span>
+                        <Badge variant="outline" className="uppercase tracking-wider text-[10px] font-bold border-border/50 text-muted-foreground">{ev.status}</Badge>
                       )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-6 py-4 text-right">
                       {ev.status !== "cancelled" ? (
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                          className="h-8 rounded-lg text-xs font-semibold text-destructive border-destructive/30 hover:text-destructive hover:bg-destructive/10 transition-colors"
                           onClick={() => setTakedownEvent({ id: ev.id, title: ev.title })}
                         >
-                          <Ban className="mr-1.5 h-3 w-3" /> Takedown
+                          <Ban className="mr-1.5 h-3.5 w-3.5" /> Takedown
                         </Button>
                       ) : (
-                        <span className="text-xs text-muted-foreground/50">—</span>
+                        <span className="text-xs text-muted-foreground/40 font-medium">—</span>
                       )}
                     </td>
                   </tr>
@@ -547,209 +536,8 @@ function AdminDashboard() {
               </tbody>
             </table>
           </div>
-        </section>
+        </motion.section>
       </div>
-
-      {/* Support / Contact Messages */}
-      <section className="mt-10 flex flex-col rounded-2xl border border-border bg-card/40 overflow-hidden">
-        <div className="flex items-center justify-between p-4 border-b border-border bg-card/80">
-          <h2 className="font-semibold">Support Messages</h2>
-          <Badge variant="outline" className="font-mono text-xs">
-            {(messages ?? []).filter((m) => !m.is_read).length} unread
-          </Badge>
-        </div>
-        <div className="p-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {(messages ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground col-span-full py-4 text-center">No messages yet.</p>
-          ) : (
-            (messages ?? []).map((msg: any) => (
-              <div
-                key={msg.id}
-                className={`rounded-xl border bg-card p-4 shadow-sm flex flex-col gap-3 transition-colors hover:border-primary/40 cursor-pointer ${
-                  msg.is_read ? "border-border opacity-70" : "border-primary/30"
-                }`}
-                onClick={() => !msg.is_read && markMessageRead.mutate(msg.id)}
-                title={msg.is_read ? "" : "Click to mark as read"}
-              >
-                <div className="flex justify-between items-start gap-2">
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-medium text-sm truncate">{msg.name}</h3>
-                    <a
-                      href={`mailto:${msg.email}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-xs text-muted-foreground hover:text-primary transition truncate block"
-                    >
-                      {msg.email}
-                    </a>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <Badge
-                      variant={msg.is_read ? "secondary" : "default"}
-                      className="text-xs h-5 px-1.5"
-                    >
-                      {msg.is_read ? "Read" : "New"}
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteMessage.mutate(msg.id);
-                      }}
-                      disabled={deleteMessage.isPending}
-                      title="Delete message"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="flex-1">
-                  {msg.topic && (
-                    <span className="inline-block px-2 py-0.5 rounded bg-muted/50 text-xs font-semibold text-muted-foreground mb-2">
-                      {msg.topic}
-                    </span>
-                  )}
-                  <p className="text-sm text-foreground/90 whitespace-pre-wrap break-words line-clamp-4">{msg.message}</p>
-                </div>
-                <div className="mt-1 pt-3 border-t border-border/50 text-xs text-muted-foreground flex justify-between items-center gap-2">
-                  <span className="truncate">{new Date(msg.created_at).toLocaleString()}</span>
-                  {msg.phone && (
-                    <a
-                      href={`tel:${msg.phone}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="hover:text-primary transition shrink-0"
-                    >
-                      {msg.phone}
-                    </a>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
-      {/* Refund Requests */}
-      <section className="mt-10 flex flex-col rounded-2xl border border-border bg-card/40 overflow-hidden">
-        <div className="flex items-center justify-between p-4 border-b border-border bg-card/80">
-          <div>
-            <h2 className="font-semibold">Refund Requests</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Submitted by buyers via My Tickets page</p>
-          </div>
-          <Badge variant="outline" className="font-mono text-xs">
-            {(refunds ?? []).filter((r: any) => r.status === "pending").length} pending
-          </Badge>
-        </div>
-        <div className="overflow-x-auto">
-          {refundsLoading ? (
-            <p className="p-6 text-sm text-muted-foreground">Loading refund requests…</p>
-          ) : (refunds ?? []).length === 0 ? (
-            <div className="p-8 text-center">
-              <RefreshCcw className="mx-auto h-8 w-8 text-muted-foreground/30" />
-              <p className="mt-3 text-sm text-muted-foreground">No refund requests yet.</p>
-            </div>
-          ) : (
-            <table className="w-full text-sm text-left">
-              <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Buyer</th>
-                  <th className="px-4 py-3 font-medium">Event</th>
-                  <th className="px-4 py-3 font-medium">Reason</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Date</th>
-                  <th className="px-4 py-3 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/50">
-                {(refunds ?? []).map((r: any) => (
-                  <tr key={r.id} className="hover:bg-muted/20 transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-sm">{r.buyer_name || "Unknown"}</div>
-                      <div className="text-xs text-muted-foreground">{r.buyer_email}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      {r.events ? (
-                        <Link
-                          to="/e/$slug"
-                          params={{ slug: r.events.slug }}
-                          className="text-primary hover:underline text-xs font-medium line-clamp-2"
-                        >
-                          {r.events.title}
-                        </Link>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">Unknown event</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="capitalize text-xs">{r.reason}</span>
-                      {r.other_reason && (
-                        <p className="mt-1 text-xs text-muted-foreground line-clamp-2" title={r.other_reason}>
-                          {r.other_reason}
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {r.status === "pending" && (
-                        <Badge variant="outline" className="text-amber-500 border-amber-500/40 bg-amber-500/10 text-xs">Pending</Badge>
-                      )}
-                      {r.status === "approved" && (
-                        <Badge variant="outline" className="text-green-500 border-green-500/40 bg-green-500/10 text-xs">Approved</Badge>
-                      )}
-                      {r.status === "rejected" && (
-                        <Badge variant="outline" className="text-destructive border-destructive/40 bg-destructive/10 text-xs">Rejected</Badge>
-                      )}
-                      {r.status === "processed" && (
-                        <Badge variant="secondary" className="text-xs">Processed</Badge>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">
-                      {new Date(r.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3">
-                      {r.status === "pending" && (
-                        <div className="flex gap-1.5">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 text-xs text-green-500 border-green-500/30 hover:bg-green-500/10"
-                            disabled={updateRefundMutation.isPending}
-                            onClick={() => updateRefundMutation.mutate({ id: r.id, status: "approved" })}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
-                            disabled={updateRefundMutation.isPending}
-                            onClick={() => updateRefundMutation.mutate({ id: r.id, status: "rejected" })}
-                          >
-                            Reject
-                          </Button>
-                        </div>
-                      )}
-                      {r.status === "approved" && (
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          className="h-7 text-xs"
-                          disabled={updateRefundMutation.isPending}
-                          onClick={() => updateRefundMutation.mutate({ id: r.id, status: "processed" })}
-                        >
-                          Mark Processed
-                        </Button>
-                      )}
-                      {(r.status === "rejected" || r.status === "processed") && (
-                        <span className="text-xs text-muted-foreground/50">—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </section>
     </div>
   );
 }
@@ -759,21 +547,31 @@ function StatCard({
   label,
   value,
   className,
+  delay = 0,
 }: {
   icon: any;
   label: string;
   value: string;
   className?: string;
+  delay?: number;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-card/60 p-6 flex items-start gap-4 shadow-sm">
-      <div className="rounded-xl bg-primary/10 p-3 text-primary">
-        <Icon className="h-6 w-6" />
+    <motion.div 
+      variants={{
+        hidden: { opacity: 0, y: 10 },
+        show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 400, damping: 30, delay } }
+      }}
+      className={`rounded-3xl border border-border/60 bg-card p-6 flex flex-col justify-between shadow-sm transition-all hover:shadow-md ${className}`}
+    >
+      <div className="flex items-start justify-between">
+        <div className="rounded-2xl bg-primary/10 p-3 text-primary">
+          <Icon className="h-6 w-6" />
+        </div>
       </div>
-      <div>
-        <p className="text-sm font-medium text-muted-foreground">{label}</p>
-        <h3 className={`mt-1 font-display text-3xl ${className || "text-foreground"}`}>{value}</h3>
+      <div className="mt-4">
+        <p className="text-sm font-semibold text-muted-foreground mb-1 uppercase tracking-wider">{label}</p>
+        <h3 className={`font-display text-4xl tracking-tight ${className?.includes('text-gradient') ? '' : 'text-foreground'}`}>{value}</h3>
       </div>
-    </div>
+    </motion.div>
   );
 }

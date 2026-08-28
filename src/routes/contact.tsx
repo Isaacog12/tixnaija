@@ -5,8 +5,9 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Instagram } from "lucide-react";
+import { Instagram, Send, PhoneCall, Mail, AlertCircle, HelpCircle, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 
 export const Route = createFileRoute("/contact")({
   component: ContactPage,
@@ -31,6 +32,21 @@ const TOPICS = [
   "Partnership / Business Enquiry",
   "Other",
 ];
+
+const fadeUp: Variants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+};
+
+const staggerContainer: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
 
 function ContactPage() {
   const [form, setForm] = useState({
@@ -89,84 +105,88 @@ function ContactPage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative overflow-hidden">
       <SiteNav />
+      
+      <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] -z-10 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-purple-500/5 rounded-full blur-[100px] -z-10 pointer-events-none" />
+
       {/* ── Hero ── */}
-      <div className="relative overflow-hidden border-b border-border/60">
-        <div className="absolute inset-0 gradient-sunset opacity-10 pointer-events-none" />
-        <div className="mx-auto max-w-6xl px-4 py-12 md:py-16">
-          <h1 className="font-display text-5xl md:text-7xl leading-[0.95] mb-3">
-            Contact Us
-          </h1>
-          <p className="text-muted-foreground max-w-lg mt-3">
-            Got a question, issue, or just want to say hi? Fill in the form below
-            and we'll get back to you as soon as possible.
-          </p>
-        </div>
+      <div className="relative border-b border-border/40 py-16 md:py-24 overflow-hidden">
+        <div className="absolute inset-0 bg-grid-pattern opacity-[0.02] pointer-events-none" />
+        <motion.div 
+          initial="hidden" animate="visible" variants={staggerContainer}
+          className="mx-auto max-w-6xl px-4 text-center md:text-left relative z-10"
+        >
+          <motion.h1 variants={fadeUp} className="font-display text-5xl md:text-7xl lg:text-8xl leading-[0.95] tracking-tight mb-6">
+            Get in <span className="text-gradient-sunset">touch</span>
+          </motion.h1>
+          <motion.p variants={fadeUp} className="text-muted-foreground text-lg md:text-2xl max-w-2xl font-medium leading-relaxed mx-auto md:mx-0">
+            Got a question, issue, or just want to say hi? We're here to help you turn up without the hassle.
+          </motion.p>
+        </motion.div>
       </div>
 
       {/* ── Body ── */}
-      <div className="mx-auto max-w-6xl px-4 py-12 md:py-16 grid grid-cols-1 md:grid-cols-[1fr_400px] gap-12 items-start">
+      <div className="mx-auto max-w-6xl px-4 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-[1fr_450px] gap-16 items-start">
 
-        <div className="space-y-5">
-          <div>
-            <h2 className="font-display text-2xl md:text-3xl mb-1">We'd love to hear from you</h2>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-md">
-              Whether you're an attendee with a ticket problem or an organizer
-              needing support, our team is ready to help.
+        <motion.div initial="hidden" animate="visible" variants={staggerContainer} className="space-y-12">
+          
+          <motion.div variants={fadeUp}>
+            <h2 className="font-display text-3xl md:text-4xl mb-4 tracking-tight">We'd love to hear from you</h2>
+            <p className="text-lg text-muted-foreground leading-relaxed max-w-xl">
+              Whether you're an attendee with a ticket problem or an organizer needing support, our team is ready to help you succeed.
             </p>
-          </div>
+          </motion.div>
 
           {/* Direct contact */}
-          <div className="flex flex-col gap-3">
-            <a
+          <motion.div variants={staggerContainer} className="grid sm:grid-cols-2 gap-4">
+            <motion.a
+              variants={fadeUp}
               href="tel:+2349011275275"
-              className="flex items-center gap-4 rounded-lg border border-border bg-card/60 p-4 transition hover:border-primary/50 hover:bg-card group"
+              className="flex items-center gap-5 rounded-3xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 transition-all duration-300 hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 group hover:-translate-y-1"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full gradient-sunset shadow-glow text-primary-foreground">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-                  <path fillRule="evenodd" d="M1.5 4.5a3 3 0 013-3h1.372c.86 0 1.61.586 1.819 1.42l1.105 4.423a1.875 1.875 0 01-.694 1.955l-1.293.97c-.135.101-.164.249-.126.352a11.285 11.285 0 006.697 6.697c.103.038.25.009.352-.126l.97-1.293a1.875 1.875 0 011.955-.694l4.423 1.105c.834.209 1.42.959 1.42 1.82V19.5a3 3 0 01-3 3h-2.25C8.552 22.5 1.5 15.448 1.5 6.75V4.5z" clipRule="evenodd" />
-                </svg>
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                <PhoneCall className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-semibold">Call / WhatsApp</p>
-                <p className="text-sm font-semibold text-foreground group-hover:text-primary transition">+234 901 127 5275</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-bold mb-1">Call / WhatsApp</p>
+                <p className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">+234 901 127 5275</p>
               </div>
-            </a>
+            </motion.a>
 
-            <a
+            <motion.a
+              variants={fadeUp}
               href="mailto:tixnaijaapp@gmail.com"
-              className="flex items-center gap-4 rounded-lg border border-border bg-card/60 p-4 transition hover:border-primary/50 hover:bg-card group"
+              className="flex items-center gap-5 rounded-3xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 transition-all duration-300 hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 group hover:-translate-y-1"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full gradient-sunset shadow-glow text-primary-foreground">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-                  <path d="M1.5 8.67v8.58a3 3 0 003 3h15a3 3 0 003-3V8.67l-8.928 5.493a3 3 0 01-3.144 0L1.5 8.67z" />
-                  <path d="M22.5 6.908V6.75a3 3 0 00-3-3h-15a3 3 0 00-3 3v.158l9.714 5.978a1.5 1.5 0 001.572 0L22.5 6.908z" />
-                </svg>
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                <Mail className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-semibold">Email</p>
-                <p className="text-sm font-semibold text-foreground group-hover:text-primary transition">tixnaijaapp@gmail.com</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-bold mb-1">Email us</p>
+                <p className="text-base font-semibold text-foreground group-hover:text-primary transition-colors truncate w-full" title="tixnaijaapp@gmail.com">tixnaijaapp@gmail.com</p>
               </div>
-            </a>
+            </motion.a>
 
-            <a
+            <motion.a
+              variants={fadeUp}
               href="https://www.instagram.com/tixnaija/"
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-4 rounded-lg border border-border bg-card/60 p-4 transition hover:border-primary/50 hover:bg-card group"
+              className="flex items-center gap-5 rounded-3xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 transition-all duration-300 hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 group hover:-translate-y-1 sm:col-span-2 lg:col-span-1"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full gradient-sunset shadow-glow text-primary-foreground">
-                <Instagram className="h-5 w-5" />
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                <Instagram className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-semibold">Instagram</p>
-                <p className="text-sm font-semibold text-foreground group-hover:text-primary transition">@tixnaija</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-bold mb-1">Follow us</p>
+                <p className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">@tixnaija</p>
               </div>
-            </a>
-          </div>
+            </motion.a>
+          </motion.div>
 
-          <div className="grid gap-4 sm:grid-cols-2 mt-2">
+          <motion.div variants={staggerContainer} className="grid sm:grid-cols-2 gap-4">
             {[
               {
                 label: "Buyers & Attendees",
@@ -189,169 +209,183 @@ function ContactPage() {
                 icon: "🚨",
               },
             ].map(({ label, desc, icon }) => (
-              <div
+              <motion.div
+                variants={fadeUp}
                 key={label}
-                className="rounded-lg border border-border bg-card/60 p-5 transition hover:border-primary/40"
+                className="rounded-3xl border border-border/60 bg-card/40 p-6 transition-colors hover:border-primary/30 hover:bg-card/80"
               >
-                <span className="text-2xl">{icon}</span>
-                <p className="mt-3 font-semibold text-sm">{label}</p>
-                <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{desc}</p>
-              </div>
+                <span className="text-3xl block mb-4">{icon}</span>
+                <p className="font-bold text-lg mb-2">{label}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
 
-          <div className="mt-4 pt-6 border-t border-border/40 flex gap-6 text-xs text-muted-foreground">
-            <Link to="/terms" className="hover:text-primary transition">Terms of Service</Link>
-            <Link to="/privacy" className="hover:text-primary transition">Privacy Policy</Link>
-          </div>
-        </div>
+          <motion.div variants={fadeUp} className="pt-8 border-t border-border/40 flex flex-wrap gap-6 text-sm font-semibold text-muted-foreground">
+            <Link to="/terms" className="hover:text-primary transition-colors">Terms of Service</Link>
+            <Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
+            <Link to="/careers" className="hover:text-primary transition-colors">Careers</Link>
+          </motion.div>
+        </motion.div>
 
         {/* Right — form card */}
-        <div className="rounded-2xl border border-border bg-card/80 p-6 md:p-8 shadow-glow backdrop-blur">
-          {sent ? (
-            <SuccessState name={form.name} onReset={() => { setSent(false); setForm({ name: "", email: "", phone: "", topic: "", message: "" }); }} />
-          ) : (
-            <form onSubmit={onSubmit} className="space-y-5" noValidate>
-              <div>
-                <h2 className="font-display text-2xl leading-tight">Send us a message</h2>
-                <p className="text-xs text-muted-foreground mt-1">
-                  All fields marked <span className="text-primary">*</span> are required.
-                </p>
-              </div>
-
-              {/* Name */}
-              <div className="space-y-1.5">
-                <Label htmlFor="contact-name">
-                  Full name <span className="text-primary">*</span>
-                </Label>
-                <Input
-                  id="contact-name"
-                  value={form.name}
-                  onChange={(e) => update("name", e.target.value)}
-                  placeholder="Chidera Okoye"
-                  autoComplete="name"
-                  required
-                />
-              </div>
-
-              {/* Email */}
-              <div className="space-y-1.5">
-                <Label htmlFor="contact-email">
-                  Email address <span className="text-primary">*</span>
-                </Label>
-                <Input
-                  id="contact-email"
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => update("email", e.target.value)}
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                  required
-                />
-              </div>
-
-              {/* Phone */}
-              <div className="space-y-1.5">
-                <Label htmlFor="contact-phone">
-                  Phone number <span className="text-primary">*</span>
-                </Label>
-                <Input
-                  id="contact-phone"
-                  type="tel"
-                  value={form.phone}
-                  onChange={(e) => update("phone", e.target.value)}
-                  placeholder="+234 800 000 0000"
-                  autoComplete="tel"
-                  required
-                />
-              </div>
-
-              {/* Topic */}
-              <div className="space-y-1.5">
-                <Label htmlFor="contact-topic">Topic</Label>
-                <select
-                  id="contact-topic"
-                  value={form.topic}
-                  onChange={(e) => update("topic", e.target.value)}
-                  className="w-full rounded-md border border-input bg-input px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  <option value="">Select a topic...</option>
-                  {TOPICS.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Message */}
-              <div className="space-y-1.5">
-                <Label htmlFor="contact-message">
-                  Message <span className="text-primary">*</span>
-                </Label>
-                <textarea
-                  id="contact-message"
-                  rows={5}
-                  value={form.message}
-                  onChange={(e) => update("message", e.target.value)}
-                  placeholder="Tell us what's going on and we'll be in touch..."
-                  required
-                  className="w-full rounded-md border border-input bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-                />
-              </div>
-
-              <Button
-                type="submit"
-                disabled={busy}
-                className="w-full gradient-sunset text-primary-foreground shadow-glow hover:opacity-90 transition"
-              >
-                {busy ? (
-                  <span className="flex items-center gap-2">
-                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                    </svg>
-                    Sending...
-                  </span>
-                ) : (
-                  "Send message"
-                )}
-              </Button>
-            </form>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SuccessState({ name, onReset }: { name: string; onReset: () => void }) {
-  return (
-    <div className="flex flex-col items-center text-center py-8 gap-5">
-      {/* Animated checkmark */}
-      <div className="relative flex h-20 w-20 items-center justify-center rounded-full gradient-sunset shadow-glow">
-        <svg className="h-9 w-9 text-primary-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      </div>
-
-      <div>
-        <h2 className="font-display text-3xl">Message sent!</h2>
-        <p className="text-muted-foreground text-sm mt-2 max-w-xs leading-relaxed">
-          Thanks{name ? `, ${name.split(" ")[0]}` : ""}! We've received your message and
-          will get back to you within <strong className="text-foreground">1-2 business days</strong>.
-        </p>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-3 mt-2">
-        <Button
-          onClick={onReset}
-          variant="outline"
-          className="border-border hover:border-primary hover:text-primary"
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="rounded-[2.5rem] border border-border/60 bg-card/80 p-8 md:p-10 shadow-2xl shadow-primary/5 backdrop-blur-xl sticky top-28"
         >
-          Send another message
-        </Button>
-        <Button asChild className="gradient-sunset text-primary-foreground hover:opacity-90">
-          <Link to="/">Back to events</Link>
-        </Button>
+          <AnimatePresence mode="wait">
+            {sent ? (
+              <motion.div 
+                key="success"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="flex flex-col items-center text-center py-12 gap-6"
+              >
+                <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-green-500/10 text-green-500 mb-2">
+                  <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping opacity-50" />
+                  <CheckCircle2 className="h-12 w-12" />
+                </div>
+                <div>
+                  <h2 className="font-display text-4xl mb-3 text-foreground">Message sent!</h2>
+                  <p className="text-muted-foreground text-lg max-w-xs mx-auto leading-relaxed">
+                    Thanks{form.name ? `, ${form.name.split(" ")[0]}` : ""}! We've received your message and
+                    will get back to you within <strong className="text-foreground">1-2 business days</strong>.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-3 mt-6 w-full">
+                  <Button asChild className="gradient-sunset text-primary-foreground hover:opacity-90 rounded-xl h-12 w-full text-base font-semibold shadow-lg shadow-primary/25">
+                    <Link to="/">Back to events</Link>
+                  </Button>
+                  <Button
+                    onClick={() => { setSent(false); setForm({ name: "", email: "", phone: "", topic: "", message: "" }); }}
+                    variant="outline"
+                    className="border-border/60 hover:border-primary hover:text-primary rounded-xl h-12 w-full text-base font-medium"
+                  >
+                    Send another message
+                  </Button>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.form 
+                key="form"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                onSubmit={onSubmit} 
+                className="space-y-6" 
+                noValidate
+              >
+                <div className="mb-8">
+                  <h2 className="font-display text-3xl md:text-4xl leading-tight mb-2 tracking-tight">Drop a message</h2>
+                  <p className="text-sm text-muted-foreground font-medium">
+                    All fields marked <span className="text-primary font-bold">*</span> are required.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contact-name" className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
+                    Full name <span className="text-primary">*</span>
+                  </Label>
+                  <Input
+                    id="contact-name"
+                    value={form.name}
+                    onChange={(e) => update("name", e.target.value)}
+                    placeholder="Chidera Okoye"
+                    autoComplete="name"
+                    required
+                    className="h-12 rounded-xl border-border/60 bg-background/50 focus-visible:ring-primary/20 text-base"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contact-email" className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
+                    Email address <span className="text-primary">*</span>
+                  </Label>
+                  <Input
+                    id="contact-email"
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => update("email", e.target.value)}
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                    required
+                    className="h-12 rounded-xl border-border/60 bg-background/50 focus-visible:ring-primary/20 text-base"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contact-phone" className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
+                    Phone number <span className="text-primary">*</span>
+                  </Label>
+                  <Input
+                    id="contact-phone"
+                    type="tel"
+                    value={form.phone}
+                    onChange={(e) => update("phone", e.target.value)}
+                    placeholder="+234 800 000 0000"
+                    autoComplete="tel"
+                    required
+                    className="h-12 rounded-xl border-border/60 bg-background/50 focus-visible:ring-primary/20 text-base"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contact-topic" className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Topic</Label>
+                  <select
+                    id="contact-topic"
+                    value={form.topic}
+                    onChange={(e) => update("topic", e.target.value)}
+                    className="w-full h-12 rounded-xl border border-border/60 bg-background/50 px-4 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none"
+                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundPosition: `right 1rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}
+                  >
+                    <option value="" disabled className="text-muted-foreground">Select a topic...</option>
+                    {TOPICS.map((t) => (
+                      <option key={t} value={t} className="bg-background text-foreground">{t}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contact-message" className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
+                    Message <span className="text-primary">*</span>
+                  </Label>
+                  <textarea
+                    id="contact-message"
+                    rows={5}
+                    value={form.message}
+                    onChange={(e) => update("message", e.target.value)}
+                    placeholder="Tell us what's going on and we'll be in touch..."
+                    required
+                    className="w-full rounded-xl border border-border/60 bg-background/50 p-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none transition-all"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={busy}
+                  className="w-full h-14 rounded-xl gradient-sunset text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all hover:-translate-y-0.5 text-lg font-bold mt-4"
+                >
+                  {busy ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                      </svg>
+                      Sending...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      Send message <Send className="h-5 w-5 ml-1" />
+                    </span>
+                  )}
+                </Button>
+              </motion.form>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </div>
     </div>
   );
