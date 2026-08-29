@@ -363,7 +363,7 @@ function EventDetailPage() {
           navigate({ to: "/my-tickets" });
         } else {
           toast.success("Free ticket claimed successfully!");
-          navigate({ to: "/inbox" });
+          navigate({ to: "/notifications" });
         }
         return;
       }

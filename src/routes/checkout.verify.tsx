@@ -74,10 +74,10 @@ function VerifyCheckoutPage() {
             {userId ? (
               <>
                 <p className="mt-2 text-muted-foreground">
-                  Your tickets have been generated. We've sent them to your inbox.
+                  Your tickets have been generated. We've sent them to your email and your notifications.
                 </p>
                 <Button asChild className="mt-8 w-full gradient-sunset" size="lg">
-                  <Link to="/inbox">Go to Inbox</Link>
+                  <Link to="/notifications">Go to Notifications</Link>
                 </Button>
               </>
             ) : (

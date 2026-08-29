@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { LogOut, LayoutDashboard, User as UserIcon, Mail, Ticket as TicketIcon, Menu } from "lucide-react";
+import { LogOut, LayoutDashboard, User as UserIcon, Mail, Ticket as TicketIcon, Menu, Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -97,8 +97,8 @@ export function SiteNav() {
           {loading ? null : user ? (
             <div className="flex items-center gap-3">
               <Button asChild variant="ghost" size="icon" className="relative rounded-full h-11 w-11 hover:bg-secondary/80 transition-colors">
-                <Link to="/inbox">
-                  <Mail className="h-5 w-5 text-muted-foreground" />
+                <Link to="/notifications">
+                  <Bell className="h-5 w-5 text-muted-foreground" />
                   <AnimatePresence>
                     {unreadCount > 0 && (
                       <motion.span 

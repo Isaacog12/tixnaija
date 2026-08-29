@@ -244,7 +244,7 @@ function OrderTicketsPage() {
               <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 text-center">
                 <h3 className="font-semibold">Create a free account</h3>
                 <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
-                  Sign up with this email to get your tickets in one place, receive inbox notifications, and request refunds easily.
+                  Sign up with this email to get your tickets in one place, receive notifications, and request refunds easily.
                 </p>
                 <Button asChild className="mt-4 gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
                   <Link to="/auth" search={{ mode: "signup" }}>Create free account</Link>
