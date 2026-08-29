@@ -64,17 +64,6 @@ serve(async (req) => {
     const orderRef = order.id.split('-')[0].toUpperCase();
 
     const allTickets = order.order_items?.flatMap((item: any) => item.tickets || []) || [];
-    let qrBlocksHtml = "";
-    allTickets.forEach((ticket: any) => {
-      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${ticket.ticket_code}`;
-      qrBlocksHtml += `
-      <div style="text-align: center; padding: 20px 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee; margin-bottom: 24px;">
-        <img src="${qrCodeUrl}" alt="Entry QR code" width="160" height="160" style="display: block; margin: 0 auto 8px;" />
-        <span style="font-family: monospace; font-size: 13px; letter-spacing: 1px; color: #FF5A1F;">${ticket.ticket_code}</span>
-        <p style="font-size: 12px; color: #999; margin: 8px 0 0;">Show this at entry — don't share it with anyone else.</p>
-      </div>
-      `;
-    });
 
     let htmlBody = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #111;">
@@ -105,8 +94,6 @@ serve(async (req) => {
         <tr><td style="padding: 10px 0; border-bottom: 1px solid #eee; color: #666;">Amount paid</td><td style="padding: 10px 0; border-bottom: 1px solid #eee; text-align: right;">${amountPaid}</td></tr>
         <tr><td style="padding: 10px 0; color: #666;">Order ref</td><td style="padding: 10px 0; text-align: right; font-family: monospace;">${orderRef}</td></tr>
       </table>
-
-      ${qrBlocksHtml}
 
       <a href="${downloadUrl}" style="display: block; text-align: center; background: #FF5A1F; color: #fff; text-decoration: none; padding: 14px; border-radius: 6px; font-weight: 600; font-size: 14px; margin-bottom: 12px; box-shadow: 0 4px 6px rgba(255, 90, 31, 0.2);">Download all tickets</a>
       <a href="${ticketUrl}" style="display: block; text-align: center; background: #111; color: #fff; text-decoration: none; padding: 14px; border-radius: 6px; font-weight: 600; font-size: 14px;">View tickets online</a>
