@@ -77,7 +77,7 @@ async function fetchOrderTickets(orderId: string, guestEmail?: string, guestAcce
   return { order, tickets: tickets || [], isGuest: false };
 }
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 function OrderTicketsPage() {
   const { orderId } = Route.useParams();
@@ -104,7 +104,7 @@ function OrderTicketsPage() {
     if (!editingTicket) return;
     setIsUpdating(true);
     try {
-      const { error } = await supabase.rpc("update_ticket_attendee", {
+      const { error } = await supabase.rpc("update_ticket_attendee" as any, {
         p_ticket_id: editingTicket.id,
         p_attendee_name: editName,
         p_attendee_email: editEmail,
