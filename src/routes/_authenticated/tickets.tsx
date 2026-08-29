@@ -329,7 +329,7 @@ function TicketsPage() {
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             <Tabs defaultValue={live.length > 0 ? "live" : upcoming.length > 0 ? "upcoming" : "past"} className="w-full mt-2">
-              <TabsList className="mb-10 inline-flex h-14 items-center justify-center rounded-full bg-secondary/50 p-1.5 text-muted-foreground border border-border/40 shadow-inner overflow-x-auto max-w-full no-scrollbar">
+              <TabsList className="mb-10 inline-flex h-14 items-center justify-center rounded-full bg-secondary/50 p-1.5 text-muted-foreground border border-border/40 shadow-inner overflow-x-auto overflow-y-hidden max-w-full no-scrollbar">
                 <TabsTrigger value="upcoming" className="rounded-full px-6 py-2.5 text-base font-semibold data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md transition-all">
                   Upcoming ({upcoming.length})
                 </TabsTrigger>
