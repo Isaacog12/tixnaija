@@ -25,7 +25,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/inbox'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
 import { Route as CareersApplyRouteImport } from './routes/careers_.apply'
 import { Route as CheckoutVerifyRouteImport } from './routes/checkout.verify'
@@ -118,11 +118,12 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedInboxRoute = AuthenticatedInboxRouteImport.update({
-  id: '/inbox',
-  path: '/inbox',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedTicketsRoute = AuthenticatedTicketsRouteImport.update({
   id: '/tickets',
   path: '/tickets',
@@ -205,7 +206,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/inbox': typeof AuthenticatedInboxRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/tickets': typeof AuthenticatedTicketsRoute
   '/careers/apply': typeof CareersApplyRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
@@ -235,7 +236,7 @@ export interface FileRoutesByTo {
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/inbox': typeof AuthenticatedInboxRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/tickets': typeof AuthenticatedTicketsRoute
   '/careers/apply': typeof CareersApplyRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
@@ -267,7 +268,7 @@ export interface FileRoutesById {
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/inbox': typeof AuthenticatedInboxRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/tickets': typeof AuthenticatedTicketsRoute
   '/careers_/apply': typeof CareersApplyRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
@@ -299,7 +300,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/dashboard'
-    | '/inbox'
+    | '/notifications'
     | '/tickets'
     | '/careers/apply'
     | '/checkout/verify'
@@ -329,7 +330,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/dashboard'
-    | '/inbox'
+    | '/notifications'
     | '/tickets'
     | '/careers/apply'
     | '/checkout/verify'
@@ -360,7 +361,7 @@ export interface FileRouteTypes {
     | '/_authenticated/account'
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
-    | '/_authenticated/inbox'
+    | '/_authenticated/notifications'
     | '/_authenticated/tickets'
     | '/careers_/apply'
     | '/checkout/verify'
@@ -510,11 +511,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/inbox': {
-      id: '/_authenticated/inbox'
-      path: '/inbox'
-      fullPath: '/inbox'
-      preLoaderRoute: typeof AuthenticatedInboxRouteImport
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/tickets': {
@@ -608,7 +609,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRoute
   AuthenticatedAdminBannersRoute: typeof AuthenticatedAdminBannersRoute
   AuthenticatedAdminJobApplicationsRoute: typeof AuthenticatedAdminJobApplicationsRoute
@@ -622,7 +623,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedInboxRoute: AuthenticatedInboxRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedTicketsRoute: AuthenticatedTicketsRoute,
   AuthenticatedAdminBannersRoute: AuthenticatedAdminBannersRoute,
   AuthenticatedAdminJobApplicationsRoute:
