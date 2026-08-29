@@ -12,9 +12,10 @@ import { formatNaira } from "@/lib/currency";
 // guests can reach it from /my-tickets with ?email=... query param.
 export const Route = createFileRoute("/orders/$orderId/tickets")({
   component: OrderTicketsPage,
-  validateSearch: (search: Record<string, unknown>): { email?: string; accessCode?: string } => ({
+  validateSearch: (search: Record<string, unknown>): { email?: string; accessCode?: string; download?: boolean } => ({
     email: typeof search.email === "string" ? search.email : undefined,
     accessCode: typeof search.accessCode === "string" ? search.accessCode : undefined,
+    download: search.download === "true" || search.download === true,
   }),
 });
 
@@ -32,9 +33,6 @@ async function fetchOrderTickets(orderId: string, guestEmail?: string, guestAcce
     }
     
     return { order: data.order, tickets: data.tickets || [], isGuest: true };
-  } else if (guestEmail) {
-    // Missing access code
-    throw notFound();
   }
 
   // Fetch order and event for logged-in users via RLS
@@ -46,6 +44,14 @@ async function fetchOrderTickets(orderId: string, guestEmail?: string, guestAcce
   const { data: order, error: orderErr } = await query.single();
 
   if (orderErr || !order) {
+    // Check if the user is even logged in
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      // If not logged in and RLS failed, they need to log in to see their tickets!
+      window.location.href = `/auth?mode=login&returnTo=/orders/${orderId}/tickets`;
+      // Pause execution while redirect happens
+      await new Promise(() => {});
+    }
     throw notFound();
   }
 
@@ -67,14 +73,26 @@ async function fetchOrderTickets(orderId: string, guestEmail?: string, guestAcce
   return { order, tickets: tickets || [], isGuest: false };
 }
 
+import { useEffect } from "react";
+
 function OrderTicketsPage() {
   const { orderId } = Route.useParams();
-  const { email: guestEmail, accessCode: guestAccessCode } = useSearch({ from: "/orders/$orderId/tickets" });
+  const { email: guestEmail, accessCode: guestAccessCode, download } = useSearch({ from: "/orders/$orderId/tickets" });
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["order-tickets", orderId, guestEmail, guestAccessCode],
     queryFn: () => fetchOrderTickets(orderId, guestEmail, guestAccessCode),
   });
+
+  useEffect(() => {
+    if (download && data && !isLoading && !isError) {
+      // Small delay to ensure images (like QR codes) are rendered
+      const timer = setTimeout(() => {
+        window.print();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [download, data, isLoading, isError]);
 
   return (
     <div className="min-h-screen bg-background">
