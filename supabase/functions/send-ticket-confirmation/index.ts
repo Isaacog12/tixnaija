@@ -1,4 +1,6 @@
+// @ts-ignore
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// @ts-ignore
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { sendEmail } from "../_shared/zeptomail.ts";
 
@@ -8,7 +10,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -17,7 +19,9 @@ serve(async (req) => {
     const { orderId } = await req.json();
     if (!orderId) throw new Error("Missing orderId");
 
+    // @ts-ignore
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    // @ts-ignore
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const supabase = createClient(supabaseUrl, supabaseKey);
 
