@@ -52,28 +52,44 @@ serve(async (req) => {
       ? `You received a gift for ${eventTitle} 🎁`
       : `Your tickets for ${eventTitle} are ready 🎟️`;
 
+    const ticketUrl = `https://tixnaija.name.ng/orders/${order.id}/tickets?email=${encodeURIComponent(recipientEmail)}&accessCode=${order.access_code || ''}`;
+
     let htmlBody = `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2>${subject}</h2>
-        <p>Hi ${recipientName},</p>
+      <div style="font-family: 'Inter', Helvetica, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 20px; background-color: #fcfcfc; color: #1a1a1a;">
+        <div style="text-align: center; margin-bottom: 32px;">
+          <h1 style="margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.02em;">TIX<span style="color: #FF5A1F; font-weight: 300;">NAIJA</span></h1>
+        </div>
+        
+        <div style="background: #fff; border: 1px solid #eaeaea; border-radius: 24px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.04);">
+          <h2 style="margin-top: 0; font-size: 22px; color: #111;">${subject}</h2>
+          <p style="font-size: 16px; line-height: 1.5; color: #444;">Hi ${recipientName},</p>
     `;
 
     if (isGift) {
-      htmlBody += `<p>You received a gift from ${order.buyer_name}!</p>`;
+      htmlBody += `<p style="font-size: 16px; line-height: 1.5; color: #444;">You received a gift from <strong>${order.buyer_name}</strong>!</p>`;
       if (order.gift_message) {
-        htmlBody += `<blockquote style="border-left: 4px solid #eee; padding-left: 10px; color: #555;">"${order.gift_message}"</blockquote>`;
+        htmlBody += `<blockquote style="border-left: 4px solid #FF5A1F; margin: 20px 0; padding-left: 16px; font-style: italic; color: #666;">"${order.gift_message}"</blockquote>`;
       }
     } else {
-      htmlBody += `<p>Thank you for your purchase. Your tickets are ready!</p>`;
+      htmlBody += `<p style="font-size: 16px; line-height: 1.5; color: #444;">Thank you for your purchase! Your tickets for <strong>${eventTitle}</strong> are ready.</p>`;
     }
 
     htmlBody += `
-        <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
-          <strong>Date:</strong> ${date}<br>
-          <strong>Location:</strong> ${order.events?.venue_name || 'Online'}<br>
+          <div style="background: #f8f9fa; border: 1px solid #eee; padding: 20px; border-radius: 12px; margin: 24px 0;">
+            <p style="margin: 0 0 8px 0; font-size: 15px;"><strong style="color: #666; display: inline-block; width: 80px;">Date:</strong> ${date}</p>
+            <p style="margin: 0; font-size: 15px;"><strong style="color: #666; display: inline-block; width: 80px;">Location:</strong> ${order.events?.venue_name || 'Online'}</p>
+          </div>
+          
+          <p style="font-size: 16px; line-height: 1.5; color: #444; margin-bottom: 24px;">Click the button below to view, download, or scan your tickets at the door.</p>
+          
+          <div style="text-align: center;">
+            <a href="${ticketUrl}" style="display: inline-block; background: linear-gradient(135deg, #FF5A1F 0%, #FF2A5F 100%); color: #fff; text-decoration: none; padding: 14px 32px; border-radius: 50px; font-weight: 700; font-size: 16px; box-shadow: 0 8px 16px rgba(255,90,31,0.25);">View Tickets</a>
+          </div>
         </div>
-        <p>Click the link below to view and download your tickets:</p>
-        <a href="https://tixnaija.name.ng/orders" style="display: inline-block; background: #000; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold;">View Tickets</a>
+        
+        <p style="text-align: center; font-size: 13px; color: #999; margin-top: 32px;">
+          © ${new Date().getFullYear()} TixNaija. All rights reserved.
+        </p>
       </div>
     `;
 

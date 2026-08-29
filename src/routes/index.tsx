@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Calendar, MapPin, ChevronRight, ArrowRight, Sparkles } from "lucide-react";
+import { Search, Calendar, MapPin, ChevronRight, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteNav } from "@/components/site-nav";
 import { Button } from "@/components/ui/button";
@@ -151,7 +151,6 @@ function LandingPage() {
             <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
               Naija's Premier Ticket Hub
             </span>
-            <Sparkles className="h-4 w-4 text-primary" />
           </motion.div>
           
           <motion.h1 variants={fadeUp} className="font-display text-6xl leading-[0.9] md:text-8xl lg:text-[7rem] tracking-tight mb-8">
