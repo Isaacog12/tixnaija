@@ -220,6 +220,20 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const errorMsg = event.reason?.message || event.reason?.toString() || "";
+      if (
+        errorMsg.includes("message channel closed") ||
+        errorMsg.includes("message port closed") ||
+        errorMsg.includes("message timeout") ||
+        errorMsg.includes("A listener indicated an asynchronous response")
+      ) {
+        console.warn("Suppressed Chrome extension message timeout error:", event.reason);
+        event.preventDefault();
+      }
+    };
+    window.addEventListener("unhandledrejection", handleUnhandledRejection);
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && session) {
         const { error } = await supabase.rpc("claim_guest_messages" as any);
@@ -231,6 +245,7 @@ function RootComponent() {
 
     return () => {
       subscription.unsubscribe();
+      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
     };
   }, [router]);
 
