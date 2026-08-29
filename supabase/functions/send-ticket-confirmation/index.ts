@@ -44,13 +44,13 @@ serve(async (req) => {
 
     const eventTitle = order.events?.title || "Event";
     const date = new Date(order.events?.start_datetime || "").toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
-    
+
     // Check if it's a gift
     const isGift = order.is_gift;
     const recipientName = order.recipient_name || order.buyer_name;
     const recipientEmail = order.recipient_email || order.buyer_email;
 
-    const subject = isGift 
+    const subject = isGift
       ? `You received a gift for ${eventTitle} 🎁`
       : `Your tickets for ${eventTitle} are ready 🎟️`;
 
@@ -109,9 +109,9 @@ serve(async (req) => {
     });
 
     // 2. Send Individual Tickets to Attendees
-    const allTickets = order.order_items?.flatMap((item: any) => 
+    const allTickets = order.order_items?.flatMap((item: any) =>
       (item.tickets || []).map((t: any) => ({
-        ...t, 
+        ...t,
         ticketTypeName: item.ticket_types?.name || 'General Admission'
       }))
     ) || [];
@@ -119,15 +119,15 @@ serve(async (req) => {
     const attendeeGroups = new Map<string, any[]>();
     for (const t of allTickets) {
       if (t.attendee_email && t.attendee_email !== recipientEmail) {
-         if (!attendeeGroups.has(t.attendee_email)) attendeeGroups.set(t.attendee_email, []);
-         attendeeGroups.get(t.attendee_email)!.push(t);
+        if (!attendeeGroups.has(t.attendee_email)) attendeeGroups.set(t.attendee_email, []);
+        attendeeGroups.get(t.attendee_email)!.push(t);
       }
     }
 
     for (const [email, tickets] of attendeeGroups.entries()) {
       const attendeeName = tickets[0].attendee_name || 'Attendee';
       const attSubject = `Your ticket for ${eventTitle} 🎟️`;
-      
+
       let attHtmlBody = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #111;">
         <div style="border-bottom: 2px solid #FF5A1F; padding-bottom: 16px; margin-bottom: 24px; text-align: center;">
@@ -157,7 +157,7 @@ serve(async (req) => {
       }
 
       attHtmlBody += `
-        <p style="margin-top: 32px; font-size: 12px; color: #999;">TixNaija — questions? Reply to this email.</p>
+        <p style="margin-top: 32px; font-size: 12px; color: #999;">TixNaija — questions? Contact us at [EMAIL_ADDRESS] or visit our support page.</p>
       </div>
       `;
 

@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { LogOut, LayoutDashboard, User as UserIcon, Mail, Ticket as TicketIcon, Menu, Sparkles } from "lucide-react";
+import { LogOut, LayoutDashboard, User as UserIcon, Mail, Ticket as TicketIcon, Menu } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -161,7 +161,7 @@ export function SiteNav() {
               </Button>
               <Button asChild className="rounded-full gradient-sunset text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all font-semibold px-7 h-11">
                 <Link to="/auth" search={{ mode: "signup" }}>
-                  <Sparkles className="mr-2 h-4 w-4" /> Get started
+                  Get started
                 </Link>
               </Button>
             </div>
