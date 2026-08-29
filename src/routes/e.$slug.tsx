@@ -194,6 +194,7 @@ function EventDetailPage() {
 
   // attendee names keyed by ticketTypeId -> array of names (one per ticket in that tier)
   const [attendeeNames, setAttendeeNames] = useState<Record<string, string[]>>({});
+  const [attendeeEmails, setAttendeeEmails] = useState<Record<string, string[]>>({});
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -269,10 +270,24 @@ function EventDetailPage() {
       while (next.length < clamped) next.push("");
       return { ...prev, [t.id]: next };
     });
+    setAttendeeEmails((prev) => {
+      const existing = prev[t.id] ?? [];
+      const next = existing.slice(0, clamped);
+      while (next.length < clamped) next.push("");
+      return { ...prev, [t.id]: next };
+    });
   }
 
   function setAttendeeName(ticketTypeId: string, index: number, value: string) {
     setAttendeeNames((prev) => {
+      const arr = [...(prev[ticketTypeId] ?? [])];
+      arr[index] = value;
+      return { ...prev, [ticketTypeId]: arr };
+    });
+  }
+
+  function setAttendeeEmail(ticketTypeId: string, index: number, value: string) {
+    setAttendeeEmails((prev) => {
       const arr = [...(prev[ticketTypeId] ?? [])];
       arr[index] = value;
       return { ...prev, [ticketTypeId]: arr };
@@ -301,6 +316,7 @@ function EventDetailPage() {
         ticketTypeId: i.type.id,
         count: i.count,
         attendee_names: (attendeeNames[i.type.id] ?? []).slice(0, i.count),
+        attendee_emails: (attendeeEmails[i.type.id] ?? []).slice(0, i.count).map(email => email || buyerEmail),
       }));
 
       if (!userId && (!accessCode || accessCode.trim().length < 4)) {
@@ -331,6 +347,15 @@ function EventDetailPage() {
 
         if (checkoutError) {
           throw new Error(`Database error: ${checkoutError.message}`);
+        }
+
+        // Trigger free ticket email confirmation
+        try {
+          await supabase.functions.invoke("send-ticket-confirmation", {
+            body: { orderId },
+          });
+        } catch (emailErr) {
+          console.error("Failed to send free ticket email", emailErr);
         }
 
         if (!userId) {
@@ -530,25 +555,37 @@ function EventDetailPage() {
             </div>
 
             {totalCount > 1 && (
-              <div className="space-y-3 border-t border-border pt-4">
+              <div className="space-y-4 border-t border-border pt-4">
                 <div>
-                  <p className="text-sm font-semibold">Attendee names</p>
+                  <p className="text-sm font-semibold">Ticket Assignments</p>
                   <p className="text-xs text-muted-foreground">
-                    Add a name for each ticket (optional — blanks use your name).
+                    Since you're buying {totalCount} tickets, please assign them to the attendees. Each person will receive their own ticket via email.
                   </p>
                 </div>
                 {items.map((it) => (
-                  <div key={it.type.id} className="space-y-2">
-                    <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                  <div key={it.type.id} className="space-y-3">
+                    <p className="text-xs uppercase tracking-widest text-muted-foreground border-b border-border/50 pb-1">
                       {it.type.name}
                     </p>
                     {Array.from({ length: it.count }).map((_, idx) => (
-                      <Input
-                        key={idx}
-                        value={attendeeNames[it.type.id]?.[idx] ?? ""}
-                        onChange={(e) => setAttendeeName(it.type.id, idx, e.target.value)}
-                        placeholder={`Attendee ${idx + 1} full name`}
-                      />
+                      <div key={idx} className="flex flex-col gap-2 rounded-lg bg-secondary/20 p-3">
+                        <p className="text-xs font-medium text-foreground/80">Ticket {idx + 1}</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          <Input
+                            value={attendeeNames[it.type.id]?.[idx] ?? ""}
+                            onChange={(e) => setAttendeeName(it.type.id, idx, e.target.value)}
+                            placeholder="Attendee Name"
+                            required
+                          />
+                          <Input
+                            type="email"
+                            value={attendeeEmails[it.type.id]?.[idx] ?? ""}
+                            onChange={(e) => setAttendeeEmail(it.type.id, idx, e.target.value)}
+                            placeholder="Attendee Email"
+                            required
+                          />
+                        </div>
+                      </div>
                     ))}
                   </div>
                 ))}

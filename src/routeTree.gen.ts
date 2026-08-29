@@ -30,6 +30,7 @@ import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticate
 import { Route as CareersApplyRouteImport } from './routes/careers_.apply'
 import { Route as CheckoutVerifyRouteImport } from './routes/checkout.verify'
 import { Route as ESlugRouteImport } from './routes/e.$slug'
+import { Route as TTicketCodeRouteImport } from './routes/t.$ticketCode'
 import { Route as AuthenticatedAdminBannersRouteImport } from './routes/_authenticated/admin_.banners'
 import { Route as AuthenticatedAdminJobApplicationsRouteImport } from './routes/_authenticated/admin_.job-applications'
 import { Route as AuthenticatedAdminOrganizerApplicationsRouteImport } from './routes/_authenticated/admin_.organizer-applications'
@@ -142,6 +143,11 @@ const ESlugRoute = ESlugRouteImport.update({
   path: '/e/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TTicketCodeRoute = TTicketCodeRouteImport.update({
+  id: '/t/$ticketCode',
+  path: '/t/$ticketCode',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminBannersRoute =
   AuthenticatedAdminBannersRouteImport.update({
     id: '/admin_/banners',
@@ -204,6 +210,7 @@ export interface FileRoutesByFullPath {
   '/careers/apply': typeof CareersApplyRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
   '/e/$slug': typeof ESlugRoute
+  '/t/$ticketCode': typeof TTicketCodeRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/admin/job-applications': typeof AuthenticatedAdminJobApplicationsRoute
   '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
@@ -233,6 +240,7 @@ export interface FileRoutesByTo {
   '/careers/apply': typeof CareersApplyRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
   '/e/$slug': typeof ESlugRoute
+  '/t/$ticketCode': typeof TTicketCodeRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/admin/job-applications': typeof AuthenticatedAdminJobApplicationsRoute
   '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
@@ -264,6 +272,7 @@ export interface FileRoutesById {
   '/careers_/apply': typeof CareersApplyRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
   '/e/$slug': typeof ESlugRoute
+  '/t/$ticketCode': typeof TTicketCodeRoute
   '/_authenticated/admin_/banners': typeof AuthenticatedAdminBannersRoute
   '/_authenticated/admin_/job-applications': typeof AuthenticatedAdminJobApplicationsRoute
   '/_authenticated/admin_/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
@@ -295,6 +304,7 @@ export interface FileRouteTypes {
     | '/careers/apply'
     | '/checkout/verify'
     | '/e/$slug'
+    | '/t/$ticketCode'
     | '/admin/banners'
     | '/admin/job-applications'
     | '/admin/organizer-applications'
@@ -324,6 +334,7 @@ export interface FileRouteTypes {
     | '/careers/apply'
     | '/checkout/verify'
     | '/e/$slug'
+    | '/t/$ticketCode'
     | '/admin/banners'
     | '/admin/job-applications'
     | '/admin/organizer-applications'
@@ -354,6 +365,7 @@ export interface FileRouteTypes {
     | '/careers_/apply'
     | '/checkout/verify'
     | '/e/$slug'
+    | '/t/$ticketCode'
     | '/_authenticated/admin_/banners'
     | '/_authenticated/admin_/job-applications'
     | '/_authenticated/admin_/organizer-applications'
@@ -380,6 +392,7 @@ export interface RootRouteChildren {
   CareersApplyRoute: typeof CareersApplyRoute
   CheckoutVerifyRoute: typeof CheckoutVerifyRoute
   ESlugRoute: typeof ESlugRoute
+  TTicketCodeRoute: typeof TTicketCodeRoute
   OrdersOrderIdTicketsRoute: typeof OrdersOrderIdTicketsRoute
 }
 
@@ -532,6 +545,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ESlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/t/$ticketCode': {
+      id: '/t/$ticketCode'
+      path: '/t/$ticketCode'
+      fullPath: '/t/$ticketCode'
+      preLoaderRoute: typeof TTicketCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin_/banners': {
       id: '/_authenticated/admin_/banners'
       path: '/admin/banners'
@@ -634,6 +654,7 @@ const rootRouteChildren: RootRouteChildren = {
   CareersApplyRoute: CareersApplyRoute,
   CheckoutVerifyRoute: CheckoutVerifyRoute,
   ESlugRoute: ESlugRoute,
+  TTicketCodeRoute: TTicketCodeRoute,
   OrdersOrderIdTicketsRoute: OrdersOrderIdTicketsRoute,
 }
 export const routeTree = rootRouteImport

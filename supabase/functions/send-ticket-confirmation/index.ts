@@ -34,7 +34,7 @@ serve(async (req) => {
         order_items (
           quantity,
           ticket_types ( name ),
-          tickets ( ticket_code )
+          tickets ( id, ticket_code, attendee_name, attendee_email )
         )
       `)
       .eq("id", orderId)
@@ -63,9 +63,8 @@ serve(async (req) => {
     const venue = [order.events?.venue_name, order.events?.address].filter(Boolean).join(', ') || 'Online';
     const orderRef = order.id.split('-')[0].toUpperCase();
 
-    const allTickets = order.order_items?.flatMap((item: any) => item.tickets || []) || [];
-
-    let htmlBody = `
+    // 1. Send Master Receipt to Buyer
+    let masterHtmlBody = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #111;">
       <div style="border-bottom: 2px solid #FF5A1F; padding-bottom: 16px; margin-bottom: 24px; text-align: center;">
         <img src="https://tixnaija.name.ng/logo.png" alt="TixNaija" style="height: 40px; margin-bottom: 12px; display: inline-block;" />
@@ -76,7 +75,7 @@ serve(async (req) => {
     `;
 
     if (isGift) {
-      htmlBody += `
+      masterHtmlBody += `
         <div style="background: #FFF5F2; border-left: 4px solid #FF5A1F; padding: 12px 16px; margin-bottom: 24px; border-radius: 4px;">
           <p style="margin: 0; font-size: 14px; color: #444;">This is a gift from <strong>${order.buyer_name}</strong>!</p>
           ${order.gift_message ? `<p style="margin: 8px 0 0; font-style: italic; color: #666;">"${order.gift_message}"</p>` : ''}
@@ -84,7 +83,7 @@ serve(async (req) => {
       `;
     }
 
-    htmlBody += `
+    masterHtmlBody += `
       <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 24px;">
         <tr><td style="padding: 10px 0; border-bottom: 1px solid #eee; color: #666;">Event</td><td style="padding: 10px 0; border-bottom: 1px solid #eee; text-align: right; font-weight: 600;">${eventTitle}</td></tr>
         <tr><td style="padding: 10px 0; border-bottom: 1px solid #eee; color: #666;">Date & time</td><td style="padding: 10px 0; border-bottom: 1px solid #eee; text-align: right;">${date}</td></tr>
@@ -102,11 +101,72 @@ serve(async (req) => {
     </div>
     `;
 
+    // Send the master receipt
     await sendEmail({
       to: { address: recipientEmail, name: recipientName },
       subject,
-      htmlBody,
+      htmlBody: masterHtmlBody,
     });
+
+    // 2. Send Individual Tickets to Attendees
+    const allTickets = order.order_items?.flatMap((item: any) => 
+      (item.tickets || []).map((t: any) => ({
+        ...t, 
+        ticketTypeName: item.ticket_types?.name || 'General Admission'
+      }))
+    ) || [];
+
+    const attendeeGroups = new Map<string, any[]>();
+    for (const t of allTickets) {
+      if (t.attendee_email && t.attendee_email !== recipientEmail) {
+         if (!attendeeGroups.has(t.attendee_email)) attendeeGroups.set(t.attendee_email, []);
+         attendeeGroups.get(t.attendee_email)!.push(t);
+      }
+    }
+
+    for (const [email, tickets] of attendeeGroups.entries()) {
+      const attendeeName = tickets[0].attendee_name || 'Attendee';
+      const attSubject = `Your ticket for ${eventTitle} 🎟️`;
+      
+      let attHtmlBody = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #111;">
+        <div style="border-bottom: 2px solid #FF5A1F; padding-bottom: 16px; margin-bottom: 24px; text-align: center;">
+          <img src="https://tixnaija.name.ng/logo.png" alt="TixNaija" style="height: 40px; margin-bottom: 12px; display: inline-block;" />
+        </div>
+        
+        <h1 style="font-size: 20px; margin: 0 0 8px;">You've been sent a ticket!</h1>
+        <p style="margin: 0 0 24px; color: #444;">Hi ${attendeeName}, <strong>${order.buyer_name}</strong> sent you a ticket for <strong>${eventTitle}</strong>.</p>
+        
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 24px;">
+          <tr><td style="padding: 10px 0; border-bottom: 1px solid #eee; color: #666;">Date & time</td><td style="padding: 10px 0; border-bottom: 1px solid #eee; text-align: right;">${date}</td></tr>
+          <tr><td style="padding: 10px 0; border-bottom: 1px solid #eee; color: #666;">Venue</td><td style="padding: 10px 0; border-bottom: 1px solid #eee; text-align: right;">${venue}</td></tr>
+        </table>
+        
+        <p style="margin: 0 0 16px; font-weight: 600; text-align: center;">Your Tickets:</p>
+      `;
+
+      for (const t of tickets) {
+        const singleUrl = `https://tixnaija.name.ng/t/${t.ticket_code}`;
+        attHtmlBody += `
+          <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 16px; text-align: center;">
+            <p style="margin: 0 0 4px; font-weight: 600;">${t.ticketTypeName}</p>
+            <p style="margin: 0 0 16px; font-size: 12px; color: #64748b;">Ticket code: ${t.ticket_code.split('-')[0].toUpperCase()}</p>
+            <a href="${singleUrl}" style="display: inline-block; background: #FF5A1F; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; font-size: 14px; box-shadow: 0 2px 4px rgba(255, 90, 31, 0.2);">View / Download Ticket</a>
+          </div>
+        `;
+      }
+
+      attHtmlBody += `
+        <p style="margin-top: 32px; font-size: 12px; color: #999;">TixNaija — questions? Reply to this email.</p>
+      </div>
+      `;
+
+      await sendEmail({
+        to: { address: email, name: attendeeName },
+        subject: attSubject,
+        htmlBody: attHtmlBody,
+      });
+    }
 
     return new Response(JSON.stringify({ success: true }), { headers: corsHeaders, status: 200 });
   } catch (error: any) {

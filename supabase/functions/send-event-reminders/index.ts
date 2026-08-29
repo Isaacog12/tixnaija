@@ -26,10 +26,16 @@ serve(async (req) => {
 
     let count = 0;
     for (const event of events) {
-      // Find paid orders for this event
       const { data: orders } = await supabase
         .from("orders")
-        .select("buyer_name, buyer_email, recipient_name, recipient_email, is_gift")
+        .select(`
+          order_items (
+            tickets (
+              attendee_name,
+              attendee_email
+            )
+          )
+        `)
         .eq("event_id", event.id)
         .eq("status", "paid");
 
@@ -38,34 +44,37 @@ serve(async (req) => {
       const dateStr = new Date(event.start_datetime).toLocaleDateString();
       const subject = `Reminder: ${event.title} is happening tomorrow!`;
 
-      // Unique emails to avoid spamming someone multiple times for the same event
       const sentEmails = new Set();
 
       for (const order of orders) {
-        const email = order.is_gift ? (order.recipient_email || order.buyer_email) : order.buyer_email;
-        const name = order.is_gift ? (order.recipient_name || order.buyer_name) : order.buyer_name;
+        const tickets = order.order_items?.flatMap((item: any) => item.tickets || []) || [];
+        
+        for (const ticket of tickets) {
+          const email = ticket.attendee_email;
+          const name = ticket.attendee_name || 'Attendee';
 
-        if (!email || sentEmails.has(email)) continue;
-        sentEmails.add(email);
+          if (!email || sentEmails.has(email)) continue;
+          sentEmails.add(email);
 
-        const htmlBody = `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2>Your event is tomorrow!</h2>
-            <p>Hi ${name},</p>
-            <p>This is a quick reminder that <strong>${event.title}</strong> is happening tomorrow.</p>
-            <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <strong>Date:</strong> ${dateStr}<br>
-              <strong>Location:</strong> ${event.venue_name || 'Online'}<br>
+          const htmlBody = `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2>Your event is tomorrow!</h2>
+              <p>Hi ${name},</p>
+              <p>This is a quick reminder that <strong>${event.title}</strong> is happening tomorrow.</p>
+              <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <strong>Date:</strong> ${dateStr}<br>
+                <strong>Location:</strong> ${event.venue_name || 'Online'}<br>
+              </div>
+              <p>Don't forget to have your tickets ready!</p>
             </div>
-            <p>Don't forget to have your tickets ready!</p>
-          </div>
-        `;
+          `;
 
-        try {
-          await sendEmail({ to: { address: email, name }, subject, htmlBody });
-          count++;
-        } catch (err) {
-          console.error("Failed to send reminder to", email, err);
+          try {
+            await sendEmail({ to: { address: email, name }, subject, htmlBody });
+            count++;
+          } catch (err) {
+            console.error("Failed to send reminder to", email, err);
+          }
         }
       }
     }
