@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteNav } from "@/components/site-nav";
-import { BackButton } from "@/components/back-button";
 import { useState } from "react";
 import { ChevronDown, LifeBuoy, Ticket, CreditCard, Calendar, MessageCircle, AlertCircle } from "lucide-react";
 
@@ -205,9 +204,6 @@ function FAQPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteNav />
-      <div className="mx-auto max-w-7xl px-4 pt-6 w-full relative z-20">
-        <BackButton />
-      </div>
 
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-border/50 bg-card/20 py-16 md:py-24">

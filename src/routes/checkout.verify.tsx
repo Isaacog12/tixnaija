@@ -4,7 +4,6 @@ import { Loader2, CheckCircle, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { SiteNav } from "@/components/site-nav";
-import { BackButton } from "@/components/back-button";
 
 export const Route = createFileRoute("/checkout/verify")({
   component: VerifyCheckoutPage,
@@ -58,9 +57,6 @@ function VerifyCheckoutPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteNav />
-      <div className="mx-auto max-w-7xl px-4 pt-6 w-full relative z-20">
-        <BackButton />
-      </div>
       <div className="mx-auto flex max-w-md flex-col items-center justify-center px-4 py-32 text-center">
         {status === "verifying" && (
           <>

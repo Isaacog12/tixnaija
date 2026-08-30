@@ -17,7 +17,6 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { BackButton } from "@/components/back-button";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -176,10 +175,7 @@ function JobApplicationsPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
       <div className="mb-8">
-        <div className="flex items-center gap-4 mb-2">
-          <BackButton />
-          <h1 className="font-display text-4xl md:text-5xl">Job Applications</h1>
-        </div>
+        <h1 className="font-display text-4xl md:text-5xl">Job Applications</h1>
         <p className="mt-2 text-muted-foreground">
           Review applications from candidates who've applied to join TixNaija.
         </p>

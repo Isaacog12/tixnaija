@@ -3,8 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo, useEffect } from "react";
 import { Calendar, MapPin, Loader2, Minus, Plus, Share2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { reportLovableError } from "@/lib/lovable-error-reporting";
-import { BackButton } from "@/components/back-button";
 import { formatNaira } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import {
@@ -702,10 +700,7 @@ function EventBody({
             <span className="text-xs font-semibold uppercase tracking-[0.35em] text-primary">
               {event.category}
             </span>
-            <div className="mt-2 flex items-center gap-4">
-              <BackButton />
-              <h1 className="font-display text-4xl leading-[0.95] md:text-6xl">{event.title}</h1>
-            </div>
+            <h1 className="mt-2 font-display text-4xl leading-[0.95] md:text-6xl">{event.title}</h1>
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-primary" />

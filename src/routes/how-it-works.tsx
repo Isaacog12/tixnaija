@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteNav } from "@/components/site-nav";
-import { BackButton } from "@/components/back-button";
 import {
   UserPlus, Search, CreditCard, QrCode, Ticket, LayoutDashboard,
   ClipboardList, ScanLine, BarChart3, MessageSquare, ShieldCheck,
@@ -129,9 +128,6 @@ function HowItWorksPage() {
   return (
     <div className="min-h-screen">
       <SiteNav />
-      <div className="mx-auto max-w-7xl px-4 pt-6 w-full relative z-20">
-        <BackButton />
-      </div>
 
       {/* ── Hero ── */}
       <div className="relative overflow-hidden border-b border-border/40 py-20 md:py-32">

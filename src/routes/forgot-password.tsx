@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { BackButton } from "@/components/back-button";
 import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/forgot-password")({
@@ -57,10 +56,7 @@ function ForgotPasswordPage() {
           <span className="font-display text-3xl font-light tracking-[0.02em] text-gradient-sunset">NAIJA</span>
         </Link>
         <div className="rounded-2xl border border-border bg-card/80 p-6 shadow-glow backdrop-blur">
-          <div className="flex items-center gap-4">
-            <BackButton />
-            <h1 className="font-display text-2xl">Forgot password?</h1>
-          </div>
+          <h1 className="font-display text-2xl">Forgot password?</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Enter your email and we'll send you a reset link.
           </p>

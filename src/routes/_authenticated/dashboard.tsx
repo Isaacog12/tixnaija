@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BackButton } from "@/components/back-button";
 import { formatNaira } from "@/lib/currency";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -94,12 +93,9 @@ function Dashboard() {
     <div className="mx-auto max-w-6xl px-4 py-12 md:py-20 min-h-screen">
       <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
         <div>
-          <div className="flex items-center gap-4 mb-2">
-            <BackButton />
-            <h1 className="font-display text-5xl md:text-6xl tracking-tight">
-              Hey <span className="text-primary">{data?.profile?.full_name?.split(" ")[0] || "there"}</span>.
-            </h1>
-          </div>
+          <h1 className="font-display text-5xl md:text-6xl tracking-tight mb-2">
+            Hey <span className="text-primary">{data?.profile?.full_name?.split(" ")[0] || "there"}</span>.
+          </h1>
           <p className="text-muted-foreground text-lg">
             {isOrganizer ? "Welcome back to your command center." : "Ready to discover your next experience?"}
           </p>

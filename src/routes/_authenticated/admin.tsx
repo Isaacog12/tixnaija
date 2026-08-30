@@ -28,7 +28,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { BackButton } from "@/components/back-button";
 import {
   useReactTable,
   getCoreRowModel,
@@ -410,10 +409,7 @@ function AdminDashboard() {
       </AlertDialog>
 
       <div className="mb-10">
-        <div className="flex items-center gap-4 mb-2">
-          <BackButton />
-          <h1 className="font-display text-4xl md:text-5xl tracking-tight">Admin Portal</h1>
-        </div>
+        <h1 className="font-display text-4xl md:text-5xl tracking-tight mb-2">Admin Portal</h1>
         <p className="text-muted-foreground text-lg">Platform overview and moderation.</p>
       </div>
 
