@@ -67,18 +67,7 @@ const VALUE_PROPS = [
   },
 ];
 
-const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
-};
 
-const staggerContainer: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 }
-  }
-};
 
 function LandingPage() {
   const navigate = useNavigate();
@@ -143,10 +132,7 @@ function LandingPage() {
       <section className="relative pt-16 pb-20 md:pt-28 md:pb-32">
         <div className="absolute inset-0 bg-grid-pattern opacity-[0.02] pointer-events-none" />
         
-        <div 
-          initial="hidden" animate="visible" 
-          className="mx-auto max-w-5xl px-4 text-center relative z-10"
-        >
+        <div className="mx-auto max-w-5xl px-4 text-center relative z-10">
           <div  className="inline-flex items-center gap-3 mb-8 bg-secondary/50 border border-border/50 backdrop-blur-md rounded-full px-5 py-2 shadow-sm">
             <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
               Naija's Premier Ticket Hub
@@ -201,11 +187,7 @@ function LandingPage() {
 
       {/* ── Value Props ── */}
       <section className="mx-auto max-w-7xl px-4 pb-24 md:pb-32">
-        <div 
-          initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}
-          
-          className="grid gap-6 md:grid-cols-3"
-        >
+        <div className="grid gap-6 md:grid-cols-3">
           {VALUE_PROPS.map(({ title, body }, i) => (
             <div 
               
@@ -227,10 +209,7 @@ function LandingPage() {
 
       {/* ── Organizer CTA ── */}
       <section className="mx-auto max-w-7xl px-4 pb-24 md:pb-32">
-        <div 
-          initial="hidden" whileInView="visible" viewport={{ once: true }} 
-          className="relative overflow-hidden rounded-[3rem] border border-primary/20 p-10 md:p-16 shadow-2xl"
-        >
+        <div className="relative overflow-hidden rounded-[3rem] border border-primary/20 p-10 md:p-16 shadow-2xl">
           <div className="absolute inset-0 gradient-sunset opacity-95" />
           <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none" />
           
@@ -264,10 +243,7 @@ function LandingPage() {
 
       {/* ── Upcoming Events ── */}
       <section className="mx-auto max-w-7xl px-4 pb-32">
-        <div 
-          initial="hidden" whileInView="visible" viewport={{ once: true }} 
-          className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-border/40 pb-6"
-        >
+        <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-border/40 pb-6">
           <div>
             <h2 className="font-display text-4xl md:text-5xl mb-2">Coming up next</h2>
             <p className="text-lg text-muted-foreground font-medium">
@@ -299,10 +275,7 @@ function LandingPage() {
         )}
 
         {upcoming.data && upcoming.data.length === 0 && (
-          <div 
-            initial="hidden" whileInView="visible" viewport={{ once: true }} 
-            className="grid gap-6 md:grid-cols-3"
-          >
+          <div className="grid gap-6 md:grid-cols-3">
             {[1, 2, 3].map((i) => (
               <div  key={i} className="rounded-[2.5rem] border border-dashed border-border/60 bg-card/30 p-10 flex flex-col items-center justify-center text-center">
                 <div className="font-display text-7xl text-muted-foreground/20 mb-6">
@@ -317,11 +290,7 @@ function LandingPage() {
         )}
 
         {upcoming.data && upcoming.data.length > 0 && (
-          <div 
-            initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }}
-            
-            className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3"
-          >
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {upcoming.data.map((ev) => {
               const isCancelled = ev.status === 'cancelled';
               return (
