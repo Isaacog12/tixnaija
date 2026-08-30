@@ -254,7 +254,9 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <GlobalLoader />
       <AppErrorBoundary>
-        <BackButton />
+        <div className="mx-auto max-w-7xl px-4 pt-6 pb-4 w-full relative z-20">
+          <BackButton />
+        </div>
         <Outlet />
       </AppErrorBoundary>
       <Toaster position="top-center" richColors />

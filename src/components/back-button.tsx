@@ -1,5 +1,4 @@
 import { useRouter, useLocation } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
 export function BackButton() {
@@ -12,16 +11,12 @@ export function BackButton() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-4 w-full">
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        onClick={() => router.history.back()}
-        className="text-muted-foreground hover:text-foreground -ml-2"
-      >
-        <ArrowLeft className="w-4 h-4 mr-2" />
-        Back
-      </Button>
-    </div>
+    <button 
+      onClick={() => router.history.back()}
+      aria-label="Go back"
+      className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/[0.06] border-[0.5px] border-white/[0.12] text-muted-foreground hover:text-foreground hover:bg-white/[0.1] transition-colors shadow-sm"
+    >
+      <ArrowLeft className="w-4 h-4" />
+    </button>
   );
 }
