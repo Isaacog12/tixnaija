@@ -186,8 +186,8 @@ function BrowsePage() {
 
           {/* Filters Row */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
-            {/* Categories */}
-            <div className="flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pb-2 sm:pb-0 w-full sm:w-auto">
+            {/* Categories - Desktop Pills */}
+            <div className="hidden md:flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pb-2 sm:pb-0 w-full sm:w-auto">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat}
@@ -201,6 +201,23 @@ function BrowsePage() {
                   {cat}
                 </button>
               ))}
+            </div>
+
+            {/* Categories - Mobile Dropdown */}
+            <div className="md:hidden relative group w-full sm:w-auto shrink-0 mb-3 sm:mb-0">
+              <select
+                value={activeCategory}
+                onChange={(e) => { setActiveCategory(e.target.value); updateSearch({ c: e.target.value }); }}
+                className="w-full appearance-none bg-card border border-border/60 rounded-full pl-9 pr-9 py-2 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 hover:border-primary/40 transition-colors cursor-pointer shadow-sm"
+              >
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat === "All" ? "All Categories" : cat}
+                  </option>
+                ))}
+              </select>
+              <Compass className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none group-hover:text-primary transition-colors" />
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
             </div>
 
             {/* Dropdown Filters & Layout */}
