@@ -14,7 +14,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { CookieBanner } from "@/components/cookie-banner";
 import { GlobalLoader } from "@/components/global-loader";
 import { supabase } from "@/integrations/supabase/client";
-import { BackButton } from "@/components/back-button";
 
 // ── Render-phase crash boundary ────────────────────────────────────────────────
 // Catches any JS error thrown during React render (e.g. a failed dynamic import
@@ -254,9 +253,6 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <GlobalLoader />
       <AppErrorBoundary>
-        <div className="mx-auto max-w-7xl px-4 pt-6 pb-4 w-full relative z-20">
-          <BackButton />
-        </div>
         <Outlet />
       </AppErrorBoundary>
       <Toaster position="top-center" richColors />

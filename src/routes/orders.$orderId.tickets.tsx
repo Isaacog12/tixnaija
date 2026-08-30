@@ -10,6 +10,8 @@ import { formatNaira } from "@/lib/currency";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { GlobalLoader } from "@/components/global-loader";
+import { BackButton } from "@/components/back-button";
 import { toast } from "sonner";
 
 // This route is intentionally NOT under _authenticated —
@@ -168,7 +170,10 @@ function OrderTicketsPage() {
                 </div>
                 <span className="text-sm font-medium text-green-600 dark:text-green-500">Order Confirmed</span>
               </div>
-              <h1 className="font-display text-4xl mb-1">Your Tickets</h1>
+              <div className="flex items-center gap-4 mb-1">
+                <BackButton />
+                <h1 className="font-display text-4xl">Your Tickets</h1>
+              </div>
               <p className="text-muted-foreground text-sm">
                 Have these ready to scan at the door, or download them for offline use.
               </p>

@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Search, Ticket, Calendar, MapPin, QrCode, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteNav } from "@/components/site-nav";
+import { BackButton } from "@/components/back-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -70,6 +71,9 @@ function GuestTicketsPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteNav />
+      <div className="mx-auto max-w-7xl px-4 pt-6 w-full relative z-20">
+        <BackButton />
+      </div>
 
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-border bg-card/30 py-14 md:py-20">

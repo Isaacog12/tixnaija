@@ -9,6 +9,8 @@ import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BackButton } from "@/components/back-button";
 
 const searchSchema = z.object({
   mode: z.enum(["signin", "signup"]).optional(),
@@ -61,9 +63,12 @@ function AuthPage() {
             <span className="font-display text-4xl leading-none font-light tracking-[0.02em] text-gradient-sunset">NAIJA</span>
           </Link>
           <div className="w-full max-w-sm">
-            <h1 className="text-2xl font-semibold tracking-tight mb-2">
-              {isSignUp ? "Create Account" : "Sign In"}
-            </h1>
+            <div className="flex items-center gap-4 mb-2">
+              <BackButton />
+              <h1 className="text-2xl font-semibold tracking-tight">
+                {isSignUp ? "Create Account" : "Sign In"}
+              </h1>
+            </div>
             <p className="text-sm text-muted-foreground mb-6">
               {isSignUp ? "Enter your details to get started." : "Welcome back! Please enter your details."}
             </p>

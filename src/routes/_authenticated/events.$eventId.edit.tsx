@@ -6,6 +6,8 @@ import { ArrowLeft, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { FormLabel, FormMessage } from "@/components/ui/form";
+import { BackButton } from "@/components/back-button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -160,10 +162,10 @@ function EditEventPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <Button asChild variant="ghost" size="sm" className="mb-4 -ml-2">
-        <a href="/dashboard"><ArrowLeft className="mr-1 h-4 w-4" /> Back</a>
-      </Button>
-      <h1 className="font-display text-4xl md:text-5xl">{data.event.title}</h1>
+      <div className="flex items-center gap-4 mb-2">
+        <BackButton />
+        <h1 className="font-display text-4xl md:text-5xl">{data.event.title}</h1>
+      </div>
       <p className="text-muted-foreground">Manage details, tickets, and status.</p>
 
       <form onSubmit={save} className="mt-8 space-y-6">

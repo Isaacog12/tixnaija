@@ -4,6 +4,7 @@ import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-q
 import { Ticket, Mail, Clock, CheckCircle, QrCode, Bell, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/back-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow, differenceInDays, format } from "date-fns";
 import { toast } from "sonner";
@@ -130,9 +131,12 @@ function NotificationsPage() {
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary mb-4 shadow-sm">
             <Bell className="h-3.5 w-3.5" /> Updates & Alerts
           </div>
-          <h1 className="font-display text-5xl md:text-6xl tracking-tight mb-2">
-            Your <span className="text-primary">Notifications</span>
-          </h1>
+          <div className="flex items-center gap-4 mb-2">
+            <BackButton />
+            <h1 className="font-display text-5xl md:text-6xl tracking-tight">
+              Your <span className="text-primary">Notifications</span>
+            </h1>
+          </div>
           <p className="text-muted-foreground text-lg max-w-md">Stay on top of your upcoming events, new tickets, and system announcements.</p>
         </div>
         

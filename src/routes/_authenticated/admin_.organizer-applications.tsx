@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { BackButton } from "@/components/back-button";
 import { toast } from "sonner";
 
 export const Route = createFileRoute(
@@ -158,9 +159,12 @@ function OrganizerApplicationsPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
       <div className="mb-8">
-        <h1 className="font-display text-4xl md:text-5xl">
-          Organizer Applications
-        </h1>
+        <div className="flex items-center gap-4 mb-2">
+          <BackButton />
+          <h1 className="font-display text-4xl md:text-5xl">
+            Organizer Applications
+          </h1>
+        </div>
         <p className="mt-2 text-muted-foreground">
           Review and action pending applications to become an organizer.
         </p>
