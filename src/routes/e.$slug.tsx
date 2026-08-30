@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo, useEffect } from "react";
 import { Calendar, MapPin, Loader2, Minus, Plus, Share2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { reportLovableError } from "@/lib/lovable-error-reporting";
+
 import { BackButton } from "@/components/back-button";
 import { formatNaira } from "@/lib/currency";
 import { Button } from "@/components/ui/button";

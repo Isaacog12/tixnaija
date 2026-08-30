@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { reportLovableError } from "@/lib/lovable-error-reporting";
+
 import { BackButton } from "@/components/back-button";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
