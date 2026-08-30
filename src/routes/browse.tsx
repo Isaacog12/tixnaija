@@ -35,7 +35,7 @@ async function fetchEvents(q: string, category: string) {
   let query = supabase
     .from("events")
     .select("id, title, slug, city, venue_name, start_datetime, end_datetime, cover_image_url, description, status, category")
-    .in("status", ["published", "cancelled"])
+    .in("status", ["published", "cancelled", "completed"])
     .order("start_datetime", { ascending: true })
     .limit(100);
 
@@ -264,9 +264,9 @@ function BrowsePage() {
               </span>
             )}
           </h2>
-          <Button variant="outline" size="sm" className="hidden sm:flex rounded-full gap-2 items-center bg-card shadow-sm border-border/50 hover:bg-secondary">
+          <Button variant="outline" size="sm" className="flex rounded-full gap-2 items-center bg-card shadow-sm border-border/50 hover:bg-secondary shrink-0">
             <SlidersHorizontal className="h-4 w-4" />
-            <span>Filter</span>
+            <span className="hidden sm:inline">Filter</span>
           </Button>
         </div>
 

@@ -114,7 +114,7 @@ function EventDetailPage() {
       const { data: evs } = await supabase
         .from("events")
         .select("id, title, slug, cover_image_url, start_datetime, city, venue_name, status")
-        .eq("status", "published")
+        .in("status", ["published", "cancelled", "completed"])
         .eq("category", data.event.category)
         .neq("id", data.event.id)
         .limit(4);
@@ -341,7 +341,7 @@ function EventDetailPage() {
       {data && data.event.status !== "cancelled" && (() => {
         const start = new Date(data.event.start_datetime);
         const end = data.event.end_datetime ? new Date(data.event.end_datetime) : start;
-        const isPastEvent = end < new Date();
+        const isPastEvent = end < new Date() || data.event.status === "completed";
         if (isPastEvent) return null;
         return (
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-background/95 backdrop-blur md:hidden">
@@ -643,7 +643,7 @@ function EventBody({
   const start = new Date(event.start_datetime);
   const end = event.end_datetime ? new Date(event.end_datetime) : new Date(start.getTime() + 24 * 60 * 60 * 1000);
   const now = new Date();
-  const isPastEvent = end < now;
+  const isPastEvent = end < now || event.status === "completed";
 
   return (
     <div className="mx-auto max-w-6xl px-4 pt-6 md:pt-10">
@@ -817,12 +817,12 @@ function EventBody({
               </span>
             </div>
             <Button
-              disabled={!totalCount}
+              disabled={!totalCount || isPastEvent || event.status === "cancelled"}
               onClick={onCheckout}
               className="mt-4 hidden w-full gradient-sunset text-primary-foreground shadow-glow hover:opacity-90 disabled:opacity-40 md:inline-flex"
               size="lg"
             >
-              Buy tickets
+              {isPastEvent ? "Event ended" : event.status === "cancelled" ? "Sales closed" : "Buy tickets"}
             </Button>
           </div>
         </aside>

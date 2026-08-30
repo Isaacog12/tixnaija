@@ -17,7 +17,7 @@ async function fetchUpcoming() {
   const { data, error } = await supabase
     .from("events")
     .select("id, title, slug, city, venue_name, start_datetime, end_datetime, cover_image_url, status")
-    .in("status", ["published", "cancelled"])
+    .in("status", ["published", "cancelled", "completed"])
     .gte("start_datetime", new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString())
     .order("start_datetime", { ascending: true })
     .limit(20);
