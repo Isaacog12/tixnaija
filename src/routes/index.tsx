@@ -50,7 +50,6 @@ async function fetchBanners() {
   });
 }
 
-const CATEGORIES = ["Concerts", "Comedy", "Conferences", "Church", "Campus", "Parties"];
 
 const VALUE_PROPS = [
   {
@@ -174,18 +173,7 @@ function LandingPage() {
             </Button>
           </form>
 
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-3 max-w-4xl mx-auto">
-            <span className="text-sm font-semibold text-muted-foreground mr-2 hidden sm:inline">Trending:</span>
-            {CATEGORIES.map((label) => (
-              <button
-                key={label}
-                onClick={() => navigate({ to: "/browse", search: { q: label } })}
-                className="rounded-full border border-white/5 bg-white/5 px-6 py-2.5 text-sm font-semibold transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/10 hover:text-primary hover:shadow-[0_10px_20px_-10px_var(--theme-primary)] backdrop-blur-sm"
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+
         </div>
       </section>
 
