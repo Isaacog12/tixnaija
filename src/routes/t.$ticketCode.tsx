@@ -14,20 +14,7 @@ export const Route = createFileRoute("/t/$ticketCode")({
 
 async function fetchSingleTicket(ticketCode: string) {
   const { data: ticket, error: ticketErr } = await supabase
-    .from("tickets")
-    .select(`
-      *,
-      order_items!inner(
-        order_id,
-        ticket_types(*),
-        orders!inner(
-          *,
-          events(*)
-        )
-      )
-    `)
-    .eq("ticket_code", ticketCode)
-    .maybeSingle();
+    .rpc("get_ticket_by_code", { p_ticket_code: ticketCode });
 
   if (ticketErr || !ticket) {
     throw notFound();

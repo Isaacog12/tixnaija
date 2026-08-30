@@ -1,11 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, Copy, MapPin, Plus, QrCode, Ticket, Zap, Users, BarChart2, Clock, XCircle, ArrowRight } from "lucide-react";
+import { CalendarDays, Copy, MapPin, Plus, QrCode, Ticket, Zap, Users, BarChart2, Clock, XCircle, ArrowRight, FileEdit } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BackButton } from "@/components/back-button";
 import { formatNaira } from "@/lib/currency";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -90,33 +89,30 @@ function Dashboard() {
   const isAdmin = data?.isAdmin ?? false;
   const latestApp = data?.latestApp ?? null;
 
+
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 md:py-20 min-h-screen">
-      <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
+    <div className="mx-auto max-w-6xl px-4 py-8 md:py-12 min-h-screen">
+      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-border pb-6">
         <div>
-          <div className="flex items-center gap-4 mb-2">
-            <BackButton />
-            <h1 className="font-display text-5xl md:text-6xl tracking-tight">
-              Hey <span className="text-primary">{data?.profile?.full_name?.split(" ")[0] || "there"}</span>.
-            </h1>
-          </div>
-          <p className="text-muted-foreground text-lg">
-            {isOrganizer ? "Welcome back to your command center." : "Ready to discover your next experience?"}
+          <h1 className="font-display text-4xl md:text-5xl tracking-tight mb-2">Dashboard</h1>
+          <p className="text-muted-foreground text-sm font-medium">
+            Welcome back, {data?.profile?.full_name || "User"}
           </p>
         </div>
-        <div className="grid w-full grid-cols-2 sm:flex sm:w-auto sm:flex-row sm:items-center gap-3 shrink-0">
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
           {isAdmin && (
             <>
-              <Button asChild variant="outline" className="w-full sm:w-auto border-primary/20 text-primary shadow-sm hover:bg-primary/5 h-12 sm:h-11">
+              <Button asChild variant="outline" className="h-9 px-4 rounded-md border-border text-foreground hover:bg-secondary">
                 <Link to="/admin">Admin Panel</Link>
               </Button>
-              <Button asChild variant="outline" className="w-full sm:w-auto border-amber-500/30 text-amber-500 hover:bg-amber-500/10 shadow-sm h-12 sm:h-11">
+              <Button asChild variant="outline" className="h-9 px-4 rounded-md border-border text-foreground hover:bg-secondary">
                 <Link to="/admin/organizer-applications">Review Apps</Link>
               </Button>
             </>
           )}
           {isOrganizer && (
-            <Button asChild className="w-full sm:w-auto shadow-sm h-12 sm:h-11 col-span-2 sm:col-span-1">
+            <Button asChild className="h-9 px-5 rounded-md bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary/90">
               <Link to="/events/new">
                 <Plus className="mr-2 h-4 w-4" /> New Event
               </Link>
@@ -125,10 +121,12 @@ function Dashboard() {
         </div>
       </div>
 
+
+
       {!isOrganizer && !isLoading && (
         <div className="space-y-12">
           {/* Hero CTA */}
-          <div className="relative overflow-hidden rounded-[2rem] border border-border bg-card p-8 md:p-16 shadow-sm">
+          <div className="relative overflow-hidden rounded-xl border border-border bg-card p-8 md:p-12 shadow-sm">
             <div className="relative grid gap-12 lg:grid-cols-2 lg:items-center">
               <div>
                 <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary mb-6 shadow-sm">
@@ -173,20 +171,20 @@ function Dashboard() {
 
               {/* Sample event card mock */}
               <div className="relative mx-auto w-full max-w-sm lg:max-w-md">
-                <div className="rounded-[2rem] border border-border bg-card shadow-sm overflow-hidden">
-                  <div className="h-48 w-full bg-secondary relative flex items-end p-6">
+                <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+                  <div className="h-40 w-full bg-secondary relative flex items-end p-6">
                     <span className="relative font-display text-sm uppercase tracking-[0.4em] text-secondary-foreground drop-shadow-md">Admit One</span>
                   </div>
-                  <div className="p-6">
-                    <div className="flex items-start justify-between mb-4">
+                  <div className="p-5">
+                    <div className="flex items-start justify-between mb-3">
                       <div>
-                        <p className="text-xs uppercase tracking-widest text-primary font-bold mb-1.5">Music · Lagos</p>
-                        <h3 className="font-display text-2xl leading-tight">Afrobeats Live 2025</h3>
+                        <p className="text-[10px] uppercase tracking-widest text-primary font-bold mb-1">Music · Lagos</p>
+                        <h3 className="font-display text-xl leading-tight">Afrobeats Live 2025</h3>
                       </div>
-                      <span className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary border border-primary/20">Live</span>
+                      <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary border border-primary/20">Live</span>
                     </div>
-                    <p className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
-                      <CalendarDays className="h-4 w-4" /> Sat, Aug 23 · 7:00 PM
+                    <p className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
+                      <CalendarDays className="h-3 w-3" /> Sat, Aug 23 · 7:00 PM
                     </p>
                   </div>
                 </div>
@@ -226,13 +224,13 @@ function Dashboard() {
               ].map((f) => (
                 <div 
                   key={f.title}
-                  className="rounded-[1.5rem] border border-border bg-card p-6 shadow-sm"
+                  className="rounded-xl border border-border bg-card p-6 shadow-sm"
                 >
-                  <div className="inline-flex rounded-2xl bg-secondary p-3 mb-4">
-                    <f.icon className="h-6 w-6 text-primary" />
+                  <div className="inline-flex rounded-lg bg-secondary p-3 mb-4">
+                    <f.icon className="h-5 w-5 text-primary" />
                   </div>
-                  <h3 className="font-semibold text-lg mb-2">{f.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                  <h3 className="font-semibold text-base mb-1.5">{f.title}</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{f.desc}</p>
                 </div>
               ))}
             </div>
@@ -267,104 +265,111 @@ function Dashboard() {
       )}
 
       {isOrganizer && data && data.events.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-[2.5rem] border border-dashed border-border/60 bg-card/40 py-24 px-6 text-center shadow-sm max-w-4xl mx-auto mt-8">
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-secondary/50 mb-8 relative">
-            <Ticket className="h-12 w-12 text-muted-foreground/50" />
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 bg-card/40 py-20 px-6 text-center shadow-sm max-w-4xl mx-auto">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary/50 mb-6 relative">
+            <Ticket className="h-8 w-8 text-muted-foreground/50" />
           </div>
-          <h3 className="font-display text-4xl mb-4">No events yet</h3>
-          <p className="max-w-md text-muted-foreground text-lg mb-8 leading-relaxed">
+          <h3 className="font-display text-3xl mb-3">No events yet</h3>
+          <p className="max-w-md text-muted-foreground text-base mb-8 leading-relaxed">
             Your dashboard is looking a little empty. Create your first event and start selling tickets globally.
           </p>
-          <Button asChild size="lg" className="h-14 rounded-full px-8 text-base">
+          <Button asChild className="h-11 rounded-md px-6 text-sm font-semibold">
             <Link to="/events/new">
-              <Plus className="mr-2 h-5 w-5" /> Create your first event
+              <Plus className="mr-2 h-4 w-4" /> Create your first event
             </Link>
           </Button>
         </div>
       )}
 
       {isOrganizer && data && data.events.length > 0 && (
-        <div className="grid gap-6 mt-8">
-          {data.events.map((ev) => {
-            const stats = data.statsByEvent[ev.id] ?? { sold: 0, revenueKobo: 0 };
-            return (
-              <div
-                key={ev.id}
-                className="group flex flex-col overflow-hidden rounded-[2rem] border border-border bg-card shadow-sm md:flex-row"
-              >
-                <Link to="/events/$eventId/edit" params={{ eventId: ev.id }} className="flex flex-1 flex-col md:flex-row">
-                  <div
-                    className="h-56 w-full shrink-0 bg-secondary bg-cover bg-center md:h-auto md:w-72 relative overflow-hidden"
-                  >
-                    {ev.cover_image_url && (
-                       <img src={ev.cover_image_url} alt={ev.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                    )}
-                  </div>
-                  <div className="flex flex-1 flex-col justify-between p-6 md:p-8">
-                    <div>
-                      <div className="flex items-start justify-between gap-4">
-                        <h3 className="text-2xl font-display leading-tight group-hover:text-primary transition-colors">
+        <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden mb-8">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm whitespace-nowrap">
+              <thead className="bg-secondary/30 text-muted-foreground">
+                <tr>
+                  <th className="px-5 py-3 font-semibold w-12"></th>
+                  <th className="px-5 py-3 font-semibold">Event</th>
+                  <th className="px-5 py-3 font-semibold">Date</th>
+                  <th className="px-5 py-3 font-semibold">Status</th>
+                  <th className="px-5 py-3 font-semibold text-right">Sold</th>
+                  <th className="px-5 py-3 font-semibold text-right">Revenue</th>
+                  <th className="px-5 py-3 font-semibold text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {data.events.map((ev) => {
+                  const stats = data.statsByEvent[ev.id] ?? { sold: 0, revenueKobo: 0 };
+                  const evDate = new Date(ev.start_datetime);
+                  return (
+                    <tr key={ev.id} className="hover:bg-muted/30 transition-colors group">
+                      <td className="px-5 py-4">
+                        <div className="h-10 w-10 shrink-0 rounded bg-secondary border border-border overflow-hidden">
+                          {ev.cover_image_url ? (
+                            <img src={ev.cover_image_url} alt={ev.title} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center bg-muted">
+                              <Ticket className="h-4 w-4 text-muted-foreground/50" />
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <Link to="/events/$eventId/edit" params={{ eventId: ev.id }} className="font-semibold text-sm hover:text-primary transition-colors">
                           {ev.title}
-                        </h3>
-                        <div className="shrink-0">
-                          <StatusBadge status={ev.status} />
+                        </Link>
+                        {ev.city && <div className="text-muted-foreground text-xs mt-0.5">{ev.city}</div>}
+                      </td>
+                      <td className="px-5 py-4 text-muted-foreground text-xs">
+                        {evDate.toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric" })}
+                        <div className="text-[10px] mt-0.5">{evDate.toLocaleTimeString("en-NG", { hour: "numeric", minute: "2-digit" })}</div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <StatusBadge status={ev.status} />
+                      </td>
+                      <td className="px-5 py-4 text-right font-medium">
+                        {stats.sold}
+                      </td>
+                      <td className="px-5 py-4 text-right font-medium text-primary">
+                        {formatNaira(stats.revenueKobo)}
+                      </td>
+                      <td className="px-5 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                          {ev.status === "published" && (
+                            <>
+                              <Button asChild variant="outline" size="icon" className="h-8 w-8 rounded hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors" title="Scan Tickets">
+                                <Link to="/events/$eventId/scan" params={{ eventId: ev.id }}>
+                                  <QrCode className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8 rounded hover:bg-secondary transition-colors"
+                                title="Copy public link"
+                                onClick={() => {
+                                  const url = `${window.location.origin}/e/${ev.slug}`;
+                                  navigator.clipboard.writeText(url);
+                                  toast.success("Link copied", { icon: <Copy className="h-4 w-4" /> });
+                                }}
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                          <Button asChild variant="outline" size="icon" className="h-8 w-8 rounded hover:bg-secondary transition-colors" title="Edit Event">
+                            <Link to="/events/$eventId/edit" params={{ eventId: ev.id }}>
+                              <FileEdit className="h-4 w-4" />
+                            </Link>
+                          </Button>
                         </div>
-                      </div>
-                      <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground font-medium">
-                        <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5">
-                          <CalendarDays className="h-4 w-4 text-primary" />
-                          {new Date(ev.start_datetime).toLocaleString("en-NG", {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          })}
-                        </span>
-                        {ev.city && (
-                          <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5">
-                            <MapPin className="h-4 w-4 text-primary" /> {ev.city}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="mt-8 flex flex-wrap items-center gap-6 sm:gap-12 border-t border-border pt-6">
-                      <div>
-                        <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Tickets Sold</div>
-                        <div className="font-display text-3xl">{stats.sold}</div>
-                      </div>
-                      <div>
-                        <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Revenue</div>
-                        <div className="font-display text-3xl text-primary">
-                          {formatNaira(stats.revenueKobo)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-                
-                {ev.status === "published" && (
-                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3 border-t border-border bg-muted/20 p-6 md:w-56 md:flex-col md:items-stretch md:justify-center md:border-t-0 md:border-l">
-                    <Button asChild className="w-full rounded-xl bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary h-12 shadow-none font-semibold">
-                      <Link to="/events/$eventId/scan" params={{ eventId: ev.id }}>
-                        <QrCode className="mr-2 h-5 w-5" /> Scan Tickets
-                      </Link>
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full rounded-xl h-12 font-medium hover:bg-secondary"
-                      onClick={() => {
-                        const url = `${window.location.origin}/e/${ev.slug}`;
-                        navigator.clipboard.writeText(url);
-                        toast.success("Public link copied", { icon: <Copy className="h-4 w-4" /> });
-                      }}
-                    >
-                      <Copy className="mr-2 h-4 w-4" /> Copy link
-                    </Button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
@@ -380,5 +385,5 @@ function StatusBadge({ status }: { status: string }) {
     completed: { label: "Ended", className: "bg-secondary text-secondary-foreground border-transparent" },
   };
   const cfg = map[status] ?? map.draft;
-  return <Badge className={`font-bold tracking-wide uppercase px-3 py-1 border ${cfg.className}`} variant="outline">{cfg.label}</Badge>;
+  return <Badge className={`font-semibold text-[10px] tracking-wider uppercase px-2 py-0.5 border ${cfg.className}`} variant="outline">{cfg.label}</Badge>;
 }
