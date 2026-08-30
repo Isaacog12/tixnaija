@@ -1,6 +1,6 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Users, Calendar, BarChart3, Search, MoreVertical,
   Ban, CheckCircle, ClipboardList, ExternalLink, ShieldOff, ShieldCheck, Trash2, Image as ImageIcon, RefreshCcw, Briefcase,
@@ -28,7 +28,20 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
+import {
+  useReactTable,
+  getCoreRowModel,
+  flexRender,
+  createColumnHelper,
+} from "@tanstack/react-table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async () => {
@@ -107,43 +120,6 @@ async function fetchAdminEvents() {
   return data ?? [];
 }
 
-async function fetchContactMessages() {
-  const { data, error } = await supabase
-    .from("contact_messages" as any)
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(50);
-  if (error) throw error;
-  return (data ?? []) as any[];
-}
-
-async function fetchRefundRequests() {
-  const { data, error } = await (supabase as any)
-    .from("refund_requests")
-    .select(`
-      id, reason, other_reason, status, admin_note, created_at,
-      buyer_email, buyer_name,
-      events(title, slug)
-    `)
-    .order("created_at", { ascending: false })
-    .limit(50);
-  if (error) throw error;
-  return (data ?? []) as any[];
-}
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.05 }
-  }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 400, damping: 30 } }
-};
-
 function AdminDashboard() {
   const qc = useQueryClient();
   const [userSearch, setUserSearch] = useState("");
@@ -154,8 +130,6 @@ function AdminDashboard() {
   const { data: stats } = useQuery({ queryKey: ["admin-stats"], queryFn: fetchAdminStats });
   const { data: users, isLoading: usersLoading } = useQuery({ queryKey: ["admin-users"], queryFn: fetchAdminUsers });
   const { data: events, isLoading: eventsLoading } = useQuery({ queryKey: ["admin-events"], queryFn: fetchAdminEvents });
-  const { data: messages } = useQuery({ queryKey: ["admin-contact-messages"], queryFn: fetchContactMessages });
-  const { data: refunds, isLoading: refundsLoading } = useQuery({ queryKey: ["admin-refund-requests"], queryFn: fetchRefundRequests });
 
   const takedownMutation = useMutation({
     mutationFn: async ({ id, note }: { id: string; note: string }) => {
@@ -206,50 +180,168 @@ function AdminDashboard() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const markMessageRead = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await (supabase.from("contact_messages" as any) as any)
-        .update({ is_read: true })
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-contact-messages"] }),
-    onError: (e: Error) => toast.error(e.message),
+  const filteredUsers = useMemo(() => {
+    return (users ?? []).filter((u) => {
+      const q = userSearch.toLowerCase();
+      return !q || u.full_name.toLowerCase().includes(q);
+    });
+  }, [users, userSearch]);
+
+  const userColumnHelper = createColumnHelper<any>();
+  const userColumns = useMemo(
+    () => [
+      userColumnHelper.accessor("full_name", {
+        header: "User",
+        cell: (info) => (
+          <div>
+            <div className="font-semibold text-foreground text-base mb-1">{info.getValue() || "Unknown"}</div>
+            <div className="text-xs text-muted-foreground font-mono bg-secondary/50 inline-block px-2 py-0.5 rounded">{info.row.original.id.slice(0, 8)}…</div>
+            <div className="text-xs text-muted-foreground mt-1">Joined {new Date(info.row.original.created_at).toLocaleDateString()}</div>
+          </div>
+        ),
+      }),
+      userColumnHelper.accessor("roles", {
+        header: "Roles",
+        cell: (info) => {
+          const roles = info.getValue() as string[];
+          const u = info.row.original;
+          return (
+            <div className="flex gap-2 flex-wrap">
+              {roles.includes("admin") && <Badge className="uppercase tracking-wider text-[10px] font-bold">Admin</Badge>}
+              {roles.includes("organizer") && <Badge variant="secondary" className="uppercase tracking-wider text-[10px] font-bold border-border/50">Organizer</Badge>}
+              {!roles.includes("admin") && !roles.includes("organizer") && <span className="text-xs text-muted-foreground font-medium">User</span>}
+              {u.suspended && <Badge variant="destructive" className="uppercase tracking-wider text-[10px] font-bold">Suspended</Badge>}
+            </div>
+          );
+        },
+      }),
+      userColumnHelper.display({
+        id: "actions",
+        header: () => <div className="text-right">Actions</div>,
+        cell: (info) => {
+          const u = info.row.original;
+          return (
+            <div className="text-right">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-secondary">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-xl border-border/50 p-2">
+                  <DropdownMenuItem asChild className="rounded-xl px-3 py-2 cursor-pointer focus:bg-secondary">
+                    <Link to="/dashboard" className="flex items-center gap-2">
+                      <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">View full profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="mx-2" />
+                  {u.roles.includes("organizer") && (
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive focus:bg-destructive/10 rounded-xl px-3 py-2 cursor-pointer"
+                      onClick={() => setRevokeUser({ id: u.id, name: u.full_name || "Unknown" })}
+                    >
+                      <ShieldOff className="mr-2 h-4 w-4" />
+                      <span className="font-medium">Revoke Organizer</span>
+                    </DropdownMenuItem>
+                  )}
+                  {u.suspended ? (
+                    <DropdownMenuItem
+                      className="text-green-500 focus:text-green-500 focus:bg-green-500/10 rounded-xl px-3 py-2 cursor-pointer"
+                      onClick={() => suspendMutation.mutate({ userId: u.id, suspend: false })}
+                    >
+                      <ShieldCheck className="mr-2 h-4 w-4" />
+                      <span className="font-medium">Unsuspend user</span>
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive focus:bg-destructive/10 rounded-xl px-3 py-2 cursor-pointer"
+                      onClick={() => suspendMutation.mutate({ userId: u.id, suspend: true })}
+                    >
+                      <ShieldOff className="mr-2 h-4 w-4" />
+                      <span className="font-medium">Suspend user</span>
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          );
+        },
+      }),
+    ],
+    []
+  );
+
+  const userTable = useReactTable({
+    data: filteredUsers,
+    columns: userColumns,
+    getCoreRowModel: getCoreRowModel(),
   });
 
-  const deleteMessage = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await (supabase.from("contact_messages" as any) as any)
-        .delete()
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Message deleted.");
-      qc.invalidateQueries({ queryKey: ["admin-contact-messages"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
+  const eventColumnHelper = createColumnHelper<any>();
+  const eventColumns = useMemo(
+    () => [
+      eventColumnHelper.accessor("title", {
+        header: "Event",
+        cell: (info) => (
+          <div>
+            <div className="font-semibold text-foreground text-base mb-1 line-clamp-1">{info.getValue()}</div>
+            <div className="text-xs text-muted-foreground font-medium">
+              by {info.row.original.profiles?.full_name || "Unknown"}
+            </div>
+          </div>
+        ),
+      }),
+      eventColumnHelper.accessor("status", {
+        header: "Status",
+        cell: (info) => {
+          const ev = info.row.original;
+          return (
+            <div>
+              {ev.status === "cancelled" ? (
+                <Badge variant="destructive" className="uppercase tracking-wider text-[10px] font-bold">Cancelled</Badge>
+              ) : new Date(ev.end_datetime || ev.start_datetime) < new Date() ? (
+                <Badge variant="secondary" className="uppercase tracking-wider text-[10px] font-bold border-border/50">Ended</Badge>
+              ) : ev.status === "published" ? (
+                <Badge variant="outline" className="uppercase tracking-wider text-[10px] font-bold text-green-500 border-green-500/40 bg-green-500/10">Live</Badge>
+              ) : (
+                <Badge variant="outline" className="uppercase tracking-wider text-[10px] font-bold border-border/50 text-muted-foreground">{ev.status}</Badge>
+              )}
+            </div>
+          );
+        },
+      }),
+      eventColumnHelper.display({
+        id: "actions",
+        header: () => <div className="text-right">Action</div>,
+        cell: (info) => {
+          const ev = info.row.original;
+          return (
+            <div className="text-right">
+              {ev.status !== "cancelled" ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 rounded-lg text-xs font-semibold text-destructive border-destructive/30 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                  onClick={() => setTakedownEvent({ id: ev.id, title: ev.title })}
+                >
+                  <Ban className="mr-1.5 h-3.5 w-3.5" /> Takedown
+                </Button>
+              ) : (
+                <span className="text-xs text-muted-foreground/40 font-medium">—</span>
+              )}
+            </div>
+          );
+        },
+      }),
+    ],
+    []
+  );
 
-  const updateRefundMutation = useMutation({
-    mutationFn: async ({ id, status, admin_note }: { id: string; status: string; admin_note?: string }) => {
-      const { error } = await (supabase as any)
-        .from("refund_requests")
-        .update({ status, admin_note: admin_note || null, updated_at: new Date().toISOString() })
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: (_, vars) => {
-      const labels: Record<string, string> = { approved: "approved", rejected: "rejected", processed: "marked as processed" };
-      toast.success(`Refund request ${labels[vars.status] ?? vars.status}.`);
-      qc.invalidateQueries({ queryKey: ["admin-refund-requests"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const filteredUsers = (users ?? []).filter((u) => {
-    const q = userSearch.toLowerCase();
-    return !q || u.full_name.toLowerCase().includes(q);
+  const eventTable = useReactTable({
+    data: events ?? [],
+    columns: eventColumns,
+    getCoreRowModel: getCoreRowModel(),
   });
 
   return (
@@ -276,7 +368,7 @@ function AdminDashboard() {
               }
               disabled={takedownMutation.isPending}
             >
-              {takedownMutation.isPending ? "Taking down”¦" : "Yes, take down"}
+              {takedownMutation.isPending ? "Taking down…" : "Yes, take down"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -316,26 +408,17 @@ function AdminDashboard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <motion.div 
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-10"
-      >
+      <div className="mb-10">
         <h1 className="font-display text-4xl md:text-5xl tracking-tight mb-2">Admin Portal</h1>
         <p className="text-muted-foreground text-lg">Platform overview and moderation.</p>
-      </motion.div>
+      </div>
 
-      <motion.div 
-        variants={containerVariants}
-        initial="hidden"
-        animate="show"
-        className="grid gap-6 md:grid-cols-2 lg:grid-cols-6 mb-12"
-      >
-        <StatCard icon={Users} label="Total Users" value={stats?.users.toLocaleString() ?? "—"} delay={0} className="lg:col-span-1" />
-        <StatCard icon={Calendar} label="Total Events" value={stats?.events.toLocaleString() ?? "—"} delay={0.1} className="lg:col-span-1" />
-        <StatCard icon={BarChart3} label="Total Volume" value={formatNaira(stats?.revenueKobo ?? 0)} className="text-gradient-sunset lg:col-span-2" delay={0.2} />
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-6 mb-12">
+        <StatCard icon={Users} label="Total Users" value={stats?.users.toLocaleString() ?? "—"} className="lg:col-span-1" />
+        <StatCard icon={Calendar} label="Total Events" value={stats?.events.toLocaleString() ?? "—"} className="lg:col-span-1" />
+        <StatCard icon={BarChart3} label="Total Volume" value={formatNaira(stats?.revenueKobo ?? 0)} className="text-gradient-sunset lg:col-span-2" />
         
-        <motion.div variants={itemVariants} className="lg:col-span-1">
+        <div className="lg:col-span-1">
           <Link to="/admin/organizer-applications" className="group block cursor-pointer h-full">
             <div className="rounded-3xl border border-amber-500/30 bg-card p-6 flex flex-col justify-between shadow-sm hover:border-amber-500/60 hover:shadow-amber-500/10 transition-all h-full">
               <div className="flex items-start justify-between">
@@ -350,9 +433,9 @@ function AdminDashboard() {
               </div>
             </div>
           </Link>
-        </motion.div>
+        </div>
         
-        <motion.div variants={itemVariants} className="lg:col-span-1">
+        <div className="lg:col-span-1">
           <Link to="/admin/banners" className="group block cursor-pointer h-full">
             <div className="rounded-3xl border border-primary/30 bg-card p-6 flex flex-col justify-between shadow-sm hover:border-primary/60 hover:shadow-primary/10 transition-all h-full">
               <div className="flex items-start justify-between">
@@ -367,16 +450,11 @@ function AdminDashboard() {
               </div>
             </div>
           </Link>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
-        <motion.section 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
-          className="flex flex-col rounded-3xl border border-border/60 bg-card shadow-sm overflow-hidden h-[600px]"
-        >
+        <section className="flex flex-col rounded-3xl border border-border/60 bg-card shadow-sm overflow-hidden h-[600px]">
           <div className="flex items-center justify-between p-6 border-b border-border/40 bg-card/50 backdrop-blur-sm z-10">
             <h2 className="font-display text-2xl">Recent Users</h2>
             <div className="relative">
@@ -390,153 +468,84 @@ function AdminDashboard() {
             </div>
           </div>
           <div className="overflow-x-auto overflow-y-auto flex-1">
-            <table className="w-full text-sm text-left">
-              <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-md text-xs uppercase font-bold tracking-wider text-muted-foreground">
-                <tr>
-                  <th className="px-6 py-4">User</th>
-                  <th className="px-6 py-4">Roles</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/40">
+            <Table>
+              <TableHeader className="bg-muted/80 backdrop-blur-md">
+                {userTable.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <TableHead key={header.id} className="text-xs uppercase font-bold tracking-wider text-muted-foreground px-6 py-4">
+                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
                 {usersLoading ? (
-                  <tr>
-                    <td colSpan={3} className="px-6 py-12 text-center text-muted-foreground">Loading users”¦</td>
-                  </tr>
-                ) : filteredUsers.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className="px-6 py-12 text-center text-muted-foreground">No users found.</td>
-                  </tr>
-                ) : (
-                  filteredUsers.map((u) => (
-                    <tr key={u.id} className={`hover:bg-muted/30 transition-colors ${u.suspended ? "opacity-50 grayscale" : ""}`}>
-                      <td className="px-6 py-4">
-                        <div className="font-semibold text-foreground text-base mb-1">{u.full_name || "Unknown"}</div>
-                        <div className="text-xs text-muted-foreground font-mono bg-secondary/50 inline-block px-2 py-0.5 rounded">{u.id.slice(0, 8)}”¦</div>
-                        <div className="text-xs text-muted-foreground mt-1">Joined {new Date(u.created_at).toLocaleDateString()}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-2 flex-wrap">
-                          {u.roles.includes("admin") && <Badge className="uppercase tracking-wider text-[10px] font-bold">Admin</Badge>}
-                          {u.roles.includes("organizer") && <Badge variant="secondary" className="uppercase tracking-wider text-[10px] font-bold border-border/50">Organizer</Badge>}
-                          {!u.roles.includes("admin") && !u.roles.includes("organizer") && <span className="text-xs text-muted-foreground font-medium">User</span>}
-                          {u.suspended && <Badge variant="destructive" className="uppercase tracking-wider text-[10px] font-bold">Suspended</Badge>}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-secondary">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-xl border-border/50 p-2">
-                            <DropdownMenuItem asChild className="rounded-xl px-3 py-2 cursor-pointer focus:bg-secondary">
-                              <Link to="/dashboard" className="flex items-center gap-2">
-                                <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                                <span className="font-medium">View full profile</span>
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator className="mx-2" />
-                            {u.roles.includes("organizer") && (
-                              <DropdownMenuItem
-                                className="text-destructive focus:text-destructive focus:bg-destructive/10 rounded-xl px-3 py-2 cursor-pointer"
-                                onClick={() => setRevokeUser({ id: u.id, name: u.full_name || "Unknown" })}
-                              >
-                                <ShieldOff className="mr-2 h-4 w-4" />
-                                <span className="font-medium">Revoke Organizer</span>
-                              </DropdownMenuItem>
-                            )}
-                            {u.suspended ? (
-                              <DropdownMenuItem
-                                className="text-green-500 focus:text-green-500 focus:bg-green-500/10 rounded-xl px-3 py-2 cursor-pointer"
-                                onClick={() => suspendMutation.mutate({ userId: u.id, suspend: false })}
-                              >
-                                <ShieldCheck className="mr-2 h-4 w-4" />
-                                <span className="font-medium">Unsuspend user</span>
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem
-                                className="text-destructive focus:text-destructive focus:bg-destructive/10 rounded-xl px-3 py-2 cursor-pointer"
-                                onClick={() => suspendMutation.mutate({ userId: u.id, suspend: true })}
-                              >
-                                <ShieldOff className="mr-2 h-4 w-4" />
-                                <span className="font-medium">Suspend user</span>
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </tr>
+                  <TableRow>
+                    <TableCell colSpan={3} className="px-6 py-12 text-center text-muted-foreground">Loading users…</TableCell>
+                  </TableRow>
+                ) : userTable.getRowModel().rows.length ? (
+                  userTable.getRowModel().rows.map((row) => (
+                    <TableRow key={row.id} className={`hover:bg-muted/30 transition-colors ${row.original.suspended ? "opacity-50 grayscale" : ""}`}>
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id} className="px-6 py-4">
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      ))}
+                    </TableRow>
                   ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} className="px-6 py-12 text-center text-muted-foreground">No users found.</TableCell>
+                  </TableRow>
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
-        </motion.section>
+        </section>
 
-        <motion.section 
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4 }}
-          className="flex flex-col rounded-3xl border border-border/60 bg-card shadow-sm overflow-hidden h-[600px]"
-        >
+        <section className="flex flex-col rounded-3xl border border-border/60 bg-card shadow-sm overflow-hidden h-[600px]">
           <div className="flex items-center justify-between p-6 border-b border-border/40 bg-card/50 backdrop-blur-sm z-10">
             <h2 className="font-display text-2xl">Event Moderation</h2>
           </div>
-          <div className="overflow-x-auto flex-1">
-            <table className="w-full text-sm text-left">
-              <thead className="sticky top-0 bg-muted/80 backdrop-blur-md text-xs uppercase font-bold tracking-wider text-muted-foreground z-10">
-                <tr>
-                  <th className="px-6 py-4">Event</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/40">
-                {eventsLoading ? (
-                  <tr>
-                    <td colSpan={3} className="px-6 py-12 text-center text-muted-foreground">Loading events”¦</td>
-                  </tr>
-                ) : (events ?? []).map((ev: any) => (
-                  <tr key={ev.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-semibold text-foreground text-base mb-1 line-clamp-1">{ev.title}</div>
-                      <div className="text-xs text-muted-foreground font-medium">
-                        by {ev.profiles?.full_name || "Unknown"}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {ev.status === "cancelled" ? (
-                        <Badge variant="destructive" className="uppercase tracking-wider text-[10px] font-bold">Cancelled</Badge>
-                      ) : new Date(ev.end_datetime || ev.start_datetime) < new Date() ? (
-                        <Badge variant="secondary" className="uppercase tracking-wider text-[10px] font-bold border-border/50">Ended</Badge>
-                      ) : ev.status === "published" ? (
-                        <Badge variant="outline" className="uppercase tracking-wider text-[10px] font-bold text-green-500 border-green-500/40 bg-green-500/10">Live</Badge>
-                      ) : (
-                        <Badge variant="outline" className="uppercase tracking-wider text-[10px] font-bold border-border/50 text-muted-foreground">{ev.status}</Badge>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      {ev.status !== "cancelled" ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 rounded-lg text-xs font-semibold text-destructive border-destructive/30 hover:text-destructive hover:bg-destructive/10 transition-colors"
-                          onClick={() => setTakedownEvent({ id: ev.id, title: ev.title })}
-                        >
-                          <Ban className="mr-1.5 h-3.5 w-3.5" /> Takedown
-                        </Button>
-                      ) : (
-                        <span className="text-xs text-muted-foreground/40 font-medium">—</span>
-                      )}
-                    </td>
-                  </tr>
+          <div className="overflow-x-auto overflow-y-auto flex-1">
+            <Table>
+              <TableHeader className="bg-muted/80 backdrop-blur-md">
+                {eventTable.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <TableHead key={header.id} className="text-xs uppercase font-bold tracking-wider text-muted-foreground px-6 py-4">
+                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                      </TableHead>
+                    ))}
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableHeader>
+              <TableBody>
+                {eventsLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={3} className="px-6 py-12 text-center text-muted-foreground">Loading events…</TableCell>
+                  </TableRow>
+                ) : eventTable.getRowModel().rows.length ? (
+                  eventTable.getRowModel().rows.map((row) => (
+                    <TableRow key={row.id} className="hover:bg-muted/30 transition-colors">
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id} className="px-6 py-4">
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} className="px-6 py-12 text-center text-muted-foreground">No events found.</TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </div>
-        </motion.section>
+        </section>
       </div>
     </div>
   );
@@ -547,22 +556,14 @@ function StatCard({
   label,
   value,
   className,
-  delay = 0,
 }: {
   icon: any;
   label: string;
   value: string;
   className?: string;
-  delay?: number;
 }) {
   return (
-    <motion.div 
-      variants={{
-        hidden: { opacity: 0, y: 10 },
-        show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 400, damping: 30, delay } }
-      }}
-      className={`rounded-3xl border border-border/60 bg-card p-6 flex flex-col justify-between shadow-sm transition-all hover:shadow-md ${className}`}
-    >
+    <div className={`rounded-3xl border border-border/60 bg-card p-6 flex flex-col justify-between shadow-sm transition-all hover:shadow-md ${className}`}>
       <div className="flex items-start justify-between">
         <div className="rounded-2xl bg-primary/10 p-3 text-primary">
           <Icon className="h-6 w-6" />
@@ -572,6 +573,6 @@ function StatCard({
         <p className="text-sm font-semibold text-muted-foreground mb-1 uppercase tracking-wider">{label}</p>
         <h3 className={`font-display text-4xl tracking-tight ${className?.includes('text-gradient') ? '' : 'text-foreground'}`}>{value}</h3>
       </div>
-    </motion.div>
+    </div>
   );
 }
