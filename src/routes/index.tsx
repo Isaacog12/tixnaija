@@ -177,7 +177,7 @@ function LandingPage() {
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search events, artists, cities”¦"
+              placeholder="Search events, artists, cities..."
               className="border-0 bg-transparent shadow-none focus-visible:ring-0 text-base h-12"
             />
             <Button type="submit" className="rounded-full h-12 px-8 gradient-sunset text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-primary/40 font-bold text-base transition-all hover:-translate-y-0.5">
