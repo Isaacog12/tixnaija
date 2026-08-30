@@ -64,13 +64,18 @@ async function fetchEvents(q: string, category: string, dateFilter: string) {
     const nextMonth = new Date(now);
     nextMonth.setMonth(now.getMonth() + 1);
     query = query.gte("start_datetime", now.toISOString()).lte("start_datetime", nextMonth.toISOString());
-  } else {
-    // any date
-    query = query.gte("start_datetime", new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString());
   }
 
-  if (category && category.toLowerCase() !== "all") {
-    query = query.eq("category", category.toLowerCase() as any);
+
+  if (category && category !== "All") {
+    const mappedCategory = 
+      category === "Concerts" ? "music" :
+      category === "Conferences" ? "conference" :
+      category === "Parties" ? "party" :
+      category === "Tech" ? "other" :
+      category.toLowerCase();
+    
+    query = query.eq("category", mappedCategory as any);
   }
 
   const { data, error } = await query;
@@ -137,7 +142,7 @@ function BrowsePage() {
   const filteredEvents = React.useMemo(() => {
     if (!query.data) return [];
     return query.data.events.filter(ev => {
-      const min = query.data.minPrice[ev.id] ?? 0;
+      const min = query.data?.minPrice[ev.id] ?? 0;
       if (activePrice === "free") return min === 0;
       if (activePrice === "paid") return min > 0;
       if (activePrice === "under_5k") return min > 0 && min <= 500000; // 5k Naira
@@ -182,7 +187,7 @@ function BrowsePage() {
           {/* Filters Row */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
             {/* Categories */}
-            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 sm:pb-0 hide-scrollbar w-full sm:w-auto">
+            <div className="flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pb-2 sm:pb-0 w-full sm:w-auto">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat}
@@ -318,7 +323,7 @@ function BrowsePage() {
               : "grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"}
           >
             {filteredEvents.map((ev) => {
-              const min = query.data.minPrice[ev.id];
+              const min = query.data?.minPrice[ev.id];
               const isCancelled = ev.status === 'cancelled';
 
               const CardInner = (
