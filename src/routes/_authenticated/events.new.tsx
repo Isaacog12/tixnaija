@@ -209,7 +209,7 @@ function NewEventPage() {
       const { error: ttErr } = await supabase.from("ticket_types").insert(parsedTickets);
       if (ttErr) throw new Error(`Ticket error: ${ttErr.message}`);
 
-      toast.success(publish ? "Event published! 🎉" : "Event saved as draft");
+      toast.success(publish ? "Event published successfully" : "Event saved as draft");
       navigate({ to: "/dashboard" });
     } catch (err: any) {
       toast.error(err.message || "Failed to create event");
