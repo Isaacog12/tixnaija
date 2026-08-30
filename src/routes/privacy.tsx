@@ -35,13 +35,13 @@ function PrivacyPage() {
   return (
     <div className="min-h-screen">
       <SiteNav />
-      <div className="mx-auto max-w-7xl px-4 pt-6 w-full relative z-20">
-        <BackButton />
-      </div>
       {/* ── Hero header ── */}
-      <div className="relative overflow-hidden border-b border-border/60">
+      <div className="relative overflow-hidden border-b border-border/60 pb-12 pt-6 md:pb-16">
+        <div className="mx-auto max-w-7xl px-4 w-full relative z-20 mb-6 md:mb-10">
+          <BackButton />
+        </div>
         <div className="absolute inset-0 gradient-sunset opacity-10 pointer-events-none" />
-        <div className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+        <div className="mx-auto max-w-6xl px-4">
           <h1 className="font-display text-5xl md:text-7xl leading-[0.95] mb-4">
             Privacy Policy
           </h1>

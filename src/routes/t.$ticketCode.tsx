@@ -57,11 +57,10 @@ function SingleTicketPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteNav />
-      <div className="mx-auto max-w-7xl px-4 pt-6 w-full relative z-20">
-        <BackButton />
-      </div>
-      
-      <section className="bg-card border-b border-border shadow-sm mb-10 pt-8 pb-8 relative overflow-hidden">
+      <section className="bg-card border-b border-border shadow-sm mb-10 pt-6 pb-8 relative overflow-hidden">
+        <div className="mx-auto max-w-7xl px-4 w-full relative z-20 mb-4 md:mb-6">
+          <BackButton />
+        </div>
         <div className="absolute inset-0 z-0 bg-gradient-to-r from-primary/5 to-transparent opacity-50" />
         <div className="mx-auto max-w-4xl px-4 relative z-10 text-center">
           <h1 className="font-display text-4xl mb-2">Your Ticket</h1>

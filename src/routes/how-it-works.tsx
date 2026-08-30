@@ -129,16 +129,16 @@ function HowItWorksPage() {
   return (
     <div className="min-h-screen">
       <SiteNav />
-      <div className="mx-auto max-w-7xl px-4 pt-6 w-full relative z-20">
-        <BackButton />
-      </div>
-
       {/* ── Hero ── */}
-      <div className="relative overflow-hidden border-b border-border/40 py-20 md:py-32">
+      <div className="relative overflow-hidden border-b border-border/40 pt-6 pb-20 md:pb-32">
         <div className="absolute inset-0 bg-grid-pattern opacity-[0.02]" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-3xl -z-10 pointer-events-none" />
         
-        <div 
+        <div className="mx-auto max-w-7xl px-4 w-full relative z-20 mb-10 md:mb-20">
+          <BackButton />
+        </div>
+
+        <div  
           initial="hidden"
           animate="visible"
           

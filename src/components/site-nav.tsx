@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { LogOut, LayoutDashboard, User as UserIcon, Mail, Ticket as TicketIcon, Menu, Bell } from "lucide-react";
+import { LogOut, LayoutDashboard, User as UserIcon, Mail, Ticket as TicketIcon, Menu, Bell, Compass, Search, HelpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -43,14 +43,14 @@ export function SiteNav() {
   const [hoveredPath, setHoveredPath] = useState<string | null>(null);
   
   const links = [
-    { name: "Discover", to: "/" },
-    { name: "Browse", to: "/browse" },
+    { name: "Discover", to: "/", icon: Compass },
+    { name: "Browse", to: "/browse", icon: Search },
     ...(user ? [
-      { name: "Tickets", to: "/tickets" },
-      { name: "Dashboard", to: "/dashboard" },
+      { name: "Tickets", to: "/tickets", icon: TicketIcon },
+      { name: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
     ] : []),
-    { name: "How it works", to: "/how-it-works" },
-    { name: "Contact", to: "/contact" },
+    { name: "How it works", to: "/how-it-works", icon: HelpCircle },
+    { name: "Contact", to: "/contact", icon: Mail },
   ];
 
   return (
@@ -77,9 +77,10 @@ export function SiteNav() {
                 to={link.to}
                 onMouseEnter={() => setHoveredPath(link.to)}
                 onMouseLeave={() => setHoveredPath(null)}
-                className="relative px-4 py-2.5 text-sm font-medium transition-colors hover:text-foreground text-muted-foreground z-10"
+                className="relative flex items-center gap-2 px-3.5 py-2 text-sm font-medium transition-colors hover:text-foreground text-muted-foreground z-10"
                 activeProps={{ className: "text-foreground font-semibold" }}
               >
+                <link.icon className="w-4 h-4 opacity-70" />
                 <span className="relative z-10">{link.name}</span>
                 {hoveredPath === link.to && (
                   <div
@@ -175,28 +176,29 @@ export function SiteNav() {
                 <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-full sm:w-[400px] border-l-border/50 p-0">
+            <SheetContent side="right" className="w-[300px] sm:w-[350px] border-l-border/50 p-0 shadow-2xl">
               <div className="flex flex-col h-full bg-background/95 backdrop-blur-2xl">
-                <div className="p-6 pb-2 border-b border-border/40">
+                <div className="p-6 pb-4 border-b border-border/40">
                   <Link to="/" className="group relative flex items-baseline w-fit">
-                    <span className="font-display text-4xl leading-none tracking-wide text-foreground">
+                    <span className="font-display text-3xl leading-none tracking-wide text-foreground">
                       TIX
                     </span>
-                    <span className="font-display text-4xl leading-none tracking-wide font-light text-gradient-sunset">
+                    <span className="font-display text-3xl leading-none tracking-wide font-light text-gradient-sunset">
                       NAIJA
                     </span>
                   </Link>
                 </div>
                 
                 <div className="flex-1 overflow-y-auto px-4 py-6">
-                  <nav className="flex flex-col gap-2">
+                  <nav className="flex flex-col gap-1.5">
                     {links.map((link) => (
                       <Link 
                         key={link.to}
                         to={link.to} 
-                        className="flex items-center px-4 py-4 rounded-2xl text-lg font-medium text-muted-foreground transition-all active:scale-95" 
-                        activeProps={{ className: "text-foreground bg-secondary/80 font-semibold" }}
+                        className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-base font-medium text-muted-foreground transition-all hover:bg-secondary/40 active:scale-95 hover:text-foreground" 
+                        activeProps={{ className: "text-foreground bg-secondary/80 font-semibold shadow-sm" }}
                       >
+                        <link.icon className="w-5 h-5 opacity-70" />
                         {link.name}
                       </Link>
                     ))}

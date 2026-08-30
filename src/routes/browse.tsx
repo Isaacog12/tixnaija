@@ -134,12 +134,12 @@ function BrowsePage() {
   return (
     <div className="min-h-screen bg-background selection:bg-primary/20">
       <SiteNav />
-      <div className="mx-auto max-w-7xl px-4 pt-6 w-full relative z-20">
-        <BackButton />
-      </div>
-
       {/* Premium Hero Section */}
-      <section className="relative overflow-hidden border-b border-border bg-card/30 pb-12 pt-16 md:pt-24 md:pb-16">
+      <section className="relative overflow-hidden border-b border-border bg-card/30 pb-12 pt-6 md:pb-16">
+        <div className="mx-auto max-w-7xl px-4 w-full relative z-20 mb-8 md:mb-12">
+          <BackButton />
+        </div>
+
         {/* Animated Background Orbs */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           <div 

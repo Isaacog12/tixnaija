@@ -205,12 +205,11 @@ function FAQPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteNav />
-      <div className="mx-auto max-w-7xl px-4 pt-6 w-full relative z-20">
-        <BackButton />
-      </div>
-
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-border/50 bg-card/20 py-16 md:py-24">
+      <section className="relative overflow-hidden border-b border-border/50 bg-card/20 pb-16 pt-6 md:pb-24">
+        <div className="mx-auto max-w-7xl px-4 w-full relative z-20 mb-8 md:mb-12">
+          <BackButton />
+        </div>
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.08),transparent_60%)]" />
         <div className="relative mx-auto max-w-3xl px-4 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl gradient-sunset shadow-glow">
