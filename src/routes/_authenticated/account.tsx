@@ -97,6 +97,8 @@ const applicationSchema = z.object({
 // Main page
 // ---------------------------------------------------------------------------
 
+type Tab = "general" | "organizer" | "payouts";
+
 function AccountPage() {
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["me"], queryFn: fetchProfile });
@@ -104,6 +106,8 @@ function AccountPage() {
     queryKey: ["my-organizer-application"],
     queryFn: fetchMyApplication,
   });
+
+  const [activeTab, setActiveTab] = useState<Tab>("general");
 
   const [form, setForm] = useState({
     full_name: "",
@@ -145,33 +149,40 @@ function AccountPage() {
 
   useEffect(() => {
     if (form.bank_account_number.length === 10 && form.bank_name && banks) {
-      const bank = banks.find((b) => b.name === form.bank_name);
-      if (bank) {
-        setResolvingAccount(true);
-        supabase.functions
-          .invoke("connect-payout-account", {
-            method: "POST",
-            body: {
-              action: "resolve",
-              account_number: form.bank_account_number,
-              bank_code: bank.code,
-            },
-          })
-          .then(({ data, error }) => {
-            if (error) {
-              toast.error("Could not resolve account name. Check the account number.");
-              setForm((prev) => ({ ...prev, bank_account_name: "" }));
-            } else if (data?.account_name) {
-              setForm((prev) => ({ ...prev, bank_account_name: data.account_name }));
-              toast.success("Account name resolved!");
-            }
-            setResolvingAccount(false);
-          });
+      // FIX: Only auto-resolve if the account number or bank name is different from what's saved
+      const isSavedAccount =
+        data?.profile?.bank_account_number === form.bank_account_number &&
+        data?.profile?.bank_name === form.bank_name;
+
+      if (!isSavedAccount) {
+        const bank = banks.find((b) => b.name === form.bank_name);
+        if (bank) {
+          setResolvingAccount(true);
+          supabase.functions
+            .invoke("connect-payout-account", {
+              method: "POST",
+              body: {
+                action: "resolve",
+                account_number: form.bank_account_number,
+                bank_code: bank.code,
+              },
+            })
+            .then(({ data: resData, error }) => {
+              if (error) {
+                toast.error("Could not resolve account name. Check the account number.");
+                setForm((prev) => ({ ...prev, bank_account_name: "" }));
+              } else if (resData?.account_name) {
+                setForm((prev) => ({ ...prev, bank_account_name: resData.account_name }));
+                toast.success("Account name resolved!");
+              }
+              setResolvingAccount(false);
+            });
+        }
       }
     } else {
       setResolvingAccount(false);
     }
-  }, [form.bank_account_number, form.bank_name, banks]);
+  }, [form.bank_account_number, form.bank_name, banks, data?.profile]);
 
   async function connectPayout(e: React.FormEvent) {
     e.preventDefault();
@@ -245,215 +256,232 @@ function AccountPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-10 text-sm text-muted-foreground">
-        Loading…
+      <div className="mx-auto max-w-5xl px-4 py-10 flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" /> Loading account details…
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
-      <div className="mb-10">
+    <div className="mx-auto max-w-6xl px-4 py-10">
+      <div className="mb-8">
         <div className="flex items-center gap-4 mb-2">
           <BackButton />
-          <h1 className="font-display text-4xl md:text-5xl">Account Settings</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Account Settings</h1>
         </div>
-        <p className="mt-2 text-muted-foreground">Signed in as {data?.email}</p>
+        <p className="text-muted-foreground text-sm">Manage your profile, organizer status, and payout methods.</p>
       </div>
 
-      <div className="space-y-16">
-        {/* Profile Section */}
-        <div className="grid gap-8 md:grid-cols-3">
-          <div className="md:col-span-1">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <UserIcon className="h-5 w-5 text-primary" />
+      <div className="flex flex-col md:flex-row gap-8">
+        {/* Sidebar Nav */}
+        <aside className="w-full md:w-56 shrink-0">
+          <nav className="flex flex-row md:flex-col gap-1 overflow-x-auto pb-2 md:pb-0">
+            <button
+              onClick={() => setActiveTab("general")}
+              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                activeTab === "general"
+                  ? "bg-secondary text-foreground"
+                  : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+              }`}
+            >
+              <UserIcon className="h-4 w-4" />
               Personal Info
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Update your personal details, phone number, and location.
-            </p>
-          </div>
-          <div className="md:col-span-2">
-            <form
-              onSubmit={save}
-              className="rounded-2xl border border-border bg-card/60 p-6 shadow-sm"
+            </button>
+            <button
+              onClick={() => setActiveTab("organizer")}
+              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                activeTab === "organizer"
+                  ? "bg-secondary text-foreground"
+                  : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+              }`}
             >
-              <div className="grid gap-5 sm:grid-cols-2">
-                <Field label="Full name">
-                  <Input
-                    value={form.full_name}
-                    onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                  />
-                </Field>
-                <Field label="Phone">
-                  <Input
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    placeholder="+2348012345678"
-                  />
-                </Field>
-                <Field label="City" className="sm:col-span-2">
-                  <Input
-                    value={form.city}
-                    onChange={(e) => setForm({ ...form, city: e.target.value })}
-                    placeholder="Lagos"
-                  />
-                </Field>
-              </div>
-              <div className="mt-6 flex justify-end border-t border-border pt-4">
-                <Button
-                  type="submit"
-                  disabled={saving}
-                  className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90"
-                >
-                  {saving ? "Saving…" : "Save profile"}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-
-        <div className="h-px bg-border w-full" />
-
-        {/* Organizer Application Section */}
-        <div className="grid gap-8 md:grid-cols-3">
-          <div className="md:col-span-1">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-primary" />
+              <ShieldCheck className="h-4 w-4" />
               Organizer Status
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Become a verified organizer to create events and sell tickets on
-              TixNaija.
-            </p>
-          </div>
-          <div className="md:col-span-2">
-            {appLoading ? (
-              <div className="rounded-2xl border border-border bg-card/60 p-6 shadow-sm flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" /> Loading…
-              </div>
-            ) : (
-              <OrganizerApplicationCard
-                app={myApp ?? null}
-                userEmail={data?.email ?? ""}
-                profileFullName={data?.profile?.full_name ?? ""}
-                profilePhone={data?.profile?.phone ?? ""}
-                isOrganizer={!!data?.profile?.is_organizer}
-                onSubmitted={() => {
-                  qc.invalidateQueries({ queryKey: ["my-organizer-application"] });
-                  qc.invalidateQueries({ queryKey: ["my-events"] });
-                }}
-              />
-            )}
-          </div>
-        </div>
-
-        <div className="h-px bg-border w-full" />
-
-        {/* Payout Bank Account Section */}
-        <div className="grid gap-8 md:grid-cols-3">
-          <div className="md:col-span-1">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Landmark className="h-5 w-5 text-primary" />
-              Payout Account
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Connect the Nigerian bank account where you want to receive your payouts from ticket sales. Funds are automatically routed here.
-            </p>
-            <div className="mt-4 space-y-2">
-              <p className="text-xs font-medium text-primary bg-primary/10 px-3 py-2 rounded-md leading-relaxed">
-                <strong>Important:</strong> Your payouts from ticket sales will be sent directly to this exact bank account. A 15% platform fee applies.
-              </p>
-            </div>
-          </div>
-          <div className="md:col-span-2">
-            <form
-              onSubmit={connectPayout}
-              className="rounded-2xl border border-border bg-card/60 p-6 shadow-sm"
+            </button>
+            <button
+              onClick={() => setActiveTab("payouts")}
+              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                activeTab === "payouts"
+                  ? "bg-secondary text-foreground"
+                  : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+              }`}
             >
-              <div className="mb-6 flex items-center justify-between">
-                <h3 className="font-medium text-foreground">Bank Details</h3>
-                {data?.profile?.paystack_subaccount_code && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-1 text-xs font-medium text-green-500">
-                    <CheckCircle className="h-3.5 w-3.5" />
-                    Connected
-                  </span>
-                )}
-              </div>
+              <Landmark className="h-4 w-4" />
+              Payout Account
+            </button>
+          </nav>
+        </aside>
 
-              <div className="grid gap-5 sm:grid-cols-2">
-                <Field label="Bank name">
-                  <Select
-                    value={form.bank_name}
-                    onValueChange={(v) => setForm({ ...form, bank_name: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Bank" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {banks?.map((b) => (
-                        <SelectItem key={b.code} value={b.name}>
-                          {b.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label="Account number">
-                  <Input
-                    inputMode="numeric"
-                    value={form.bank_account_number}
-                    onChange={(e) =>
-                      setForm({ ...form, bank_account_number: e.target.value })
-                    }
-                    placeholder="0123456789"
-                  />
-                  <p className="text-[11px] text-muted-foreground mt-1.5 leading-snug">
-                    Your payouts will be sent to this exact account number.
-                  </p>
-                </Field>
-                <Field label="Account name" className="sm:col-span-2">
-                  <div className="relative">
+        {/* Content Area */}
+        <main className="flex-1 min-w-0">
+          {activeTab === "general" && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-semibold text-foreground">Personal Info</h2>
+                <p className="text-sm text-muted-foreground">
+                  Update your personal details, phone number, and location.
+                </p>
+              </div>
+              <form
+                onSubmit={save}
+                className="rounded-lg border border-border bg-card p-6"
+              >
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <Field label="Full name">
                     <Input
-                      readOnly={resolvingAccount}
-                      value={form.bank_account_name}
-                      onChange={(e) =>
-                        setForm({ ...form, bank_account_name: e.target.value })
-                      }
-                      placeholder="As shown on your bank statement"
+                      value={form.full_name}
+                      onChange={(e) => setForm({ ...form, full_name: e.target.value })}
                     />
-                    {resolvingAccount && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                        Resolving...
-                      </div>
-                    )}
-                  </div>
-                </Field>
+                  </Field>
+                  <Field label="Phone">
+                    <Input
+                      value={form.phone}
+                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                      placeholder="+2348012345678"
+                    />
+                  </Field>
+                  <Field label="Email Address">
+                     <Input value={data?.email ?? ""} readOnly disabled className="bg-muted" />
+                  </Field>
+                  <Field label="City">
+                    <Input
+                      value={form.city}
+                      onChange={(e) => setForm({ ...form, city: e.target.value })}
+                      placeholder="Lagos"
+                    />
+                  </Field>
+                </div>
+                <div className="mt-6 flex justify-end pt-4 border-t border-border">
+                  <Button type="submit" disabled={saving}>
+                    {saving ? "Saving…" : "Save changes"}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {activeTab === "organizer" && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-semibold text-foreground">Organizer Status</h2>
+                <p className="text-sm text-muted-foreground">
+                  Become a verified organizer to create events and sell tickets on TixNaija.
+                </p>
+              </div>
+              
+              {appLoading ? (
+                <div className="rounded-lg border border-border bg-card p-6 flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+                </div>
+              ) : (
+                <OrganizerApplicationCard
+                  app={myApp ?? null}
+                  userEmail={data?.email ?? ""}
+                  profileFullName={data?.profile?.full_name ?? ""}
+                  profilePhone={data?.profile?.phone ?? ""}
+                  isOrganizer={!!data?.profile?.is_organizer}
+                  onSubmitted={() => {
+                    qc.invalidateQueries({ queryKey: ["my-organizer-application"] });
+                    qc.invalidateQueries({ queryKey: ["my-events"] });
+                  }}
+                />
+              )}
+            </div>
+          )}
+
+          {activeTab === "payouts" && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-semibold text-foreground">Payout Account</h2>
+                <p className="text-sm text-muted-foreground">
+                  Connect the Nigerian bank account where you want to receive your payouts from ticket sales.
+                </p>
+                <div className="mt-4 rounded-md bg-muted px-4 py-3 text-sm">
+                  <strong>Important:</strong> Your payouts from ticket sales will be sent directly to this exact bank account. A 15% platform fee applies.
+                </div>
               </div>
 
-              <div className="mt-6 flex justify-end border-t border-border pt-4">
-                <Button
-                  type="submit"
-                  disabled={connectingPayout}
-                  variant={
-                    data?.profile?.paystack_subaccount_code ? "outline" : "default"
-                  }
-                  className={
-                    data?.profile?.paystack_subaccount_code
-                      ? ""
-                      : "gradient-sunset text-primary-foreground shadow-glow hover:opacity-90"
-                  }
-                >
-                  {connectingPayout
-                    ? "Connecting…"
-                    : data?.profile?.paystack_subaccount_code
-                      ? "Update Account"
-                      : "Connect Account"}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
+              <form
+                onSubmit={connectPayout}
+                className="rounded-lg border border-border bg-card p-6"
+              >
+                <div className="mb-6 flex items-center justify-between">
+                  <h3 className="font-medium text-foreground">Bank Details</h3>
+                  {data?.profile?.paystack_subaccount_code && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-1 text-xs font-medium text-green-500">
+                      <CheckCircle className="h-3.5 w-3.5" />
+                      Connected
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <Field label="Bank name">
+                    <Select
+                      value={form.bank_name}
+                      onValueChange={(v) => setForm({ ...form, bank_name: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Bank" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {banks?.map((b) => (
+                          <SelectItem key={b.code} value={b.name}>
+                            {b.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Account number">
+                    <Input
+                      inputMode="numeric"
+                      value={form.bank_account_number}
+                      onChange={(e) =>
+                        setForm({ ...form, bank_account_number: e.target.value })
+                      }
+                      placeholder="0123456789"
+                    />
+                    <p className="text-[11px] text-muted-foreground mt-1.5 leading-snug">
+                      Your payouts will be sent to this exact account number.
+                    </p>
+                  </Field>
+                  <Field label="Account name" className="sm:col-span-2">
+                    <div className="relative">
+                      <Input
+                        readOnly={resolvingAccount}
+                        value={form.bank_account_name}
+                        onChange={(e) =>
+                          setForm({ ...form, bank_account_name: e.target.value })
+                        }
+                        placeholder="As shown on your bank statement"
+                      />
+                      {resolvingAccount && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                          Resolving...
+                        </div>
+                      )}
+                    </div>
+                  </Field>
+                </div>
+
+                <div className="mt-6 flex justify-end border-t border-border pt-4">
+                  <Button
+                    type="submit"
+                    disabled={connectingPayout}
+                    variant={data?.profile?.paystack_subaccount_code ? "outline" : "default"}
+                  >
+                    {connectingPayout
+                      ? "Connecting…"
+                      : data?.profile?.paystack_subaccount_code
+                        ? "Update Account"
+                        : "Connect Account"}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          )}
+        </main>
       </div>
     </div>
   );
@@ -483,12 +511,12 @@ function OrganizerApplicationCard({
   // Already an organizer (approved + role granted)
   if (isOrganizer || app?.status === "approved") {
     return (
-      <div className="rounded-2xl border border-green-500/30 bg-green-500/5 p-6 shadow-sm flex items-start gap-4">
+      <div className="rounded-lg border border-green-500/30 bg-green-500/5 p-6 flex items-start gap-4">
         <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-green-500/15 text-green-500">
           <CheckCircle className="h-5 w-5" />
         </div>
         <div>
-          <h3 className="font-semibold text-green-500">You're an approved organizer</h3>
+          <h3 className="font-semibold text-green-600 dark:text-green-500">You're an approved organizer</h3>
           <p className="mt-1 text-sm text-muted-foreground">
             Your account has organizer access. Head to your dashboard to create
             and manage events.
@@ -501,12 +529,12 @@ function OrganizerApplicationCard({
   // Pending review
   if (app?.status === "pending") {
     return (
-      <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6 shadow-sm flex items-start gap-4">
+      <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-6 flex items-start gap-4">
         <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/15 text-amber-500">
           <Clock className="h-5 w-5" />
         </div>
         <div>
-          <h3 className="font-semibold text-amber-500">Application under review</h3>
+          <h3 className="font-semibold text-amber-600 dark:text-amber-500">Application under review</h3>
           <p className="mt-1 text-sm text-muted-foreground">
             Your application was submitted on{" "}
             {new Date(app.created_at).toLocaleDateString("en-NG", { dateStyle: "medium" })}.
@@ -522,7 +550,7 @@ function OrganizerApplicationCard({
   if (app?.status === "rejected") {
     return (
       <div className="space-y-4">
-        <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6 shadow-sm flex items-start gap-4">
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-6 flex items-start gap-4">
           <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-destructive/15 text-destructive">
             <XCircle className="h-5 w-5" />
           </div>
@@ -550,10 +578,7 @@ function OrganizerApplicationCard({
             onCancel={() => setShowForm(false)}
           />
         ) : (
-          <Button
-            onClick={() => setShowForm(true)}
-            className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90"
-          >
+          <Button onClick={() => setShowForm(true)}>
             Apply again
           </Button>
         )}
@@ -565,19 +590,16 @@ function OrganizerApplicationCard({
   return (
     <div className="space-y-4">
       {!showForm ? (
-        <div className="rounded-2xl border border-border bg-card/60 p-6 shadow-sm">
+        <div className="rounded-lg border border-border bg-card p-6">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
-              <h3 className="font-medium text-foreground">Become a verified organizer</h3>
+              <h3 className="font-medium text-foreground">Submit Application</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Submit an application to unlock event creation and ticket sales.
+                Apply to unlock event creation and ticket sales.
                 Applications are reviewed within 3 business days.
               </p>
             </div>
-            <Button
-              onClick={() => setShowForm(true)}
-              className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90 flex-shrink-0"
-            >
+            <Button onClick={() => setShowForm(true)} className="flex-shrink-0">
               Apply to become an organizer
             </Button>
           </div>
@@ -686,7 +708,7 @@ function ApplicationForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-2xl border border-border bg-card/60 p-6 shadow-sm space-y-5"
+      className="rounded-lg border border-border bg-card p-6 space-y-5"
     >
       <div>
         <h3 className="font-semibold text-foreground">Organizer Application</h3>
@@ -711,13 +733,10 @@ function ApplicationForm({
             onChange={(e) => setFields({ ...fields, phone_number: e.target.value })}
             placeholder="+2348012345678"
           />
-          <p className="text-xs text-muted-foreground mt-1">
-            This is how we'll contact you to confirm your application.
-          </p>
         </Field>
 
         <Field label="Email address" className="sm:col-span-2">
-          <Input value={userEmail} readOnly className="opacity-60 cursor-not-allowed" />
+          <Input value={userEmail} readOnly className="opacity-60 cursor-not-allowed bg-muted" />
         </Field>
 
         <Field label="Social media link (optional)" className="sm:col-span-2">
@@ -751,15 +770,15 @@ function ApplicationForm({
       {/* ID photo upload */}
       <div>
         <Label className="text-sm font-medium">
-          ID Photo (selfie holding a government-issued ID)NIN *
+          ID Photo (selfie holding a government-issued ID/NIN) *
         </Label>
-        <div className="mt-2 rounded-xl border-2 border-dashed border-border bg-muted/20 p-5">
+        <div className="mt-2 rounded-md border-2 border-dashed border-border bg-muted/20 p-5">
           <div className="flex flex-col items-center gap-3 text-center">
             {photoPreview ? (
               <img
                 src={photoPreview}
                 alt="ID preview"
-                className="max-h-52 w-full object-contain rounded-lg"
+                className="max-h-52 w-full object-contain rounded-md"
               />
             ) : (
               <div className="flex flex-col items-center gap-2 text-muted-foreground">
@@ -776,13 +795,13 @@ function ApplicationForm({
             />
             <label
               htmlFor="id-photo-upload"
-              className="cursor-pointer rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted transition"
+              className="cursor-pointer rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors"
             >
               {photoPreview ? "Change photo" : "Choose file"}
             </label>
           </div>
         </div>
-        <div className="mt-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5 text-xs text-amber-600 dark:text-amber-400">
+        <div className="mt-3 rounded-md border border-border bg-muted px-4 py-3 text-xs text-muted-foreground leading-relaxed">
           <strong>Why we ask for this:</strong> A selfie holding your government
           ID helps us verify that every organizer on TixNaija is a real person.
           This protects ticket buyers from fraud. Your photo is only seen by our
@@ -794,11 +813,7 @@ function ApplicationForm({
         <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
           Cancel
         </Button>
-        <Button
-          type="submit"
-          disabled={submitting}
-          className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90"
-        >
+        <Button type="submit" disabled={submitting}>
           {submitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting…
