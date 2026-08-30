@@ -14,7 +14,7 @@ export function BackButton() {
     <button 
       onClick={() => router.history.back()}
       aria-label="Go back"
-      className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/[0.06] border-[0.5px] border-white/[0.12] text-muted-foreground hover:text-foreground hover:bg-white/[0.1] transition-colors shadow-sm"
+      className="hidden md:flex items-center justify-center w-9 h-9 rounded-lg bg-white/[0.06] border-[0.5px] border-white/[0.12] text-muted-foreground hover:text-foreground hover:bg-white/[0.1] transition-colors shadow-sm"
     >
       <ArrowLeft className="w-4 h-4" />
     </button>

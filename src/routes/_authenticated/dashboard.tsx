@@ -104,21 +104,21 @@ function Dashboard() {
             {isOrganizer ? "Welcome back to your command center." : "Ready to discover your next experience?"}
           </p>
         </div>
-        <div className="flex w-full flex-col sm:w-auto sm:flex-row sm:items-center gap-3 shrink-0">
+        <div className="grid w-full grid-cols-2 sm:flex sm:w-auto sm:flex-row sm:items-center gap-3 shrink-0">
           {isAdmin && (
             <>
-              <Button asChild size="lg" variant="outline" className="w-full sm:w-auto border-primary/20 text-primary shadow-sm hover:bg-primary/5">
+              <Button asChild variant="outline" className="w-full sm:w-auto border-primary/20 text-primary shadow-sm hover:bg-primary/5 h-12 sm:h-11">
                 <Link to="/admin">Admin Panel</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="w-full sm:w-auto border-amber-500/30 text-amber-500 hover:bg-amber-500/10 shadow-sm">
-                <Link to="/admin/organizer-applications">Review Applications</Link>
+              <Button asChild variant="outline" className="w-full sm:w-auto border-amber-500/30 text-amber-500 hover:bg-amber-500/10 shadow-sm h-12 sm:h-11">
+                <Link to="/admin/organizer-applications">Review Apps</Link>
               </Button>
             </>
           )}
           {isOrganizer && (
-            <Button asChild size="lg" className="w-full sm:w-auto shadow-sm">
+            <Button asChild className="w-full sm:w-auto shadow-sm h-12 sm:h-11 col-span-2 sm:col-span-1">
               <Link to="/events/new">
-                <Plus className="mr-2 h-5 w-5" /> New Event
+                <Plus className="mr-2 h-4 w-4" /> New Event
               </Link>
             </Button>
           )}
