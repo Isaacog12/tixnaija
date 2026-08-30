@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Instagram, Send, PhoneCall, Mail, AlertCircle, HelpCircle, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { motion, AnimatePresence, Variants } from "framer-motion";
+
 
 export const Route = createFileRoute("/contact")({
   component: ContactPage,
@@ -114,35 +114,35 @@ function ContactPage() {
       {/* ── Hero ── */}
       <div className="relative border-b border-border/40 py-16 md:py-24 overflow-hidden">
         <div className="absolute inset-0 bg-grid-pattern opacity-[0.02] pointer-events-none" />
-        <motion.div 
-          initial="hidden" animate="visible" variants={staggerContainer}
+        <div 
+          initial="hidden" animate="visible" 
           className="mx-auto max-w-6xl px-4 text-center md:text-left relative z-10"
         >
-          <motion.h1 variants={fadeUp} className="font-display text-5xl md:text-7xl lg:text-8xl leading-[0.95] tracking-tight mb-6">
+          <h1  className="font-display text-5xl md:text-7xl lg:text-8xl leading-[0.95] tracking-tight mb-6">
             Get in <span className="text-gradient-sunset">touch</span>
-          </motion.h1>
-          <motion.p variants={fadeUp} className="text-muted-foreground text-lg md:text-2xl max-w-2xl font-medium leading-relaxed mx-auto md:mx-0">
+          </h1>
+          <p  className="text-muted-foreground text-lg md:text-2xl max-w-2xl font-medium leading-relaxed mx-auto md:mx-0">
             Got a question, issue, or just want to say hi? We're here to help you turn up without the hassle.
-          </motion.p>
-        </motion.div>
+          </p>
+        </div>
       </div>
 
       {/* ── Body ── */}
       <div className="mx-auto max-w-6xl px-4 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-[1fr_450px] gap-16 items-start">
 
-        <motion.div initial="hidden" animate="visible" variants={staggerContainer} className="space-y-12">
+        <div initial="hidden" animate="visible"  className="space-y-12">
           
-          <motion.div variants={fadeUp}>
+          <div>
             <h2 className="font-display text-3xl md:text-4xl mb-4 tracking-tight">We'd love to hear from you</h2>
             <p className="text-lg text-muted-foreground leading-relaxed max-w-xl">
               Whether you're an attendee with a ticket problem or an organizer needing support, our team is ready to help you succeed.
             </p>
-          </motion.div>
+          </div>
 
           {/* Direct contact */}
-          <motion.div variants={staggerContainer} className="grid sm:grid-cols-2 gap-4">
-            <motion.a
-              variants={fadeUp}
+          <div  className="grid sm:grid-cols-2 gap-4">
+            <a
+              
               href="tel:+2349011275275"
               className="flex items-center gap-5 rounded-3xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 transition-all duration-300 hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 group hover:-translate-y-1"
             >
@@ -153,10 +153,10 @@ function ContactPage() {
                 <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-bold mb-1">Call / WhatsApp</p>
                 <p className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">+234 901 127 5275</p>
               </div>
-            </motion.a>
+            </a>
 
-            <motion.a
-              variants={fadeUp}
+            <a
+              
               href="mailto:tixnaijaapp@gmail.com"
               className="flex items-center gap-5 rounded-3xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 transition-all duration-300 hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 group hover:-translate-y-1"
             >
@@ -167,10 +167,10 @@ function ContactPage() {
                 <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-bold mb-1">Email us</p>
                 <p className="text-base font-semibold text-foreground group-hover:text-primary transition-colors truncate w-full" title="tixnaijaapp@gmail.com">tixnaijaapp@gmail.com</p>
               </div>
-            </motion.a>
+            </a>
 
-            <motion.a
-              variants={fadeUp}
+            <a
+              
               href="https://www.instagram.com/tixnaija/"
               target="_blank"
               rel="noreferrer"
@@ -183,10 +183,10 @@ function ContactPage() {
                 <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-bold mb-1">Follow us</p>
                 <p className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">@tixnaija</p>
               </div>
-            </motion.a>
-          </motion.div>
+            </a>
+          </div>
 
-          <motion.div variants={staggerContainer} className="grid sm:grid-cols-2 gap-4">
+          <div  className="grid sm:grid-cols-2 gap-4">
             {[
               {
                 label: "Buyers & Attendees",
@@ -209,39 +209,39 @@ function ContactPage() {
                 icon: "🚨",
               },
             ].map(({ label, desc, icon }) => (
-              <motion.div
-                variants={fadeUp}
+              <div
+                
                 key={label}
                 className="rounded-3xl border border-border/60 bg-card/40 p-6 transition-colors hover:border-primary/30 hover:bg-card/80"
               >
                 <span className="text-3xl block mb-4">{icon}</span>
                 <p className="font-bold text-lg mb-2">{label}</p>
                 <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
-              </motion.div>
+              </div>
             ))}
-          </motion.div>
+          </div>
 
-          <motion.div variants={fadeUp} className="pt-8 border-t border-border/40 flex flex-wrap gap-6 text-sm font-semibold text-muted-foreground">
+          <div  className="pt-8 border-t border-border/40 flex flex-wrap gap-6 text-sm font-semibold text-muted-foreground">
             <Link to="/terms" className="hover:text-primary transition-colors">Terms of Service</Link>
             <Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
             <Link to="/careers" className="hover:text-primary transition-colors">Careers</Link>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
 
         {/* Right — form card */}
-        <motion.div 
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
+        <div 
+          
+          
+          
           className="rounded-[2.5rem] border border-border/60 bg-card/80 p-8 md:p-10 shadow-2xl shadow-primary/5 backdrop-blur-xl sticky top-28"
         >
-          <AnimatePresence mode="wait">
+          
             {sent ? (
-              <motion.div 
+              <div 
                 key="success"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
+                
+                
+                
                 className="flex flex-col items-center text-center py-12 gap-6"
               >
                 <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-green-500/10 text-green-500 mb-2">
@@ -267,13 +267,13 @@ function ContactPage() {
                     Send another message
                   </Button>
                 </div>
-              </motion.div>
+              </div>
             ) : (
-              <motion.form 
+              <form 
                 key="form"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
+                
+                
+                
                 onSubmit={onSubmit} 
                 className="space-y-6" 
                 noValidate
@@ -382,10 +382,10 @@ function ContactPage() {
                     </span>
                   )}
                 </Button>
-              </motion.form>
+              </form>
             )}
-          </AnimatePresence>
-        </motion.div>
+          
+        </div>
       </div>
     </div>
   );

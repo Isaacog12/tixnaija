@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow, differenceInDays, format } from "date-fns";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
 
 export const Route = createFileRoute("/_authenticated/notifications")({
   component: NotificationsPage,
@@ -124,38 +123,21 @@ function NotificationsPage() {
     return <Mail className={`${baseClass} ${!isRead ? 'text-rose-500' : 'text-muted-foreground'}`} />;
   }
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: { staggerChildren: 0.05 }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 15 },
-    show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 24 } }
-  };
-
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 md:py-20 min-h-screen">
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between mb-12"
-      >
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between mb-12">
         <div className="relative z-10">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary mb-4 shadow-sm">
             <Bell className="h-3.5 w-3.5" /> Updates & Alerts
           </div>
           <h1 className="font-display text-5xl md:text-6xl tracking-tight mb-2">
-            Your <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-rose-500">Notifications</span>
+            Your <span className="text-primary">Notifications</span>
           </h1>
           <p className="text-muted-foreground text-lg max-w-md">Stay on top of your upcoming events, new tickets, and system announcements.</p>
         </div>
         
         {hasUnread && (
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+          <div>
             <Button 
               size="lg"
               variant="outline" 
@@ -166,9 +148,9 @@ function NotificationsPage() {
               <CheckCircle className="mr-2 h-4 w-4 text-primary" />
               Mark all as read
             </Button>
-          </motion.div>
+          </div>
         )}
-      </motion.div>
+      </div>
 
       <div className="space-y-4">
         {isLoading ? (
@@ -178,25 +160,16 @@ function NotificationsPage() {
             ))}
           </div>
         ) : messages.length > 0 ? (
-          <motion.div 
-            variants={containerVariants}
-            initial="hidden"
-            animate="show"
-            className="space-y-4 relative"
-          >
-            {/* Background glowing blob */}
-            <div className="pointer-events-none absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-primary/5 rounded-full blur-[100px] -z-10" />
-            
+          <div className="space-y-4 relative">
             {messages.map((msg: any) => {
               const isExpanded = expandedId === msg.id;
               return (
-                <motion.div
-                  variants={itemVariants}
+                <div
                   key={msg.id}
                   className={`group cursor-pointer rounded-[1.5rem] border transition-all duration-300 overflow-hidden relative ${
                     msg.is_read 
-                      ? "border-border/60 bg-card/40 hover:bg-card/80 hover:shadow-md backdrop-blur-sm" 
-                      : "border-primary/30 bg-primary/5 shadow-lg shadow-primary/5 hover:bg-primary/10"
+                      ? "border-border/60 bg-card/40 hover:bg-card/80 hover:shadow-md" 
+                      : "border-primary/30 bg-primary/5 shadow-sm shadow-primary/5 hover:bg-primary/10"
                   }`}
                   onClick={() => {
                     if (!msg.is_read) markRead.mutate(msg.id);
@@ -204,7 +177,7 @@ function NotificationsPage() {
                   }}
                 >
                   {!msg.is_read && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary to-rose-500 rounded-l-[1.5rem]" />
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-[1.5rem]" />
                   )}
                   
                   <div className="p-6 sm:p-8">
@@ -233,40 +206,30 @@ function NotificationsPage() {
                           </div>
                         </div>
 
-                        <AnimatePresence initial={false}>
-                          {isExpanded ? (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: "auto", opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.3, ease: "easeInOut" }}
-                              className="overflow-hidden"
-                            >
-                              <div className="pt-3">
-                                <p className="whitespace-pre-wrap text-sm sm:text-base text-foreground/90 leading-relaxed">
-                                  {msg.body}
-                                </p>
-                                {msg.type === 'ticket_delivery' && msg.related_order_id && (
-                                  <div className="mt-6">
-                                    <Button asChild className="gradient-sunset text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all rounded-xl h-11 px-6 font-semibold">
-                                      <Link to="/orders/$orderId/tickets" params={{ orderId: msg.related_order_id }} search={{}} onClick={(e) => e.stopPropagation()}>
-                                        <QrCode className="mr-2 h-4 w-4" /> View Ticket Details
-                                      </Link>
-                                    </Button>
-                                  </div>
-                                )}
-                              </div>
-                            </motion.div>
-                          ) : (
-                            <p className="line-clamp-1 text-sm sm:text-base text-muted-foreground pr-8">
+                        {isExpanded ? (
+                          <div className="pt-3">
+                            <p className="whitespace-pre-wrap text-sm sm:text-base text-foreground/90 leading-relaxed">
                               {msg.body}
                             </p>
-                          )}
-                        </AnimatePresence>
+                            {msg.type === 'ticket_delivery' && msg.related_order_id && (
+                              <div className="mt-6">
+                                <Button asChild className="rounded-xl h-11 px-6 font-semibold">
+                                  <Link to="/orders/$orderId/tickets" params={{ orderId: msg.related_order_id }} search={{}} onClick={(e) => e.stopPropagation()}>
+                                    <QrCode className="mr-2 h-4 w-4" /> View Ticket Details
+                                  </Link>
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="line-clamp-1 text-sm sm:text-base text-muted-foreground pr-8">
+                            {msg.body}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               );
             })}
             
@@ -286,15 +249,10 @@ function NotificationsPage() {
                 </Button>
               </div>
             )}
-          </motion.div>
+          </div>
         ) : (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center justify-center rounded-[2.5rem] border border-dashed border-border/60 bg-card/40 py-24 px-6 text-center shadow-sm max-w-3xl mx-auto mt-8"
-          >
+          <div className="flex flex-col items-center justify-center rounded-[2.5rem] border border-dashed border-border/60 bg-card/40 py-24 px-6 text-center shadow-sm max-w-3xl mx-auto mt-8">
             <div className="flex h-24 w-24 items-center justify-center rounded-full bg-secondary/50 mb-8 relative">
-              <div className="absolute inset-0 bg-primary/10 rounded-full animate-ping opacity-20" />
               <Bell className="h-10 w-10 text-muted-foreground/50" />
             </div>
             <h3 className="font-display text-4xl mb-4">All caught up!</h3>
@@ -304,7 +262,7 @@ function NotificationsPage() {
             <Button asChild size="lg" className="rounded-xl h-12 px-8">
               <Link to="/browse">Browse events</Link>
             </Button>
-          </motion.div>
+          </div>
         )}
       </div>
     </div>

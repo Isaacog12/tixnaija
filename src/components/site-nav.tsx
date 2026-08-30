@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { motion, AnimatePresence } from "framer-motion";
+
 import { useState } from "react";
 
 export function SiteNav() {
@@ -82,10 +82,10 @@ export function SiteNav() {
               >
                 <span className="relative z-10">{link.name}</span>
                 {hoveredPath === link.to && (
-                  <motion.div
+                  <div
                     layoutId="nav-pill"
                     className="absolute inset-0 rounded-full bg-secondary/80 -z-10"
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    
                   />
                 )}
               </Link>
@@ -99,18 +99,18 @@ export function SiteNav() {
               <Button asChild variant="ghost" size="icon" className="relative rounded-full h-11 w-11 hover:bg-secondary/80 transition-colors">
                 <Link to="/notifications">
                   <Bell className="h-5 w-5 text-muted-foreground" />
-                  <AnimatePresence>
+                  
                     {unreadCount > 0 && (
-                      <motion.span 
-                        initial={{ scale: 0 }} 
-                        animate={{ scale: 1 }} 
-                        exit={{ scale: 0 }}
+                      <span 
+                         
+                         
+                        
                         className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground border-2 border-background shadow-sm"
                       >
                         {unreadCount > 9 ? "9+" : unreadCount}
-                      </motion.span>
+                      </span>
                     )}
-                  </AnimatePresence>
+                  
                 </Link>
               </Button>
               <DropdownMenu>

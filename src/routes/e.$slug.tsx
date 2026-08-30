@@ -1,28 +1,31 @@
-import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState, useEffect } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Calendar, MapPin, Minus, Plus, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { useState, useMemo, useEffect } from "react";
+import { Calendar, MapPin, Loader2, Minus, Plus, Share2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { SiteNav } from "@/components/site-nav";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { formatNaira } from "@/lib/currency";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { SiteNav } from "@/components/site-nav";
+
+import { z } from "zod";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/e/$slug")({
-  ssr: false,
   component: EventDetailPage,
 });
-
 
 type TicketType = {
   id: string;
@@ -31,178 +34,120 @@ type TicketType = {
   price_kobo: number;
   quantity_available: number;
   quantity_sold: number;
-  max_per_order: number;
+  max_per_order: number | null;
   sales_start_at: string | null;
   sales_end_at: string | null;
-  sort_order: number;
 };
 
 async function fetchEventBySlug(slug: string) {
-  const { data: event, error } = await supabase
+  const { data: ev, error: eventErr } = await supabase
     .from("events")
-    .select("*")
+    .select("*, profiles!events_organizer_id_fkey(full_name)")
     .eq("slug", slug)
-    .in("status", ["published", "cancelled"])
     .maybeSingle();
-  if (error) throw error;
-  if (!event) throw notFound();
 
-  const { data: types, error: e2 } = await supabase
+  if (eventErr) throw eventErr;
+  if (!ev) return null;
+
+  const { data: types, error: typesErr } = await supabase
     .from("ticket_types")
     .select("*")
-    .eq("event_id", event.id)
-    .order("sort_order", { ascending: true });
-  if (e2) throw e2;
+    .eq("event_id", ev.id)
+    .order("price_kobo", { ascending: true });
 
-  return { event, types: (types ?? []) as TicketType[] };
+  if (typesErr) throw typesErr;
+
+  return {
+    event: ev,
+    types: (types || []) as TicketType[],
+  };
 }
 
-async function fetchSimilarEvents(eventId: string, city: string | null, category: string) {
-  const { data, error } = await supabase
-    .from("events")
-    .select("id, title, slug, city, venue_name, start_datetime, cover_image_url, category")
-    .eq("status", "published")
-    .gte("start_datetime", new Date().toISOString())
-    .neq("id", eventId)
-    .order("start_datetime", { ascending: true })
-    .limit(20);
-    
-  if (error) throw error;
-  if (!data || data.length === 0) return [];
-  
-  const scored = data.map(ev => {
-    let score = 0;
-    if (city && ev.city === city) score += 2;
-    if (category && ev.category === category) score += 1;
-    return { ...ev, score };
-  });
-  
-  scored.sort((a, b) => {
-    if (b.score !== a.score) return b.score - a.score;
-    return new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime();
-  });
-  
-  return scored.slice(0, 4);
-}
+const checkoutSchema = z.object({
+  buyerName: z.string().min(1, "Full name is required"),
+  buyerEmail: z.string().email("Invalid email address"),
+  buyerPhone: z.string().optional(),
+  isGift: z.boolean(),
+  recipientName: z.string().optional(),
+  recipientEmail: z.string().optional(),
+  giftMessage: z.string().optional(),
+  accessCode: z.string().optional(),
+  promoCode: z.string().optional(),
+  termsAccepted: z.boolean().refine(val => val === true, "You must agree to the Terms of Service and Privacy Policy"),
+  attendees: z.record(
+    z.string(),
+    z.array(
+      z.object({
+        name: z.string().min(1, "Name is required"),
+        email: z.string().email("Invalid email"),
+      })
+    )
+  ),
+}).superRefine((data, ctx) => {
+  if (data.isGift) {
+    if (!data.recipientName || data.recipientName.trim().length === 0) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Recipient name is required", path: ["recipientName"] });
+    }
+    if (!data.recipientEmail || !/^\S+@\S+\.\S+$/.test(data.recipientEmail)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Valid recipient email is required", path: ["recipientEmail"] });
+    }
+  }
+});
+
+type CheckoutFormValues = z.infer<typeof checkoutSchema>;
 
 function EventDetailPage() {
   const { slug } = Route.useParams();
   const navigate = useNavigate();
+
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["public-event", slug],
+    queryKey: ["event", slug],
     queryFn: () => fetchEventBySlug(slug),
   });
 
-  // Update page title, SEO meta tags, and Schema.org when event data loads
-  useEffect(() => {
-    if (!data?.event) return;
-    
-    const event = data.event;
-    const previousTitle = document.title;
-    document.title = `${event.title} — TixNaija`;
-    
-    // Create/update OpenGraph tags dynamically
-    const updateMeta = (property: string, content: string, isName = false) => {
-      const attr = isName ? 'name' : 'property';
-      let tag = document.querySelector(`meta[${attr}="${property}"]`);
-      if (!tag) {
-        tag = document.createElement("meta");
-        tag.setAttribute(attr, property);
-        document.head.appendChild(tag);
-      }
-      tag.setAttribute("content", content);
-    };
-
-    updateMeta("og:title", `${event.title} — TixNaija`);
-    updateMeta("og:description", event.description || "Get tickets on TixNaija.");
-    if (event.cover_image_url) {
-      updateMeta("og:image", event.cover_image_url);
-      updateMeta("twitter:image", event.cover_image_url, true);
-    }
-    
-    // Inject Schema.org JSON-LD for Events
-    const schemaScript = document.createElement('script');
-    schemaScript.type = 'application/ld+json';
-    schemaScript.id = 'event-schema';
-    
-    // Find min price for schema
-    const minPrice = data.types?.length > 0 
-      ? Math.min(...data.types.map((t: any) => t.price_kobo)) / 100 
-      : 0;
-
-    const schema = {
-      "@context": "https://schema.org",
-      "@type": "Event",
-      "name": event.title,
-      "startDate": event.start_datetime,
-      "endDate": event.end_datetime || event.start_datetime,
-      "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
-      "eventStatus": event.status === "cancelled" ? "https://schema.org/EventCancelled" : "https://schema.org/EventScheduled",
-      "location": {
-        "@type": "Place",
-        "name": event.venue_name || "TBA",
-        "address": {
-          "@type": "PostalAddress",
-          "addressLocality": event.city || "Nigeria",
-          "addressCountry": "NG"
-        }
-      },
-      "image": [event.cover_image_url || "https://tixnaija.com/preview.jpg"],
-      "description": event.description || "Event tickets on TixNaija",
-      "offers": {
-        "@type": "Offer",
-        "url": `https://tixnaija.com/e/${event.slug}`,
-        "price": minPrice,
-        "priceCurrency": "NGN",
-        "availability": "https://schema.org/InStock",
-        "validFrom": new Date().toISOString()
-      },
-      "organizer": {
-        "@type": "Organization",
-        "name": "TixNaija",
-        "url": "https://tixnaija.com"
-      }
-    };
-    
-    schemaScript.textContent = JSON.stringify(schema);
-    document.head.appendChild(schemaScript);
-
-    return () => { 
-      document.title = previousTitle; 
-      const existingScript = document.getElementById('event-schema');
-      if (existingScript) existingScript.remove();
-    };
-  }, [data?.event, data?.types]);
-
   const { data: similarEvents } = useQuery({
-    queryKey: ["similar-events", data?.event?.id],
-    queryFn: () => fetchSimilarEvents(data!.event.id, data!.event.city, data!.event.category),
+    queryKey: ["similar-events", data?.event?.category],
+    queryFn: async () => {
+      if (!data?.event?.category) return [];
+      const { data: evs } = await supabase
+        .from("events")
+        .select("id, title, slug, cover_image_url, start_datetime, city, venue_name, status")
+        .eq("status", "published")
+        .eq("category", data.event.category)
+        .neq("id", data.event.id)
+        .limit(4);
+      return evs || [];
+    },
     enabled: !!data?.event,
   });
 
   const [qty, setQty] = useState<Record<string, number>>({});
   const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const [buyerName, setBuyerName] = useState("");
-  const [buyerEmail, setBuyerEmail] = useState("");
-  const [buyerPhone, setBuyerPhone] = useState("");
-  
-  // Gift details
-  const [isGift, setIsGift] = useState(false);
-  const [recipientName, setRecipientName] = useState("");
-  const [recipientEmail, setRecipientEmail] = useState("");
-  const [giftMessage, setGiftMessage] = useState("");
-
-  // attendee names keyed by ticketTypeId -> array of names (one per ticket in that tier)
-  const [attendeeNames, setAttendeeNames] = useState<Record<string, string[]>>({});
-  const [attendeeEmails, setAttendeeEmails] = useState<Record<string, string[]>>({});
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
-  const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<{ id: string; discount_type: string; discount_value: number } | null>(null);
   const [validatingPromo, setValidatingPromo] = useState(false);
-  const [termsAccepted, setTermsAccepted] = useState(false);
-  const [accessCode, setAccessCode] = useState("");
+
+  const form = useForm<CheckoutFormValues>({
+    resolver: zodResolver(checkoutSchema),
+    defaultValues: {
+      buyerName: "",
+      buyerEmail: "",
+      buyerPhone: "",
+      isGift: false,
+      recipientName: "",
+      recipientEmail: "",
+      giftMessage: "",
+      accessCode: "",
+      promoCode: "",
+      termsAccepted: false,
+      attendees: {},
+    },
+  });
+
+  const isGift = form.watch("isGift");
+  const promoCodeValue = form.watch("promoCode");
 
   // Pre-fill user data if logged in
   useQuery({
@@ -211,9 +156,9 @@ function EventDetailPage() {
       const { data: userData } = await supabase.auth.getUser();
       if (userData?.user) {
         setUserId(userData.user.id);
-        setBuyerEmail(userData.user.email || "");
+        form.setValue("buyerEmail", userData.user.email || "");
         const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", userData.user.id).maybeSingle();
-        if (profile?.full_name) setBuyerName(profile.full_name);
+        if (profile?.full_name) form.setValue("buyerName", profile.full_name);
       }
       return userData?.user ?? null;
     },
@@ -239,13 +184,28 @@ function EventDetailPage() {
   const totalKobo = subtotalKobo - discountKobo;
   const totalCount = items.reduce((sum: number, i: { count: number }) => sum + i.count, 0);
 
+  // Sync qty to form attendees
+  useEffect(() => {
+    if (checkoutOpen) {
+      const currentAttendees = form.getValues("attendees");
+      const newAttendees: Record<string, { name: string; email: string }[]> = {};
+      items.forEach((it) => {
+        const existing = currentAttendees[it.type.id] || [];
+        const next = existing.slice(0, it.count);
+        while (next.length < it.count) next.push({ name: "", email: "" });
+        newAttendees[it.type.id] = next;
+      });
+      form.setValue("attendees", newAttendees);
+    }
+  }, [checkoutOpen, items]);
+
   async function applyPromo() {
-    if (!promoCode.trim() || !data) return;
+    if (!promoCodeValue || !promoCodeValue.trim() || !data) return;
     setValidatingPromo(true);
     try {
       const { data: res, error } = await supabase.rpc('validate_promo_code', {
         p_event_id: data.event.id,
-        p_code: promoCode.trim()
+        p_code: promoCodeValue.trim()
       });
       if (error) throw error;
       if (!res) throw new Error("Invalid promo code");
@@ -264,34 +224,6 @@ function EventDetailPage() {
     const cap = Math.min(t.max_per_order || 10, remaining);
     const clamped = Math.max(0, Math.min(cap, next));
     setQty((q) => ({ ...q, [t.id]: clamped }));
-    setAttendeeNames((prev) => {
-      const existing = prev[t.id] ?? [];
-      const next = existing.slice(0, clamped);
-      while (next.length < clamped) next.push("");
-      return { ...prev, [t.id]: next };
-    });
-    setAttendeeEmails((prev) => {
-      const existing = prev[t.id] ?? [];
-      const next = existing.slice(0, clamped);
-      while (next.length < clamped) next.push("");
-      return { ...prev, [t.id]: next };
-    });
-  }
-
-  function setAttendeeName(ticketTypeId: string, index: number, value: string) {
-    setAttendeeNames((prev) => {
-      const arr = [...(prev[ticketTypeId] ?? [])];
-      arr[index] = value;
-      return { ...prev, [ticketTypeId]: arr };
-    });
-  }
-
-  function setAttendeeEmail(ticketTypeId: string, index: number, value: string) {
-    setAttendeeEmails((prev) => {
-      const arr = [...(prev[ticketTypeId] ?? [])];
-      arr[index] = value;
-      return { ...prev, [ticketTypeId]: arr };
-    });
   }
 
   function onCheckout() {
@@ -299,57 +231,45 @@ function EventDetailPage() {
     setCheckoutOpen(true);
   }
 
-  async function handleCheckoutSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!buyerName || !buyerEmail) {
-      toast.error("Please fill in your name and email.");
-      return;
-    }
-    if (!termsAccepted) {
-      toast.error("You must agree to the Terms of Service and Privacy Policy.");
-      return;
-    }
-
+  async function handleCheckoutSubmit(values: CheckoutFormValues) {
     setCheckoutBusy(true);
     try {
       const ticketsPayload = items.map((i: { type: TicketType; count: number }) => ({
         ticketTypeId: i.type.id,
         count: i.count,
-        attendee_names: (attendeeNames[i.type.id] ?? []).slice(0, i.count),
-        attendee_emails: (attendeeEmails[i.type.id] ?? []).slice(0, i.count).map(email => email || buyerEmail),
+        attendee_names: (values.attendees[i.type.id] ?? []).map(a => a.name),
+        attendee_emails: (values.attendees[i.type.id] ?? []).map(a => a.email || values.buyerEmail),
       }));
 
-      if (!userId && (!accessCode || accessCode.trim().length < 4)) {
+      if (!userId && (!values.accessCode || values.accessCode.trim().length < 4)) {
         toast.error("Please create a 4-6 digit Access PIN for your tickets.");
         setCheckoutBusy(false);
         return;
       }
 
       if (totalKobo === 0) {
-
         // Handle free tickets locally
         const { data: orderId, error: checkoutError } = await supabase.rpc('process_checkout', {
           p_event_id: data!.event.id,
           p_user_id: (userId || null) as string,
-          p_buyer_name: buyerName,
-          p_buyer_email: buyerEmail,
-          p_buyer_phone: (buyerPhone || null) as string,
+          p_buyer_name: values.buyerName,
+          p_buyer_email: values.buyerEmail,
+          p_buyer_phone: (values.buyerPhone || null) as string,
           p_tickets: ticketsPayload,
           p_amount_paid: 0,
           p_payment_reference: `FREE_${Date.now()}_${Math.random().toString(36).substring(7)}`,
           p_promo_code_id: appliedPromo?.id ?? undefined,
-          p_is_gift: isGift,
-          p_recipient_name: isGift ? recipientName : null,
-          p_recipient_email: isGift ? recipientEmail : null,
-          p_gift_message: isGift ? giftMessage : null,
-          p_access_code: !userId ? accessCode.trim() : null,
+          p_is_gift: values.isGift,
+          p_recipient_name: values.isGift ? values.recipientName : null,
+          p_recipient_email: values.isGift ? values.recipientEmail : null,
+          p_gift_message: values.isGift ? values.giftMessage : null,
+          p_access_code: !userId ? values.accessCode?.trim() : null,
         });
 
         if (checkoutError) {
           throw new Error(`Database error: ${checkoutError.message}`);
         }
 
-        // Trigger free ticket email confirmation
         try {
           await supabase.functions.invoke("send-ticket-confirmation", {
             body: { orderId },
@@ -371,21 +291,21 @@ function EventDetailPage() {
       const metadata = {
         eventId: data!.event.id,
         userId,
-        buyerName,
-        buyerEmail,
-        buyerPhone: buyerPhone || null,
+        buyerName: values.buyerName,
+        buyerEmail: values.buyerEmail,
+        buyerPhone: values.buyerPhone || null,
         tickets: ticketsPayload,
         promoCodeId: appliedPromo?.id || null,
-        isGift,
-        recipientName: isGift ? recipientName : null,
-        recipientEmail: isGift ? recipientEmail : null,
-        giftMessage: isGift ? giftMessage : null,
-        accessCode: !userId ? accessCode.trim() : undefined,
+        isGift: values.isGift,
+        recipientName: values.isGift ? values.recipientName : null,
+        recipientEmail: values.isGift ? values.recipientEmail : null,
+        giftMessage: values.isGift ? values.giftMessage : null,
+        accessCode: !userId ? values.accessCode?.trim() : undefined,
       };
 
       const { data: initData, error: initErr } = await supabase.functions.invoke("initialize-payment", {
         body: {
-          email: buyerEmail,
+          email: values.buyerEmail,
           amount: totalKobo / 100, // edge fn multiplies by 100
           metadata,
         },
@@ -416,7 +336,6 @@ function EventDetailPage() {
         </>
       )}
 
-      {/* Sticky mobile buy bar */}
       {data && data.event.status !== "cancelled" && (() => {
         const start = new Date(data.event.start_datetime);
         const end = data.event.end_datetime ? new Date(data.event.end_datetime) : start;
@@ -446,7 +365,6 @@ function EventDetailPage() {
         );
       })()}
 
-      {/* Checkout Dialog */}
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
         <DialogContent className="sm:max-w-[480px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -455,164 +373,249 @@ function EventDetailPage() {
               You're buying {totalCount} ticket{totalCount === 1 ? "" : "s"} for {formatNaira(totalKobo)}.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleCheckoutSubmit} className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Your Full Name</Label>
-              <Input id="name" required value={buyerName} onChange={(e) => setBuyerName(e.target.value)} placeholder="Nneka Okafor" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input id="email" type="email" required value={buyerEmail} onChange={(e) => setBuyerEmail(e.target.value)} placeholder="nneka@company.com" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number (Optional)</Label>
-              <Input id="phone" type="tel" value={buyerPhone} onChange={(e) => setBuyerPhone(e.target.value)} placeholder="08012345678" />
-            </div>
 
-            <div className="space-y-4 border-t border-border pt-4">
-              <div className="flex items-center gap-2">
-                <input 
-                  type="checkbox" 
-                  id="is-gift" 
-                  className="mt-0.5"
-                  checked={isGift}
-                  onChange={(e) => setIsGift(e.target.checked)}
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleCheckoutSubmit)} className="space-y-4 pt-4">
+              <FormField
+                control={form.control}
+                name="buyerName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Your Full Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nneka Okafor" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="buyerEmail"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email Address</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="nneka@company.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="buyerPhone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone Number (Optional)</FormLabel>
+                    <FormControl>
+                      <Input type="tel" placeholder="08012345678" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="space-y-4 border-t border-border pt-4">
+                <FormField
+                  control={form.control}
+                  name="isGift"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-2">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Buy as a gift</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
                 />
-                <Label htmlFor="is-gift" className="text-sm font-semibold">Buy as a gift</Label>
-              </div>
 
-              {!userId && (
-                <div className="space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-4 mt-6">
-                  <div className="flex gap-3">
-                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
-                      <span className="text-xs font-bold">!</span>
+                {!userId && (
+                  <div className="space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-4 mt-6">
+                    <div className="flex gap-3">
+                      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
+                        <span className="text-xs font-bold">!</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Guest Checkout</p>
+                        <p className="text-xs text-muted-foreground">
+                          Since you aren't logged in, please create a short PIN (4-6 digits) so you can access your tickets later.
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium">Guest Checkout</p>
-                      <p className="text-xs text-muted-foreground">
-                        Since you aren't logged in, please create a short PIN (4-6 digits) so you can access your tickets later.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="accessCode">Access PIN</Label>
-                    <Input
-                      id="accessCode"
-                      type="text"
-                      maxLength={10}
-                      required
-                      value={accessCode}
-                      onChange={(e) => setAccessCode(e.target.value)}
-                      placeholder="e.g. 12345"
-                      className="max-w-[200px]"
+                    <FormField
+                      control={form.control}
+                      name="accessCode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Access PIN</FormLabel>
+                          <FormControl>
+                            <Input type="text" maxLength={10} placeholder="e.g. 12345" className="max-w-[200px]" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
                   </div>
-                </div>
-              )}
+                )}
 
-              {isGift && (
-                <div className="space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="recipientName">Recipient Name</Label>
-                    <Input id="recipientName" required={isGift} value={recipientName} onChange={(e) => setRecipientName(e.target.value)} placeholder="Gift recipient's full name" />
+                {isGift && (
+                  <div className="space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-4">
+                    <FormField
+                      control={form.control}
+                      name="recipientName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Recipient Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Gift recipient's full name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="recipientEmail"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Recipient Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="Where to send the tickets" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="giftMessage"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Gift Message (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Happy Birthday!" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="recipientEmail">Recipient Email</Label>
-                    <Input id="recipientEmail" type="email" required={isGift} value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)} placeholder="Where to send the tickets" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="giftMessage">Gift Message (Optional)</Label>
-                    <Input id="giftMessage" value={giftMessage} onChange={(e) => setGiftMessage(e.target.value)} placeholder="Happy Birthday!" />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2 border-t border-border pt-4">
-              <Label>Promo Code</Label>
-              <div className="flex gap-2">
-                <Input 
-                  value={promoCode} 
-                  onChange={(e) => setPromoCode(e.target.value)} 
-                  placeholder="e.g. EARLYBIRD" 
-                  disabled={!!appliedPromo}
-                />
-                {!appliedPromo ? (
-                  <Button type="button" variant="secondary" onClick={applyPromo} disabled={validatingPromo || !promoCode.trim()}>
-                    {validatingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
-                  </Button>
-                ) : (
-                  <Button type="button" variant="destructive" onClick={() => { setAppliedPromo(null); setPromoCode(""); }}>
-                    Remove
-                  </Button>
                 )}
               </div>
-              {appliedPromo && (
-                <p className="text-xs text-green-500 font-medium">
-                  {appliedPromo.discount_type === "percent" ? `${appliedPromo.discount_value}%` : formatNaira(appliedPromo.discount_value)} discount applied!
-                </p>
-              )}
-            </div>
 
-            {totalCount > 1 && (
-              <div className="space-y-4 border-t border-border pt-4">
-                <div>
-                  <p className="text-sm font-semibold">Ticket Assignments</p>
-                  <p className="text-xs text-muted-foreground">
-                    Since you're buying {totalCount} tickets, please assign them to the attendees. Each person will receive their own ticket via email.
-                  </p>
-                </div>
-                {items.map((it) => (
-                  <div key={it.type.id} className="space-y-3">
-                    <p className="text-xs uppercase tracking-widest text-muted-foreground border-b border-border/50 pb-1">
-                      {it.type.name}
-                    </p>
-                    {Array.from({ length: it.count }).map((_, idx) => (
-                      <div key={idx} className="flex flex-col gap-2 rounded-lg bg-secondary/20 p-3">
-                        <p className="text-xs font-medium text-foreground/80">Ticket {idx + 1}</p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          <Input
-                            value={attendeeNames[it.type.id]?.[idx] ?? ""}
-                            onChange={(e) => setAttendeeName(it.type.id, idx, e.target.value)}
-                            placeholder="Attendee Name"
-                            required
-                          />
-                          <Input
-                            type="email"
-                            value={attendeeEmails[it.type.id]?.[idx] ?? ""}
-                            onChange={(e) => setAttendeeEmail(it.type.id, idx, e.target.value)}
-                            placeholder="Attendee Email"
-                            required
-                          />
-                        </div>
+              <div className="space-y-2 border-t border-border pt-4">
+                <FormField
+                  control={form.control}
+                  name="promoCode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Promo Code</FormLabel>
+                      <div className="flex gap-2">
+                        <FormControl>
+                          <Input placeholder="e.g. EARLYBIRD" disabled={!!appliedPromo} {...field} />
+                        </FormControl>
+                        {!appliedPromo ? (
+                          <Button type="button" variant="secondary" onClick={applyPromo} disabled={validatingPromo || !field.value?.trim()}>
+                            {validatingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
+                          </Button>
+                        ) : (
+                          <Button type="button" variant="destructive" onClick={() => { setAppliedPromo(null); form.setValue("promoCode", ""); }}>
+                            Remove
+                          </Button>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                ))}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {appliedPromo && (
+                  <p className="text-xs text-green-500 font-medium">
+                    {appliedPromo.discount_type === "percent" ? `${appliedPromo.discount_value}%` : formatNaira(appliedPromo.discount_value)} discount applied!
+                  </p>
+                )}
               </div>
-            )}
 
-            <div className="flex items-start gap-2 border-t border-border pt-4">
-              <input 
-                type="checkbox" 
-                id="terms" 
-                required
-                className="mt-1"
-                checked={termsAccepted}
-                onChange={(e) => setTermsAccepted(e.target.checked)}
-              />
-              <Label htmlFor="terms" className="text-xs text-muted-foreground leading-relaxed">
-                I agree to the <Link to="/terms" target="_blank" className="text-primary hover:underline">Terms of Service</Link> and <Link to="/privacy" target="_blank" className="text-primary hover:underline">Privacy Policy</Link>.
-              </Label>
-            </div>
+              {totalCount > 1 && (
+                <div className="space-y-4 border-t border-border pt-4">
+                  <div>
+                    <p className="text-sm font-semibold">Ticket Assignments</p>
+                    <p className="text-xs text-muted-foreground">
+                      Since you're buying {totalCount} tickets, please assign them to the attendees. Each person will receive their own ticket via email.
+                    </p>
+                  </div>
+                  {items.map((it) => (
+                    <div key={it.type.id} className="space-y-3">
+                      <p className="text-xs uppercase tracking-widest text-muted-foreground border-b border-border/50 pb-1">
+                        {it.type.name}
+                      </p>
+                      {Array.from({ length: it.count }).map((_, idx) => (
+                        <div key={idx} className="flex flex-col gap-2 rounded-lg bg-secondary/20 p-3">
+                          <p className="text-xs font-medium text-foreground/80">Ticket {idx + 1}</p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <FormField
+                              control={form.control}
+                              name={`attendees.${it.type.id}.${idx}.name` as const}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <Input placeholder="Attendee Name" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name={`attendees.${it.type.id}.${idx}.email` as const}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <Input type="email" placeholder="Attendee Email" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
 
-            <Button type="submit" disabled={checkoutBusy || !termsAccepted} className="w-full gradient-sunset text-primary-foreground shadow-glow">
-              {checkoutBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {totalKobo === 0 ? "Get free tickets" : `Pay ${formatNaira(totalKobo)}`}
-            </Button>
-          </form>
+              <div className="border-t border-border pt-4">
+                <FormField
+                  control={form.control}
+                  name="termsAccepted"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-2">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-xs text-muted-foreground font-normal leading-relaxed">
+                          I agree to the <Link to="/terms" target="_blank" className="text-primary hover:underline">Terms of Service</Link> and <Link to="/privacy" target="_blank" className="text-primary hover:underline">Privacy Policy</Link>.
+                        </FormLabel>
+                        <FormMessage />
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <Button type="submit" disabled={checkoutBusy} className="w-full gradient-sunset text-primary-foreground shadow-glow mt-4">
+                {checkoutBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {totalKobo === 0 ? "Get free tickets" : `Pay ${formatNaira(totalKobo)}`}
+              </Button>
+            </form>
+          </Form>
         </DialogContent>
-
       </Dialog>
     </div>
   );
@@ -627,7 +630,7 @@ function EventBody({
   totalCount,
   totalKobo,
 }: {
-  event: Awaited<ReturnType<typeof fetchEventBySlug>>["event"];
+  event: NonNullable<Awaited<ReturnType<typeof fetchEventBySlug>>>["event"];
   types: TicketType[];
   qty: Record<string, number>;
   setCount: (t: TicketType, n: number) => void;
@@ -636,7 +639,6 @@ function EventBody({
   totalKobo: number;
 }) {
   const start = new Date(event.start_datetime);
-  // If no end time is provided, assume the event lasts for 24 hours so tickets can still be sold
   const end = event.end_datetime ? new Date(event.end_datetime) : new Date(start.getTime() + 24 * 60 * 60 * 1000);
   const now = new Date();
   const isPastEvent = end < now;

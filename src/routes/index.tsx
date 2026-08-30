@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SiteNav } from "@/components/site-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { motion, AnimatePresence, Variants } from "framer-motion";
+
 
 export const Route = createFileRoute("/")({
   ssr: false,
@@ -106,19 +106,19 @@ function LandingPage() {
       <div className="absolute top-[30%] left-[-10%] w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[100px] -z-10 pointer-events-none" />
 
       {/* ── Banners Section ── */}
-      <AnimatePresence>
+      
         {banners.data && banners.data.length > 0 && (
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+          <div 
+            
+            
+            
             className="mx-auto max-w-7xl px-4 pt-6"
           >
             <div className="flex gap-4 overflow-x-auto pb-4 snap-x no-scrollbar">
               {banners.data.map((banner: any) => (
-                <motion.div 
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                <div 
+                  
+                  
                   key={banner.id}
                   onClick={() => handleBannerClick(banner)}
                   className={`relative h-48 sm:h-64 md:h-72 min-w-[85vw] sm:min-w-[600px] md:min-w-[700px] shrink-0 rounded-[2rem] overflow-hidden snap-center group shadow-xl border border-border/50 ${banner.link_url ? "cursor-pointer" : ""}`}
@@ -132,39 +132,39 @@ function LandingPage() {
                   <div className="absolute top-4 right-4 px-3 py-1.5 bg-background/80 backdrop-blur-md text-foreground text-xs font-bold tracking-wider uppercase rounded-full shadow-sm pointer-events-none">
                     Sponsored
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
+      
 
       {/* ── Hero ── */}
       <section className="relative pt-16 pb-20 md:pt-28 md:pb-32">
         <div className="absolute inset-0 bg-grid-pattern opacity-[0.02] pointer-events-none" />
         
-        <motion.div 
-          initial="hidden" animate="visible" variants={staggerContainer}
+        <div 
+          initial="hidden" animate="visible" 
           className="mx-auto max-w-5xl px-4 text-center relative z-10"
         >
-          <motion.div variants={fadeUp} className="inline-flex items-center gap-3 mb-8 bg-secondary/50 border border-border/50 backdrop-blur-md rounded-full px-5 py-2 shadow-sm">
+          <div  className="inline-flex items-center gap-3 mb-8 bg-secondary/50 border border-border/50 backdrop-blur-md rounded-full px-5 py-2 shadow-sm">
             <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
               Naija's Premier Ticket Hub
             </span>
-          </motion.div>
+          </div>
           
-          <motion.h1 variants={fadeUp} className="font-display text-6xl leading-[0.9] md:text-8xl lg:text-[7rem] tracking-tight mb-8">
+          <h1  className="font-display text-6xl leading-[0.9] md:text-8xl lg:text-[7rem] tracking-tight mb-8">
             Buy tickets.
             <br />
             <span className="text-gradient-sunset inline-block mt-2">Turn up.</span>
-          </motion.h1>
+          </h1>
           
-          <motion.p variants={fadeUp} className="mx-auto max-w-2xl text-lg text-muted-foreground md:text-2xl leading-relaxed font-medium mb-12">
+          <p  className="mx-auto max-w-2xl text-lg text-muted-foreground md:text-2xl leading-relaxed font-medium mb-12">
             Discover concerts, comedy shows, and premium events across Nigeria. Buy your tickets in seconds and enter with a scannable QR code.
-          </motion.p>
+          </p>
 
-          <motion.form
-            variants={fadeUp}
+          <form
+            
             className="mx-auto flex max-w-2xl items-center gap-2 rounded-full border border-border/60 bg-card/80 p-2 shadow-2xl backdrop-blur-xl"
             onSubmit={(e) => {
               e.preventDefault();
@@ -183,9 +183,9 @@ function LandingPage() {
             <Button type="submit" className="rounded-full h-12 px-8 gradient-sunset text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-primary/40 font-bold text-base transition-all hover:-translate-y-0.5">
               Search
             </Button>
-          </motion.form>
+          </form>
 
-          <motion.div variants={fadeUp} className="mt-10 flex flex-wrap items-center justify-center gap-3">
+          <div  className="mt-10 flex flex-wrap items-center justify-center gap-3">
             {CATEGORIES.map((label) => (
               <button
                 key={label}
@@ -195,20 +195,20 @@ function LandingPage() {
                 {label}
               </button>
             ))}
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </section>
 
       {/* ── Value Props ── */}
       <section className="mx-auto max-w-7xl px-4 pb-24 md:pb-32">
-        <motion.div 
+        <div 
           initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}
-          variants={staggerContainer}
+          
           className="grid gap-6 md:grid-cols-3"
         >
           {VALUE_PROPS.map(({ title, body }, i) => (
-            <motion.div 
-              variants={fadeUp}
+            <div 
+              
               key={title} 
               className="group rounded-[2.5rem] border border-border/60 bg-card/40 p-8 md:p-10 hover:bg-card hover:border-primary/30 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5"
             >
@@ -220,15 +220,15 @@ function LandingPage() {
               </div>
               <h3 className="text-2xl font-display tracking-tight mb-3 group-hover:text-primary transition-colors">{title}</h3>
               <p className="text-base text-muted-foreground leading-relaxed font-medium">{body}</p>
-            </motion.div>
+            </div>
           ))}
-        </motion.div>
+        </div>
       </section>
 
       {/* ── Organizer CTA ── */}
       <section className="mx-auto max-w-7xl px-4 pb-24 md:pb-32">
-        <motion.div 
-          initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}
+        <div 
+          initial="hidden" whileInView="visible" viewport={{ once: true }} 
           className="relative overflow-hidden rounded-[3rem] border border-primary/20 p-10 md:p-16 shadow-2xl"
         >
           <div className="absolute inset-0 gradient-sunset opacity-95" />
@@ -259,13 +259,13 @@ function LandingPage() {
               </Button>
             </div>
           </div>
-        </motion.div>
+        </div>
       </section>
 
       {/* ── Upcoming Events ── */}
       <section className="mx-auto max-w-7xl px-4 pb-32">
-        <motion.div 
-          initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}
+        <div 
+          initial="hidden" whileInView="visible" viewport={{ once: true }} 
           className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-border/40 pb-6"
         >
           <div>
@@ -279,7 +279,7 @@ function LandingPage() {
           <Link to="/browse" className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-5 py-2.5 text-sm font-semibold hover:border-primary hover:text-primary transition-all shadow-sm">
             Browse all <ArrowRight className="h-4 w-4" />
           </Link>
-        </motion.div>
+        </div>
 
         {upcoming.isLoading && (
           <div className="grid gap-6 md:grid-cols-3">
@@ -299,33 +299,33 @@ function LandingPage() {
         )}
 
         {upcoming.data && upcoming.data.length === 0 && (
-          <motion.div 
-            initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}
+          <div 
+            initial="hidden" whileInView="visible" viewport={{ once: true }} 
             className="grid gap-6 md:grid-cols-3"
           >
             {[1, 2, 3].map((i) => (
-              <motion.div variants={fadeUp} key={i} className="rounded-[2.5rem] border border-dashed border-border/60 bg-card/30 p-10 flex flex-col items-center justify-center text-center">
+              <div  key={i} className="rounded-[2.5rem] border border-dashed border-border/60 bg-card/30 p-10 flex flex-col items-center justify-center text-center">
                 <div className="font-display text-7xl text-muted-foreground/20 mb-6">
                   {String(i).padStart(2, "0")}
                 </div>
                 <p className="text-base text-muted-foreground font-medium max-w-[200px]">
                   Be the first to list an event in this slot.
                 </p>
-              </motion.div>
+              </div>
             ))}
-          </motion.div>
+          </div>
         )}
 
         {upcoming.data && upcoming.data.length > 0 && (
-          <motion.div 
+          <div 
             initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }}
-            variants={staggerContainer}
+            
             className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3"
           >
             {upcoming.data.map((ev) => {
               const isCancelled = ev.status === 'cancelled';
               return (
-                <motion.div variants={fadeUp} key={ev.id}>
+                <div  key={ev.id}>
                   <Link
                     to="/e/$slug"
                     params={{ slug: ev.slug }}
@@ -383,9 +383,9 @@ function LandingPage() {
                     )}
                   </div>
                 </Link>
-              </motion.div>
+              </div>
             )})}
-          </motion.div>
+          </div>
         )}
       </section>
 

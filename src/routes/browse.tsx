@@ -8,7 +8,7 @@ import { SiteNav } from "@/components/site-nav";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { formatNaira } from "@/lib/currency";
-import { motion, AnimatePresence, Variants } from "framer-motion";
+
 
 const searchSchema = z.object({
   q: z.string().optional(),
@@ -138,66 +138,60 @@ function BrowsePage() {
       <section className="relative overflow-hidden border-b border-border bg-card/30 pb-12 pt-16 md:pt-24 md:pb-16">
         {/* Animated Background Orbs */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-          <motion.div 
-            animate={{ 
-              scale: [1, 1.2, 1],
-              opacity: [0.3, 0.5, 0.3],
-            }}
-            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          <div 
+            
+            
             className="absolute -top-40 -right-40 h-[500px] w-[500px] rounded-full bg-primary/20 blur-[120px]" 
           />
-          <motion.div 
-            animate={{ 
-              scale: [1, 1.5, 1],
-              opacity: [0.2, 0.4, 0.2],
-            }}
-            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          <div 
+            
+            
             className="absolute top-20 -left-20 h-[300px] w-[300px] rounded-full bg-blue-500/20 blur-[100px]" 
           />
         </div>
 
         <div className="relative z-10 mx-auto max-w-6xl px-4 text-center">
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+          <div 
+            
+            
+            
             className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 mb-8 text-sm backdrop-blur-md text-primary font-medium shadow-sm"
           >
             <Compass className="h-4 w-4" />
             <span>Discover the best experiences</span>
-          </motion.div>
+          </div>
 
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
+          <h1 
+            
+            
+            
             className="font-display text-5xl md:text-6xl lg:text-7xl tracking-tight mb-6"
           >
             Find your next <span className="text-gradient-sunset relative inline-block">
               vibe.
-              <motion.span 
-                initial={{ width: 0 }}
-                animate={{ width: "100%" }}
-                transition={{ duration: 0.8, delay: 0.6, ease: "easeOut" }}
+              <span 
+                
+                
+                
                 className="absolute -bottom-2 left-0 h-1 bg-gradient-to-r from-primary to-purple-500 rounded-full"
               />
             </span>
-          </motion.h1>
+          </h1>
           
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
+          <p 
+            
+            
+            
             className="mx-auto max-w-2xl text-muted-foreground text-lg md:text-xl mb-10 leading-relaxed"
           >
             Explore thousands of concerts, comedy shows, tech conferences, and exclusive parties happening across Nigeria.
-          </motion.p>
+          </p>
 
           {/* Search Bar */}
-          <motion.form
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
+          <form
+            
+            
+            
             className="mx-auto flex w-full max-w-2xl items-center gap-2 rounded-full border border-border/60 bg-background/90 p-2 shadow-2xl backdrop-blur-xl transition-all focus-within:ring-4 focus-within:ring-primary/20 focus-within:border-primary/50 group hover:border-primary/30"
             onSubmit={handleSearch}
           >
@@ -213,13 +207,13 @@ function BrowsePage() {
             <Button type="submit" size="lg" className="rounded-full gradient-sunset text-primary-foreground hover:shadow-lg hover:shadow-primary/25 transition-all px-8 h-12 text-base font-medium">
               Search
             </Button>
-          </motion.form>
+          </form>
 
           {/* Categories Pill Bar */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
+          <div 
+            
+            
+            
             className="mx-auto mt-12 flex max-w-4xl items-center justify-center relative"
           >
             <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-card/30 to-transparent z-10 pointer-events-none md:hidden" />
@@ -237,10 +231,10 @@ function BrowsePage() {
                     }`}
                   >
                     {isActive && (
-                      <motion.div 
+                      <div 
                         layoutId="activeCategory" 
                         className="absolute inset-0 bg-primary z-0" 
-                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                        
                       />
                     )}
                     <span className="relative z-10">{cat}</span>
@@ -249,7 +243,7 @@ function BrowsePage() {
               })}
             </div>
             <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card/30 to-transparent z-10 pointer-events-none md:hidden" />
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -261,9 +255,9 @@ function BrowsePage() {
             {!q && (!c || c === 'All') ? (
               <><Flame className="h-7 w-7 text-primary" /> Trending Events</>
             ) : (
-              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <span>
                 <span className="text-primary">{query.data?.events.length || 0}</span> Results found
-              </motion.span>
+              </span>
             )}
           </h2>
           <Button variant="outline" size="sm" className="hidden sm:flex rounded-full gap-2 items-center bg-card shadow-sm border-border/50 hover:bg-secondary">
@@ -291,21 +285,21 @@ function BrowsePage() {
         )}
 
         {query.error && (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }} 
-            animate={{ opacity: 1, scale: 1 }} 
+          <div 
+             
+             
             className="rounded-2xl border border-destructive/20 bg-destructive/5 p-8 text-center text-destructive max-w-2xl mx-auto"
           >
             <Frown className="h-10 w-10 mx-auto mb-4 opacity-50" />
             <h3 className="font-medium text-lg mb-1">Oops, something went wrong</h3>
             <p className="text-destructive/80">{(query.error as Error).message}</p>
-          </motion.div>
+          </div>
         )}
 
         {query.data && query.data.events.length === 0 && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+          <div 
+            
+            
             className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border/60 bg-card/30 py-24 text-center backdrop-blur-sm max-w-3xl mx-auto"
           >
             <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-secondary/50 relative">
@@ -319,18 +313,18 @@ function BrowsePage() {
             <Button size="lg" className="rounded-full shadow-md" onClick={() => handleCategoryClick("All")}>
               Clear All Filters
             </Button>
-          </motion.div>
+          </div>
         )}
 
         {/* Grid */}
         {query.data && query.data.events.length > 0 && (
-          <motion.div 
-            variants={containerVariants}
+          <div 
+            
             initial="hidden"
             animate="show"
             className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:gap-8"
           >
-            <AnimatePresence>
+            
               {query.data.events.map((ev) => {
                 const min = query.data.minPrice[ev.id];
                 const isCancelled = ev.status === 'cancelled';
@@ -406,18 +400,18 @@ function BrowsePage() {
 
                 if (isCancelled) {
                   return (
-                    <motion.div
-                      variants={cardVariants}
+                    <div
+                      
                       key={ev.id}
                       className="group relative flex flex-col overflow-hidden rounded-3xl bg-card border border-border/40 opacity-80 shadow-sm"
                     >
                       {CardInner}
-                    </motion.div>
+                    </div>
                   );
                 }
 
                 return (
-                  <motion.div variants={cardVariants} key={ev.id}>
+                  <div  key={ev.id}>
                     <Link
                       to="/e/$slug"
                       params={{ slug: ev.slug }}
@@ -425,11 +419,11 @@ function BrowsePage() {
                     >
                       {CardInner}
                     </Link>
-                  </motion.div>
+                  </div>
                 );
               })}
-            </AnimatePresence>
-          </motion.div>
+            
+          </div>
         )}
       </section>
     </div>

@@ -16,7 +16,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
+
 
 export const Route = createFileRoute("/_authenticated/tickets")({
   component: TicketsPage,
@@ -148,12 +148,12 @@ function RefundRequestModal({ open, onClose, event, ticketId, buyerEmail, buyerN
             </div>
           </div>
 
-          <AnimatePresence>
+          
             {reason === "other" && (
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
+              <div 
+                
+                
+                
                 className="space-y-3 overflow-hidden"
               >
                 <Label htmlFor="other-reason" className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -169,9 +169,9 @@ function RefundRequestModal({ open, onClose, event, ticketId, buyerEmail, buyerN
                   maxLength={500}
                 />
                 <p className="text-right text-xs text-muted-foreground font-medium">{otherText.length}/500</p>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
+          
 
           <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-600/90 leading-relaxed font-medium">
             Refund requests are reviewed by the organizer and TixNaija within{" "}
@@ -262,15 +262,15 @@ function TicketsPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 md:py-20 min-h-screen">
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+      <div 
+        
+        
+        
         className="mb-12"
       >
         <h1 className="font-display text-5xl md:text-6xl tracking-tight mb-4">Your Tickets</h1>
         <p className="text-muted-foreground text-lg max-w-2xl">Manage your purchased tickets and passes. Get ready for your next unforgettable experience.</p>
-      </motion.div>
+      </div>
 
       {isLoading && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-8">
@@ -292,21 +292,21 @@ function TicketsPage() {
       )}
 
       {error && (
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }} 
-          animate={{ opacity: 1, scale: 1 }} 
+        <div 
+           
+           
           className="rounded-2xl border border-destructive/20 bg-destructive/5 p-8 text-center text-destructive max-w-2xl mx-auto"
         >
           <Frown className="h-10 w-10 mx-auto mb-4 opacity-50" />
           <h3 className="font-medium text-lg mb-1">Failed to load tickets</h3>
           <p className="text-destructive/80">{(error as Error).message}</p>
-        </motion.div>
+        </div>
       )}
 
       {tickets && tickets.length === 0 ? (
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
+        <div 
+          
+          
           className="flex flex-col items-center justify-center border border-dashed border-border/60 bg-card/30 p-16 md:p-24 text-center rounded-[2.5rem] mt-8 shadow-sm max-w-3xl mx-auto backdrop-blur-sm"
         >
           <div className="mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-secondary/50 relative">
@@ -320,14 +320,10 @@ function TicketsPage() {
           <Button asChild size="lg" className="rounded-full h-14 px-10 gradient-sunset text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all font-semibold text-lg">
             <Link to="/browse">Explore events</Link>
           </Button>
-        </motion.div>
+        </div>
       ) : (
         tickets && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
+          <div>
             <Tabs defaultValue={live.length > 0 ? "live" : upcoming.length > 0 ? "upcoming" : "past"} className="w-full mt-2">
               <TabsList className="mb-10 inline-flex h-14 items-center justify-center rounded-full bg-secondary/50 p-1.5 text-muted-foreground border border-border/40 shadow-inner overflow-x-auto overflow-y-hidden max-w-full no-scrollbar">
                 <TabsTrigger value="upcoming" className="rounded-full px-6 py-2.5 text-base font-semibold data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md transition-all">
@@ -353,7 +349,7 @@ function TicketsPage() {
                 <EventList events={past} emptyMessage="No past events in your history." type="past" />
               </TabsContent>
             </Tabs>
-          </motion.div>
+          </div>
         )
       )}
     </div>
@@ -374,26 +370,26 @@ function EventList({ events, emptyMessage, type }: { events: any[]; emptyMessage
 
   if (events.length === 0) {
     return (
-      <motion.div 
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+      <div 
+         
         className="rounded-3xl border border-dashed border-border/60 bg-card/30 py-20 text-center text-lg text-muted-foreground font-medium"
       >
         {emptyMessage}
-      </motion.div>
+      </div>
     );
   }
 
   return (
     <>
-      <motion.div 
-        variants={containerVariants}
+      <div 
+        
         initial="hidden"
         animate="show"
         className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:gap-8"
       >
         {events.map((ev) => (
-          <motion.div
-            variants={cardVariants}
+          <div
+            
             key={ev.id}
             className="group relative flex flex-col overflow-hidden rounded-[2rem] bg-card border border-border/60 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/10 hover:border-primary/30"
           >
@@ -488,11 +484,11 @@ function EventList({ events, emptyMessage, type }: { events: any[]; emptyMessage
                 )}
               </div>
             </div>
-          </motion.div>
+          </div>
         ))}
-      </motion.div>
+      </div>
 
-      <AnimatePresence>
+      
         {refundTarget && (
           <RefundRequestModal
             open={!!refundTarget}
@@ -503,7 +499,7 @@ function EventList({ events, emptyMessage, type }: { events: any[]; emptyMessage
             buyerName={userName}
           />
         )}
-      </AnimatePresence>
+      
     </>
   );
 }

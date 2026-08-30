@@ -5,7 +5,7 @@ import {
   ClipboardList, ScanLine, BarChart3, MessageSquare, ShieldCheck,
   ChevronRight,
 } from "lucide-react";
-import { motion } from "framer-motion";
+
 
 export const Route = createFileRoute("/how-it-works")({
   component: HowItWorksPage,
@@ -134,26 +134,26 @@ function HowItWorksPage() {
         <div className="absolute inset-0 bg-grid-pattern opacity-[0.02]" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-3xl -z-10 pointer-events-none" />
         
-        <motion.div 
+        <div 
           initial="hidden"
           animate="visible"
-          variants={staggerContainer}
+          
           className="mx-auto max-w-6xl px-4 text-center"
         >
-          <motion.div variants={fadeUp} className="inline-flex items-center gap-3 mb-8 bg-secondary/50 border border-border/50 backdrop-blur-md rounded-full px-5 py-2 shadow-sm">
+          <div  className="inline-flex items-center gap-3 mb-8 bg-secondary/50 border border-border/50 backdrop-blur-md rounded-full px-5 py-2 shadow-sm">
             <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
               Platform Guide
             </span>
             <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-          </motion.div>
-          <motion.h1 variants={fadeUp} className="font-display text-5xl md:text-7xl lg:text-8xl leading-[0.95] tracking-tight mb-8">
+          </div>
+          <h1  className="font-display text-5xl md:text-7xl lg:text-8xl leading-[0.95] tracking-tight mb-8">
             How <span className="text-gradient-sunset">TixNaija</span> works
-          </motion.h1>
-          <motion.p variants={fadeUp} className="text-muted-foreground text-lg md:text-2xl max-w-2xl mx-auto leading-relaxed mb-12 font-medium">
+          </h1>
+          <p  className="text-muted-foreground text-lg md:text-2xl max-w-2xl mx-auto leading-relaxed mb-12 font-medium">
             Whether you're going out or putting on a show — here's everything you
             need to know to get started in minutes.
-          </motion.p>
-          <motion.div variants={fadeUp} className="flex flex-wrap justify-center gap-4">
+          </p>
+          <div  className="flex flex-wrap justify-center gap-4">
             <a
               href="#buyers"
               className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-6 py-3 text-sm font-semibold hover:border-primary hover:text-primary transition-all shadow-sm hover:shadow-md"
@@ -166,17 +166,17 @@ function HowItWorksPage() {
             >
               I want to sell tickets <ChevronRight className="h-4 w-4" />
             </a>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </div>
 
       {/* ── Buyers Section ── */}
       <section id="buyers" className="scroll-mt-24 mx-auto max-w-6xl px-4 py-20 md:py-28 relative">
         <div className="absolute top-40 left-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-10" />
         
-        <motion.div 
+        <div 
           initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}
-          variants={fadeUp}
+          
           className="flex flex-col md:flex-row items-start md:items-baseline gap-6 mb-16"
         >
           <span className="font-display text-6xl md:text-8xl leading-none text-muted-foreground/10 select-none hidden md:block">01</span>
@@ -184,18 +184,18 @@ function HowItWorksPage() {
             <h2 className="font-display text-4xl md:text-5xl leading-tight">For Ticket Buyers</h2>
             <p className="text-xl text-muted-foreground font-medium">Find your event, pay, show up — that's it.</p>
           </div>
-        </motion.div>
+        </div>
 
         <div className="relative">
           <div className="absolute left-[27px] top-10 bottom-10 w-0.5 bg-gradient-to-b from-primary/50 via-primary/20 to-transparent hidden md:block rounded-full" aria-hidden />
 
-          <motion.div 
+          <div 
             initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}
-            variants={staggerContainer}
+            
             className="space-y-12"
           >
             {BUYER_STEPS.map((step, i) => (
-              <motion.div variants={fadeUp} key={i} className="flex gap-6 md:gap-10">
+              <div  key={i} className="flex gap-6 md:gap-10">
                 <div className="relative shrink-0 hidden md:block">
                   <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-primary bg-background shadow-lg shadow-primary/20 z-10 relative">
                     <step.icon className="h-6 w-6 text-primary" />
@@ -211,19 +211,19 @@ function HowItWorksPage() {
                   </div>
                   <p className="text-muted-foreground text-lg leading-relaxed">{step.body}</p>
                 </div>
-              </motion.div>
+              </div>
             ))}
-          </motion.div>
+          </div>
         </div>
 
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="mt-16 flex justify-center md:justify-start md:ml-[96px]">
+        <div initial="hidden" whileInView="visible" viewport={{ once: true }}  className="mt-16 flex justify-center md:justify-start md:ml-[96px]">
           <Link
             to="/browse"
             className="inline-flex items-center justify-center gap-2 rounded-full h-14 px-8 gradient-sunset text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-1 transition-all font-semibold text-lg w-full md:w-auto"
           >
             Browse Events Now <ChevronRight className="h-5 w-5" />
           </Link>
-        </motion.div>
+        </div>
       </section>
 
       {/* ── Organizers Section ── */}
@@ -231,9 +231,9 @@ function HowItWorksPage() {
         <div className="absolute inset-0 bg-grid-pattern opacity-[0.02]" />
         
         <div className="mx-auto max-w-6xl px-4 relative z-10">
-          <motion.div 
+          <div 
             initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}
-            variants={fadeUp}
+            
             className="flex flex-col md:flex-row items-start md:items-baseline gap-6 mb-16"
           >
             <span className="font-display text-6xl md:text-8xl leading-none text-muted-foreground/10 select-none hidden md:block">02</span>
@@ -241,16 +241,16 @@ function HowItWorksPage() {
               <h2 className="font-display text-4xl md:text-5xl leading-tight">For Event Organizers</h2>
               <p className="text-xl text-muted-foreground font-medium">Set up, sell out, get paid — no listing fees.</p>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div 
+          <div 
             initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}
-            variants={staggerContainer}
+            
             className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
           >
             {ORGANIZER_STEPS.map((step, i) => (
-              <motion.div
-                variants={fadeUp}
+              <div
+                
                 key={i}
                 className="rounded-3xl border border-border/60 bg-card p-8 hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 group flex flex-col"
               >
@@ -264,12 +264,12 @@ function HowItWorksPage() {
                 </div>
                 <h3 className="font-display text-xl mb-3">{step.title}</h3>
                 <p className="text-base text-muted-foreground leading-relaxed flex-1">{step.body}</p>
-              </motion.div>
+              </div>
             ))}
-          </motion.div>
+          </div>
 
-          <motion.div 
-            initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}
+          <div 
+            initial="hidden" whileInView="visible" viewport={{ once: true }} 
             className="mt-12 rounded-[2.5rem] border-2 border-primary/20 bg-primary/5 p-8 md:p-12 relative overflow-hidden group"
           >
             <div className="absolute right-0 top-0 w-64 h-64 bg-primary/10 rounded-bl-full -z-10 group-hover:scale-110 transition-transform duration-700" />
@@ -292,9 +292,9 @@ function HowItWorksPage() {
                 </p>
               </div>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="mt-12 flex flex-wrap gap-4">
+          <div initial="hidden" whileInView="visible" viewport={{ once: true }}  className="mt-12 flex flex-wrap gap-4">
             <Link
               to="/auth"
               search={{ mode: "signup" }}
@@ -308,7 +308,7 @@ function HowItWorksPage() {
             >
               <MessageSquare className="h-5 w-5" /> Talk to us
             </Link>
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -316,9 +316,9 @@ function HowItWorksPage() {
       <section className="mx-auto max-w-6xl px-4 py-20 md:py-28 relative">
         <div className="absolute right-0 bottom-40 w-[500px] h-[500px] bg-secondary rounded-full blur-3xl -z-10 opacity-50" />
         
-        <motion.div 
+        <div 
           initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}
-          variants={fadeUp}
+          
           className="flex flex-col md:flex-row items-start md:items-baseline gap-6 mb-16 text-center md:text-left"
         >
           <span className="font-display text-6xl md:text-8xl leading-none text-muted-foreground/10 select-none hidden md:block">03</span>
@@ -326,15 +326,15 @@ function HowItWorksPage() {
             <h2 className="font-display text-4xl md:text-5xl leading-tight">Frequently Asked Questions</h2>
             <p className="text-xl text-muted-foreground font-medium">Everything you need to know about the platform.</p>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div 
+        <div 
           initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}
-          variants={staggerContainer}
+          
           className="grid gap-6 md:grid-cols-2"
         >
           {FAQ.map((item, i) => (
-            <motion.div variants={fadeUp} key={i} className="rounded-3xl border border-border/60 bg-card/60 backdrop-blur-sm p-8 hover:bg-card hover:border-border transition-colors group">
+            <div  key={i} className="rounded-3xl border border-border/60 bg-card/60 backdrop-blur-sm p-8 hover:bg-card hover:border-border transition-colors group">
               <h3 className="font-display text-xl mb-4 flex items-start gap-4">
                 <div className="rounded-full bg-secondary p-2 group-hover:bg-primary/10 group-hover:text-primary transition-colors shrink-0">
                   <ShieldCheck className="h-5 w-5" />
@@ -342,15 +342,15 @@ function HowItWorksPage() {
                 <span className="mt-1">{item.q}</span>
               </h3>
               <p className="text-base text-muted-foreground leading-relaxed pl-14">{item.a}</p>
-            </motion.div>
+            </div>
           ))}
-        </motion.div>
+        </div>
       </section>
 
       {/* ── CTA Banner ── */}
       <section className="mx-auto max-w-6xl px-4 pb-24">
-        <motion.div 
-          initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}
+        <div 
+          initial="hidden" whileInView="visible" viewport={{ once: true }} 
           className="relative overflow-hidden rounded-[3rem] border border-primary/20 p-10 md:p-20 shadow-2xl"
         >
           <div className="absolute inset-0 gradient-sunset opacity-95" />
@@ -381,7 +381,7 @@ function HowItWorksPage() {
               </Link>
             </div>
           </div>
-        </motion.div>
+        </div>
       </section>
 
       {/* Footer */}
