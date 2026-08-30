@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Calendar, MapPin, ChevronRight, ArrowRight } from "lucide-react";
+import { Search, Calendar, MapPin, ChevronRight, ArrowRight, QrCode, CreditCard, Ticket, Zap, Flame, Compass } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteNav } from "@/components/site-nav";
 import { Button } from "@/components/ui/button";
@@ -129,54 +129,58 @@ function LandingPage() {
       
 
       {/* ── Hero ── */}
-      <section className="relative pt-16 pb-20 md:pt-28 md:pb-32">
-        <div className="absolute inset-0 bg-grid-pattern opacity-[0.02] pointer-events-none" />
+      <section className="relative pt-16 pb-20 md:pt-32 md:pb-40 overflow-visible">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" />
         
-        <div className="mx-auto max-w-5xl px-4 text-center relative z-10">
-          <div  className="inline-flex items-center gap-3 mb-8 bg-secondary/50 border border-border/50 backdrop-blur-md rounded-full px-5 py-2 shadow-sm">
-            <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
+        {/* Animated glowing orbs */}
+        <div className="absolute top-[20%] left-[20%] w-[40vw] h-[40vw] max-w-[600px] max-h-[600px] bg-primary/20 rounded-full blur-[100px] mix-blend-screen animate-[spin_20s_linear_infinite] pointer-events-none" />
+        <div className="absolute top-[10%] right-[15%] w-[35vw] h-[35vw] max-w-[500px] max-h-[500px] bg-purple-500/20 rounded-full blur-[100px] mix-blend-screen animate-[spin_25s_linear_infinite_reverse] pointer-events-none" />
+
+        <div className="mx-auto max-w-5xl px-4 text-center relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+          <div className="inline-flex items-center gap-3 mb-10 bg-background/50 border border-primary/20 backdrop-blur-xl rounded-full px-5 py-2 shadow-lg shadow-primary/5 ring-1 ring-white/10">
+            <span className="text-xs font-bold uppercase tracking-[0.25em] text-foreground/90">
               Naija's Premier Ticket Hub
             </span>
           </div>
           
-          <h1  className="font-display text-6xl leading-[0.9] md:text-8xl lg:text-[7rem] tracking-tight mb-8">
+          <h1 className="font-display text-6xl leading-[0.85] md:text-8xl lg:text-[8rem] tracking-tighter mb-8 drop-shadow-2xl">
             Buy tickets.
             <br />
-            <span className="text-gradient-sunset inline-block mt-2">Turn up.</span>
+            <span className="bg-gradient-to-br from-primary via-orange-500 to-purple-600 bg-clip-text text-transparent inline-block mt-4 pb-2 filter drop-shadow-lg">Turn up.</span>
           </h1>
           
-          <p  className="mx-auto max-w-2xl text-lg text-muted-foreground md:text-2xl leading-relaxed font-medium mb-12">
-            Discover concerts, comedy shows, and premium events across Nigeria. Buy your tickets in seconds and enter with a scannable QR code.
+          <p className="mx-auto max-w-2xl text-lg text-muted-foreground md:text-xl leading-relaxed font-medium mb-12 max-w-[600px]">
+            Discover concerts, comedy shows, and premium events across Nigeria. Secure your spot in seconds and enter with a scannable QR code.
           </p>
 
           <form
-            
-            className="mx-auto flex max-w-2xl items-center gap-2 rounded-full border border-border/60 bg-card/80 p-2 shadow-2xl backdrop-blur-xl"
+            className="mx-auto flex w-full max-w-3xl items-center gap-3 rounded-[2rem] border border-white/10 bg-black/40 p-3 shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] backdrop-blur-2xl transition-all hover:border-primary/30 hover:shadow-primary/20 hover:bg-black/50 group"
             onSubmit={(e) => {
               e.preventDefault();
               navigate({ to: "/browse", search: { q: query.trim() || undefined } });
             }}
           >
-            <div className="pl-4">
-              <Search className="h-5 w-5 text-muted-foreground" />
+            <div className="pl-5 flex items-center justify-center bg-white/5 rounded-full w-12 h-12 shrink-0 group-hover:bg-primary/10 transition-colors">
+              <Search className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
             </div>
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search events, artists, cities..."
-              className="border-0 bg-transparent shadow-none focus-visible:ring-0 text-base h-12"
+              placeholder="Search for events, artists, venues..."
+              className="border-0 bg-transparent shadow-none focus-visible:ring-0 text-base md:text-lg h-14 placeholder:text-muted-foreground/60 w-full font-medium"
             />
-            <Button type="submit" className="rounded-full h-12 px-8 gradient-sunset text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-primary/40 font-bold text-base transition-all hover:-translate-y-0.5">
-              Search
+            <Button type="submit" className="rounded-full h-14 px-8 md:px-10 bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_30px_-5px_var(--theme-primary)] font-bold text-base transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_0_var(--theme-primary)] shrink-0">
+              Find Events
             </Button>
           </form>
 
-          <div  className="mt-10 flex flex-wrap items-center justify-center gap-3">
+          <div className="mt-12 flex flex-wrap items-center justify-center gap-3 max-w-4xl mx-auto">
+            <span className="text-sm font-semibold text-muted-foreground mr-2 hidden sm:inline">Trending:</span>
             {CATEGORIES.map((label) => (
               <button
                 key={label}
                 onClick={() => navigate({ to: "/browse", search: { q: label } })}
-                className="rounded-full border border-border/60 bg-card/50 px-5 py-2 text-sm font-semibold transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-primary hover:shadow-sm"
+                className="rounded-full border border-white/5 bg-white/5 px-6 py-2.5 text-sm font-semibold transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/10 hover:text-primary hover:shadow-[0_10px_20px_-10px_var(--theme-primary)] backdrop-blur-sm"
               >
                 {label}
               </button>
@@ -185,58 +189,95 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* ── Value Props ── */}
-      <section className="mx-auto max-w-7xl px-4 pb-24 md:pb-32">
-        <div className="grid gap-6 md:grid-cols-3">
-          {VALUE_PROPS.map(({ title, body }, i) => (
-            <div 
-              
-              key={title} 
-              className="group rounded-[2.5rem] border border-border/60 bg-card/40 p-8 md:p-10 hover:bg-card hover:border-primary/30 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5"
-            >
-              <div className="flex items-start gap-4 mb-8">
-                <span className="font-display text-5xl md:text-6xl leading-none text-muted-foreground/20 group-hover:text-primary/30 transition-colors">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <div className="h-px flex-1 bg-border/60 mt-6 group-hover:bg-primary/20 transition-colors" />
-              </div>
-              <h3 className="text-2xl font-display tracking-tight mb-3 group-hover:text-primary transition-colors">{title}</h3>
-              <p className="text-base text-muted-foreground leading-relaxed font-medium">{body}</p>
+      {/* ── Value Props Bento Box ── */}
+      <section className="mx-auto max-w-7xl px-4 pb-24 md:pb-40">
+        <div className="text-center mb-16 relative z-10">
+          <h2 className="font-display text-4xl md:text-5xl lg:text-6xl mb-6">Why TixNaija?</h2>
+          <p className="text-lg text-muted-foreground font-medium max-w-2xl mx-auto">We've eliminated the friction from ticketing. Experience the most seamless way to discover and host events in Nigeria.</p>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-3 md:grid-rows-2 md:h-[600px] relative z-10">
+          {/* Card 1: Wide */}
+          <div className="group relative overflow-hidden rounded-[3rem] border border-white/10 bg-card/60 backdrop-blur-xl p-10 md:col-span-2 shadow-2xl hover:border-primary/40 transition-colors duration-500 flex flex-col justify-between">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+            <div className="absolute right-0 bottom-0 w-64 h-64 bg-primary/20 rounded-full blur-[80px] -z-10 group-hover:bg-primary/30 transition-colors" />
+            
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-8 border border-primary/20 shadow-inner group-hover:scale-110 transition-transform duration-500">
+              <QrCode className="h-8 w-8 text-primary" />
             </div>
-          ))}
+            
+            <div className="relative z-10">
+              <h3 className="text-3xl md:text-4xl font-display tracking-tight mb-4 group-hover:text-primary transition-colors">QR tickets, zero drama</h3>
+              <p className="text-lg text-muted-foreground leading-relaxed font-medium max-w-md">Every ticket generates a unique, secure cryptographic QR code. Fast door scans, absolutely no double entries, just pure vibes and smooth access control.</p>
+            </div>
+          </div>
+
+          {/* Card 2: Tall */}
+          <div className="group relative overflow-hidden rounded-[3rem] border border-white/10 bg-card/60 backdrop-blur-xl p-10 md:row-span-2 shadow-2xl hover:border-purple-500/40 transition-colors duration-500 flex flex-col justify-between">
+            <div className="absolute inset-0 bg-gradient-to-b from-purple-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-purple-500/20 rounded-full blur-[80px] -z-10 group-hover:bg-purple-500/30 transition-colors" />
+            
+            <div className="w-16 h-16 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-8 border border-purple-500/20 shadow-inner group-hover:scale-110 transition-transform duration-500">
+              <CreditCard className="h-8 w-8 text-purple-500" />
+            </div>
+            
+            <div className="relative z-10 mt-auto">
+              <h3 className="text-3xl md:text-4xl font-display tracking-tight mb-4 group-hover:text-purple-400 transition-colors">Pay with ease</h3>
+              <p className="text-lg text-muted-foreground leading-relaxed font-medium">Cards, bank transfers, USSD — we support all the payment methods Naija actually uses via our secure Paystack integration.</p>
+            </div>
+          </div>
+
+          {/* Card 3: Standard */}
+          <div className="group relative overflow-hidden rounded-[3rem] border border-white/10 bg-card/60 backdrop-blur-xl p-10 shadow-2xl hover:border-orange-500/40 transition-colors duration-500 flex flex-col justify-between md:col-span-2">
+            <div className="absolute inset-0 bg-gradient-to-tl from-orange-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+            <div className="absolute right-10 top-10 w-32 h-32 bg-orange-500/20 rounded-full blur-[60px] -z-10 group-hover:bg-orange-500/30 transition-colors" />
+            
+            <div className="flex justify-between items-start">
+              <div className="relative z-10">
+                <h3 className="text-3xl md:text-4xl font-display tracking-tight mb-4 group-hover:text-orange-400 transition-colors">Sell in minutes</h3>
+                <p className="text-lg text-muted-foreground leading-relaxed font-medium max-w-lg">Create your event, add ticket tiers, and share the link globally. Selling out has never been this ridiculously easy.</p>
+              </div>
+              <div className="w-16 h-16 rounded-2xl bg-orange-500/10 hidden sm:flex items-center justify-center border border-orange-500/20 shadow-inner group-hover:scale-110 transition-transform duration-500 shrink-0">
+                <Ticket className="h-8 w-8 text-orange-500" />
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ── Organizer CTA ── */}
-      <section className="mx-auto max-w-7xl px-4 pb-24 md:pb-32">
-        <div className="relative overflow-hidden rounded-[3rem] border border-primary/20 p-10 md:p-16 shadow-2xl">
-          <div className="absolute inset-0 gradient-sunset opacity-95" />
-          <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+      {/* ── Organizer Breakout CTA ── */}
+      <section className="relative py-32 overflow-hidden my-16 border-y border-white/5 bg-background/20">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent" />
+        
+        {/* Animated grid lines behind */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-50 pointer-events-none" />
+
+        <div className="mx-auto max-w-6xl px-4 relative z-10 text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 border border-primary/30 mb-8 shadow-[0_0_50px_0_var(--theme-primary)]">
+            <Zap className="h-10 w-10 text-primary" />
+          </div>
           
-          <div className="relative grid gap-10 md:grid-cols-2 md:items-center">
-            <div>
-              <h2 className="font-display text-4xl md:text-5xl lg:text-6xl leading-tight text-primary-foreground mb-4">
-                Selling tickets? Start here.
-              </h2>
-              <p className="text-primary-foreground/90 text-lg font-medium leading-relaxed max-w-md">
-                Set up your event, publish instantly, and get paid directly to your Nigerian bank account. No listing fees, no hassle.
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4 md:justify-end">
-              <Button asChild size="lg" className="rounded-full bg-background text-foreground hover:bg-background/90 shadow-xl h-14 px-8 text-lg font-bold hover:scale-105 transition-transform border-0">
-                <Link to="/auth" search={{ mode: "signup" }}>
-                  Create your event
-                </Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="rounded-full border-2 border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 h-14 px-8 text-lg font-bold transition-colors"
-              >
-                <Link to="/dashboard">Go to Dashboard</Link>
-              </Button>
-            </div>
+          <h2 className="font-display text-5xl md:text-7xl leading-tight text-foreground mb-6 drop-shadow-xl">
+            Selling tickets? <span className="text-gradient-sunset">Start here.</span>
+          </h2>
+          <p className="text-muted-foreground text-xl md:text-2xl font-medium leading-relaxed max-w-2xl mx-auto mb-12">
+            Set up your event, publish instantly, and get paid directly to your Nigerian bank account. Zero listing fees, zero hassle.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+            <Button asChild size="lg" className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_40px_-10px_var(--theme-primary)] h-16 px-10 text-xl font-bold hover:scale-105 transition-all duration-300 w-full sm:w-auto">
+              <Link to="/auth" search={{ mode: "signup" }}>
+                Create your event
+              </Link>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="rounded-full border-2 border-white/10 bg-white/5 backdrop-blur-md text-foreground hover:bg-white/10 hover:border-white/20 h-16 px-10 text-xl font-bold transition-all duration-300 hover:-translate-y-1 w-full sm:w-auto"
+            >
+              <Link to="/dashboard">Go to Dashboard</Link>
+            </Button>
           </div>
         </div>
       </section>
@@ -293,14 +334,15 @@ function LandingPage() {
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {upcoming.data.map((ev) => {
               const isCancelled = ev.status === 'cancelled';
+              const startDate = new Date(ev.start_datetime);
               return (
-                <div  key={ev.id}>
+                <div key={ev.id}>
                   <Link
                     to="/e/$slug"
                     params={{ slug: ev.slug }}
-                    className="group relative flex flex-col overflow-hidden rounded-[2.5rem] bg-card border border-border/60 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/10 hover:border-primary/30 h-full"
+                    className="group relative flex flex-col overflow-hidden rounded-[2.5rem] bg-card border border-white/5 shadow-lg transition-all duration-500 hover:-translate-y-3 hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/40 h-full"
                   >
-                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary">
+                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary/50">
                       {ev.cover_image_url ? (
                         <img
                           src={ev.cover_image_url}
@@ -313,7 +355,13 @@ function LandingPage() {
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-purple-500/20" />
                       )}
                       
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-40 group-hover:opacity-70 transition-opacity duration-300 z-10" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500 z-10" />
+
+                      {/* Floating Date Badge */}
+                      <div className="absolute right-4 top-4 z-20 flex flex-col items-center justify-center bg-background/90 backdrop-blur-xl border border-white/10 rounded-2xl w-14 h-16 shadow-2xl group-hover:bg-primary group-hover:border-primary group-hover:text-primary-foreground transition-all duration-300">
+                        <span className="text-xs font-bold uppercase tracking-widest opacity-70 group-hover:opacity-100">{startDate.toLocaleString("en-NG", { month: "short" })}</span>
+                        <span className="text-xl font-display leading-none">{startDate.getDate()}</span>
+                      </div>
 
                       {isCancelled && (
                         <div className="absolute inset-0 bg-background/60 backdrop-blur-md flex items-center justify-center z-20">
@@ -322,38 +370,39 @@ function LandingPage() {
                           </div>
                         </div>
                       )}
+                    </div>
+                  
+                    {/* Ticket Body */}
+                    <div className="flex flex-1 flex-col p-6 lg:p-8 bg-card/80 backdrop-blur-xl z-20 relative -mt-4 rounded-t-[2rem] border-t border-white/10">
+                      <div className="mb-3 inline-flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
+                        <Calendar className="h-4 w-4" />
+                        {startDate.toLocaleString("en-NG", {
+                          hour: "numeric",
+                          minute: "2-digit"
+                        })}
+                      </div>
+                      
+                      <h3 className="font-display text-2xl lg:text-3xl leading-tight group-hover:text-primary transition-colors line-clamp-2 mb-4 drop-shadow-sm">
+                        {ev.title}
+                      </h3>
+                      
                       {ev.city && (
-                        <div className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-background/95 px-3 py-1.5 text-xs font-bold text-foreground shadow-sm backdrop-blur-md z-20 border border-border/50 uppercase tracking-wider">
-                          <MapPin className="h-3.5 w-3.5 text-primary" />
-                          {ev.city}
+                        <div className="mt-auto flex items-center justify-between border-t border-white/10 pt-5 text-sm text-muted-foreground font-medium group-hover:text-foreground/80 transition-colors">
+                          <div className="flex items-center gap-2 line-clamp-1 pr-2">
+                            <MapPin className="h-4 w-4 text-primary shrink-0" />
+                            <span className="line-clamp-1">{ev.venue_name || ev.city}</span>
+                          </div>
+                          
+                          <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-primary/20 group-hover:text-primary transition-colors">
+                            <ArrowRight className="h-4 w-4" />
+                          </div>
                         </div>
                       )}
                     </div>
-                  
-                  <div className="flex flex-1 flex-col p-6 lg:p-8 bg-card/80 backdrop-blur-sm z-20 relative -mt-6 rounded-t-[2rem] border-t border-white/5">
-                    <div className="mb-3 inline-flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
-                      <Calendar className="h-4 w-4" />
-                      {new Date(ev.start_datetime).toLocaleString("en-NG", {
-                        month: "short",
-                        day: "numeric",
-                        hour: "numeric",
-                        minute: "2-digit"
-                      })}
-                    </div>
-                    
-                    <h3 className="font-display text-2xl lg:text-3xl leading-tight group-hover:text-primary transition-colors line-clamp-2 mb-3">
-                      {ev.title}
-                    </h3>
-                    
-                    {ev.venue_name && (
-                      <p className="mt-auto text-sm text-muted-foreground font-medium line-clamp-1 border-t border-border/60 pt-4">
-                        {ev.venue_name}
-                      </p>
-                    )}
-                  </div>
-                </Link>
-              </div>
-            )})}
+                  </Link>
+                </div>
+              );
+            })}
           </div>
         )}
       </section>
