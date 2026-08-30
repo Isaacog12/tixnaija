@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { ArrowLeft, ImagePlus, Plus, Trash2, Loader2, Check, Calendar, MapPin, ChevronRight, ChevronLeft } from "lucide-react";
+import { BackButton } from "@/components/back-button";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -224,7 +225,10 @@ function NewEventPage() {
   if (!hasOrganizerRole) {
     return (
       <div className="mx-auto max-w-lg px-4 py-24 text-center">
-        <h1 className="font-display text-4xl text-gradient-sunset">Organizer Access Required</h1>
+        <div className="flex items-center gap-4 mb-4 justify-center">
+          <BackButton />
+          <h1 className="font-display text-4xl text-gradient-sunset">Organizer Access Required</h1>
+        </div>
         <p className="mt-4 text-muted-foreground">You need an approved organizer account to create events. Submit an application from your Account Settings page.</p>
         <Button asChild className="mt-8 gradient-sunset text-primary-foreground shadow-glow hover:opacity-90"><Link to="/account">Go to Account Settings</Link></Button>
       </div>
@@ -269,12 +273,11 @@ function NewEventPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 pb-32">
-      <Button asChild variant="ghost" size="sm" className="mb-8 -ml-2 text-muted-foreground hover:text-foreground">
-        <Link to="/dashboard"><ArrowLeft className="mr-1 h-4 w-4" /> Back to dashboard</Link>
-      </Button>
-
       <div className="mb-12">
-        <h1 className="font-display text-4xl md:text-5xl text-gradient-sunset">Create Event</h1>
+        <div className="flex items-center gap-4 mb-2">
+          <BackButton />
+          <h1 className="font-display text-4xl md:text-5xl text-gradient-sunset">Create Event</h1>
+        </div>
         <p className="text-muted-foreground mt-2">Follow the steps to get your event published and ready for sales.</p>
       </div>
 

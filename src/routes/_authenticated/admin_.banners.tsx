@@ -6,7 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { BackButton } from "@/components/back-button";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin_/banners")({
@@ -95,7 +96,10 @@ function AdminBannersPage() {
     <div className="mx-auto max-w-4xl px-4 py-10">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="font-display text-4xl md:text-5xl">Sponsored Banners</h1>
+          <div className="flex items-center gap-4 mb-2">
+            <BackButton />
+            <h1 className="font-display text-4xl md:text-5xl">Sponsored Banners</h1>
+          </div>
           <p className="mt-2 text-muted-foreground">Manage homepage sponsored banner slots.</p>
         </div>
         <Button onClick={handleCreateNew} className="gradient-sunset text-primary-foreground shadow-glow">

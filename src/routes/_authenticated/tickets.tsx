@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
+import { formatNaira } from "@/lib/currency";
+import { BackButton } from "@/components/back-button";
 import { Ticket as TicketIcon, Calendar, MapPin, QrCode, RefreshCcw, Frown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -268,7 +270,10 @@ function TicketsPage() {
         
         className="mb-12"
       >
-        <h1 className="font-display text-5xl md:text-6xl tracking-tight mb-4">Your Tickets</h1>
+        <div className="flex items-center gap-4 mb-4">
+          <BackButton />
+          <h1 className="font-display text-5xl md:text-6xl tracking-tight">Your Tickets</h1>
+        </div>
         <p className="text-muted-foreground text-lg max-w-2xl">Manage your purchased tickets and passes. Get ready for your next unforgettable experience.</p>
       </div>
 
