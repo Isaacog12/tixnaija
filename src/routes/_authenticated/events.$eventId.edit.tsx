@@ -92,7 +92,7 @@ function EditEventPage() {
     }
   }, [data]);
 
-  const isAdminCancelled = data?.event?.admin_cancelled === true;
+  const isAdminCancelled = (data?.event as any)?.admin_cancelled === true;
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
