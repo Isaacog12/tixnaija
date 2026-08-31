@@ -307,7 +307,7 @@ function LandingPage() {
           <div className="grid gap-6 md:grid-cols-3">
             {[1, 2, 3].map((i) => (
               <div  key={i} className="rounded-[2.5rem] border border-dashed border-border/60 bg-card/30 p-10 flex flex-col items-center justify-center text-center">
-                <div className="font-display text-7xl text-muted-foreground/20 mb-6">
+                <div className="font-display text-7xl text-muted-foreground/50 mb-6">
                   {String(i).padStart(2, "0")}
                 </div>
                 <p className="text-base text-muted-foreground font-medium max-w-[200px]">

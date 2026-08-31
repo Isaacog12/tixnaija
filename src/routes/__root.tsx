@@ -147,7 +147,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" },
+      { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "TixNaija — Nigerian event tickets, sold fast" },
       {
         name: "description",
@@ -170,14 +170,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/favicon.png", type: "image/png" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700&display=swap",
-        crossOrigin: "anonymous"
-      },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+      { rel: "stylesheet", href: "/fonts/fonts.css" },
     ],
   }),
   shellComponent: RootShell,
@@ -242,7 +236,9 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <GlobalLoader />
       <AppErrorBoundary>
-        <Outlet />
+        <main>
+          <Outlet />
+        </main>
       </AppErrorBoundary>
       <Toaster position="top-center" richColors />
       <CookieBanner />

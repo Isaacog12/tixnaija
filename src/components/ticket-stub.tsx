@@ -1,8 +1,6 @@
 import React, { useRef } from "react";
 import { format } from "date-fns";
 import { QRCodeCanvas } from "qrcode.react";
-import { toPng } from "html-to-image";
-import { jsPDF } from "jspdf";
 import { MapPin, Calendar, Download, CalendarPlus } from "lucide-react";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
@@ -23,6 +21,10 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
       // Ensure fonts are fully loaded before capturing so we don't get generic fallback fonts
       await document.fonts.ready;
       
+      // Dynamically import heavy libraries for PDF generation to reduce bundle size
+      const { toPng } = await import("html-to-image");
+      const { jsPDF } = await import("jspdf");
+
       // Use html-to-image to fully support modern CSS like oklch from Tailwind v4
       const dataUrl = await toPng(ticketRef.current, {
         cacheBust: true,

@@ -40,15 +40,14 @@ BEGIN
     WHERE o.event_id = p_event_id AND t.status = 'valid'
   LOOP
     INSERT INTO public.messages (
-      user_email, event_id, subject, body, action_url, action_text
+      recipient_email, type, title, body, related_order_id
     ) VALUES (
       v_buyer.buyer_email,
-      p_event_id,
+      'event_update',
       'Event Cancelled: ' || v_event.title,
       'This event has been taken down by the platform. ' || COALESCE(p_note, '') ||
       ' Please expect a refund to your original payment method.',
-      '/orders/' || v_buyer.order_id || '/tickets',
-      'View Details'
+      v_buyer.order_id
     );
   END LOOP;
 END;
