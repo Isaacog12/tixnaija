@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2, ShieldAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,8 +92,11 @@ function EditEventPage() {
     }
   }, [data]);
 
+  const isAdminCancelled = data?.event?.admin_cancelled === true;
+
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    if (isAdminCancelled) return;
     if (form.status === "published" && !data?.hasPayoutAccount) {
       toast.error("Please connect your payout account in Settings to publish events.");
       return;
@@ -124,6 +127,7 @@ function EditEventPage() {
   }
 
   async function deleteEvent() {
+    if (isAdminCancelled) return;
     const { count, error: countErr } = await supabase
       .from("orders")
       .select("*", { count: "exact", head: true })
@@ -144,6 +148,7 @@ function EditEventPage() {
   }
 
   async function addTicketType() {
+    if (isAdminCancelled) return;
     const { error } = await supabase.from("ticket_types").insert({
       event_id: eventId,
       name: "New tier",
@@ -168,7 +173,21 @@ function EditEventPage() {
       </div>
       <p className="text-muted-foreground">Manage details, tickets, and status.</p>
 
+      {isAdminCancelled && (
+        <div className="mt-6 rounded-2xl border border-destructive/40 bg-destructive/10 p-5 flex items-start gap-4">
+          <ShieldAlert className="h-6 w-6 text-destructive shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-destructive">This event was cancelled by a platform admin</p>
+            <p className="text-sm text-destructive/80 mt-1">
+              This event has been taken down by the TixNaija team and cannot be edited, republished, or deleted.
+              If you believe this was a mistake, please contact support.
+            </p>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={save} className="mt-8 space-y-6">
+        <fieldset disabled={isAdminCancelled} className="space-y-6">
         <section className="rounded-2xl border border-border bg-card/60 p-6">
           <h2 className="mb-4 text-lg font-semibold">Details</h2>
           <div className="grid gap-4 md:grid-cols-2">
@@ -182,7 +201,7 @@ function EditEventPage() {
             <Field label="City"><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></Field>
             <Field label="Starts"><Input type="datetime-local" value={form.start_datetime} onChange={(e) => setForm({ ...form, start_datetime: e.target.value })} /></Field>
             <Field label="Status" className="md:col-span-2">
-              <Select value={form.status} onValueChange={(v: typeof form.status) => setForm({ ...form, status: v })}>
+              <Select value={form.status} onValueChange={(v: typeof form.status) => setForm({ ...form, status: v })} disabled={isAdminCancelled}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="draft">Draft (hidden)</SelectItem>
@@ -203,19 +222,21 @@ function EditEventPage() {
         </section>
 
         <div className="flex flex-wrap justify-between gap-3">
-          <Button type="button" variant="outline" onClick={deleteEvent} className="text-destructive hover:text-destructive">
+          <Button type="button" variant="outline" onClick={deleteEvent} disabled={isAdminCancelled} className="text-destructive hover:text-destructive">
             <Trash2 className="mr-2 h-4 w-4" /> Delete event
           </Button>
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={() => navigate({ to: "/dashboard" })}>Cancel</Button>
-            <Button type="submit" disabled={saving} className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
+            <Button type="submit" disabled={saving || isAdminCancelled} className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
               {saving ? "Saving…" : "Save changes"}
             </Button>
           </div>
         </div>
+        </fieldset>
       </form>
 
       {/* Advanced Actions (Comp / Cancel / Postpone) */}
+      {!isAdminCancelled && (
       <section className="mt-10 rounded-2xl border border-border bg-card/60 p-6">
         <h2 className="mb-4 text-lg font-semibold">Event Actions</h2>
         <div className="flex flex-wrap gap-4">
@@ -228,6 +249,7 @@ function EditEventPage() {
           )}
         </div>
       </section>
+      )}
 
       {/* Ticket types */}
       <section className="mt-10 rounded-2xl border border-border bg-card/60 p-6">
