@@ -255,13 +255,13 @@ function EditEventPage() {
       <section className="mt-10 rounded-2xl border border-border bg-card/60 p-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Ticket types</h2>
-          <Button type="button" size="sm" variant="outline" onClick={addTicketType}>
+          <Button type="button" size="sm" variant="outline" onClick={addTicketType} disabled={isAdminCancelled}>
             Add tier
           </Button>
         </div>
         <div className="space-y-3">
           {data.types.map((t) => (
-            <TicketRow key={t.id} row={t} eventId={eventId} />
+            <TicketRow key={t.id} row={t} eventId={eventId} isAdminCancelled={isAdminCancelled} />
           ))}
           {data.types.length === 0 && (
             <p className="text-sm text-muted-foreground">No ticket types yet. Add one to start selling.</p>
@@ -270,7 +270,7 @@ function EditEventPage() {
       </section>
 
       {/* Promo Codes */}
-      <PromoCodesSection eventId={eventId} promoCodes={data.promoCodes} />
+      <PromoCodesSection eventId={eventId} promoCodes={data.promoCodes} isAdminCancelled={isAdminCancelled} />
     </div>
   );
 }
@@ -278,9 +278,11 @@ function EditEventPage() {
 function TicketRow({
   row,
   eventId,
+  isAdminCancelled,
 }: {
   row: any;
   eventId: string;
+  isAdminCancelled?: boolean;
 }) {
   const qc = useQueryClient();
   const [state, setState] = useState({
@@ -359,10 +361,10 @@ function TicketRow({
           Revenue <span className="text-gradient-sunset font-semibold">{formatNaira(row.quantity_sold * row.price_kobo)}</span>
         </div>
         <div className="flex gap-2">
-          <Button size="sm" variant="ghost" onClick={remove} className="text-destructive hover:text-destructive">
+          <Button size="sm" variant="ghost" onClick={remove} disabled={isAdminCancelled} className="text-destructive hover:text-destructive">
             Remove
           </Button>
-          <Button size="sm" onClick={save} disabled={busy}>
+          <Button size="sm" onClick={save} disabled={busy || isAdminCancelled}>
             {busy ? "Saving…" : "Save"}
           </Button>
         </div>
@@ -380,7 +382,7 @@ function Field({ label, children, className }: { label: string; children: React.
   );
 }
 
-function PromoCodesSection({ eventId, promoCodes }: { eventId: string; promoCodes: any[] }) {
+function PromoCodesSection({ eventId, promoCodes, isAdminCancelled }: { eventId: string; promoCodes: any[]; isAdminCancelled?: boolean; }) {
   const qc = useQueryClient();
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({
@@ -430,7 +432,7 @@ function PromoCodesSection({ eventId, promoCodes }: { eventId: string; promoCode
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold">Promo Codes</h2>
         {!adding && (
-          <Button type="button" size="sm" variant="outline" onClick={() => setAdding(true)}>
+          <Button type="button" size="sm" variant="outline" onClick={() => setAdding(true)} disabled={isAdminCancelled}>
             Add code
           </Button>
         )}
@@ -472,10 +474,10 @@ function PromoCodesSection({ eventId, promoCodes }: { eventId: string; promoCode
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" onClick={() => toggleStatus(p.id, p.active)}>
+              <Button size="sm" variant="outline" onClick={() => toggleStatus(p.id, p.active)} disabled={isAdminCancelled}>
                 {p.active ? "Disable" : "Enable"}
               </Button>
-              <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => removeCode(p.id)}>
+              <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => removeCode(p.id)} disabled={isAdminCancelled}>
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>

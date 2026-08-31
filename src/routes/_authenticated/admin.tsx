@@ -114,7 +114,7 @@ async function fetchAdminUsers() {
 async function fetchAdminEvents() {
   const { data, error } = await supabase
     .from("events")
-    .select("id, title, status, created_at, organizer_id, start_datetime, end_datetime, profiles!events_organizer_id_fkey(full_name)")
+    .select("id, title, status, admin_cancelled, created_at, organizer_id, start_datetime, end_datetime, profiles!events_organizer_id_fkey(full_name)")
     .order("created_at", { ascending: false })
     .limit(30);
   if (error) throw error;
@@ -125,6 +125,7 @@ function AdminDashboard() {
   const qc = useQueryClient();
   const [userSearch, setUserSearch] = useState("");
   const [takedownEvent, setTakedownEvent] = useState<{ id: string; title: string } | null>(null);
+  const [undoTakedownEvent, setUndoTakedownEvent] = useState<{ id: string; title: string } | null>(null);
   const [revokeUser, setRevokeUser] = useState<{ id: string; name: string } | null>(null);
   const [revokeReason, setRevokeReason] = useState("");
 
@@ -145,6 +146,23 @@ function AdminDashboard() {
       qc.invalidateQueries({ queryKey: ["admin-events"] });
       qc.invalidateQueries({ queryKey: ["admin-stats"] });
       setTakedownEvent(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const undoTakedownMutation = useMutation({
+    mutationFn: async ({ id }: { id: string }) => {
+      const { error } = await supabase.rpc("admin_undo_cancel_event" as any, {
+        p_event_id: id,
+        p_note: "Platform admin has restored this event.",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Event takedown has been undone.");
+      qc.invalidateQueries({ queryKey: ["admin-events"] });
+      qc.invalidateQueries({ queryKey: ["admin-stats"] });
+      setUndoTakedownEvent(null);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -328,8 +346,17 @@ function AdminDashboard() {
                 >
                   <Ban className="mr-1.5 h-3.5 w-3.5" /> Takedown
                 </Button>
+              ) : ev.admin_cancelled ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 rounded-lg text-xs font-semibold text-green-600 border-green-600/30 hover:text-green-700 hover:bg-green-600/10 transition-colors"
+                  onClick={() => setUndoTakedownEvent({ id: ev.id, title: ev.title })}
+                >
+                  <RefreshCcw className="mr-1.5 h-3.5 w-3.5" /> Undo Takedown
+                </Button>
               ) : (
-                <span className="text-xs text-muted-foreground/40 font-medium">—</span>
+                <span className="text-xs text-muted-foreground/40 font-medium">Org Cancelled</span>
               )}
             </div>
           );
@@ -370,6 +397,33 @@ function AdminDashboard() {
               disabled={takedownMutation.isPending}
             >
               {takedownMutation.isPending ? "Taking down…" : "Yes, take down"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!undoTakedownEvent} onOpenChange={() => setUndoTakedownEvent(null)}>
+        <AlertDialogContent className="rounded-3xl border-border shadow-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-2xl">Undo Event Takedown?</AlertDialogTitle>
+            <AlertDialogDescription className="text-base text-foreground/80 mt-2">
+              <strong>&ldquo;{undoTakedownEvent?.title}&rdquo;</strong> will be restored to "Published" status.
+              This will allow the organizer to manage it again and resume ticket sales.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-6">
+            <AlertDialogCancel className="rounded-xl h-12">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl h-12 font-bold"
+              onClick={() =>
+                undoTakedownEvent &&
+                undoTakedownMutation.mutate({
+                  id: undoTakedownEvent.id,
+                })
+              }
+              disabled={undoTakedownMutation.isPending}
+            >
+              {undoTakedownMutation.isPending ? "Restoring…" : "Yes, restore event"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

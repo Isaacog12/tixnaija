@@ -44,12 +44,16 @@ serve(async (req) => {
     // Fetch event dates to block past events
     const { data: eventData, error: eventError } = await supabase
       .from("events")
-      .select("start_datetime, end_datetime")
+      .select("start_datetime, end_datetime, status")
       .eq("id", metadata.eventId)
       .single();
 
     if (eventError || !eventData) {
       throw new Error("Event not found");
+    }
+
+    if (eventData.status === "cancelled") {
+      throw new Error("This event has been cancelled. Tickets are no longer available.");
     }
 
     const start = new Date(eventData.start_datetime);

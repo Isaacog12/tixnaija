@@ -55,12 +55,16 @@ serve(async (req) => {
     // Fetch organizer's subaccount code
     const { data: eventData, error: eventError } = await supabase
       .from("events")
-      .select("organizer_id, start_datetime, end_datetime")
+      .select("organizer_id, start_datetime, end_datetime, status")
       .eq("id", eventId)
       .single();
 
     if (eventError || !eventData) {
       throw new Error("Event not found");
+    }
+
+    if (eventData.status === "cancelled") {
+      throw new Error("This event has been cancelled. Tickets are no longer available.");
     }
 
     const start = new Date(eventData.start_datetime);
