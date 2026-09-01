@@ -44,7 +44,7 @@ export interface Database {
           city: string | null;
           state: string | null;
           start_datetime: string;
-          end_datetime: string | null;
+          end_datetime: string;
           status: string;
           created_at: string;
           updated_at: string;

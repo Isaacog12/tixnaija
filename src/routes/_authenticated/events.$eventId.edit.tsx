@@ -74,7 +74,7 @@ function EditEventPage() {
 
   const [form, setForm] = useState({
     title: "", description: "", city: "", venue_name: "",
-    start_datetime: "", status: "draft" as (typeof STATUSES)[number]["value"],
+    start_datetime: "", end_datetime: "", status: "draft" as (typeof STATUSES)[number]["value"],
   });
   const [saving, setSaving] = useState(false);
 
@@ -87,6 +87,7 @@ function EditEventPage() {
         city: ev.city ?? "",
         venue_name: ev.venue_name ?? "",
         start_datetime: ev.start_datetime ? new Date(ev.start_datetime).toISOString().slice(0, 16) : "",
+        end_datetime: ev.end_datetime ? new Date(ev.end_datetime).toISOString().slice(0, 16) : "",
         status: (ev.status as typeof form.status) ?? "draft",
       });
     }
@@ -113,7 +114,7 @@ function EditEventPage() {
         address: null,
         state: null,
         start_datetime: new Date(form.start_datetime).toISOString(),
-        end_datetime: null,
+        end_datetime: form.end_datetime ? new Date(form.end_datetime).toISOString() : null,
         status: form.status,
       })
       .eq("id", eventId);
@@ -200,6 +201,7 @@ function EditEventPage() {
             <Field label="Venue"><Input value={form.venue_name} onChange={(e) => setForm({ ...form, venue_name: e.target.value })} /></Field>
             <Field label="City"><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></Field>
             <Field label="Starts"><Input type="datetime-local" value={form.start_datetime} onChange={(e) => setForm({ ...form, start_datetime: e.target.value })} /></Field>
+            <Field label="Ends"><Input type="datetime-local" value={form.end_datetime} onChange={(e) => setForm({ ...form, end_datetime: e.target.value })} min={form.start_datetime || undefined} /></Field>
             <Field label="Status" className="md:col-span-2">
               <Select value={form.status} onValueChange={(v: typeof form.status) => setForm({ ...form, status: v })} disabled={isAdminCancelled}>
                 <SelectTrigger><SelectValue /></SelectTrigger>

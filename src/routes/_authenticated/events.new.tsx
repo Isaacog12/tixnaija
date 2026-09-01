@@ -42,6 +42,10 @@ const detailsSchema = z.object({
   venue_name: z.string().trim().min(2, "Venue name is required").max(120),
   city: z.string().trim().min(2, "City is required").max(60),
   start_datetime: z.string().min(1, "Pick a start date & time"),
+  end_datetime: z.string().min(1, "Pick an end date & time"),
+}).refine((d) => !d.start_datetime || !d.end_datetime || new Date(d.end_datetime) > new Date(d.start_datetime), {
+  message: "End time must be after start time",
+  path: ["end_datetime"],
 });
 
 interface TicketDraft {
@@ -72,6 +76,7 @@ function NewEventPage() {
     venue_name: "",
     city: "",
     start_datetime: "",
+    end_datetime: "",
     is_free: false,
   });
   const [coverFile, setCoverFile] = useState<File | null>(null);
@@ -189,7 +194,7 @@ function NewEventPage() {
         city: form.city,
         state: null,
         start_datetime: new Date(form.start_datetime).toISOString(),
-        end_datetime: null,
+        end_datetime: new Date(form.end_datetime).toISOString(),
         status: (publish ? "published" : "draft") as "published" | "draft",
       };
       
@@ -354,6 +359,9 @@ function NewEventPage() {
                 <Field label="Starts at" required>
                   <Input type="datetime-local" value={form.start_datetime} onChange={(e) => setForm({ ...form, start_datetime: e.target.value })} className="h-11" />
                 </Field>
+                <Field label="Ends at" required>
+                  <Input type="datetime-local" value={form.end_datetime} onChange={(e) => setForm({ ...form, end_datetime: e.target.value })} className="h-11" min={form.start_datetime || undefined} />
+                </Field>
               </div>
             </section>
           </div>
@@ -482,6 +490,11 @@ function NewEventPage() {
                     <p className="font-medium text-primary">
                       {form.start_datetime ? new Date(form.start_datetime).toLocaleString("en-NG", { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : "Not set"}
                     </p>
+                    {form.end_datetime && (
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        Ends: {new Date(form.end_datetime).toLocaleString("en-NG", { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Location</h4>
