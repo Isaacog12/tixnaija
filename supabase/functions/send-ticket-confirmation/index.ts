@@ -93,35 +93,47 @@ serve(async (req: Request) => {
     }
 
     masterHtmlBody += `
-        <table style="width: 100%; border-collapse: collapse; background: #1f222b; border-radius: 12px; border: 1px solid #2a2e37; overflow: hidden; margin-bottom: 32px;">
+        <table style="width: 100%; border-collapse: collapse; background: #1f222b; border-radius: 12px; margin-bottom: 32px; font-size: 15px;">
           <tr>
-            <td style="width: 50%; padding: 20px 16px; border-bottom: 1px solid #2a2e37; border-right: 1px solid #2a2e37; vertical-align: top;">
-              <p style="margin: 0 0 6px; font-size: 11px; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.5px;">🎭 EVENT</p>
-              <p style="margin: 0; font-size: 15px; font-weight: 600; color: #ffffff;">${eventTitle}</p>
-            </td>
-            <td style="width: 50%; padding: 20px 16px; border-bottom: 1px solid #2a2e37; vertical-align: top;">
-              <p style="margin: 0 0 6px; font-size: 11px; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.5px;">📅 DATE & TIME</p>
-              <p style="margin: 0; font-size: 15px; font-weight: 600; color: #ffffff;">${date}</p>
+            <td style="padding: 16px 20px; border-bottom: 1px solid #2a2e37;">
+              <span style="color: #a1a1aa; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Event</span>
+              <strong style="color: #ffffff; font-weight: 600;">${eventTitle}</strong>
             </td>
           </tr>
           <tr>
-            <td style="width: 50%; padding: 20px 16px; border-bottom: 1px solid #2a2e37; border-right: 1px solid #2a2e37; vertical-align: top;">
-              <p style="margin: 0 0 6px; font-size: 11px; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.5px;">📍 VENUE</p>
-              <p style="margin: 0; font-size: 15px; font-weight: 600; color: #ffffff;">${venue}</p>
-            </td>
-            <td style="width: 50%; padding: 20px 16px; border-bottom: 1px solid #2a2e37; vertical-align: top;">
-              <p style="margin: 0 0 6px; font-size: 11px; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.5px;">🎟️ TICKET INFO</p>
-              <p style="margin: 0; font-size: 15px; font-weight: 600; color: #ffffff;">Type: ${ticketTypes}, Qty: ${totalQuantity}</p>
+            <td style="padding: 16px 20px; border-bottom: 1px solid #2a2e37;">
+              <span style="color: #a1a1aa; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Date & Time</span>
+              <strong style="color: #ffffff; font-weight: 600;">${date}</strong>
             </td>
           </tr>
           <tr>
-            <td style="width: 50%; padding: 20px 16px; border-right: 1px solid #2a2e37; vertical-align: top;">
-              <p style="margin: 0 0 6px; font-size: 11px; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.5px;">💰 AMOUNT PAID</p>
-              <p style="margin: 0; font-size: 15px; font-weight: 600; color: #ffffff;">${amountPaid}</p>
+            <td style="padding: 16px 20px; border-bottom: 1px solid #2a2e37;">
+              <span style="color: #a1a1aa; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Venue</span>
+              <strong style="color: #ffffff; font-weight: 600;">${venue}</strong>
             </td>
-            <td style="width: 50%; padding: 20px 16px; vertical-align: top;">
-              <p style="margin: 0 0 6px; font-size: 11px; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.5px;">🧾 ORDER REF</p>
-              <p style="margin: 0; font-size: 15px; font-weight: 600; color: #ffffff;">${orderRef}</p>
+          </tr>
+          <tr>
+            <td style="padding: 16px 20px; border-bottom: 1px solid #2a2e37;">
+              <span style="color: #a1a1aa; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Ticket Type</span>
+              <strong style="color: #ffffff; font-weight: 600;">${ticketTypes}</strong>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 16px 20px; border-bottom: 1px solid #2a2e37;">
+              <span style="color: #a1a1aa; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Quantity</span>
+              <strong style="color: #ffffff; font-weight: 600;">${totalQuantity}</strong>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 16px 20px; border-bottom: 1px solid #2a2e37;">
+              <span style="color: #a1a1aa; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Amount Paid</span>
+              <strong style="color: #ffffff; font-weight: 600;">${amountPaid}</strong>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 16px 20px;">
+              <span style="color: #a1a1aa; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Order Ref</span>
+              <strong style="color: #ffffff; font-weight: 600;">${orderRef}</strong>
             </td>
           </tr>
         </table>
@@ -175,15 +187,17 @@ serve(async (req: Request) => {
           </h1>
           <p style="margin: 0 0 32px; color: #e4e4e7; font-size: 16px;">Hi ${attendeeName}, <strong>${order.buyer_name}</strong> sent you a ticket for <strong>${eventTitle}</strong>.</p>
           
-          <table style="width: 100%; border-collapse: collapse; background: #1f222b; border-radius: 12px; border: 1px solid #2a2e37; overflow: hidden; margin-bottom: 32px;">
+          <table style="width: 100%; border-collapse: collapse; background: #1f222b; border-radius: 12px; margin-bottom: 32px; font-size: 15px;">
             <tr>
-              <td style="width: 50%; padding: 20px 16px; border-right: 1px solid #2a2e37; vertical-align: top;">
-                <p style="margin: 0 0 6px; font-size: 11px; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.5px;">📅 DATE & TIME</p>
-                <p style="margin: 0; font-size: 15px; font-weight: 600; color: #ffffff;">${date}</p>
+              <td style="padding: 16px 20px; border-bottom: 1px solid #2a2e37;">
+                <span style="color: #a1a1aa; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Date & Time</span>
+                <strong style="color: #ffffff; font-weight: 600;">${date}</strong>
               </td>
-              <td style="width: 50%; padding: 20px 16px; vertical-align: top;">
-                <p style="margin: 0 0 6px; font-size: 11px; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.5px;">📍 VENUE</p>
-                <p style="margin: 0; font-size: 15px; font-weight: 600; color: #ffffff;">${venue}</p>
+            </tr>
+            <tr>
+              <td style="padding: 16px 20px;">
+                <span style="color: #a1a1aa; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Venue</span>
+                <strong style="color: #ffffff; font-weight: 600;">${venue}</strong>
               </td>
             </tr>
           </table>
