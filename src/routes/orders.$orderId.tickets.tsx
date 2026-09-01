@@ -118,15 +118,9 @@ function OrderTicketsPage() {
       setEditingTicket(null);
       refetch();
 
-      // Trigger the edge function to re-send the ticket
-      // We pass the orderId, but we need the edge function to pick up the new email. 
-      // The edge function groups by attendee_email and sends, so triggering it for the order will resend.
-      // Wait, sending it for the whole order will resend everyone's tickets. 
-      // Actually, we should trigger a new function or update send-ticket-confirmation to accept a specific ticketId? 
-      // For now, invoking send-ticket-confirmation is safe because Zeptomail will send them all again (as receipts/reminders).
-      // Let's just invoke it to keep it simple.
+      // Trigger the edge function to re-send the specific ticket to the new email
       await supabase.functions.invoke("send-ticket-confirmation", {
-        body: { orderId: data?.order?.id },
+        body: { orderId: data?.order?.id, ticketId: editingTicket.id },
       });
 
     } catch (err: any) {

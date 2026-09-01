@@ -16,7 +16,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { orderId } = await req.json();
+    const { orderId, ticketId } = await req.json();
     if (!orderId) throw new Error("Missing orderId");
 
     // @ts-ignore
@@ -148,12 +148,14 @@ serve(async (req: Request) => {
     </div>
     `;
 
-    // Send the master receipt
-    await sendEmail({
-      to: { address: recipientEmail, name: recipientName },
-      subject,
-      htmlBody: masterHtmlBody,
-    });
+    // 1. Send Master Receipt to Buyer (Only if not a single ticket resend)
+    if (!ticketId) {
+      await sendEmail({
+        to: { address: recipientEmail, name: recipientName },
+        subject,
+        htmlBody: masterHtmlBody,
+      });
+    }
 
     // 2. Send Individual Tickets to Attendees
     const allTickets = order.order_items?.flatMap((item: any) =>
@@ -165,9 +167,13 @@ serve(async (req: Request) => {
 
     const attendeeGroups = new Map<string, any[]>();
     for (const t of allTickets) {
-      if (t.attendee_email && t.attendee_email !== recipientEmail) {
-        if (!attendeeGroups.has(t.attendee_email)) attendeeGroups.set(t.attendee_email, []);
-        attendeeGroups.get(t.attendee_email)!.push(t);
+      if (ticketId && t.id !== ticketId) continue; // Only process the specific ticket if provided
+
+      // If ticketId is provided, force send to that ticket's email. Otherwise, only send if different from buyer.
+      if (ticketId || (t.attendee_email && t.attendee_email !== recipientEmail)) {
+        const targetEmail = t.attendee_email || recipientEmail;
+        if (!attendeeGroups.has(targetEmail)) attendeeGroups.set(targetEmail, []);
+        attendeeGroups.get(targetEmail)!.push(t);
       }
     }
 
