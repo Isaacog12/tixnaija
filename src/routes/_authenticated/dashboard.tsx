@@ -357,6 +357,11 @@ function Dashboard() {
                               </Button>
                             </>
                           )}
+                          <Button asChild variant="outline" size="icon" className="h-8 w-8 rounded hover:bg-secondary transition-colors" title="Manage Attendees">
+                            <Link to="/events/$eventId/attendees" params={{ eventId: ev.id }}>
+                              <Users className="h-4 w-4" />
+                            </Link>
+                          </Button>
                           <Button asChild variant="outline" size="icon" className="h-8 w-8 rounded hover:bg-secondary transition-colors" title="Edit Event">
                             <Link to="/events/$eventId/edit" params={{ eventId: ev.id }}>
                               <FileEdit className="h-4 w-4" />
