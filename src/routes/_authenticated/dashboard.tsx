@@ -30,7 +30,7 @@ async function fetchMyEvents() {
     .maybeSingle();
 
   const { data: latestApp } = await supabase
-    .from("organizer_applications" as any)
+    .from("organizer_applications")
     .select("status, admin_note, created_at")
     .order("created_at", { ascending: false })
     .limit(1)

@@ -51,7 +51,7 @@ async function fetchProfile() {
 
 async function fetchMyApplication() {
   const { data, error } = await supabase
-    .from("organizer_applications" as any)
+    .from("organizer_applications")
     .select("id, status, admin_note, created_at")
     .order("created_at", { ascending: false })
     .limit(1)
@@ -681,7 +681,7 @@ function ApplicationForm({
 
       // Insert application
       const { error: insertError } = await supabase
-        .from("organizer_applications" as any)
+        .from("organizer_applications")
         .insert({
           user_id: user.id,
           full_name: parsed.data.full_name,

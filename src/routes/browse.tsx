@@ -19,7 +19,6 @@ const searchSchema = z.object({
 });
 
 export const Route = createFileRoute("/browse")({
-  ssr: false,
   validateSearch: searchSchema,
   component: BrowsePage,
   head: () => ({

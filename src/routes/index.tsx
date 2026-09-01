@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 
 
 export const Route = createFileRoute("/")({
-  ssr: false,
   component: LandingPage,
 });
 
@@ -35,7 +34,7 @@ async function fetchUpcoming() {
 
 async function fetchBanners() {
   const { data, error } = await supabase
-    .from("sponsored_banners" as any)
+    .from("sponsored_banners")
     .select("*")
     .eq("is_active", true)
     .order("display_order", { ascending: true })

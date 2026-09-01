@@ -64,7 +64,7 @@ async function fetchApplications(): Promise<{
   reviewed: OrgApp[];
 }> {
   const { data, error } = await supabase
-    .from("organizer_applications" as any)
+    .from("organizer_applications")
     .select("*")
     .order("created_at", { ascending: false });
 

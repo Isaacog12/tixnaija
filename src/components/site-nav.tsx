@@ -31,7 +31,7 @@ export function SiteNav() {
     queryFn: async () => {
       if (!user) return 0;
       const { count, error } = await supabase
-        .from("messages" as any)
+        .from("messages")
         .select("*", { count: "exact", head: true })
         .eq("is_read", false);
       if (error) return 0;

@@ -71,7 +71,7 @@ async function fetchAdminStats() {
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase.from("events").select("*", { count: "exact", head: true }),
     supabase.from("orders").select("total_kobo").eq("status", "paid"),
-    supabase.from("organizer_applications" as any).select("*", { count: "exact", head: true }).eq("status", "pending"),
+    supabase.from("organizer_applications").select("*", { count: "exact", head: true }).eq("status", "pending"),
   ]);
 
   const totalRevenueKobo = (orders ?? []).reduce((acc: number, o: any) => acc + (o.total_kobo || 0), 0);

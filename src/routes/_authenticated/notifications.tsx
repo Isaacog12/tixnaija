@@ -28,7 +28,7 @@ function NotificationsPage() {
     initialPageParam: 0,
     queryFn: async ({ pageParam = 0 }) => {
       const { data, error } = await supabase
-        .from("messages" as any)
+        .from("messages")
         .select("*")
         .order("created_at", { ascending: false })
         .range(pageParam * 20, (pageParam + 1) * 20 - 1);
@@ -44,7 +44,7 @@ function NotificationsPage() {
 
   const markRead = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase.from("messages" as any) as any).update({ is_read: true }).eq("id", id);
+      const { error } = await (supabase.from("messages") as any).update({ is_read: true }).eq("id", id);
       if (error) throw error;
     },
     onMutate: async (id) => {
@@ -77,7 +77,7 @@ function NotificationsPage() {
 
   const markAllRead = useMutation({
     mutationFn: async () => {
-      const { error } = await (supabase.from("messages" as any) as any).update({ is_read: true }).eq("is_read", false);
+      const { error } = await (supabase.from("messages") as any).update({ is_read: true }).eq("is_read", false);
       if (error) throw error;
     },
     onMutate: async () => {

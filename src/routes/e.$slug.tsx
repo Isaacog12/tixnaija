@@ -27,6 +27,25 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/e/$slug")({
   component: EventDetailPage,
+  loader: async ({ params }) => {
+    return await fetchEventBySlug(params.slug);
+  },
+  head: ({ loaderData }) => {
+    if (!loaderData || !loaderData.event) {
+      return { meta: [{ title: 'Event - TixNaija' }] };
+    }
+    const { event } = loaderData;
+    return {
+      meta: [
+        { title: `${event.title} | TixNaija` },
+        { name: 'description', content: event.description?.substring(0, 160) || 'Get tickets on TixNaija' },
+        { property: 'og:title', content: event.title },
+        { property: 'og:description', content: event.description?.substring(0, 160) || 'Get tickets on TixNaija' },
+        { property: 'og:image', content: event.cover_image_url || 'https://tixnaija.vercel.app/og-default.png' },
+        { property: 'twitter:card', content: 'summary_large_image' },
+      ],
+    };
+  },
 });
 
 type TicketType = {
@@ -702,9 +721,31 @@ function EventBody({
             <span className="text-xs font-semibold uppercase tracking-[0.35em] text-primary">
               {event.category}
             </span>
-            <div className="mt-2 flex items-center gap-4">
-              <BackButton />
-              <h1 className="font-display text-4xl leading-[0.95] md:text-6xl">{event.title}</h1>
+            <div className="mt-2 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <BackButton />
+                <h1 className="font-display text-4xl leading-[0.95] md:text-6xl">{event.title}</h1>
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0"
+                onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({
+                      title: event.title,
+                      text: "Check out this event on TixNaija!",
+                      url: window.location.href,
+                    }).catch(() => {});
+                  } else {
+                    navigator.clipboard.writeText(window.location.href);
+                    toast.success("Link copied to clipboard");
+                  }
+                }}
+                aria-label="Share Event"
+              >
+                <Share2 className="h-4 w-4" />
+              </Button>
             </div>
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-2">
