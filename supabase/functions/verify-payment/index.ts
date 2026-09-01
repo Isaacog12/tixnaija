@@ -67,6 +67,10 @@ async function processVerifiedPayment(
     throw new Error("This event has been cancelled. Tickets are no longer available.");
   }
 
+  if (eventData.status === "completed") {
+    throw new Error("This event has ended. Tickets are no longer available for purchase.");
+  }
+
   const start = new Date(eventData.start_datetime);
   const end = eventData.end_datetime
     ? new Date(eventData.end_datetime)
