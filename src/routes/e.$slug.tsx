@@ -99,8 +99,8 @@ const checkoutSchema = z.object({
     z.string(),
     z.array(
       z.object({
-        name: z.string().min(1, "Name is required"),
-        email: z.string().email("Invalid email"),
+        name: z.string(),
+        email: z.string(),
       })
     )
   ),
@@ -112,6 +112,20 @@ const checkoutSchema = z.object({
     if (!data.recipientEmail || !/^\S+@\S+\.\S+$/.test(data.recipientEmail)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Valid recipient email is required", path: ["recipientEmail"] });
     }
+  }
+  
+  const totalCount = Object.values(data.attendees).reduce((sum, arr) => sum + arr.length, 0);
+  if (totalCount > 1) {
+    Object.entries(data.attendees).forEach(([ticketId, arr]) => {
+      arr.forEach((attendee, idx) => {
+        if (!attendee.name || attendee.name.trim().length === 0) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Name is required", path: ["attendees", ticketId, idx, "name"] });
+        }
+        if (!attendee.email || !/^\S+@\S+\.\S+$/.test(attendee.email)) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Valid email is required", path: ["attendees", ticketId, idx, "email"] });
+        }
+      });
+    });
   }
 });
 
@@ -258,7 +272,7 @@ function EventDetailPage() {
       const ticketsPayload = items.map((i: { type: TicketType; count: number }) => ({
         ticketTypeId: i.type.id,
         count: i.count,
-        attendee_names: (values.attendees[i.type.id] ?? []).map(a => a.name),
+        attendee_names: (values.attendees[i.type.id] ?? []).map(a => a.name || values.buyerName),
         attendee_emails: (values.attendees[i.type.id] ?? []).map(a => a.email || values.buyerEmail),
       }));
 
