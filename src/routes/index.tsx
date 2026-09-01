@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { SiteNav } from "@/components/site-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
 
 
 export const Route = createFileRoute("/")({
@@ -23,7 +25,7 @@ async function fetchUpcoming() {
   if (error) throw error;
 
   const now = new Date();
-  const validEvents = (data ?? []).filter(ev => {
+  const validEvents = ((data as any[]) ?? []).filter((ev: any) => {
     const start = new Date(ev.start_datetime);
     const end = ev.end_datetime ? new Date(ev.end_datetime) : start;
     return end >= now;
@@ -42,7 +44,7 @@ async function fetchBanners() {
   if (error) throw error;
   
   const now = new Date();
-  return (data ?? []).filter((b: any) => {
+  return (data as any[] ?? []).filter((b: any) => {
     if (b.starts_at && new Date(b.starts_at) > now) return false;
     if (b.ends_at && new Date(b.ends_at) < now) return false;
     return true;
@@ -74,7 +76,7 @@ function LandingPage() {
   const banners = useQuery({ queryKey: ["home-banners"], queryFn: fetchBanners });
 
   const handleBannerClick = async (banner: any) => {
-    supabase.rpc("increment_banner_click" as any, { banner_id: banner.id }).then();
+    supabase.rpc("increment_banner_click" as any, { banner_id: banner.id } as any).then();
     if (banner.link_url) {
       if (banner.link_url.startsWith("http")) {
         window.open(banner.link_url, "_blank", "noopener,noreferrer");
@@ -95,33 +97,36 @@ function LandingPage() {
       {/* ── Banners Section ── */}
       
         {banners.data && banners.data.length > 0 && (
-          <div 
-            
-            
-            
-            className="mx-auto max-w-7xl px-4 pt-6"
-          >
-            <div className="flex gap-4 overflow-x-auto pb-4 snap-x no-scrollbar">
-              {banners.data.map((banner: any) => (
-                <div 
-                  
-                  
-                  key={banner.id}
-                  onClick={() => handleBannerClick(banner)}
-                  className={`relative h-48 sm:h-64 md:h-72 min-w-[85vw] sm:min-w-[600px] md:min-w-[700px] shrink-0 rounded-[2rem] overflow-hidden snap-center group shadow-xl border border-border/50 ${banner.link_url ? "cursor-pointer" : ""}`}
-                >
-                  <img 
-                    src={banner.image_url} 
-                    alt={banner.title} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="absolute top-4 right-4 px-3 py-1.5 bg-background/80 backdrop-blur-md text-foreground text-xs font-bold tracking-wider uppercase rounded-full shadow-sm pointer-events-none">
-                    Sponsored
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="mx-auto max-w-[95vw] sm:max-w-7xl pt-6">
+            <Carousel 
+              opts={{ align: "start", loop: true }} 
+              plugins={[Autoplay({ delay: 5000, stopOnInteraction: true })]}
+              className="w-full"
+            >
+              <CarouselContent className="-ml-2 md:-ml-4">
+                {banners.data.map((banner: any) => (
+                  <CarouselItem 
+                    key={banner.id} 
+                    className="pl-2 md:pl-4 md:basis-4/5 lg:basis-[85%]"
+                  >
+                    <div 
+                      onClick={() => handleBannerClick(banner)}
+                      className={`relative h-48 sm:h-64 md:h-80 w-full shrink-0 rounded-[2rem] overflow-hidden group shadow-xl border border-border/50 ${banner.link_url ? "cursor-pointer" : ""}`}
+                    >
+                      <img 
+                        src={banner.image_url} 
+                        alt={banner.title} 
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <div className="absolute top-4 right-4 px-3 py-1.5 bg-background/80 backdrop-blur-md text-foreground text-xs font-bold tracking-wider uppercase rounded-full shadow-sm pointer-events-none">
+                        Sponsored
+                      </div>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </Carousel>
           </div>
         )}
       
@@ -319,7 +324,7 @@ function LandingPage() {
 
         {upcoming.data && upcoming.data.length > 0 && (
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {upcoming.data.map((ev) => {
+            {upcoming.data.map((ev: any) => {
               const isCancelled = ev.status === 'cancelled';
               const startDate = new Date(ev.start_datetime);
               return (
