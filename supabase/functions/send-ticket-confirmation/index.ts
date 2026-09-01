@@ -54,9 +54,12 @@ serve(async (req: Request) => {
     const recipientName = order.recipient_name || order.buyer_name;
     const recipientEmail = order.recipient_email || order.buyer_email;
 
+    const orderRef = order.id.split('-')[0].toUpperCase();
+    const sentTime = new Date().toLocaleString("en-US", { timeStyle: "short" });
+
     const subject = isGift
-      ? `You received a gift for ${eventTitle} 🎁`
-      : `Your tickets for ${eventTitle} are ready 🎟️`;
+      ? `You received a gift for ${eventTitle} 🎁 (Ref: ${orderRef})`
+      : `Your tickets for ${eventTitle} are ready 🎟️ (Ref: ${orderRef})`;
 
     const ticketUrl = `https://tixnaija.name.ng/orders/${order.id}/tickets?email=${encodeURIComponent(recipientEmail)}&accessCode=${order.access_code || ''}`;
     const downloadUrl = `${ticketUrl}&download=true`;
@@ -65,7 +68,6 @@ serve(async (req: Request) => {
     const totalQuantity = order.order_items?.reduce((acc: number, item: any) => acc + item.quantity, 0) || 1;
     const amountPaid = `₦${(order.total_kobo / 100).toLocaleString()}`;
     const venue = [order.events?.venue_name, order.events?.address].filter(Boolean).join(', ') || 'Online';
-    const orderRef = order.id.split('-')[0].toUpperCase();
 
     // 1. Send Master Receipt to Buyer
     let masterHtmlBody = `
@@ -141,7 +143,7 @@ serve(async (req: Request) => {
         <a href="${downloadUrl}" style="display: block; width: 100%; text-align: center; background: #c2410c; color: #ffffff; text-decoration: none; padding: 18px 0; border-radius: 8px; font-weight: 600; font-size: 16px; margin-bottom: 16px; border: 1px solid #ea580c;">Download all tickets 📥</a>
         <a href="${ticketUrl}" style="display: block; width: 100%; text-align: center; background: #1e293b; color: #94a3b8; text-decoration: none; padding: 18px 0; border-radius: 8px; font-weight: 600; font-size: 16px; border: 1px solid #334155;">🌐 View tickets online</a>
 
-        <p style="margin-top: 48px; font-size: 13px; color: #71717a; text-align: center;">TixNaija — questions? Reply to this email.</p>
+        <p style="margin-top: 48px; font-size: 13px; color: #71717a; text-align: center;">TixNaija — questions? Reply to this email. (Sent at ${sentTime})</p>
       </div>
     </div>
     `;
@@ -171,7 +173,7 @@ serve(async (req: Request) => {
 
     for (const [email, tickets] of attendeeGroups.entries()) {
       const attendeeName = tickets[0].attendee_name || 'Attendee';
-      const attSubject = `Your ticket for ${eventTitle} 🎟️`;
+      const attSubject = `Your ticket for ${eventTitle} 🎟️ (Code: ${tickets[0].ticket_code.split('-')[0].toUpperCase()})`;
 
       let attHtmlBody = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #000000; color: #ffffff; padding: 40px 20px; text-align: center;">
@@ -217,7 +219,7 @@ serve(async (req: Request) => {
       }
 
       attHtmlBody += `
-          <p style="margin-top: 48px; font-size: 13px; color: #71717a; text-align: center;">TixNaija — questions? Contact us at support or reply to this email.</p>
+          <p style="margin-top: 48px; font-size: 13px; color: #71717a; text-align: center;">TixNaija — questions? Contact us at support or reply to this email. (Sent at ${sentTime})</p>
         </div>
       </div>
       `;
