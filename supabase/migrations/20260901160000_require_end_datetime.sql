@@ -11,9 +11,17 @@ WHERE end_datetime IS NULL;
 ALTER TABLE public.events
   ALTER COLUMN end_datetime SET NOT NULL;
 
--- 3. Ensure end is always after start
-ALTER TABLE public.events
-  ADD CONSTRAINT events_end_after_start CHECK (end_datetime > start_datetime);
+-- 3. Ensure end is always after start (idempotent)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'events_end_after_start'
+  ) THEN
+    ALTER TABLE public.events
+      ADD CONSTRAINT events_end_after_start CHECK (end_datetime > start_datetime);
+  END IF;
+END;
+$$;
 
 -- 4. Partial index so the cron job only scans published events
 CREATE INDEX IF NOT EXISTS idx_events_published_end
