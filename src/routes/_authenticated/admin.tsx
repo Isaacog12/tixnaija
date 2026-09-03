@@ -97,7 +97,7 @@ async function fetchAdminUsers() {
   if (rolesError) throw rolesError;
 
   const roleMap = new Map<string, string[]>();
-  for (const r of allRoles ?? []) {
+  for (const r of (allRoles as any[]) ?? []) {
     if (!roleMap.has(r.user_id)) roleMap.set(r.user_id, []);
     roleMap.get(r.user_id)!.push(r.role);
   }
@@ -128,6 +128,8 @@ function AdminDashboard() {
   const [undoTakedownEvent, setUndoTakedownEvent] = useState<{ id: string; title: string } | null>(null);
   const [revokeUser, setRevokeUser] = useState<{ id: string; name: string } | null>(null);
   const [revokeReason, setRevokeReason] = useState("");
+  const [revokeEmail, setRevokeEmail] = useState("");
+  const [revokeEmailReason, setRevokeEmailReason] = useState("");
 
   const { data: stats } = useQuery({ queryKey: ["admin-stats"], queryFn: fetchAdminStats });
   const { data: users, isLoading: usersLoading } = useQuery({ queryKey: ["admin-users"], queryFn: fetchAdminUsers });
@@ -135,7 +137,7 @@ function AdminDashboard() {
 
   const takedownMutation = useMutation({
     mutationFn: async ({ id, note }: { id: string; note: string }) => {
-      const { error } = await supabase.rpc("admin_cancel_event" as any, {
+      const { error } = await (supabase.rpc as any)("admin_cancel_event", {
         p_event_id: id,
         p_note: note,
       });
@@ -152,7 +154,7 @@ function AdminDashboard() {
 
   const undoTakedownMutation = useMutation({
     mutationFn: async ({ id }: { id: string }) => {
-      const { error } = await supabase.rpc("admin_undo_cancel_event" as any, {
+      const { error } = await (supabase.rpc as any)("admin_undo_cancel_event", {
         p_event_id: id,
         p_note: "Platform admin has restored this event.",
       });
@@ -169,7 +171,7 @@ function AdminDashboard() {
 
   const suspendMutation = useMutation({
     mutationFn: async ({ userId, suspend }: { userId: string; suspend: boolean }) => {
-      const { error } = await supabase.rpc("admin_suspend_user" as any, {
+      const { error } = await (supabase.rpc as any)("admin_suspend_user", {
         p_user_id: userId,
         p_suspended: suspend,
       });
@@ -184,7 +186,7 @@ function AdminDashboard() {
 
   const revokeMutation = useMutation({
     mutationFn: async ({ userId, reason }: { userId: string; reason: string }) => {
-      const { error } = await supabase.rpc("admin_revoke_organizer" as any, {
+      const { error } = await (supabase.rpc as any)("admin_revoke_organizer", {
         p_user_id: userId,
         p_reason: reason || null,
       });
@@ -195,6 +197,24 @@ function AdminDashboard() {
       setRevokeUser(null);
       setRevokeReason("");
       qc.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const revokeByEmailMutation = useMutation({
+    mutationFn: async ({ email, reason }: { email: string; reason: string }) => {
+      const { error } = await (supabase.rpc as any)("admin_revoke_organizer_by_email", {
+        p_email: email,
+        p_reason: reason || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Organizer access revoked successfully.");
+      setRevokeEmail("");
+      setRevokeEmailReason("");
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+      qc.invalidateQueries({ queryKey: ["admin-stats"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -508,6 +528,33 @@ function AdminDashboard() {
               </div>
             </div>
           </Link>
+        </div>
+      </div>
+
+      <div className="mb-12 rounded-3xl border border-destructive/20 bg-destructive/5 p-6">
+        <h3 className="font-display text-xl text-destructive mb-2 flex items-center gap-2"><ShieldOff className="h-5 w-5" /> Revoke Organizer by Email</h3>
+        <p className="text-sm text-foreground/80 mb-4">Quickly find a user by their email address and completely revoke their organizer access (forces them to reapply).</p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Input 
+             placeholder="User Email (e.g. hello@example.com)" 
+             value={revokeEmail} 
+             onChange={(e) => setRevokeEmail(e.target.value)}
+             className="max-w-sm bg-background border-destructive/20 focus-visible:ring-destructive/20"
+          />
+          <Input 
+             placeholder="Reason (Optional)" 
+             value={revokeEmailReason} 
+             onChange={(e) => setRevokeEmailReason(e.target.value)}
+             className="max-w-sm bg-background border-destructive/20 focus-visible:ring-destructive/20"
+          />
+          <Button 
+             variant="destructive" 
+             onClick={() => revokeByEmailMutation.mutate({ email: revokeEmail, reason: revokeEmailReason })}
+             disabled={revokeByEmailMutation.isPending || !revokeEmail}
+             className="rounded-xl font-bold"
+          >
+            {revokeByEmailMutation.isPending ? "Revoking..." : "Revoke Access"}
+          </Button>
         </div>
       </div>
 
