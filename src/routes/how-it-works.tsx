@@ -139,7 +139,7 @@ function HowItWorksPage() {
         </div>
 
         <div  
-          className="mx-auto max-w-6xl px-4 text-center"
+          className="mx-auto max-w-6xl px-4 text-center relative z-10"
         >
           <div  className="inline-flex items-center gap-3 mb-8 bg-secondary/50 border border-border/50 backdrop-blur-md rounded-full px-5 py-2 shadow-sm">
             <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
