@@ -139,9 +139,6 @@ function HowItWorksPage() {
         </div>
 
         <div  
-          initial="hidden"
-          animate="visible"
-          
           className="mx-auto max-w-6xl px-4 text-center"
         >
           <div  className="inline-flex items-center gap-3 mb-8 bg-secondary/50 border border-border/50 backdrop-blur-md rounded-full px-5 py-2 shadow-sm">
@@ -179,7 +176,7 @@ function HowItWorksPage() {
         <div className="absolute top-40 left-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-10" />
         
         <div 
-          initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}
+          
           
           className="flex flex-col md:flex-row items-start md:items-baseline gap-6 mb-16"
         >
@@ -194,7 +191,7 @@ function HowItWorksPage() {
           <div className="absolute left-[27px] top-10 bottom-10 w-0.5 bg-gradient-to-b from-primary/50 via-primary/20 to-transparent hidden md:block rounded-full" aria-hidden />
 
           <div 
-            initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}
+            
             
             className="space-y-12"
           >
@@ -220,7 +217,7 @@ function HowItWorksPage() {
           </div>
         </div>
 
-        <div initial="hidden" whileInView="visible" viewport={{ once: true }}  className="mt-16 flex justify-center md:justify-start md:ml-[96px]">
+        <div   className="mt-16 flex justify-center md:justify-start md:ml-[96px]">
           <Link
             to="/browse"
             className="inline-flex items-center justify-center gap-2 rounded-full h-14 px-8 gradient-sunset text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-1 transition-all font-semibold text-lg w-full md:w-auto"
@@ -236,7 +233,7 @@ function HowItWorksPage() {
         
         <div className="mx-auto max-w-6xl px-4 relative z-10">
           <div 
-            initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}
+            
             
             className="flex flex-col md:flex-row items-start md:items-baseline gap-6 mb-16"
           >
@@ -248,7 +245,7 @@ function HowItWorksPage() {
           </div>
 
           <div 
-            initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}
+            
             
             className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
           >
@@ -273,7 +270,7 @@ function HowItWorksPage() {
           </div>
 
           <div 
-            initial="hidden" whileInView="visible" viewport={{ once: true }} 
+             
             className="mt-12 rounded-[2.5rem] border-2 border-primary/20 bg-primary/5 p-8 md:p-12 relative overflow-hidden group"
           >
             <div className="absolute right-0 top-0 w-64 h-64 bg-primary/10 rounded-bl-full -z-10 group-hover:scale-110 transition-transform duration-700" />
@@ -298,7 +295,7 @@ function HowItWorksPage() {
             </div>
           </div>
 
-          <div initial="hidden" whileInView="visible" viewport={{ once: true }}  className="mt-12 flex flex-wrap gap-4">
+          <div   className="mt-12 flex flex-wrap gap-4">
             <Link
               to="/auth"
               search={{ mode: "signup" }}
@@ -321,7 +318,7 @@ function HowItWorksPage() {
         <div className="absolute right-0 bottom-40 w-[500px] h-[500px] bg-secondary rounded-full blur-3xl -z-10 opacity-50" />
         
         <div 
-          initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}
+          
           
           className="flex flex-col md:flex-row items-start md:items-baseline gap-6 mb-16 text-center md:text-left"
         >
@@ -333,7 +330,7 @@ function HowItWorksPage() {
         </div>
 
         <div 
-          initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}
+          
           
           className="grid gap-6 md:grid-cols-2"
         >
@@ -354,7 +351,7 @@ function HowItWorksPage() {
       {/* ── CTA Banner ── */}
       <section className="mx-auto max-w-6xl px-4 pb-24">
         <div 
-          initial="hidden" whileInView="visible" viewport={{ once: true }} 
+           
           className="relative overflow-hidden rounded-[3rem] border border-primary/20 p-10 md:p-20 shadow-2xl"
         >
           <div className="absolute inset-0 gradient-sunset opacity-95" />

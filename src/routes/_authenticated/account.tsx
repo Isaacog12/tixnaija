@@ -36,7 +36,7 @@ export const Route = createFileRoute("/_authenticated/account")({
 // Data fetching
 // ---------------------------------------------------------------------------
 
-async function fetchProfile() {
+async function fetchProfile(): Promise<{ userId: string; email: string; profile: any }> {
   const { data: userData } = await supabase.auth.getUser();
   const userId = userData.user?.id;
   if (!userId) throw new Error("Not signed in");
