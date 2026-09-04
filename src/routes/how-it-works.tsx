@@ -155,18 +155,24 @@ function HowItWorksPage() {
             need to know to get started in minutes.
           </p>
           <div  className="flex flex-wrap justify-center gap-4">
-            <a
-              href="#buyers"
-              className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-6 py-3 text-sm font-semibold hover:border-primary hover:text-primary transition-all shadow-sm hover:shadow-md"
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('buyers')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-6 py-3 text-sm font-semibold hover:border-primary hover:text-primary transition-all shadow-sm hover:shadow-md cursor-pointer"
             >
               I want to buy tickets <ChevronRight className="h-4 w-4" />
-            </a>
-            <a
-              href="#organizers"
-              className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-6 py-3 text-sm font-semibold hover:border-primary hover:text-primary transition-all shadow-sm hover:shadow-md"
+            </button>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('organizers')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-6 py-3 text-sm font-semibold hover:border-primary hover:text-primary transition-all shadow-sm hover:shadow-md cursor-pointer"
             >
               I want to sell tickets <ChevronRight className="h-4 w-4" />
-            </a>
+            </button>
           </div>
         </div>
       </div>
