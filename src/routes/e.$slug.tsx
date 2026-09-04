@@ -159,7 +159,6 @@ function EventDetailPage() {
   const [qty, setQty] = useState<Record<string, number>>({});
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
 
   const [appliedPromo, setAppliedPromo] = useState<{ id: string; discount_type: string; discount_value: number } | null>(null);
   const [validatingPromo, setValidatingPromo] = useState(false);
@@ -185,12 +184,11 @@ function EventDetailPage() {
   const promoCodeValue = form.watch("promoCode");
 
   // Pre-fill user data if logged in
-  useQuery({
+  const { data: sessionUser } = useQuery({
     queryKey: ["user-session-checkout"],
     queryFn: async () => {
       const { data: userData } = await supabase.auth.getUser();
       if (userData?.user) {
-        setUserId(userData.user.id);
         form.setValue("buyerEmail", userData.user.email || "");
         const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", userData.user.id).maybeSingle();
         if (profile?.full_name) form.setValue("buyerName", profile.full_name);
@@ -198,6 +196,8 @@ function EventDetailPage() {
       return userData?.user ?? null;
     },
   });
+
+  const userId = sessionUser?.id || null;
 
   const items = useMemo(() => {
     if (!data) return [] as { type: TicketType; count: number; subtotal: number }[];
