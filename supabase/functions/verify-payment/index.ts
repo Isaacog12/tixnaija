@@ -2,12 +2,26 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
+const allowedOrigins = [
+  "https://tixnaija.vercel.app",
+  "http://localhost:3000",
+  "http://localhost:5173"
+];
+
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://tixnaija.vercel.app",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-paystack-signature",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Origin": "https://tixnaija.vercel.app",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, GET, OPTIONS, PUT, DELETE",
 };
+
+function getCorsHeaders(req) {
+  const origin = req?.headers?.get("origin") || "";
+  const isAllowed = allowedOrigins.includes(origin) || origin.endsWith(".vercel.app");
+  return {
+    ...corsHeaders,
+    "Access-Control-Allow-Origin": isAllowed ? origin : "https://tixnaija.vercel.app",
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -130,14 +144,14 @@ async function processVerifiedPayment(
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders, status: 200 });
+    return new Response(null, { headers: getCorsHeaders(req), status: 200 });
   }
 
   const paystackSecret = Deno.env.get("PAYSTACK_SECRET_KEY");
   if (!paystackSecret) {
     return new Response(
       JSON.stringify({ error: "Paystack secret key not configured" }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 },
+      { headers: { ...getCorsHeaders(req), "Content-Type": "application/json" }, status: 500 },
     );
   }
 
@@ -157,7 +171,7 @@ serve(async (req) => {
       if (!timingSafeEqual(expectedHash, paystackSignature)) {
         console.error("Webhook signature mismatch — rejecting request");
         return new Response(JSON.stringify({ error: "Invalid signature" }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
           status: 401,
         });
       }
@@ -167,7 +181,7 @@ serve(async (req) => {
       // Only process successful charges
       if (event.event !== "charge.success") {
         return new Response(JSON.stringify({ message: "Event ignored" }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
           status: 200,
         });
       }
@@ -175,7 +189,7 @@ serve(async (req) => {
       const txData = event.data;
       if (!txData || txData.status !== "success") {
         return new Response(JSON.stringify({ error: "Transaction not successful" }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
           status: 200,
         });
       }
@@ -184,7 +198,7 @@ serve(async (req) => {
       if (!metadata || !metadata.eventId || !metadata.tickets) {
         return new Response(
           JSON.stringify({ error: "Missing order metadata in webhook payload" }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
+          { headers: { ...getCorsHeaders(req), "Content-Type": "application/json" }, status: 200 },
         );
       }
 
@@ -195,7 +209,7 @@ serve(async (req) => {
       );
 
       return new Response(JSON.stringify({ success: true, ...result }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
         status: 200,
       });
     }
@@ -236,16 +250,17 @@ serve(async (req) => {
     );
 
     return new Response(JSON.stringify({ success: true, ...result }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   } catch (error: any) {
     console.error("Verify payment error:", error);
     return new Response(
       JSON.stringify({ error: error.message || "Unknown error" }),
       {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
         status: 200,
       },
     );
   }
 });
+

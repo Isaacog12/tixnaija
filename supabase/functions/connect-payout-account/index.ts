@@ -1,15 +1,30 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
+const allowedOrigins = [
+  "https://tixnaija.vercel.app",
+  "http://localhost:3000",
+  "http://localhost:5173"
+];
+
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://tixnaija.vercel.app",
+  "Access-Control-Allow-Origin": "https://tixnaija.vercel.app",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+  "Access-Control-Allow-Methods": "POST, GET, OPTIONS, PUT, DELETE",
 };
+
+function getCorsHeaders(req) {
+  const origin = req?.headers?.get("origin") || "";
+  const isAllowed = allowedOrigins.includes(origin) || origin.endsWith(".vercel.app");
+  return {
+    ...corsHeaders,
+    "Access-Control-Allow-Origin": isAllowed ? origin : "https://tixnaija.vercel.app",
+  };
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders, status: 200 });
+    return new Response(null, { headers: getCorsHeaders(req), status: 200 });
   }
 
   try {
@@ -38,7 +53,7 @@ serve(async (req) => {
     } else if (count !== null && count > 20) {
       return new Response(JSON.stringify({ error: "Too many attempts, please wait a moment and try again" }), {
         status: 429,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" }
       });
     }
 
@@ -51,7 +66,7 @@ serve(async (req) => {
       if (!data.status) throw new Error(data.message || "Failed to fetch banks");
       
       return new Response(JSON.stringify(data.data), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -69,7 +84,7 @@ serve(async (req) => {
         if (!data.status) throw new Error(data.message || "Failed to resolve account");
         
         return new Response(JSON.stringify(data.data), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
         });
       }
 
@@ -133,7 +148,7 @@ serve(async (req) => {
       }
 
       return new Response(JSON.stringify({ success: true, subaccount_code }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -141,8 +156,9 @@ serve(async (req) => {
   } catch (error: any) {
     console.error("Connect payout account error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       status: 200,
     });
   }
 });
+

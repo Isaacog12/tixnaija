@@ -4,15 +4,30 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { sendEmail } from "../_shared/zeptomail.ts";
 
+const allowedOrigins = [
+  "https://tixnaija.vercel.app",
+  "http://localhost:3000",
+  "http://localhost:5173"
+];
+
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://tixnaija.vercel.app",
+  "Access-Control-Allow-Origin": "https://tixnaija.vercel.app",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Methods": "POST, GET, OPTIONS, PUT, DELETE",
 };
+
+function getCorsHeaders(req) {
+  const origin = req?.headers?.get("origin") || "";
+  const isAllowed = allowedOrigins.includes(origin) || origin.endsWith(".vercel.app");
+  return {
+    ...corsHeaders,
+    "Access-Control-Allow-Origin": isAllowed ? origin : "https://tixnaija.vercel.app",
+  };
+}
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: getCorsHeaders(req) });
   }
 
   try {
@@ -237,8 +252,9 @@ serve(async (req: Request) => {
       });
     }
 
-    return new Response(JSON.stringify({ success: true }), { headers: corsHeaders, status: 200 });
+    return new Response(JSON.stringify({ success: true }), { headers: getCorsHeaders(req), status: 200 });
   } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), { headers: corsHeaders, status: 400 });
+    return new Response(JSON.stringify({ error: error.message }), { headers: getCorsHeaders(req), status: 400 });
   }
 });
+
