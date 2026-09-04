@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter, redirect } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Scanner } from "@yudiel/react-qr-scanner";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,31 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, XCircle, AlertTriangle, ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/events/$eventId/scan")({
+  beforeLoad: async ({ params: { eventId } }) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw redirect({ to: "/auth" });
+
+    // Check if admin
+    const { data: adminRole } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", session.user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (adminRole) return;
+
+    // Check if organizer
+    const { data: event } = await supabase
+      .from("events")
+      .select("organizer_id")
+      .eq("id", eventId)
+      .maybeSingle();
+
+    if (!event || (event as any).organizer_id !== session.user.id) {
+      throw redirect({ to: "/dashboard" });
+    }
+  },
   component: ScannerPage,
 });
 
@@ -72,8 +97,8 @@ function ScannerPage() {
       }
 
       // 2. Check ticket status
-      if (ticketData.status === 'checked_in') {
-        const time = new Date(ticketData.checked_in_at ?? Date.now()).toLocaleTimeString();
+      if ((ticketData as any).status === 'checked_in') {
+        const time = new Date((ticketData as any).checked_in_at ?? Date.now()).toLocaleTimeString();
         setScanResult({ 
           status: "warning", 
           message: `Already scanned at ${time}!`,
@@ -82,7 +107,7 @@ function ScannerPage() {
         return;
       }
 
-      if (ticketData.status === 'cancelled') {
+      if ((ticketData as any).status === 'cancelled') {
         setScanResult({ 
           status: "error", 
           message: "Ticket is cancelled and invalid.",
@@ -92,16 +117,12 @@ function ScannerPage() {
       }
 
       // 3. Update the ticket to checked_in
-      const { error: updateError } = await supabase
-        .from("tickets")
+      const { error: updateError } = await (supabase.from("tickets") as any)
         .update({ 
           status: "checked_in", 
           checked_in_at: new Date().toISOString(),
-          // RLS ensures only organizer can update, so we can set checked_in_by to auth.uid() automatically on the server, 
-          // or we don't strictly need to pass it here if we don't have the uid handy, 
-          // but we can let Supabase default trigger handle it or leave it null for now since we just need the status.
         })
-        .eq("id", ticketData.id);
+        .eq("id", (ticketData as any).id);
 
       if (updateError) throw updateError;
 
@@ -144,7 +165,7 @@ function ScannerPage() {
           <ArrowLeft className="w-6 h-6" />
         </Button>
         <div className="flex-1 truncate">
-          <h1 className="font-semibold text-lg truncate">{event?.title || "Event Check-in"}</h1>
+          <h1 className="font-semibold text-lg truncate">{(event as any)?.title || "Event Check-in"}</h1>
           <p className="text-xs text-white/60">Ticket Scanner</p>
         </div>
       </div>

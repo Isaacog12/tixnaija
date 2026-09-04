@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://tixnaija.vercel.app",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
 };
@@ -16,6 +16,30 @@ serve(async (req) => {
     const paystackSecret = Deno.env.get("PAYSTACK_SECRET_KEY");
     if (!paystackSecret) {
       throw new Error("Paystack secret key not configured");
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+    
+    // Rate Limiting Check
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
+    await supabaseAdmin.from("rate_limit_log").insert({ ip_address: ip, endpoint: "connect_payout_account" });
+    const fiveMinsAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const { count, error: countError } = await supabaseAdmin
+      .from("rate_limit_log")
+      .select("*", { count: "exact", head: true })
+      .eq("ip_address", ip)
+      .eq("endpoint", "connect_payout_account")
+      .gte("created_at", fiveMinsAgo);
+
+    if (countError) {
+      console.error("Rate limit check error:", countError);
+    } else if (count !== null && count > 20) {
+      return new Response(JSON.stringify({ error: "Too many attempts, please wait a moment and try again" }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
     if (req.method === "GET") {
@@ -96,9 +120,6 @@ serve(async (req) => {
       const subaccount_code = data.data.subaccount_code;
 
       // Update Supabase profile using service role to bypass column-level grants
-      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-      const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
-      
       const { error: profileError } = await supabaseAdmin
         .from("profiles")
         .update({

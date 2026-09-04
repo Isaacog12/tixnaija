@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://tixnaija.vercel.app",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
@@ -13,9 +13,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders, status: 200 });
   }
   try {
-    const { email, amount, metadata } = await req.json();
-    if (!email || !amount) {
-      throw new Error("Email and amount are required");
+    const { email, metadata } = await req.json();
+    if (!email) {
+      throw new Error("Email is required");
     }
     const paystackSecret = Deno.env.get("PAYSTACK_SECRET_KEY");
     if (!paystackSecret) {
@@ -89,9 +89,36 @@ serve(async (req) => {
 
     const subaccount_code = profileData.paystack_subaccount_code;
 
+    const ticketTypeId = metadata?.ticketTypeId;
+    const quantity = metadata?.quantity || 1;
+    const promoCodeId = metadata?.promoCodeId;
+
+    if (!ticketTypeId) throw new Error("Ticket type missing");
+
+    const { data: ticketType, error: ttError } = await supabase
+      .from("ticket_types")
+      .select("price_kobo")
+      .eq("id", ticketTypeId)
+      .single();
+
+    if (ttError || !ticketType) throw new Error("Ticket type not found");
+
+    let finalTotalKobo = ticketType.price_kobo * quantity;
+
+    if (promoCodeId) {
+       const { data: promo } = await supabase
+         .from("promo_codes")
+         .select("discount_percentage, active")
+         .eq("id", promoCodeId)
+         .single();
+       if (promo && promo.active) {
+          finalTotalKobo = Math.round(finalTotalKobo * (1 - promo.discount_percentage / 100));
+       }
+    }
+
     const payload: any = {
       email,
-      amount: Math.round(amount * 100), // convert to kobo
+      amount: finalTotalKobo,
       metadata,
       callback_url: `${req.headers.get("origin")}/checkout/verify`,
       subaccount: subaccount_code,

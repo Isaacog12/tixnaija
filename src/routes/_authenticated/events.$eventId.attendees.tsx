@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteNav } from "@/components/site-nav";
@@ -19,6 +19,31 @@ import {
 } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/events/$eventId/attendees")({
+  beforeLoad: async ({ params: { eventId } }) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw redirect({ to: "/auth" });
+
+    // Check if admin
+    const { data: adminRole } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", session.user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (adminRole) return;
+
+    // Check if organizer
+    const { data: event } = await supabase
+      .from("events")
+      .select("organizer_id")
+      .eq("id", eventId)
+      .maybeSingle();
+
+    if (!event || (event as any).organizer_id !== session.user.id) {
+      throw redirect({ to: "/dashboard" });
+    }
+  },
   component: AttendeesPage,
 });
 
@@ -70,6 +95,7 @@ function AttendeesPage() {
   // Cancel ticket mutation
   const cancelTicketMutation = useMutation({
     mutationFn: async (ticketId: string) => {
+      // @ts-ignore - Supabase type gen missing p_ticket_id
       const { error } = await supabase.rpc("cancel_ticket", { p_ticket_id: ticketId });
       if (error) throw error;
     },
@@ -103,7 +129,7 @@ function AttendeesPage() {
             <h1 className="font-display text-3xl md:text-4xl">Attendees</h1>
           </div>
           <p className="text-muted-foreground text-sm">
-            {event?.title ? `Manage attendees and tickets for ${event.title}` : "Loading event..."}
+            {(event as any)?.title ? `Manage attendees and tickets for ${(event as any).title}` : "Loading event..."}
           </p>
         </div>
       </section>
