@@ -86,7 +86,7 @@ const ORGANIZER_STEPS = [
 const FAQ = [
   {
     q: "How much does TixNaija charge?",
-    a: "TixNaija charges a 15% platform fee on each ticket sold. For example, if you sell a ticket for ₦5,000, you receive ₦4,250 and TixNaija retains ₦750. Paystack's processing fee (typically 1.5% + ₦100, capped at ₦2,000) is charged separately at checkout.",
+    a: "TixNaija charges a 10% platform fee on each ticket sold. For example, if you sell a ticket for ₦5,000, you receive ₦4,500 and TixNaija retains ₦500. Paystack's processing fee (typically 1.5% + ₦100, capped at ₦2,000) is charged separately at checkout.",
   },
   {
     q: "Are free events supported?",
@@ -289,10 +289,10 @@ function HowItWorksPage() {
                   <h3 className="font-display text-2xl md:text-3xl">Platform fee breakdown</h3>
                 </div>
                 <p className="text-lg text-foreground/80 leading-relaxed font-medium max-w-3xl">
-                  TixNaija charges <strong className="text-primary font-bold bg-primary/10 px-1 rounded">15%</strong> of each ticket sale.
+                  TixNaija charges <strong className="text-primary font-bold bg-primary/10 px-1 rounded">10%</strong> of each ticket sale.
                   So for a ₦10,000 ticket: the buyer pays ₦10,000,
-                  TixNaija retains ₦1,500, and you receive{" "}
-                  <strong className="text-primary font-bold">₦8,500</strong> — settled directly to your bank account.
+                  TixNaija retains ₦1,000, and you receive{" "}
+                  <strong className="text-primary font-bold">₦9,000</strong> — settled directly to your bank account.
                 </p>
               </div>
             </div>

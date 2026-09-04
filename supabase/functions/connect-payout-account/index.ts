@@ -84,7 +84,7 @@ serve(async (req) => {
           business_name,
           settlement_bank: bank_code,
           account_number,
-          percentage_charge: 15,
+          percentage_charge: parseFloat(Deno.env.get("PLATFORM_FEE_PERCENTAGE") ?? "10"),
         }),
       });
 

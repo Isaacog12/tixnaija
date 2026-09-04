@@ -397,7 +397,7 @@ function AccountPage() {
                   Connect the Nigerian bank account where you want to receive your payouts from ticket sales.
                 </p>
                 <div className="mt-4 rounded-md bg-muted px-4 py-3 text-sm">
-                  <strong>Important:</strong> Your payouts from ticket sales will be sent directly to this exact bank account. A 15% platform fee applies.
+                  <strong>Important:</strong> Your payouts from ticket sales will be sent directly to this exact bank account. A 10% platform fee applies.
                 </div>
               </div>
 
