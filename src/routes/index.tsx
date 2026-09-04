@@ -11,6 +11,9 @@ import Autoplay from "embla-carousel-autoplay";
 
 
 export const Route = createFileRoute("/")({
+  head: () => ({
+    links: [{ rel: "canonical", href: "https://tixnaija.name.ng/" }],
+  }),
   component: LandingPage,
 });
 
