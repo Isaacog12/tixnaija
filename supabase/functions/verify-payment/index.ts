@@ -6,7 +6,9 @@ const allowedOrigins = [
   "https://tixnaija.vercel.app",
   "http://localhost:3000",
   "http://localhost:5173",
-  "http://localhost:8080"
+  "http://localhost:8080",
+  "https://www.tixnaija.name.ng",
+  "https://tixnaija.name.ng"
 ];
 
 const corsHeaders = {
@@ -264,5 +266,6 @@ serve(async (req) => {
     );
   }
 });
+
 
 
