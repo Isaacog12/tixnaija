@@ -213,11 +213,12 @@ function AccountPage() {
       toast.success("Payout account successfully connected!");
       await supabase
         .from("profiles")
+        // @ts-ignore
         .update({
           bank_name: form.bank_name,
           bank_account_number: form.bank_account_number,
           bank_account_name: form.bank_account_name,
-        })
+        } as any)
         .eq("id", data!.userId);
       qc.invalidateQueries({ queryKey: ["me"] });
     }
@@ -237,13 +238,14 @@ function AccountPage() {
     if (data.profile) {
       const { error: updateError } = await supabase
         .from("profiles")
-        .update(parsed.data)
+        // @ts-ignore
+        .update(parsed.data as any)
         .eq("id", data.userId);
       error = updateError;
     } else {
       const { error: insertError } = await supabase
         .from("profiles")
-        .insert({ id: data.userId, ...parsed.data });
+        .insert({ id: data.userId, ...parsed.data } as any);
       error = insertError;
     }
     setSaving(false);
@@ -691,7 +693,7 @@ function ApplicationForm({
           reason: parsed.data.reason,
           id_photo_url: path,
           status: "pending",
-        });
+        } as any);
       if (insertError) throw insertError;
 
       toast.success(
