@@ -7,7 +7,8 @@ import { sendEmail } from "../_shared/zeptomail.ts";
 const allowedOrigins = [
   "https://tixnaija.vercel.app",
   "http://localhost:3000",
-  "http://localhost:5173"
+  "http://localhost:5173",
+  "http://localhost:8080"
 ];
 
 const corsHeaders = {
@@ -257,4 +258,5 @@ serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: error.message }), { headers: getCorsHeaders(req), status: 400 });
   }
 });
+
 
