@@ -107,21 +107,26 @@ serve(async (req) => {
 
     const subaccount_code = profileData.paystack_subaccount_code;
 
-    const ticketTypeId = metadata?.ticketTypeId;
-    const quantity = metadata?.quantity || 1;
+    const tickets = metadata?.tickets;
     const promoCodeId = metadata?.promoCodeId;
 
-    if (!ticketTypeId) throw new Error("Ticket type missing");
+    if (!tickets || !Array.isArray(tickets) || tickets.length === 0) {
+      throw new Error("Ticket type missing");
+    }
 
-    const { data: ticketType, error: ttError } = await supabase
-      .from("ticket_types")
-      .select("price_kobo")
-      .eq("id", ticketTypeId)
-      .single();
+    let finalTotalKobo = 0;
 
-    if (ttError || !ticketType) throw new Error("Ticket type not found");
+    for (const item of tickets) {
+      if (!item.ticketTypeId || !item.count) continue;
+      const { data: ticketType, error: ttError } = await supabase
+        .from("ticket_types")
+        .select("price_kobo")
+        .eq("id", item.ticketTypeId)
+        .single();
 
-    let finalTotalKobo = ticketType.price_kobo * quantity;
+      if (ttError || !ticketType) throw new Error("Ticket type not found");
+      finalTotalKobo += ticketType.price_kobo * item.count;
+    }
 
     if (promoCodeId) {
        const { data: promo } = await supabase
