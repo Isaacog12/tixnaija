@@ -9,8 +9,6 @@ import { BackButton } from "@/components/back-button";
 import { Label } from "@/components/ui/label";
 import { Instagram, Send, PhoneCall, Mail, AlertCircle, HelpCircle, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Variants } from "framer-motion";
-
 
 export const Route = createFileRoute("/about")({
   component: AboutPage,
@@ -50,21 +48,6 @@ const TOPICS = [
   "Partnership / Business Enquiry",
   "Other",
 ];
-
-const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
-};
-
-const staggerContainer: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
 
 function AboutPage() {
   const [form, setForm] = useState({
@@ -109,7 +92,7 @@ function AboutPage() {
       phone: form.phone.trim(),
       topic: form.topic || "Other",
       message: form.message.trim(),
-    });
+    } as any);
 
     setBusy(false);
 

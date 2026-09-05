@@ -310,7 +310,7 @@ function HowItWorksPage() {
               Get started free <ChevronRight className="h-5 w-5" />
             </Link>
             <Link
-              to="/contact"
+              to="/about"
               className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-border bg-card h-14 px-8 text-lg font-semibold hover:border-primary hover:text-primary transition-all w-full sm:w-auto"
             >
               <MessageSquare className="h-5 w-5" /> Talk to us
@@ -399,7 +399,7 @@ function HowItWorksPage() {
             <span className="font-display text-2xl leading-none tracking-wide font-light text-gradient-sunset">NAIJA</span>
           </Link>
           <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 text-sm font-medium text-muted-foreground">
-            <Link to="/contact" className="hover:text-foreground transition-colors">Contact</Link>
+            <Link to="/about" className="hover:text-foreground transition-colors">Contact</Link>
             <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
             <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
             <Link to="/careers" className="hover:text-foreground transition-colors">Careers</Link>
