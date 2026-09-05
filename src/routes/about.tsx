@@ -140,7 +140,7 @@ function AboutPage() {
           <div>
             <h2 className="font-display text-3xl md:text-4xl mb-4 tracking-tight">Who owns TixNaija?</h2>
             <p className="text-lg text-muted-foreground leading-relaxed max-w-xl mb-4">
-              TixNaija is an independent platform founded by Isaac Oghenerukevwe. Our goal is to simplify event ticketing for organizers and attendees across Nigeria.
+              TixNaija is an independent platform founded by Ogbomo Isaac in 2026. Our goal is to simplify event ticketing for organizers and attendees across Nigeria.
             </p>
             <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 mt-6 mb-12">
               <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
