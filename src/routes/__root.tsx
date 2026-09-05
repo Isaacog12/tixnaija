@@ -95,7 +95,7 @@ function NotFoundComponent() {
           <span className="text-border">·</span>
           <Link to="/faq" className="hover:text-primary transition-colors">Help / FAQ</Link>
           <span className="text-border">·</span>
-          <Link to="/contact" className="hover:text-primary transition-colors">Contact us</Link>
+          <Link to="/about" className="hover:text-primary transition-colors">Contact us</Link>
         </div>
 
         <div className="mt-12 flex items-baseline justify-center gap-0">
