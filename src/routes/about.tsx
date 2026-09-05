@@ -9,17 +9,18 @@ import { BackButton } from "@/components/back-button";
 import { Label } from "@/components/ui/label";
 import { Instagram, Send, PhoneCall, Mail, AlertCircle, HelpCircle, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Variants } from "framer-motion";
 
 
-export const Route = createFileRoute("/contact")({
-  component: ContactPage,
+export const Route = createFileRoute("/about")({
+  component: AboutPage,
   head: () => ({
     meta: [
-      { title: "Contact Us — TixNaija" },
+      { title: "About Us — TixNaija" },
       {
         name: "description",
         content:
-          "Get in touch with the TixNaija team. Whether you're a buyer with a ticket issue or an organizer with a question, we're here to help.",
+          "Learn more about TixNaija, who we are, and how to get in touch with our team.",
       },
     ],
   }),
@@ -50,7 +51,7 @@ const staggerContainer: Variants = {
   },
 };
 
-function ContactPage() {
+function AboutPage() {
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -120,14 +121,13 @@ function ContactPage() {
       <div className="relative border-b border-border/40 py-16 md:py-24 overflow-hidden">
         <div className="absolute inset-0 bg-grid-pattern opacity-[0.02] pointer-events-none" />
         <div 
-          initial="hidden" animate="visible" 
           className="mx-auto max-w-6xl px-4 text-center md:text-left relative z-10"
         >
           <h1  className="font-display text-5xl md:text-7xl lg:text-8xl leading-[0.95] tracking-tight mb-6">
-            Get in <span className="text-gradient-sunset">touch</span>
+            About <span className="text-gradient-sunset">Us</span>
           </h1>
           <p  className="text-muted-foreground text-lg md:text-2xl max-w-2xl font-medium leading-relaxed mx-auto md:mx-0">
-            Got a question, issue, or just want to say hi? We're here to help you turn up without the hassle.
+            TixNaija is a proudly independent Nigerian ticketing platform built to make event creation and attendance seamless.
           </p>
         </div>
       </div>
@@ -135,10 +135,24 @@ function ContactPage() {
       {/* ── Body ── */}
       <div className="mx-auto max-w-6xl px-4 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-[1fr_450px] gap-16 items-start">
 
-        <div initial="hidden" animate="visible"  className="space-y-12">
+        <div className="space-y-12">
           
           <div>
-            <h2 className="font-display text-3xl md:text-4xl mb-4 tracking-tight">We'd love to hear from you</h2>
+            <h2 className="font-display text-3xl md:text-4xl mb-4 tracking-tight">Who owns TixNaija?</h2>
+            <p className="text-lg text-muted-foreground leading-relaxed max-w-xl mb-4">
+              TixNaija is an independent platform founded by Isaac Oghenerukevwe. Our goal is to simplify event ticketing for organizers and attendees across Nigeria.
+            </p>
+            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 mt-6 mb-12">
+              <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-primary" />
+                Not affiliated with TixAfrica
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Please note that TixNaija is a completely standalone platform and is <strong>not connected, affiliated, or associated with TixAfrica</strong> in any way. 
+              </p>
+            </div>
+
+            <h2 className="font-display text-3xl md:text-4xl mb-4 tracking-tight mt-12">Get in touch</h2>
             <p className="text-lg text-muted-foreground leading-relaxed max-w-xl">
               Whether you're an attendee with a ticket problem or an organizer needing support, our team is ready to help you succeed.
             </p>

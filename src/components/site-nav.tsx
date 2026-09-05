@@ -43,14 +43,12 @@ export function SiteNav() {
   const [hoveredPath, setHoveredPath] = useState<string | null>(null);
   
   const links = [
-    { name: "Discover", to: "/", icon: Compass },
     { name: "Browse", to: "/browse", icon: Search },
     ...(user ? [
-      { name: "Tickets", to: "/tickets", icon: TicketIcon },
       { name: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
     ] : []),
+    { name: "About Us", to: "/about", icon: Compass },
     { name: "How it works", to: "/how-it-works", icon: HelpCircle },
-    { name: "Contact", to: "/contact", icon: Mail },
   ];
 
   return (
