@@ -20,7 +20,22 @@ export const Route = createFileRoute("/about")({
       {
         name: "description",
         content:
-          "Learn more about TixNaija, who we are, and how to get in touch with our team.",
+          "TixNaija is an independent Nigerian ticketing platform built to make event creation seamless. We are a distinct company, not affiliated with Tix Africa.",
+      },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "TixNaija",
+          url: "https://www.tixnaija.name.ng",
+          description: "TixNaija is a proudly independent Nigerian ticketing platform built to make event creation and attendance seamless.",
+          foundingDate: "2026",
+          founder: { "@type": "Person", "name": "Ogbomo Isaac" },
+          sameAs: ["https://www.instagram.com/tixnaija/"]
+        }),
       },
     ],
   }),
@@ -145,11 +160,17 @@ function AboutPage() {
             <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 mt-6 mb-12">
               <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
                 <AlertCircle className="w-5 h-5 text-primary" />
-                Not affiliated with TixAfrica
+                Not affiliated with Tix Africa
               </h3>
-              <p className="text-sm text-muted-foreground">
-                Please note that TixNaija is a completely standalone platform and is <strong>not connected, affiliated, or associated with TixAfrica</strong> in any way. 
+              <p className="text-sm text-muted-foreground mb-4">
+                Please note that TixNaija is a completely standalone platform and is <strong>not connected, affiliated, or associated with Tix Africa</strong> in any way. 
               </p>
+              <div className="bg-background/60 rounded-xl p-4 border border-border/40">
+                <h4 className="font-semibold text-foreground mb-1">Is TixNaija the same as Tix Africa?</h4>
+                <p className="text-sm text-muted-foreground">
+                  No. TixNaija is a distinct and completely separate company, founded independently by Ogbomo Isaac in 2026.
+                </p>
+              </div>
             </div>
 
             <h2 className="font-display text-3xl md:text-4xl mb-4 tracking-tight mt-12">Get in touch</h2>
