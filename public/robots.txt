@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
+Disallow: /dashboard
+Disallow: /account
+Disallow: /checkout
+Disallow: /orders
+Disallow: /admin*
 
 Sitemap: https://www.tixnaija.name.ng/sitemap.xml

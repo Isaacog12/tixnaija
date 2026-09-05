@@ -30,20 +30,87 @@ export const Route = createFileRoute("/e/$slug")({
   loader: async ({ params }) => {
     return await fetchEventBySlug(params.slug);
   },
-  head: ({ loaderData }) => {
+  head: ({ loaderData, params }) => {
     if (!loaderData || !loaderData.event) {
       return { meta: [{ title: 'Event - TixNaija' }] };
     }
-    const { event } = loaderData;
+    const { event, types } = loaderData;
+    
+    const dateStr = event.start_datetime ? new Date(event.start_datetime).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+    const cityPart = event.city ? ` — ${event.city}` : '';
+    const title = `${event.title}${cityPart} | TixNaija`;
+    
+    let desc = `Get tickets for ${event.title}`;
+    if (dateStr) desc += ` on ${dateStr}`;
+    if (event.city) desc += ` in ${event.city}`;
+    if (event.description) {
+      let snippet = event.description;
+      if (snippet.length > 90) {
+        snippet = snippet.substring(0, 90);
+        const lastSpace = snippet.lastIndexOf(" ");
+        if (lastSpace > 0) snippet = snippet.substring(0, lastSpace);
+        snippet += "...";
+      }
+      desc += `. ${snippet}`;
+    } else {
+      desc += ".";
+    }
+
+    let minPrice = 0;
+    let availability = "https://schema.org/SoldOut";
+    if (types && types.length > 0) {
+      const availableTypes = types.filter((t: any) => t.quantity_available > t.quantity_sold);
+      if (availableTypes.length > 0) {
+        availability = "https://schema.org/InStock";
+        minPrice = Math.min(...availableTypes.map((t: any) => t.price_kobo)) / 100;
+      } else {
+        minPrice = Math.min(...types.map((t: any) => t.price_kobo)) / 100;
+      }
+    }
+
+    let eventStatus = "https://schema.org/EventScheduled";
+    if (event.status === "cancelled") eventStatus = "https://schema.org/EventCancelled";
+    else if (event.postponed_at) eventStatus = "https://schema.org/EventPostponed";
+    else if (event.status === "completed" || new Date(event.end_datetime || event.start_datetime) < new Date()) {
+      availability = "https://schema.org/OutOfStock";
+    }
+
     return {
       meta: [
-        { title: `${event.title} | TixNaija` },
-        { name: 'description', content: event.description?.substring(0, 160) || 'Get tickets on TixNaija' },
-        { property: 'og:title', content: event.title },
-        { property: 'og:description', content: event.description?.substring(0, 160) || 'Get tickets on TixNaija' },
-        { property: 'og:image', content: event.cover_image_url || 'https://tixnaija.vercel.app/og-default.png' },
+        { title },
+        { name: 'description', content: desc },
+        { property: 'og:title', content: title },
+        { property: 'og:description', content: desc },
+        { property: 'og:image', content: event.cover_image_url || 'https://www.tixnaija.name.ng/preview.jpg' },
         { property: 'twitter:card', content: 'summary_large_image' },
       ],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Event",
+            "name": event.title,
+            "description": desc,
+            "startDate": event.start_datetime,
+            "endDate": event.end_datetime || event.start_datetime,
+            "eventStatus": eventStatus,
+            "location": {
+              "@type": "Place",
+              "name": event.venue_name || event.city || "TBD",
+              "address": [event.city, event.state].filter(Boolean).join(", ") || "Nigeria"
+            },
+            "image": event.cover_image_url ? [event.cover_image_url] : [],
+            "offers": {
+              "@type": "Offer",
+              "price": minPrice,
+              "priceCurrency": "NGN",
+              "availability": availability,
+              "url": `https://www.tixnaija.name.ng/e/${params.slug}`
+            }
+          })
+        }
+      ]
     };
   },
 });
@@ -61,14 +128,15 @@ type TicketType = {
 };
 
 async function fetchEventBySlug(slug: string) {
-  const { data: ev, error: eventErr } = await supabase
+  const { data: _ev, error: eventErr } = await supabase
     .from("events")
     .select("*, profiles!events_organizer_id_fkey(full_name)")
     .eq("slug", slug)
     .maybeSingle();
 
   if (eventErr) throw eventErr;
-  if (!ev) return null;
+  if (!_ev) return null;
+  const ev = _ev as any;
 
   const { data: types, error: typesErr } = await supabase
     .from("ticket_types")
@@ -191,7 +259,7 @@ function EventDetailPage() {
       if (userData?.user) {
         form.setValue("buyerEmail", userData.user.email || "");
         const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", userData.user.id).maybeSingle();
-        if (profile?.full_name) form.setValue("buyerName", profile.full_name);
+        if ((profile as any)?.full_name) form.setValue("buyerName", (profile as any).full_name);
       }
       return userData?.user ?? null;
     },
@@ -241,7 +309,7 @@ function EventDetailPage() {
       const { data: res, error } = await supabase.rpc('validate_promo_code', {
         p_event_id: data.event.id,
         p_code: promoCodeValue.trim()
-      });
+      } as any);
       if (error) throw error;
       if (!res) throw new Error("Invalid promo code");
       setAppliedPromo(res as any);
@@ -299,7 +367,7 @@ function EventDetailPage() {
           p_recipient_email: values.isGift ? values.recipientEmail : null,
           p_gift_message: values.isGift ? values.giftMessage : null,
           p_access_code: !userId ? values.accessCode?.trim() : null,
-        });
+        } as any);
 
         if (checkoutError) {
           throw new Error(`Database error: ${checkoutError.message}`);

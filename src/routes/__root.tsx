@@ -186,14 +186,14 @@ function RootShell({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
         {/* Google Analytics */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=[paste real one here]"></script>
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-PLT1VPPEQR"></script>
         <script
           dangerouslySetInnerHTML={{
             __html: `
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
-              gtag('config', '[paste real one here]');
+              gtag('config', 'G-PLT1VPPEQR');
             `,
           }}
         />
