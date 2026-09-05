@@ -6,3 +6,4 @@
 
 ## General Preferences
 - The user prefers to use the Gemini High model.
+- CRITICAL: TixNaija is completely independent and separate from Tix Africa. Do NOT confuse the two platforms.
