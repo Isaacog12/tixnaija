@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // @ts-ignore
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import QRCode from "https://esm.sh/qrcode@1.5.3";
 import { sendEmail } from "../_shared/zeptomail.ts";
 
 const allowedOrigins = [
@@ -233,7 +234,7 @@ serve(async (req: Request) => {
 
       for (const t of tickets) {
         const singleUrl = `https://tixnaija.name.ng/t/${t.ticket_code}`;
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${t.ticket_code}`;
+        const qrUrl = await QRCode.toDataURL(t.ticket_code, { width: 150, margin: 1 });
         
         attHtmlBody += `
           <div style="background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 24px; margin-bottom: 16px; text-align: center;">
@@ -268,6 +269,7 @@ serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: error.message }), { headers: getCorsHeaders(req), status: 400 });
   }
 });
+
 
 
 
