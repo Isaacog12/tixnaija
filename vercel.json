@@ -27,5 +27,9 @@
       "source": "/sitemap.xml",
       "destination": "/api/sitemap.xml"
     }
-  ]
+  ],
+  "env": {
+    "VITE_SUPABASE_URL": "https://bjijftxksykbjknbleul.supabase.co",
+    "VITE_SUPABASE_ANON_KEY": "sb_publishable_RfXOHwPhaVxfcVhVX-UzvA_2GoeqbfZ"
+  }
 }
