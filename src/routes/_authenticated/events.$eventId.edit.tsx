@@ -514,14 +514,11 @@ function CompTicketsDialog({ eventId, ticketTypes }: { eventId: string, ticketTy
     
     if (recipients.length === 0) return toast.error("Enter at least one recipient");
     
-    // Fix: Format as Postgres array literal to bypass PostgREST's incorrect jsonb[] stringification
-    const pgArrayStr = "{" + recipients.map(r => `"${JSON.stringify(r).replace(/"/g, '\\"')}"`).join(",") + "}";
-    
     setBusy(true);
     const { data: orderId, error } = await supabase.rpc("issue_comp_tickets", {
       p_event_id: eventId,
       p_ticket_type_id: ticketTypeId,
-      p_recipients: pgArrayStr as any,
+      p_recipients: recipients,
     });
     
     if (error) {
