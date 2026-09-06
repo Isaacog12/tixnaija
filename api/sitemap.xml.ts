@@ -6,8 +6,8 @@ export const config = {
 
 export default async function handler(req: Request) {
   // Use environment variables available in Vercel
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://bjijftxksykbjknbleul.supabase.co';
-  const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || 'sb_publishable_RfXOHwPhaVxfcVhVX-UzvA_2GoeqbfZ';
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+  const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 
   if (!supabaseUrl || !supabaseKey) {
     return new Response("Missing Supabase configuration", { status: 500 });
