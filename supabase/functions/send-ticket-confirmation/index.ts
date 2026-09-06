@@ -233,10 +233,18 @@ serve(async (req: Request) => {
 
       for (const t of tickets) {
         const singleUrl = `https://tixnaija.name.ng/t/${t.ticket_code}`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${t.ticket_code}`;
+        
         attHtmlBody += `
           <div style="background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 24px; margin-bottom: 16px; text-align: center;">
             <p style="margin: 0 0 8px; font-weight: 700; font-size: 18px; color: #fff;">${t.ticketTypeName}</p>
-            <p style="margin: 0 0 24px; font-size: 13px; color: #94a3b8; font-family: monospace; letter-spacing: 1px;">CODE: ${t.ticket_code.split('-')[0].toUpperCase()}</p>
+            <p style="margin: 0 0 16px; font-size: 13px; color: #94a3b8; font-family: monospace; letter-spacing: 1px;">CODE: ${t.ticket_code.split('-')[0].toUpperCase()}</p>
+            
+            <div style="background: #ffffff; padding: 12px; border-radius: 12px; display: inline-block; margin-bottom: 24px;">
+              <img src="${qrUrl}" alt="Ticket QR Code" width="150" height="150" style="display: block; width: 150px; height: 150px; margin: 0 auto;" />
+            </div>
+            
+            <br />
             <a href="${singleUrl}" style="display: inline-block; background: #c2410c; border: 1px solid #ea580c; color: #fff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">View / Download Ticket 📥</a>
           </div>
         `;
