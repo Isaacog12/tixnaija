@@ -509,7 +509,7 @@ function CompTicketsDialog({ eventId, ticketTypes }: { eventId: string, ticketTy
     for (const line of lines) {
       const parts = line.split(",");
       if (parts.length < 2) return toast.error(`Invalid line format: ${line}. Use "Name, Email"`);
-      recipients.push(JSON.stringify({ name: parts[0].trim(), email: parts[1].trim() }));
+      recipients.push({ name: parts[0].trim(), email: parts[1].trim() });
     }
     
     if (recipients.length === 0) return toast.error("Enter at least one recipient");
@@ -526,9 +526,13 @@ function CompTicketsDialog({ eventId, ticketTypes }: { eventId: string, ticketTy
       toast.error(error.message);
     } else {
       if (orderId) {
-        await supabase.functions.invoke("send-ticket-confirmation", {
+        const { error: invokeError } = await supabase.functions.invoke("send-ticket-confirmation", {
           body: { orderId }
-        }).catch(err => console.error("Failed to send comp ticket emails:", err));
+        });
+        if (invokeError) {
+          console.error("Failed to send comp ticket emails:", invokeError);
+          toast.error("Tickets issued, but failed to send emails.");
+        }
       }
       setBusy(false);
       toast.success(`${recipients.length} comp tickets issued!`);
