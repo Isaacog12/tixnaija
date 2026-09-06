@@ -515,16 +515,22 @@ function CompTicketsDialog({ eventId, ticketTypes }: { eventId: string, ticketTy
     if (recipients.length === 0) return toast.error("Enter at least one recipient");
     
     setBusy(true);
-    const { error } = await supabase.rpc("issue_comp_tickets", {
+    const { data: orderId, error } = await supabase.rpc("issue_comp_tickets", {
       p_event_id: eventId,
       p_ticket_type_id: ticketTypeId,
       p_recipients: recipients,
     });
-    setBusy(false);
     
     if (error) {
+      setBusy(false);
       toast.error(error.message);
     } else {
+      if (orderId) {
+        await supabase.functions.invoke("send-ticket-confirmation", {
+          body: { orderId }
+        }).catch(err => console.error("Failed to send comp ticket emails:", err));
+      }
+      setBusy(false);
       toast.success(`${recipients.length} comp tickets issued!`);
       setOpen(false);
       setRecipientsText("");
