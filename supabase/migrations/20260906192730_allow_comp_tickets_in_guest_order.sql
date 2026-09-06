@@ -1,11 +1,10 @@
-
 -- Update get_guest_order_full to allow comp orders
 create or replace function public.get_guest_order_full(p_order_id uuid, p_email text, p_access_code text)
 returns jsonb
 language sql
 security definer
 set search_path = public
-as $function
+as $$
   select jsonb_build_object(
     'order', (
       select jsonb_build_object(
@@ -49,38 +48,43 @@ as $function
     and lower(o.buyer_email) = lower(p_email)
     and o.access_code = p_access_code
     and o.status IN ('paid', 'comp');
-unction;
+$$;
 
 -- Update get_guest_orders
+DROP FUNCTION IF EXISTS public.get_guest_orders(text, text);
 create or replace function public.get_guest_orders(p_email text, p_access_code text)
 returns table (
   id           uuid,
+  event_id     uuid,
   buyer_name   text,
   buyer_email  text,
-  status       public.order_status,
-  total_kobo   integer,
+  total_kobo   int,
+  status       text,
   created_at   timestamptz,
   event_title  text,
   event_slug   text,
-  cover_image_url text,
-  start_datetime timestamptz
+  event_city   text,
+  event_cover  text,
+  event_start  timestamptz
 )
 language plpgsql
 security definer
-as $function
+as $$
 begin
   return query
     select
       o.id,
+      o.event_id,
       o.buyer_name,
       o.buyer_email,
-      o.status,
       o.total_kobo,
+      o.status::text,
       o.created_at,
       e.title as event_title,
       e.slug as event_slug,
-      e.cover_image_url,
-      e.start_datetime
+      e.city as event_city,
+      e.cover_image_url as event_cover,
+      e.start_datetime as event_start
     from public.orders o
     join public.events e on o.event_id = e.id
     where lower(o.buyer_email) = lower(p_email)
@@ -89,22 +93,23 @@ begin
     order by o.created_at desc
     limit 50;
 end;
-unction;
+$$;
 
 -- Update get_guest_tickets
+DROP FUNCTION IF EXISTS public.get_guest_tickets(uuid, text, text);
 create or replace function public.get_guest_tickets(p_order_id uuid, p_email text, p_access_code text)
 returns table (
   id             uuid,
   ticket_code    text,
   attendee_name  text,
   attendee_email text,
-  status         public.ticket_status,
-  ticket_type_name text,
-  price_kobo     integer
+  status         text,
+  ticket_type    text,
+  price_kobo     int
 )
 language plpgsql
 security definer
-as $function
+as $$
 begin
   return query
     select
@@ -112,8 +117,8 @@ begin
       t.ticket_code,
       t.attendee_name,
       t.attendee_email,
-      t.status,
-      tt.name as ticket_type_name,
+      t.status::text,
+      tt.name as ticket_type,
       tt.price_kobo
     from public.tickets t
     join public.order_items oi on oi.id = t.order_item_id
@@ -124,5 +129,4 @@ begin
       and o.access_code = p_access_code
       and o.status IN ('paid', 'comp');
 end;
-unction;
-
+$$;
