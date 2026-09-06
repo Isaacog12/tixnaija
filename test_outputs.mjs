@@ -1,9 +1,18 @@
-import { config } from 'dotenv';
+import fs from 'fs';
 import { createClient } from '@supabase/supabase-js';
 
-config();
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+const envFile = fs.readFileSync('.env', 'utf8');
+const envVars = {};
+envFile.split(/\r?\n/).forEach(line => {
+  const match = line.match(/^([^=]+)=(.*)$/);
+  if (match) {
+    envVars[match[1]] = match[2].replace(/^["']|["']$/g, '');
+  }
+});
+
+
+const supabaseUrl = envVars.VITE_SUPABASE_URL || '';
+const supabaseKey = envVars.VITE_SUPABASE_PUBLISHABLE_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const { data: events, error } = await supabase
