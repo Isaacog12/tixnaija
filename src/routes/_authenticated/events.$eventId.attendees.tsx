@@ -7,6 +7,7 @@ import { Ticket, ArrowLeft, XCircle, Search, ShieldAlert, CheckCircle } from "lu
 import { toast } from "sonner";
 import { BackButton } from "@/components/back-button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { format } from "date-fns";
 import {
@@ -52,6 +53,15 @@ function AttendeesPage() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [cancellingTicket, setCancellingTicket] = useState<any>(null);
+  const [editingTicket, setEditingTicket] = useState<any>(null);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+
+  const handleEditOpen = (ticket: any) => {
+    setEditingTicket(ticket);
+    setEditName(ticket.attendee_name || ticket.order_items.orders.buyer_name || "");
+    setEditEmail(ticket.attendee_email || ticket.order_items.orders.buyer_email || "");
+  };
 
   // Fetch event details
   const { data: event, isLoading: eventLoading } = useQuery({
@@ -106,6 +116,33 @@ function AttendeesPage() {
     },
     onError: (err: any) => {
       toast.error(err.message || "Failed to cancel ticket.");
+    },
+  });
+
+  const updateTicketMutation = useMutation({
+    mutationFn: async ({ ticketId, name, email }: { ticketId: string, name: string, email: string }) => {
+      const { error } = await supabase.rpc("update_ticket_attendee" as any, {
+        p_ticket_id: ticketId,
+        p_attendee_name: name,
+        p_attendee_email: email,
+      });
+      if (error) throw error;
+      
+      // We also trigger the edge function to re-send to the new email
+      const ticket = filteredTickets?.find((t: any) => t.id === ticketId);
+      if (ticket) {
+        await supabase.functions.invoke("send-ticket-confirmation", {
+          body: { orderId: ticket.order_items.orders.id, ticketId },
+        });
+      }
+    },
+    onSuccess: () => {
+      toast.success("Ticket updated successfully!");
+      qc.invalidateQueries({ queryKey: ["event-tickets", eventId] });
+      setEditingTicket(null);
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to update ticket.");
     },
   });
 
@@ -202,15 +239,26 @@ function AttendeesPage() {
                         </td>
                         <td className="px-5 py-4 text-muted-foreground">{purchasedAt}</td>
                         <td className="px-5 py-4 text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={t.status === "cancelled"}
-                            onClick={() => setCancellingTicket(t)}
-                            className={t.status === "cancelled" ? "opacity-50" : "hover:bg-destructive hover:text-destructive-foreground hover:border-destructive"}
-                          >
-                            Cancel Ticket
-                          </Button>
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={t.status === "cancelled"}
+                              onClick={() => handleEditOpen(t)}
+                              className={t.status === "cancelled" ? "opacity-50" : ""}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={t.status === "cancelled"}
+                              onClick={() => setCancellingTicket(t)}
+                              className={t.status === "cancelled" ? "opacity-50" : "hover:bg-destructive hover:text-destructive-foreground hover:border-destructive"}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -254,7 +302,40 @@ function AttendeesPage() {
               onClick={() => cancelTicketMutation.mutate(cancellingTicket.id)}
               disabled={cancelTicketMutation.isPending}
             >
-              {cancelTicketMutation.isPending ? "Cancelling..." : "Yes, Cancel Ticket"}
+              {cancelTicketMutation.isPending ? "Cancelling..." : "Cancel Ticket"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Ticket Dialog */}
+      <Dialog open={!!editingTicket} onOpenChange={(open) => !open && setEditingTicket(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Attendee Details</DialogTitle>
+            <DialogDescription>
+              Update the name or email for this ticket. If you change the email, the current ticket QR code will become invalid and a new one will be generated and emailed to the new address.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Attendee Name</Label>
+              <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="e.g. Nneka Doe" />
+            </div>
+            <div className="space-y-2">
+              <Label>Attendee Email</Label>
+              <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} placeholder="nneka@example.com" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingTicket(null)} disabled={updateTicketMutation.isPending}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => updateTicketMutation.mutate({ ticketId: editingTicket.id, name: editName, email: editEmail })} 
+              disabled={updateTicketMutation.isPending || !editEmail.trim() || !editName.trim()}
+            >
+              {updateTicketMutation.isPending ? "Updating..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>
