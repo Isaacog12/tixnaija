@@ -55,9 +55,33 @@ async function fetchEvent(eventId: string) {
     .eq("id", event.organizer_id)
     .maybeSingle();
 
+  const { data: orderItems } = await supabase
+    .from("order_items")
+    .select("ticket_type_id, quantity, unit_price_kobo, orders!inner(status, subtotal_kobo, total_kobo)")
+    .eq("orders.event_id", eventId)
+    .in("orders.status", ["paid", "comp"]);
+
+  const tierRevenue: Record<string, number> = {};
+  for (const item of orderItems ?? []) {
+    const order = item.orders as unknown as { status: string; subtotal_kobo: number; total_kobo: number };
+    let itemRevenue = 0;
+    
+    if (order.status === "paid" && order.subtotal_kobo > 0) {
+      const ratio = order.total_kobo / order.subtotal_kobo;
+      itemRevenue = (item.quantity || 0) * (item.unit_price_kobo || 0) * ratio;
+    }
+
+    tierRevenue[item.ticket_type_id] = (tierRevenue[item.ticket_type_id] || 0) + itemRevenue;
+  }
+
+  const typesWithRevenue = (types ?? []).map((t: any) => ({
+    ...t,
+    actual_revenue_kobo: tierRevenue[t.id] || 0
+  }));
+
   return { 
     event, 
-    types: types ?? [], 
+    types: typesWithRevenue, 
     promoCodes: promoCodes ?? [],
     hasPayoutAccount: !!profile?.paystack_subaccount_code
   };
@@ -360,7 +384,7 @@ function TicketRow({
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
         <div>
           Sold <span className="font-semibold text-foreground">{row.quantity_sold}</span> of {row.quantity_available} ·
-          Revenue <span className="text-gradient-sunset font-semibold">{formatNaira(row.quantity_sold * row.price_kobo)}</span>
+          Revenue <span className="text-gradient-sunset font-semibold">{formatNaira(row.actual_revenue_kobo)}</span>
         </div>
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" onClick={remove} disabled={isAdminCancelled} className="text-destructive hover:text-destructive">
