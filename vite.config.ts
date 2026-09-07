@@ -7,6 +7,38 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
+  vite: {
+    optimizeDeps: {
+      include: [
+        "react",
+        "react-dom",
+        "@tanstack/react-router",
+        "@tanstack/react-query",
+        "@tanstack/react-start",
+        "@supabase/supabase-js",
+        "lucide-react",
+        "date-fns",
+        "zod",
+        "react-hook-form",
+        "@hookform/resolvers",
+        "recharts",
+        "sonner",
+        "clsx",
+        "tailwind-merge",
+        "class-variance-authority",
+        "jspdf",
+        "html-to-image",
+        "@yudiel/react-qr-scanner",
+        "qrcode.react",
+        "@radix-ui/react-dialog",
+        "@radix-ui/react-dropdown-menu",
+        "@radix-ui/react-popover",
+        "@radix-ui/react-slot",
+        "@radix-ui/react-label",
+        "@radix-ui/react-select"
+      ],
+    },
+  },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
