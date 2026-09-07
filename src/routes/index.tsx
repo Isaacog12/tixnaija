@@ -114,7 +114,7 @@ function LandingPage() {
                   >
                     <div 
                       onClick={() => handleBannerClick(banner)}
-                      className={`relative h-48 sm:h-64 md:h-80 w-full shrink-0 rounded-[2rem] overflow-hidden group shadow-xl border border-border/50 ${banner.link_url ? "cursor-pointer" : ""}`}
+                      className={`relative aspect-[16/9] md:aspect-[21/9] lg:aspect-[2.5/1] w-full max-h-[500px] shrink-0 rounded-[2rem] overflow-hidden group shadow-xl border border-border/50 ${banner.link_url ? "cursor-pointer" : ""}`}
                     >
                       <img 
                         src={banner.image_url} 
