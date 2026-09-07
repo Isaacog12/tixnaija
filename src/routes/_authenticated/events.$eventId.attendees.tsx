@@ -88,6 +88,7 @@ function AttendeesPage() {
           order_items!inner (
             ticket_types ( name ),
             orders!inner (
+              id,
               event_id,
               buyer_email,
               buyer_name
