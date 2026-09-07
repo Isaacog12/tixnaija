@@ -36,7 +36,7 @@ export default async function handler(req: Request) {
     return end >= now;
   });
 
-  const baseUrl = "https://www.tixnaija.name.ng";
+  const baseUrl = "https://tixnaija.name.ng";
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
