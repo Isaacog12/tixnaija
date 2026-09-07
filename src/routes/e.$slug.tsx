@@ -160,7 +160,6 @@ const checkoutSchema = z.object({
   recipientName: z.string().optional(),
   recipientEmail: z.string().optional(),
   giftMessage: z.string().optional(),
-  accessCode: z.string().optional(),
   promoCode: z.string().optional(),
   termsAccepted: z.boolean().refine(val => val === true, "You must agree to the Terms of Service and Privacy Policy"),
   attendees: z.record(
@@ -241,7 +240,6 @@ function EventDetailPage() {
       recipientName: "",
       recipientEmail: "",
       giftMessage: "",
-      accessCode: "",
       promoCode: "",
       termsAccepted: false,
       attendees: {},
@@ -344,11 +342,7 @@ function EventDetailPage() {
         attendee_emails: (values.attendees[i.type.id] ?? []).map(a => a.email || values.buyerEmail),
       }));
 
-      if (!userId && (!values.accessCode || values.accessCode.trim().length < 4)) {
-        toast.error("Please create a 4-6 digit Access PIN for your tickets.");
-        setCheckoutBusy(false);
-        return;
-      }
+
 
       if (totalKobo === 0) {
         // Handle free tickets locally
@@ -366,7 +360,6 @@ function EventDetailPage() {
           p_recipient_name: values.isGift ? values.recipientName : null,
           p_recipient_email: values.isGift ? values.recipientEmail : null,
           p_gift_message: values.isGift ? values.giftMessage : null,
-          p_access_code: !userId ? values.accessCode?.trim() : null,
         } as any);
 
         if (checkoutError) {
@@ -403,7 +396,6 @@ function EventDetailPage() {
         recipientName: values.isGift ? values.recipientName : null,
         recipientEmail: values.isGift ? values.recipientEmail : null,
         giftMessage: values.isGift ? values.giftMessage : null,
-        accessCode: !userId ? values.accessCode?.trim() : undefined,
       };
 
       const { data: initData, error: initErr } = await supabase.functions.invoke("initialize-payment", {
@@ -536,35 +528,6 @@ function EventDetailPage() {
                     </FormItem>
                   )}
                 />
-
-                {!userId && (
-                  <div className="space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-4 mt-6">
-                    <div className="flex gap-3">
-                      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
-                        <span className="text-xs font-bold">!</span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Guest Checkout</p>
-                        <p className="text-xs text-muted-foreground">
-                          Since you aren't logged in, please create a short PIN (4-6 digits) so you can access your tickets later.
-                        </p>
-                      </div>
-                    </div>
-                    <FormField
-                      control={form.control}
-                      name="accessCode"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Access PIN</FormLabel>
-                          <FormControl>
-                            <Input type="text" maxLength={10} placeholder="e.g. 12345" className="max-w-[200px]" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                )}
 
                 {isGift && (
                   <div className="space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-4">

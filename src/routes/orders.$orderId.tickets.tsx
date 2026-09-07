@@ -18,20 +18,18 @@ import { toast } from "sonner";
 // guests can reach it from /my-tickets with ?email=... query param.
 export const Route = createFileRoute("/orders/$orderId/tickets")({
   component: OrderTicketsPage,
-  validateSearch: (search: Record<string, unknown>): { email?: string; accessCode?: string; download?: boolean } => ({
+  validateSearch: (search: Record<string, unknown>): { email?: string; download?: boolean } => ({
     email: typeof search.email === "string" ? search.email : undefined,
-    accessCode: typeof search.accessCode === "string" ? search.accessCode : undefined,
     download: search.download === "true" || search.download === true,
   }),
 });
 
-async function fetchOrderTickets(orderId: string, guestEmail?: string, guestAccessCode?: string) {
-  // If guest mode: check email and accessCode match via RPC
-  if (guestEmail && guestAccessCode) {
+async function fetchOrderTickets(orderId: string, guestEmail?: string) {
+  // If guest mode: check email matches via RPC
+  if (guestEmail) {
     const { data, error } = await supabase.rpc("get_guest_order_full" as any, {
       p_order_id: orderId,
       p_email: guestEmail.toLowerCase(),
-      p_access_code: guestAccessCode,
     });
     
     if (error || !data) {
@@ -83,11 +81,11 @@ import { useEffect, useState } from "react";
 
 function OrderTicketsPage() {
   const { orderId } = Route.useParams();
-  const { email: guestEmail, accessCode: guestAccessCode, download } = useSearch({ from: "/orders/$orderId/tickets" });
+  const { email: searchEmail, download: shouldDownload } = useSearch({ from: "/orders/$orderId/tickets" });
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["order-tickets", orderId, guestEmail, guestAccessCode],
-    queryFn: () => fetchOrderTickets(orderId, guestEmail, guestAccessCode),
+    queryKey: ["order-tickets", orderId, searchEmail],
+    queryFn: () => fetchOrderTickets(orderId, searchEmail),
   });
 
   const [editingTicket, setEditingTicket] = useState<any>(null);

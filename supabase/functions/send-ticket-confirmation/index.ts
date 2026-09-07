@@ -80,7 +80,7 @@ serve(async (req: Request) => {
       ? `You received a gift for ${eventTitle} 🎁 (Ref: ${orderRef})`
       : `Your tickets for ${eventTitle} are ready 🎟️ (Ref: ${orderRef})`;
 
-    const ticketUrl = `https://tixnaija.name.ng/orders/${order.id}/tickets?email=${encodeURIComponent(recipientEmail)}&accessCode=${order.access_code || ''}`;
+    const ticketUrl = `https://tixnaija.name.ng/orders/${order.id}/tickets?email=${encodeURIComponent(recipientEmail)}`;
     const downloadUrl = `${ticketUrl}&download=true`;
 
     const ticketTypes = order.order_items?.map((item: any) => item.ticket_types?.name).filter(Boolean).join(', ') || 'General Admission';
