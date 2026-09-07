@@ -16,46 +16,46 @@ async function fetchMyEvents() {
   const userId = userData.user?.id;
   if (!userId) throw new Error("Not signed in");
 
-  const { data: profile } = await supabase
+  const { data: profile } = (await supabase
     .from("profiles")
     .select("is_organizer, is_admin, full_name")
     .eq("id", userId)
-    .maybeSingle();
+    .maybeSingle()) as { data: any };
 
-  const { data: adminRole } = await supabase
+  const { data: adminRole } = (await supabase
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
     .eq("role", "admin")
-    .maybeSingle();
+    .maybeSingle()) as { data: any };
 
-  const { data: latestApp } = await supabase
+  const { data: latestApp } = (await supabase
     .from("organizer_applications")
     .select("status, admin_note, created_at")
     .order("created_at", { ascending: false })
     .limit(1)
-    .maybeSingle();
+    .maybeSingle()) as { data: any };
 
-  const { data: events, error } = await supabase
+  const { data: events, error } = (await supabase
     .from("events")
     .select("id, title, slug, city, start_datetime, status, cover_image_url")
     .eq("organizer_id", userId)
-    .order("start_datetime", { ascending: true });
+    .order("start_datetime", { ascending: true })) as { data: any[] | null, error: any };
   if (error) throw error;
 
-  const eventIds = (events ?? []).map((e) => e.id);
+  const eventIds = (events ?? []).map((e: any) => e.id);
   let statsByEvent: Record<string, { sold: number; revenueKobo: number }> = {};
   if (eventIds.length) {
-    const { data: types } = await supabase
+    const { data: types } = (await supabase
       .from("ticket_types")
       .select("event_id, quantity_sold")
-      .in("event_id", eventIds);
+      .in("event_id", eventIds)) as { data: any[] | null };
       
-    const { data: orders } = await supabase
+    const { data: orders } = (await supabase
       .from("orders")
       .select("event_id, total_kobo")
       .in("event_id", eventIds)
-      .eq("status", "paid");
+      .eq("status", "paid")) as { data: any[] | null };
 
     for (const t of types ?? []) {
       const s = statsByEvent[t.event_id] ?? { sold: 0, revenueKobo: 0 };
