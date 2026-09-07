@@ -95,7 +95,7 @@ function LandingPage() {
 
       {/* Decorative Backgrounds */}
       <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] -z-10 pointer-events-none" />
-      <div className="absolute top-[30%] left-[-10%] w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[100px] -z-10 pointer-events-none" />
+      <div className="absolute top-[30%] left-[-10%] w-[500px] h-[500px] bg-accent/10 rounded-full blur-[120px] -z-10 pointer-events-none" />
 
       {/* ── Banners Section ── */}
       
@@ -139,8 +139,8 @@ function LandingPage() {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" />
         
         {/* Animated glowing orbs */}
-        <div className="absolute top-[20%] left-[20%] w-[40vw] h-[40vw] max-w-[600px] max-h-[600px] bg-primary/20 rounded-full blur-[100px] mix-blend-screen animate-[spin_20s_linear_infinite] pointer-events-none" />
-        <div className="absolute top-[10%] right-[15%] w-[35vw] h-[35vw] max-w-[500px] max-h-[500px] bg-purple-500/20 rounded-full blur-[100px] mix-blend-screen animate-[spin_25s_linear_infinite_reverse] pointer-events-none" />
+        <div className="absolute top-[20%] left-[20%] w-[40vw] h-[40vw] max-w-[600px] max-h-[600px] bg-primary/20 rounded-full blur-[120px] mix-blend-screen animate-[spin_20s_linear_infinite] pointer-events-none" />
+        <div className="absolute top-[10%] right-[15%] w-[35vw] h-[35vw] max-w-[500px] max-h-[500px] bg-accent/20 rounded-full blur-[120px] mix-blend-screen animate-[spin_25s_linear_infinite_reverse] pointer-events-none" />
 
         <div className="mx-auto max-w-5xl px-4 text-center relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
           <div className="inline-flex items-center gap-3 mb-10 bg-background/50 border border-primary/20 backdrop-blur-xl rounded-full px-5 py-2 shadow-lg shadow-primary/5 ring-1 ring-white/10">
@@ -149,10 +149,10 @@ function LandingPage() {
             </span>
           </div>
           
-          <h1 className="font-display text-6xl leading-[0.85] md:text-8xl lg:text-[8rem] tracking-tighter mb-8 drop-shadow-2xl">
+          <h1 className="font-display text-6xl leading-[0.85] md:text-8xl lg:text-[8.5rem] tracking-tighter mb-8 drop-shadow-2xl">
             Buy tickets.
             <br />
-            <span className="bg-gradient-to-br from-primary via-orange-500 to-purple-600 bg-clip-text text-transparent inline-block mt-4 pb-2 filter drop-shadow-lg">Turn up.</span>
+            <span className="bg-gradient-to-br from-primary via-accent to-primary bg-clip-text text-transparent inline-block mt-4 pb-2 filter drop-shadow-lg">Turn up.</span>
           </h1>
           
           <p className="mx-auto max-w-2xl text-lg text-muted-foreground md:text-xl leading-relaxed font-medium mb-12 max-w-[600px]">
@@ -208,32 +208,32 @@ function LandingPage() {
           </div>
 
           {/* Card 2: Tall */}
-          <div className="group relative overflow-hidden rounded-[3rem] border border-white/10 bg-card/60 backdrop-blur-xl p-10 md:row-span-2 shadow-2xl hover:border-purple-500/40 transition-colors duration-500 flex flex-col justify-between">
-            <div className="absolute inset-0 bg-gradient-to-b from-purple-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-purple-500/20 rounded-full blur-[80px] -z-10 group-hover:bg-purple-500/30 transition-colors" />
+          <div className="group relative overflow-hidden rounded-[3rem] border border-white/10 bg-card/60 backdrop-blur-xl p-10 md:row-span-2 shadow-2xl hover:border-accent/40 transition-colors duration-500 flex flex-col justify-between">
+            <div className="absolute inset-0 bg-gradient-to-b from-accent/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-accent/20 rounded-full blur-[80px] -z-10 group-hover:bg-accent/30 transition-colors" />
             
-            <div className="w-16 h-16 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-8 border border-purple-500/20 shadow-inner group-hover:scale-110 transition-transform duration-500">
-              <CreditCard className="h-8 w-8 text-purple-500" />
+            <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mb-8 border border-accent/20 shadow-inner group-hover:scale-110 transition-transform duration-500">
+              <CreditCard className="h-8 w-8 text-accent" />
             </div>
             
             <div className="relative z-10 mt-auto">
-              <h3 className="text-3xl md:text-4xl font-display tracking-tight mb-4 group-hover:text-purple-400 transition-colors">Pay with ease</h3>
+              <h3 className="text-3xl md:text-4xl font-display tracking-tight mb-4 group-hover:text-accent transition-colors">Pay with ease</h3>
               <p className="text-lg text-muted-foreground leading-relaxed font-medium">Cards, bank transfers, USSD — we support all the payment methods Naija actually uses via our secure Paystack integration.</p>
             </div>
           </div>
 
           {/* Card 3: Standard */}
-          <div className="group relative overflow-hidden rounded-[3rem] border border-white/10 bg-card/60 backdrop-blur-xl p-10 shadow-2xl hover:border-orange-500/40 transition-colors duration-500 flex flex-col justify-between md:col-span-2">
-            <div className="absolute inset-0 bg-gradient-to-tl from-orange-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-            <div className="absolute right-10 top-10 w-32 h-32 bg-orange-500/20 rounded-full blur-[60px] -z-10 group-hover:bg-orange-500/30 transition-colors" />
+          <div className="group relative overflow-hidden rounded-[3rem] border border-white/10 bg-card/60 backdrop-blur-xl p-10 shadow-2xl hover:border-primary/40 transition-colors duration-500 flex flex-col justify-between md:col-span-2">
+            <div className="absolute inset-0 bg-gradient-to-tl from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+            <div className="absolute right-10 top-10 w-32 h-32 bg-primary/20 rounded-full blur-[60px] -z-10 group-hover:bg-primary/30 transition-colors" />
             
             <div className="flex justify-between items-start">
               <div className="relative z-10">
-                <h3 className="text-3xl md:text-4xl font-display tracking-tight mb-4 group-hover:text-orange-400 transition-colors">Sell in minutes</h3>
+                <h3 className="text-3xl md:text-4xl font-display tracking-tight mb-4 group-hover:text-primary transition-colors">Sell in minutes</h3>
                 <p className="text-lg text-muted-foreground leading-relaxed font-medium max-w-lg">Create your event, add ticket tiers, and share the link globally. Selling out has never been this ridiculously easy.</p>
               </div>
-              <div className="w-16 h-16 rounded-2xl bg-orange-500/10 hidden sm:flex items-center justify-center border border-orange-500/20 shadow-inner group-hover:scale-110 transition-transform duration-500 shrink-0">
-                <Ticket className="h-8 w-8 text-orange-500" />
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 hidden sm:flex items-center justify-center border border-primary/20 shadow-inner group-hover:scale-110 transition-transform duration-500 shrink-0">
+                <Ticket className="h-8 w-8 text-primary" />
               </div>
             </div>
           </div>
@@ -347,7 +347,7 @@ function LandingPage() {
                           className={`h-full w-full object-cover transition-transform duration-700 ${!isCancelled ? "group-hover:scale-110" : "opacity-75 grayscale"}`}
                         />
                       ) : (
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-purple-500/20" />
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20" />
                       )}
                       
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500 z-10" />

@@ -355,7 +355,7 @@ function BrowsePage() {
                         className={`h-full w-full object-cover transition-transform duration-700 ${!isCancelled ? "group-hover:scale-110 group-hover:-rotate-1" : "opacity-75 grayscale"}`}
                       />
                     ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-purple-500/10" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/10" />
                     )}
 
                     {/* Smooth dark gradient for text legibility */}
