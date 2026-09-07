@@ -97,8 +97,8 @@ function LandingPage() {
       <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] -z-10 pointer-events-none" />
       <div className="absolute top-[30%] left-[-10%] w-[500px] h-[500px] bg-accent/10 rounded-full blur-[120px] -z-10 pointer-events-none" />
 
-      {/* ── Banners Section ── */}
-      
+      {/* ── Banners Section (Mobile) ── */}
+      <div className="block md:hidden">
         {banners.data && banners.data.length > 0 && (
           <div className="mx-auto max-w-[95vw] sm:max-w-7xl pt-6">
             <Carousel 
@@ -106,15 +106,15 @@ function LandingPage() {
               plugins={[Autoplay({ delay: 5000, stopOnInteraction: true })]}
               className="w-full"
             >
-              <CarouselContent className="-ml-2 md:-ml-4">
+              <CarouselContent className="-ml-2">
                 {banners.data.map((banner: any) => (
                   <CarouselItem 
                     key={banner.id} 
-                    className="pl-2 md:pl-4 md:basis-4/5 lg:basis-[85%]"
+                    className="pl-2 basis-[90%]"
                   >
                     <div 
                       onClick={() => handleBannerClick(banner)}
-                      className={`relative aspect-[16/9] md:aspect-[21/9] lg:aspect-[2.5/1] w-full max-h-[500px] shrink-0 rounded-[2rem] overflow-hidden group shadow-xl border border-border/50 ${banner.link_url ? "cursor-pointer" : ""}`}
+                      className={`relative h-48 sm:h-64 w-full shrink-0 rounded-[2rem] overflow-hidden group shadow-xl border border-border/50 ${banner.link_url ? "cursor-pointer" : ""}`}
                     >
                       <img 
                         src={banner.image_url} 
@@ -132,6 +132,7 @@ function LandingPage() {
             </Carousel>
           </div>
         )}
+      </div>
       
 
       {/* ── Hero ── */}
@@ -183,6 +184,43 @@ function LandingPage() {
 
         </div>
       </section>
+
+      {/* ── Banners Section (Desktop) ── */}
+      <div className="hidden md:block pb-32">
+        {banners.data && banners.data.length > 0 && (
+          <div className="mx-auto max-w-6xl px-4">
+            <Carousel 
+              opts={{ align: "start", loop: true }} 
+              plugins={[Autoplay({ delay: 5000, stopOnInteraction: true })]}
+              className="w-full"
+            >
+              <CarouselContent className="-ml-4">
+                {banners.data.map((banner: any) => (
+                  <CarouselItem 
+                    key={banner.id} 
+                    className="pl-4 basis-full"
+                  >
+                    <div 
+                      onClick={() => handleBannerClick(banner)}
+                      className={`relative aspect-[21/9] lg:aspect-[2.5/1] w-full max-h-[500px] shrink-0 rounded-[3rem] overflow-hidden group shadow-2xl border border-border/50 ${banner.link_url ? "cursor-pointer" : ""}`}
+                    >
+                      <img 
+                        src={banner.image_url} 
+                        alt={banner.title} 
+                        className="w-full h-full object-cover object-[center_15%] transition-transform duration-700 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <div className="absolute top-6 right-6 px-4 py-2 bg-background/80 backdrop-blur-md text-foreground text-xs font-bold tracking-widest uppercase rounded-full shadow-xl pointer-events-none border border-white/10">
+                        Sponsored
+                      </div>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </Carousel>
+          </div>
+        )}
+      </div>
 
       {/* ── Value Props Bento Box ── */}
       <section className="mx-auto max-w-7xl px-4 pb-24 md:pb-40">
