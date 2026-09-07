@@ -64,8 +64,8 @@ function GuestTicketsPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email.trim() || !accessCode.trim()) return;
-    lookup.mutate({ emailVal: email.trim(), accessCodeVal: accessCode.trim() });
+    if (!email.trim()) return;
+    lookup.mutate({ emailVal: email.trim(), accessCodeVal: "" });
   }
 
   return (
@@ -108,24 +108,12 @@ function GuestTicketsPage() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="access-code" className="text-sm font-semibold">
-                Access PIN
-              </Label>
               <div className="flex flex-col sm:flex-row gap-3">
-                <Input
-                  id="access-code"
-                  type="text"
-                  placeholder="e.g. 12345"
-                  value={accessCode}
-                  onChange={(e) => setAccessCode(e.target.value)}
-                  className="flex-1 h-12 text-base bg-background font-mono"
-                  required
-                />
                 <Button
                   type="submit"
                   size="lg"
                   className="h-12 w-full sm:w-auto px-8 font-semibold text-primary-foreground shadow-md hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
-                  disabled={lookup.isPending || !email.trim() || !accessCode.trim()}
+                  disabled={lookup.isPending || !email.trim()}
                 >
                   {lookup.isPending ? (
                     <span className="flex items-center gap-2">
@@ -156,7 +144,7 @@ function GuestTicketsPage() {
                 <Mail className="mx-auto h-10 w-10 text-muted-foreground/40" />
                 <h3 className="mt-4 font-semibold">No tickets found</h3>
                 <p className="mt-1 text-sm text-muted-foreground max-w-xs mx-auto">
-                  No paid orders found for <strong>{submitted.email}</strong> with that PIN. Check your spelling or try another email.
+                  No paid orders found for <strong>{submitted.email}</strong>. Check your spelling or try another email.
                 </p>
                 <p className="mt-3 text-xs text-muted-foreground">
                   Also check your inbox — your ticket QR codes were emailed to you at checkout.
