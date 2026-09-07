@@ -57,7 +57,7 @@ serve(async (req: Request) => {
         order_items (
           quantity,
           ticket_types ( name ),
-          tickets ( id, ticket_code, attendee_name, attendee_email )
+          tickets ( id, ticket_code, attendee_name, attendee_email, status )
         )
       `)
       .eq("id", orderId)
@@ -178,10 +178,12 @@ serve(async (req: Request) => {
 
     // 2. Send Individual Tickets to Attendees
     const allTickets = order.order_items?.flatMap((item: any) =>
-      (item.tickets || []).map((t: any) => ({
-        ...t,
-        ticketTypeName: item.ticket_types?.name || 'General Admission'
-      }))
+      (item.tickets || [])
+        .filter((t: any) => t.status === 'valid')
+        .map((t: any) => ({
+          ...t,
+          ticketTypeName: item.ticket_types?.name || 'General Admission'
+        }))
     ) || [];
 
     const attendeeGroups = new Map<string, any[]>();
