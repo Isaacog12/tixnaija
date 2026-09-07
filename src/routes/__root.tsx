@@ -147,7 +147,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" },
       { title: "TixNaija — Nigerian event tickets, sold fast" },
       {
         name: "description",
@@ -200,7 +200,7 @@ function RootShell({ children }: { children: ReactNode }) {
           }}
         />
       </head>
-      <body>
+      <body className="overflow-x-hidden">
         {children}
         <Scripts />
       </body>
