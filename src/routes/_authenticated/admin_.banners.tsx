@@ -71,7 +71,7 @@ function AdminBannersPage() {
 
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      const { error } = await supabase.from("sponsored_banners").update({ is_active }).eq("id", id);
+      const { error } = await (supabase as any).from("sponsored_banners").update({ is_active }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-banners"] }),
@@ -204,11 +204,11 @@ function BannerDialog({ open, onOpenChange, banner, onSuccess }: { open: boolean
       };
 
       if (banner) {
-        const { error } = await supabase.from("sponsored_banners").update(payload).eq("id", banner.id);
+        const { error } = await (supabase as any).from("sponsored_banners").update(payload).eq("id", banner.id);
         if (error) throw error;
         toast.success("Banner updated");
       } else {
-        const { error } = await supabase.from("sponsored_banners").insert(payload);
+        const { error } = await (supabase as any).from("sponsored_banners").insert(payload);
         if (error) throw error;
         toast.success("Banner created");
       }
