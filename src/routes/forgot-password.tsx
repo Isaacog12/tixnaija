@@ -56,7 +56,7 @@ function ForgotPasswordPage() {
           <span className="font-display text-3xl tracking-[0.02em]">TIX</span>
           <span className="font-display text-3xl font-light tracking-[0.02em] text-gradient-sunset">NAIJA</span>
         </Link>
-        <div className="rounded-2xl border border-border bg-card/80 p-6 shadow-glow backdrop-blur">
+        <div className="rounded-2xl border border-border/50 bg-card/80 p-6 shadow-2xl backdrop-blur">
           <div className="flex items-center gap-4">
             <BackButton />
             <h1 className="font-display text-2xl">Forgot password?</h1>
@@ -85,7 +85,7 @@ function ForgotPasswordPage() {
               <Button
                 type="submit"
                 disabled={busy}
-                className="w-full gradient-sunset text-primary-foreground shadow-glow hover:opacity-90"
+                className="w-full gradient-sunset text-primary-foreground shadow-glow hover:opacity-90 press-sm transition-all duration-[120ms]"
               >
                 {busy ? "Sending…" : "Send reset link"}
               </Button>

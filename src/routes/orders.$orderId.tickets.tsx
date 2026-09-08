@@ -27,7 +27,7 @@ export const Route = createFileRoute("/orders/$orderId/tickets")({
 async function fetchOrderTickets(orderId: string, guestEmail?: string) {
   // If guest mode: check email matches via RPC
   if (guestEmail) {
-    const { data, error } = await supabase.rpc("get_guest_order_full" as any, {
+    const { data, error } = await (supabase.rpc as any)("get_guest_order_full", {
       p_order_id: orderId,
       p_email: guestEmail.toLowerCase(),
     });
@@ -36,7 +36,7 @@ async function fetchOrderTickets(orderId: string, guestEmail?: string) {
       throw notFound();
     }
     
-    return { order: data.order, tickets: data.tickets || [], isGuest: true };
+    return { order: (data as any).order, tickets: (data as any).tickets || [], isGuest: true };
   }
 
   // Fetch order and event for logged-in users via RLS
@@ -104,7 +104,7 @@ function OrderTicketsPage() {
     if (!editingTicket) return;
     setIsUpdating(true);
     try {
-      const { error } = await supabase.rpc("update_ticket_attendee" as any, {
+      const { error } = await (supabase.rpc as any)("update_ticket_attendee", {
         p_ticket_id: editingTicket.id,
         p_attendee_name: editName,
         p_attendee_email: editEmail,
@@ -129,14 +129,14 @@ function OrderTicketsPage() {
   };
 
   useEffect(() => {
-    if (download && data && !isLoading && !isError) {
+    if (shouldDownload && data && !isLoading && !isError) {
       // Small delay to ensure images (like QR codes) are rendered
       const timer = setTimeout(() => {
         window.print();
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [download, data, isLoading, isError]);
+  }, [shouldDownload, data, isLoading, isError]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -146,7 +146,7 @@ function OrderTicketsPage() {
       <section className="bg-card border-b border-border shadow-sm mb-10 pt-8 pb-8 relative overflow-hidden">
         <div className="absolute inset-0 z-0 bg-gradient-to-r from-primary/5 to-transparent opacity-50" />
         <div className="mx-auto max-w-4xl px-4 relative z-10">
-          {guestEmail && (
+          {searchEmail && (
             <Button asChild variant="ghost" size="sm" className="-ml-2 mb-4">
               <Link to="/my-tickets">
                 <ArrowLeft className="mr-1 h-4 w-4" /> Back to My Tickets
@@ -164,7 +164,7 @@ function OrderTicketsPage() {
               </div>
               <div className="flex items-center gap-4 mb-1">
                 <BackButton />
-                <h1 className="font-display text-4xl">Your Tickets</h1>
+                <h1 className="type-heading-xl">Your Tickets</h1>
               </div>
               <p className="text-muted-foreground text-sm">
                 Have these ready to scan at the door, or download them for offline use.
@@ -192,7 +192,7 @@ function OrderTicketsPage() {
         ) : isError || !data ? (
           <div className="text-center py-24 text-muted-foreground">
             <p>Failed to load tickets or order not found.</p>
-            {guestEmail && (
+            {searchEmail && (
               <Button asChild variant="outline" className="mt-4">
                 <Link to="/my-tickets">Try again</Link>
               </Button>
@@ -243,9 +243,9 @@ function OrderTicketsPage() {
                 <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
                   Sign up with this email to get your tickets in one place, receive notifications, and request refunds easily.
                 </p>
-                <Button asChild className="mt-4 gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
-                  <Link to="/auth" search={{ mode: "signup" }}>Create free account</Link>
-                </Button>
+                <Button asChild className="mt-4 gradient-sunset text-primary-foreground shadow-glow press-sm transition-all duration-[120ms]">
+                   <Link to="/auth" search={{ mode: "signup" }}>Create free account</Link>
+                 </Button>
               </div>
             )}
           </div>
@@ -286,9 +286,9 @@ function OrderTicketsPage() {
               <Button type="button" variant="outline" onClick={() => setEditingTicket(null)} disabled={isUpdating}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isUpdating} className="gradient-sunset text-primary-foreground shadow-glow">
-                {isUpdating ? "Saving..." : "Save & Resend"}
-              </Button>
+              <Button type="submit" disabled={isUpdating} className="gradient-sunset text-primary-foreground shadow-glow press-sm transition-all duration-[120ms]">
+                 {isUpdating ? "Saving..." : "Save & Resend"}
+               </Button>
             </DialogFooter>
           </form>
         </DialogContent>

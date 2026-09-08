@@ -49,7 +49,7 @@ function CareersPage() {
         </div>
         <div className="absolute inset-0 gradient-sunset opacity-10 pointer-events-none" />
         <div className="mx-auto max-w-4xl px-4 py-12 md:py-16">
-          <h1 className="font-display text-5xl md:text-7xl leading-[0.95] mb-4">
+          <h1 className="type-heading-xl mb-4">
             Opportunities on TixNaija
           </h1>
           <p className="text-muted-foreground text-base md:text-lg mt-3 max-w-2xl leading-relaxed">
@@ -80,7 +80,7 @@ function CareersPage() {
                 return (
                   <div
                     key={role.title}
-                    className="group rounded-2xl border border-border bg-card/60 p-6 flex flex-col sm:flex-row sm:items-center gap-5 transition hover:border-primary/40 hover:bg-card/80"
+                    className="group rounded-2xl border border-border/50 bg-card/60 p-6 flex flex-col sm:flex-row sm:items-center gap-5 transition-all duration-[350ms] ease-out hover:border-primary/35 hover:bg-card/80 hover:-translate-y-0.5 hover:shadow-lg"
                   >
                     <div className="flex-shrink-0 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary/20 transition">
                       <Icon className="h-6 w-6" />
@@ -92,7 +92,7 @@ function CareersPage() {
                     <div className="flex-shrink-0">
                       <a
                         href={`/careers/apply?role=${encodeURIComponent(role.title)}`}
-                        className="inline-flex items-center justify-center rounded-xl gradient-sunset px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90 whitespace-nowrap"
+                         className="inline-flex items-center justify-center rounded-full gradient-sunset px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm glow-primary press-sm transition-all duration-[120ms] whitespace-nowrap"
                       >
                         Apply Now
                       </a>

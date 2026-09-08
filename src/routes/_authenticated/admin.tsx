@@ -486,7 +486,7 @@ function AdminDashboard() {
       <div className="mb-10">
         <div className="flex items-center gap-4 mb-2">
           <BackButton />
-          <h1 className="font-display text-4xl md:text-5xl tracking-tight">Admin Portal</h1>
+          <h1 className="type-heading-lg tracking-tight">Admin Portal</h1>
         </div>
         <p className="text-muted-foreground text-lg">Platform overview and moderation.</p>
       </div>
@@ -551,7 +551,7 @@ function AdminDashboard() {
              variant="destructive" 
              onClick={() => revokeByEmailMutation.mutate({ email: revokeEmail, reason: revokeEmailReason })}
              disabled={revokeByEmailMutation.isPending || !revokeEmail}
-             className="rounded-xl font-bold"
+             className="rounded-xl font-bold press-sm transition-transform duration-[120ms]"
           >
             {revokeByEmailMutation.isPending ? "Revoking..." : "Revoke Access"}
           </Button>

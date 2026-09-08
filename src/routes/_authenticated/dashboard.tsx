@@ -95,7 +95,7 @@ function Dashboard() {
     <div className="mx-auto max-w-6xl px-4 py-8 md:py-12 min-h-screen">
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-border pb-6">
         <div>
-          <h1 className="font-display text-4xl md:text-5xl tracking-tight mb-2">Dashboard</h1>
+          <h1 className="type-heading-lg tracking-tight mb-2">Dashboard</h1>
           <p className="text-muted-foreground text-sm font-medium">
             Welcome back, {data?.profile?.full_name || "User"}
           </p>
@@ -112,7 +112,7 @@ function Dashboard() {
             </>
           )}
           {isOrganizer && (
-            <Button asChild className="h-9 px-5 rounded-md bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary/90">
+            <Button asChild className="h-9 px-5 rounded-full bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary/90 press-sm transition-transform duration-[120ms]">
               <Link to="/events/new">
                 <Plus className="mr-2 h-4 w-4" /> New Event
               </Link>
@@ -126,16 +126,16 @@ function Dashboard() {
       {!isOrganizer && !isLoading && (
         <div className="space-y-12">
           {/* Hero CTA */}
-          <div className="relative overflow-hidden rounded-xl border border-border bg-card p-8 md:p-12 shadow-sm">
+          <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-8 md:p-12 shadow-sm">
             <div className="relative grid gap-12 lg:grid-cols-2 lg:items-center">
               <div>
                 <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary mb-6 shadow-sm">
                   <Zap className="h-3.5 w-3.5" /> For creators
                 </span>
-                <h2 className="font-display text-5xl leading-tight md:text-6xl tracking-tight mb-6">
-                  Start selling<br />
-                  <span className="text-primary">in minutes.</span>
-                </h2>
+                 <h2 className="type-heading-lg mb-6">
+                   Start selling<br />
+                   <span className="text-primary">in minutes.</span>
+                 </h2>
                 <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-md">
                   Create your event, set ticket tiers, track sales in real-time, and scan attendees seamlessly at the door.
                 </p>
@@ -157,9 +157,9 @@ function Dashboard() {
                       </Button>
                     </div>
                   ) : (
-                    <Button asChild size="lg" className="text-base px-8">
-                      <Link to="/account">Become an Organizer</Link>
-                    </Button>
+                    <Button asChild size="lg" className="text-base px-8 gradient-sunset text-primary-foreground glow-primary press-sm transition-all duration-[120ms]">
+                       <Link to="/account">Become an Organizer</Link>
+                     </Button>
                   )}
                   <Button asChild size="lg" variant="outline" className="border-border/60 hover:bg-secondary text-base px-8 group">
                     <Link to="/browse">

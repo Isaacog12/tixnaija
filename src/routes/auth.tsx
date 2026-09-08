@@ -54,7 +54,7 @@ function AuthPage() {
       <div className="pointer-events-none absolute inset-0 gradient-sunset opacity-5" />
       
       {/* Main Container */}
-      <div className="relative w-full max-w-[1000px] h-[650px] bg-card rounded-[2rem] border border-border shadow-2xl overflow-hidden flex flex-col md:flex-row">
+      <div className="relative w-full max-w-[1000px] h-[650px] bg-card rounded-[2rem] border border-border/50 shadow-2xl overflow-hidden flex flex-col md:flex-row">
         
         {/* Mobile View: Just a stacking card that toggles (hidden on md+) */}
         <div className="md:hidden flex-1 flex flex-col items-center justify-center p-6 w-full h-full overflow-y-auto">
@@ -91,7 +91,7 @@ function AuthPage() {
         
         {/* The Forms Container - Slides left or right */}
         <div 
-          className={`hidden md:block absolute top-0 h-full w-1/2 transition-transform duration-[1000ms] ease-[cubic-bezier(0.16,1,0.3,1)] z-10 bg-card
+          className={`hidden md:block absolute top-0 h-full w-1/2 transition-transform duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] z-10 bg-card
           ${isSignUp ? "translate-x-0" : "translate-x-full"}`}
         >
           {/* Sign Up Form (Left Side content) */}
@@ -304,7 +304,7 @@ function EmailForm({ mode, termsAccepted, setTermsAccepted }: { mode: "signin" |
       <Button
         type="submit"
         disabled={busy || (mode === "signup" && !termsAccepted)}
-        className="w-full gradient-sunset text-primary-foreground shadow-glow hover:opacity-90"
+        className="w-full gradient-sunset text-primary-foreground shadow-glow hover:opacity-90 press-sm transition-all duration-[120ms]"
       >
         {busy ? "Please wait…" : mode === "signup" ? "Create account" : "Sign in"}
       </Button>
@@ -337,7 +337,7 @@ function GoogleButton({ mode, termsAccepted }: { mode: "signin" | "signup", term
   return (
     <Button 
       variant="outline" 
-      className="w-full bg-white text-black border-gray-300 hover:bg-gray-50 shadow-sm disabled:opacity-50" 
+      className="w-full bg-white text-black border-gray-300 hover:bg-gray-50 shadow-sm disabled:opacity-50 press-sm transition-transform duration-[120ms]" 
       onClick={onGoogle} 
       disabled={busy || (mode === "signup" && !termsAccepted)}
     >

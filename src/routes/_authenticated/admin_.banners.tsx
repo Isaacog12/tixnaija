@@ -98,11 +98,11 @@ function AdminBannersPage() {
         <div>
           <div className="flex items-center gap-4 mb-2">
             <BackButton />
-            <h1 className="font-display text-4xl md:text-5xl">Sponsored Banners</h1>
+            <h1 className="type-heading-lg">Sponsored Banners</h1>
           </div>
           <p className="mt-2 text-muted-foreground">Manage homepage sponsored banner slots.</p>
         </div>
-        <Button onClick={handleCreateNew} className="gradient-sunset text-primary-foreground shadow-glow">
+        <Button onClick={handleCreateNew} className="gradient-sunset text-primary-foreground shadow-glow press-sm transition-all duration-[120ms]">
           <Plus className="mr-2 h-4 w-4" /> New Banner
         </Button>
       </div>
@@ -114,7 +114,7 @@ function AdminBannersPage() {
           </div>
         ) : (
           banners.map((banner) => (
-            <div key={banner.id} className="flex flex-col sm:flex-row items-center gap-4 rounded-xl border border-border bg-card/60 p-4 shadow-sm">
+            <div key={banner.id} className="flex flex-col sm:flex-row items-center gap-4 rounded-xl border border-border bg-card/60 p-4 shadow-sm transition-all duration-[350ms] ease-out hover:shadow-md hover:border-primary/30">
               <div className="h-24 w-48 flex-shrink-0 overflow-hidden rounded bg-muted/30">
                 <img src={banner.image_url} alt={banner.title} className="h-full w-full object-cover" />
               </div>

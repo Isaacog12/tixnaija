@@ -147,20 +147,20 @@ function HowItWorksPage() {
             </span>
             <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
           </div>
-          <h1  className="font-display text-5xl md:text-7xl lg:text-8xl leading-[0.95] tracking-tight mb-8">
+          <h1 className="type-heading-xl mb-8">
             How <span className="text-gradient-sunset">TixNaija</span> works
           </h1>
           <p  className="text-muted-foreground text-lg md:text-2xl max-w-2xl mx-auto leading-relaxed mb-12 font-medium">
             Whether you're going out or putting on a show — here's everything you
             need to know to get started in minutes.
           </p>
-          <div  className="flex flex-wrap justify-center gap-4">
+          <div className="flex flex-wrap justify-center gap-4">
             <button
               onClick={(e) => {
                 e.preventDefault();
                 document.getElementById('buyers')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
-              className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-6 py-3 text-sm font-semibold hover:border-primary hover:text-primary transition-all shadow-sm hover:shadow-md cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-6 py-3 text-sm font-semibold hover:border-primary hover:text-primary transition-all duration-[120ms] shadow-sm press-sm cursor-pointer"
             >
               I want to buy tickets <ChevronRight className="h-4 w-4" />
             </button>
@@ -169,7 +169,7 @@ function HowItWorksPage() {
                 e.preventDefault();
                 document.getElementById('organizers')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
-              className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-6 py-3 text-sm font-semibold hover:border-primary hover:text-primary transition-all shadow-sm hover:shadow-md cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-6 py-3 text-sm font-semibold hover:border-primary hover:text-primary transition-all duration-[120ms] shadow-sm press-sm cursor-pointer"
             >
               I want to sell tickets <ChevronRight className="h-4 w-4" />
             </button>
@@ -188,7 +188,7 @@ function HowItWorksPage() {
         >
           <span className="font-display text-6xl md:text-8xl leading-none text-muted-foreground/10 select-none hidden md:block">01</span>
           <div className="flex flex-col gap-3">
-            <h2 className="font-display text-4xl md:text-5xl leading-tight">For Ticket Buyers</h2>
+            <h2 className="type-heading-lg leading-tight">For Ticket Buyers</h2>
             <p className="text-xl text-muted-foreground font-medium">Find your event, pay, show up — that's it.</p>
           </div>
         </div>
@@ -208,13 +208,13 @@ function HowItWorksPage() {
                     <step.icon className="h-6 w-6 text-primary" />
                   </div>
                 </div>
-                <div className="flex-1 bg-card border border-border/50 rounded-3xl p-8 shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300 relative overflow-hidden group">
+                <div className="flex-1 bg-card border border-border/50 rounded-3xl p-8 shadow-sm hover:shadow-xl hover:border-primary/20 hover:bg-card/50 transition-all duration-300 relative overflow-hidden group">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -z-10 group-hover:scale-150 transition-transform duration-700" />
                   <div className="flex items-baseline gap-3 mb-4">
                     <span className="font-display text-2xl text-primary/40 group-hover:text-primary transition-colors">
                       {String(i + 1).padStart(2, "0")}
                     </span>
-                    <h3 className="font-display text-2xl tracking-tight">{step.title}</h3>
+                    <h3 className="type-heading-md tracking-tight">{step.title}</h3>
                   </div>
                   <p className="text-muted-foreground text-lg leading-relaxed">{step.body}</p>
                 </div>
@@ -226,7 +226,7 @@ function HowItWorksPage() {
         <div   className="mt-16 flex justify-center md:justify-start md:ml-[96px]">
           <Link
             to="/browse"
-            className="inline-flex items-center justify-center gap-2 rounded-full h-14 px-8 gradient-sunset text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-1 transition-all font-semibold text-lg w-full md:w-auto"
+            className="inline-flex items-center justify-center gap-2 rounded-full h-14 px-8 gradient-sunset text-primary-foreground glow-primary shadow-lg font-semibold text-lg press-sm transition-all duration-[220ms] ease-out hover:-translate-y-1 w-full md:w-auto"
           >
             Browse Events Now <ChevronRight className="h-5 w-5" />
           </Link>
@@ -245,7 +245,7 @@ function HowItWorksPage() {
           >
             <span className="font-display text-6xl md:text-8xl leading-none text-muted-foreground/10 select-none hidden md:block">02</span>
             <div className="flex flex-col gap-3">
-              <h2 className="font-display text-4xl md:text-5xl leading-tight">For Event Organizers</h2>
+              <h2 className="type-heading-lg leading-tight">For Event Organizers</h2>
               <p className="text-xl text-muted-foreground font-medium">Set up, sell out, get paid — no listing fees.</p>
             </div>
           </div>
@@ -259,7 +259,7 @@ function HowItWorksPage() {
               <div
                 
                 key={i}
-                className="rounded-3xl border border-border/60 bg-card p-8 hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 group flex flex-col"
+                className="rounded-3xl border border-border/50 bg-card p-8 hover:border-primary/20 hover:bg-card/50 hover:shadow-xl hover:shadow-primary/5 transition-all duration-[350ms] ease-out group flex flex-col"
               >
                 <div className="flex items-start justify-between mb-6">
                   <div className="rounded-2xl bg-primary/10 p-4 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors shadow-sm">
@@ -269,7 +269,7 @@ function HowItWorksPage() {
                     {String(i + 1).padStart(2, "0")}
                   </span>
                 </div>
-                <h3 className="font-display text-xl mb-3">{step.title}</h3>
+                <h3 className="type-heading-sm mb-3">{step.title}</h3>
                 <p className="text-base text-muted-foreground leading-relaxed flex-1">{step.body}</p>
               </div>
             ))}
@@ -289,7 +289,7 @@ function HowItWorksPage() {
                   <div className="rounded-xl bg-primary p-2 text-primary-foreground shadow-sm shrink-0 md:hidden">
                     <BarChart3 className="h-5 w-5" />
                   </div>
-                  <h3 className="font-display text-2xl md:text-3xl">Platform fee breakdown</h3>
+                  <h3 className="type-heading-md">Platform fee breakdown</h3>
                 </div>
                 <p className="text-lg text-foreground/80 leading-relaxed font-medium max-w-3xl">
                   TixNaija charges <strong className="text-primary font-bold bg-primary/10 px-1 rounded">10%</strong> of each ticket sale.
@@ -305,13 +305,13 @@ function HowItWorksPage() {
             <Link
               to="/auth"
               search={{ mode: "signup" }}
-              className="inline-flex items-center justify-center gap-2 rounded-full h-14 px-8 bg-foreground text-background hover:bg-foreground/90 transition-all font-semibold text-lg shadow-lg hover:-translate-y-1 w-full sm:w-auto"
+              className="inline-flex items-center justify-center gap-2 rounded-full h-14 px-8 gradient-sunset text-primary-foreground glow-primary font-semibold text-lg press-sm transition-all duration-[220ms] ease-out hover:-translate-y-1 w-full sm:w-auto"
             >
               Get started free <ChevronRight className="h-5 w-5" />
             </Link>
             <Link
               to="/about"
-              className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-border bg-card h-14 px-8 text-lg font-semibold hover:border-primary hover:text-primary transition-all w-full sm:w-auto"
+              className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-border bg-card h-14 px-8 text-lg font-semibold hover:border-primary hover:text-primary press-sm transition-all duration-[120ms] w-full sm:w-auto"
             >
               <MessageSquare className="h-5 w-5" /> Talk to us
             </Link>
@@ -365,7 +365,7 @@ function HowItWorksPage() {
           
           <div className="relative flex flex-col md:flex-row md:items-center gap-10 text-center md:text-left">
             <div className="flex-1">
-              <h2 className="font-display text-4xl md:text-6xl leading-none text-primary-foreground mb-4 tracking-tight">
+              <h2 className="type-heading-xl text-primary-foreground mb-4">
                 Ready to start?
               </h2>
               <p className="text-primary-foreground/90 text-lg md:text-xl leading-relaxed max-w-lg font-medium">

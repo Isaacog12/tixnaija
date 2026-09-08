@@ -121,7 +121,7 @@ function AboutPage() {
         <div 
           className="mx-auto max-w-6xl px-4 text-center md:text-left relative z-10"
         >
-          <h1  className="font-display text-5xl md:text-7xl lg:text-8xl leading-[0.95] tracking-tight mb-6">
+          <h1 className="type-heading-xl mb-6">
             About <span className="text-gradient-sunset">Us</span>
           </h1>
           <p  className="text-muted-foreground text-lg md:text-2xl max-w-2xl font-medium leading-relaxed mx-auto md:mx-0">
@@ -167,7 +167,7 @@ function AboutPage() {
             <a
               
               href="tel:+2349011275275"
-              className="flex items-center gap-5 rounded-3xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 transition-all duration-300 hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 group hover:-translate-y-1"
+              className="flex items-center gap-5 rounded-3xl border border-border/50 bg-card/60 backdrop-blur-sm p-6 transition-all duration-[350ms] ease-out hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 press-sm group hover:-translate-y-0.5"
             >
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                 <PhoneCall className="h-6 w-6" />
@@ -181,7 +181,7 @@ function AboutPage() {
             <a
               
               href="mailto:tixnaijaapp@gmail.com"
-              className="flex items-center gap-5 rounded-3xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 transition-all duration-300 hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 group hover:-translate-y-1"
+              className="flex items-center gap-5 rounded-3xl border border-border/50 bg-card/60 backdrop-blur-sm p-6 transition-all duration-[350ms] ease-out hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 press-sm group hover:-translate-y-0.5"
             >
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                 <Mail className="h-6 w-6" />
@@ -197,7 +197,7 @@ function AboutPage() {
               href="https://www.instagram.com/tixnaija/"
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-5 rounded-3xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 transition-all duration-300 hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 group hover:-translate-y-1 sm:col-span-2 lg:col-span-1"
+              className="flex items-center gap-5 rounded-3xl border border-border/50 bg-card/60 backdrop-blur-sm p-6 transition-all duration-[350ms] ease-out hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 press-sm group hover:-translate-y-0.5 sm:col-span-2 lg:col-span-1"
             >
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                 <Instagram className="h-6 w-6" />
@@ -256,7 +256,7 @@ function AboutPage() {
           
           
           
-          className="rounded-[2.5rem] border border-border/60 bg-card/80 p-8 md:p-10 shadow-2xl shadow-primary/5 backdrop-blur-xl sticky top-28"
+          className="rounded-[2.5rem] border border-border/40 bg-card/80 p-8 md:p-10 shadow-2xl shadow-primary/5 backdrop-blur-xl sticky top-28"
         >
           
             {sent ? (
@@ -389,7 +389,7 @@ function AboutPage() {
                 <Button
                   type="submit"
                   disabled={busy}
-                  className="w-full h-14 rounded-xl gradient-sunset text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all hover:-translate-y-0.5 text-lg font-bold mt-4"
+                  className="w-full h-14 rounded-xl gradient-sunset text-primary-foreground glow-primary shadow-lg press-md transition-all hover:-translate-y-0.5 text-lg font-bold mt-4"
                 >
                   {busy ? (
                     <span className="flex items-center gap-2">

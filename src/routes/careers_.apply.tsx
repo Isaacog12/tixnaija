@@ -237,9 +237,9 @@ function ApplyPage() {
             <ChevronLeft className="h-3.5 w-3.5" />
             All Opportunities
           </Link>
-          <h1 className="font-display text-4xl md:text-6xl leading-[0.95] mb-3">
-            Apply to Join TixNaija
-          </h1>
+          <h1 className="type-heading-xl mb-3">
+             Apply to Join TixNaija
+           </h1>
           <p className="text-muted-foreground text-sm md:text-base leading-relaxed">
             Fill in the form below and attach your CV. We read every application.
           </p>
@@ -425,10 +425,10 @@ function ApplyPage() {
           {/* Submit */}
           <div className="pt-2">
             <Button
-              type="submit"
-              disabled={isLoading}
-              className="w-full gradient-sunset text-primary-foreground font-semibold py-3 rounded-xl shadow-sm hover:opacity-90 transition"
-            >
+               type="submit"
+               disabled={isLoading}
+               className="w-full gradient-sunset text-primary-foreground font-semibold py-3 rounded-full shadow-sm glow-primary press-sm transition-all duration-[120ms]"
+             >
               {isLoading ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />

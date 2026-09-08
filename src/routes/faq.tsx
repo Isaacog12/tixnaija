@@ -180,7 +180,7 @@ function FAQSection({ section }: { section: FAQSection }) {
   const Icon = section.icon;
 
   return (
-    <div className="rounded-2xl border border-border/50 bg-card/40 overflow-hidden">
+    <div className="rounded-2xl border border-border/40 bg-card/60 overflow-hidden shadow-sm">
       <div className="flex items-center gap-3 border-b border-border/50 bg-card/60 px-6 py-4">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-sunset">
           <Icon className="h-4 w-4 text-primary-foreground" />
@@ -215,8 +215,8 @@ function FAQPage() {
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl gradient-sunset shadow-glow">
             <LifeBuoy className="h-7 w-7 text-primary-foreground" />
           </div>
-          <h1 className="font-display text-4xl md:text-5xl lg:text-6xl">
-            Help & FAQ
+          <h1 className="type-heading-xl mt-6">
+            Help &amp; FAQ
           </h1>
           <p className="mt-4 text-base text-muted-foreground md:text-lg max-w-xl mx-auto">
             Quick answers to common questions about tickets, refunds, and events on TixNaija.
@@ -240,17 +240,17 @@ function FAQPage() {
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link
-              to="/about"
-              className="inline-flex items-center justify-center rounded-lg gradient-sunset px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-glow transition hover:opacity-90"
-            >
-              Contact us
-            </Link>
-            <Link
-              to="/browse"
-              className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-5 py-2.5 text-sm font-medium transition hover:bg-accent hover:text-accent-foreground"
-            >
-              Browse events
-            </Link>
+               to="/about"
+               className="inline-flex items-center justify-center rounded-full gradient-sunset px-6 py-3 text-sm font-semibold text-primary-foreground glow-primary press-sm transition-all duration-[120ms]"
+             >
+               Contact us
+             </Link>
+             <Link
+               to="/browse"
+               className="inline-flex items-center justify-center rounded-full border border-border bg-background px-6 py-3 text-sm font-medium press-sm transition-all duration-[120ms] hover:bg-secondary hover:text-foreground"
+             >
+               Browse events
+             </Link>
           </div>
         </div>
       </section>

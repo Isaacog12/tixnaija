@@ -75,7 +75,7 @@ function VerifyCheckoutPage() {
                 <p className="mt-2 text-muted-foreground">
                   Your tickets have been generated. We've sent them to your email and your notifications.
                 </p>
-                <Button asChild className="mt-8 w-full gradient-sunset" size="lg">
+                <Button asChild className="mt-8 w-full gradient-sunset press-sm transition-all duration-[120ms]" size="lg">
                   <Link to="/notifications">Go to Notifications</Link>
                 </Button>
               </>
@@ -84,7 +84,7 @@ function VerifyCheckoutPage() {
                 <p className="mt-2 text-muted-foreground">
                   Your tickets were emailed to you. You can also view and download them right here using your email and the <strong>Access PIN</strong> you just created.
                 </p>
-                <Button asChild className="mt-6 w-full gradient-sunset shadow-glow" size="lg">
+                <Button asChild className="mt-6 w-full gradient-sunset shadow-glow press-sm transition-all duration-[120ms]" size="lg">
                   <Link to="/my-tickets">View My Tickets</Link>
                 </Button>
                 <p className="mt-4 text-xs text-muted-foreground">

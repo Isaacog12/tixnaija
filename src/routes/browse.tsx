@@ -161,13 +161,13 @@ function BrowsePage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-5">
              <div className="flex items-center gap-4">
                <BackButton />
-               <h1 className="font-display text-2xl md:text-3xl tracking-tight flex items-center gap-2">
-                 <Compass className="h-6 w-6 text-primary" />
-                 Discover
-               </h1>
+            <h1 className="type-heading-md flex items-center gap-2 font-display">
+               <Compass className="h-6 w-6 text-primary" />
+               Discover
+             </h1>
              </div>
              <form
-                className="flex w-full md:max-w-md items-center gap-2 rounded-full border border-border/60 bg-card/50 px-2 py-1 shadow-inner focus-within:ring-2 focus-within:ring-primary/20 transition-all hover:border-primary/40"
+               className="flex w-full md:max-w-md items-center gap-2 rounded-full border border-border/60 bg-card/80 px-2 py-1 shadow-inner focus-within:ring-2 focus-within:ring-primary/25 transition-all duration-[120ms] hover:border-primary/40"
                 onSubmit={(e) => { e.preventDefault(); updateSearch({ q: searchInput.trim() }); }}
               >
                 <div className="pl-3 text-muted-foreground"><Search className="h-4 w-4" /></div>
@@ -177,7 +177,7 @@ function BrowsePage() {
                   placeholder="Search events, artists..."
                   className="h-10 border-0 bg-transparent px-2 text-sm shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/60"
                 />
-                <Button type="submit" size="sm" className="rounded-full gradient-sunset text-primary-foreground px-5 h-8 text-xs font-bold shadow-md shadow-primary/20 hover:scale-105 transition-transform">
+                <Button type="submit" size="sm" className="rounded-full gradient-sunset text-primary-foreground px-5 h-8 text-xs font-bold shadow-md shadow-primary/20 press-sm transition-transform duration-[120ms]">
                   Search
                 </Button>
               </form>
@@ -191,10 +191,10 @@ function BrowsePage() {
                 <button
                   key={cat}
                   onClick={() => { setActiveCategory(cat); updateSearch({ c: cat }); }}
-                  className={`shrink-0 rounded-full px-5 py-1.5 text-xs font-semibold transition-all duration-300 border ${
+                   className={`shrink-0 rounded-full px-5 py-1.5 text-xs font-semibold transition-all duration-[120ms] border press-sm ${
                     activeCategory === cat
-                      ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20 scale-105"
-                      : "bg-card text-muted-foreground border-border/60 hover:bg-secondary hover:text-foreground hover:border-border"
+                      ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
+                      : "bg-card text-muted-foreground border-border/60 hover:bg-secondary hover:text-foreground hover:border-primary/30"
                   }`}
                 >
                   {cat}
@@ -278,7 +278,7 @@ function BrowsePage() {
       <section className="mx-auto max-w-7xl px-4 py-12 min-h-[60vh]">
         {/* Results Header */}
         <div className="mb-8">
-          <h2 className="font-display text-xl md:text-2xl flex items-center gap-2">
+          <h2 className="type-heading-md flex items-center gap-2">
             {!q && (!c || c === 'All') && date === 'all' && price === 'all' ? (
               <><Flame className="h-6 w-6 text-primary" /> Trending Events</>
             ) : (
@@ -428,7 +428,7 @@ function BrowsePage() {
                   <Link
                     to="/e/$slug"
                     params={{ slug: ev.slug }}
-                    className="group block relative h-full overflow-hidden rounded-[2rem] bg-card border border-border/40 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/40"
+                    className="group block relative h-full overflow-hidden rounded-[2rem] bg-card border border-border/40 shadow-sm transition-all duration-[350ms] ease-out hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-primary/15 hover:border-primary/35"
                   >
                     {CardInner}
                   </Link>

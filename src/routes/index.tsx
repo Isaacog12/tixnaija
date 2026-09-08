@@ -144,39 +144,39 @@ function LandingPage() {
         <div className="absolute top-[10%] right-[15%] w-[35vw] h-[35vw] max-w-[500px] max-h-[500px] bg-accent/20 rounded-full blur-[120px] mix-blend-screen animate-[spin_25s_linear_infinite_reverse] pointer-events-none" />
 
         <div className="mx-auto max-w-5xl px-4 text-center relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-          <div className="inline-flex items-center gap-3 mb-10 bg-background/50 border border-primary/20 backdrop-blur-xl rounded-full px-5 py-2 shadow-lg shadow-primary/5 ring-1 ring-white/10">
-            <span className="text-xs font-bold uppercase tracking-[0.25em] text-foreground/90">
+          <div className="inline-flex items-center gap-3 mb-10 bg-background/60 border border-primary/20 backdrop-blur-xl rounded-full px-5 py-2 shadow-lg shadow-primary/5">
+            <span className="type-label text-foreground/80">
               Naija's Premier Ticket Hub
             </span>
           </div>
           
-          <h1 className="font-display text-6xl leading-[0.85] md:text-8xl lg:text-[8.5rem] tracking-tighter mb-8 drop-shadow-2xl">
+          <h1 className="type-display mb-8">
             Buy tickets.
             <br />
-            <span className="bg-gradient-to-br from-primary via-accent to-primary bg-clip-text text-transparent inline-block mt-4 pb-2 filter drop-shadow-lg">Turn up.</span>
+            <span className="text-gradient-sunset inline-block mt-4 pb-2">Turn up.</span>
           </h1>
           
-          <p className="mx-auto max-w-2xl text-lg text-muted-foreground md:text-xl leading-relaxed font-medium mb-12 max-w-[600px]">
+          <p className="mx-auto max-w-[600px] type-body text-muted-foreground font-medium mb-12">
             Discover concerts, comedy shows, and premium events across Nigeria. Secure your spot in seconds and enter with a scannable QR code.
           </p>
 
           <form
-            className="mx-auto flex w-full max-w-3xl items-center gap-3 rounded-[2rem] border border-white/10 bg-black/40 p-3 shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] backdrop-blur-2xl transition-all hover:border-primary/30 hover:shadow-primary/20 hover:bg-black/50 group"
+            className="mx-auto flex w-full max-w-3xl items-center gap-3 rounded-[2rem] border border-border/40 bg-background/70 dark:bg-black/40 p-3 shadow-xl backdrop-blur-2xl transition-all duration-[350ms] ease-out hover:border-primary/30 hover:shadow-primary/10 focus-within:border-primary/40 focus-within:shadow-primary/10 group"
             onSubmit={(e) => {
               e.preventDefault();
               navigate({ to: "/browse", search: { q: query.trim() || undefined } });
             }}
           >
-            <div className="pl-5 flex items-center justify-center bg-white/5 rounded-full w-12 h-12 shrink-0 group-hover:bg-primary/10 transition-colors">
-              <Search className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+            <div className="pl-5 flex items-center justify-center bg-secondary/60 rounded-full w-12 h-12 shrink-0 group-hover:bg-primary/10 transition-colors duration-[120ms]">
+              <Search className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors duration-[120ms]" />
             </div>
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search for events, artists, venues..."
-              className="border-0 bg-transparent shadow-none focus-visible:ring-0 text-base md:text-lg h-14 placeholder:text-muted-foreground/60 w-full font-medium"
+              className="border-0 bg-transparent shadow-none focus-visible:ring-0 text-base md:text-lg h-14 placeholder:text-muted-foreground/50 w-full font-medium"
             />
-            <Button type="submit" className="rounded-full h-14 px-8 md:px-10 bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_30px_-5px_var(--theme-primary)] font-bold text-base transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_0_var(--theme-primary)] shrink-0">
+            <Button type="submit" className="rounded-full h-14 px-8 md:px-10 gradient-sunset text-primary-foreground glow-primary font-bold text-base press-sm transition-all duration-[220ms] ease-out hover:-translate-y-0.5 shrink-0">
               Find Events
             </Button>
           </form>
@@ -225,52 +225,46 @@ function LandingPage() {
       {/* ── Value Props Bento Box ── */}
       <section className="mx-auto max-w-7xl px-4 pb-24 md:pb-40">
         <div className="text-center mb-16 relative z-10">
-          <h2 className="font-display text-4xl md:text-5xl lg:text-6xl mb-6">Why TixNaija?</h2>
-          <p className="text-lg text-muted-foreground font-medium max-w-2xl mx-auto">We've eliminated the friction from ticketing. Experience the most seamless way to discover and host events in Nigeria.</p>
+          <h2 className="type-heading-xl mb-6 tracking-[-0.025em]">Why TixNaija?</h2>
+          <p className="type-body text-muted-foreground font-medium max-w-2xl mx-auto">We've eliminated the friction from ticketing. Experience the most seamless way to discover and host events in Nigeria.</p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-3 md:grid-rows-2 md:h-[600px] relative z-10">
           {/* Card 1: Wide */}
-          <div className="group relative overflow-hidden rounded-[3rem] border border-white/10 bg-card/60 backdrop-blur-xl p-10 md:col-span-2 shadow-2xl hover:border-primary/40 transition-colors duration-500 flex flex-col justify-between">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-            <div className="absolute right-0 bottom-0 w-64 h-64 bg-primary/20 rounded-full blur-[80px] -z-10 group-hover:bg-primary/30 transition-colors" />
-            
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-8 border border-primary/20 shadow-inner group-hover:scale-110 transition-transform duration-500">
+          <div className="group relative overflow-hidden rounded-[3rem] border border-border/30 dark:border-white/8 bg-card/80 backdrop-blur-xl p-10 md:col-span-2 shadow-xl hover:border-primary/35 hover:shadow-2xl transition-all duration-[350ms] ease-out flex flex-col justify-between">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute right-0 bottom-0 w-64 h-64 bg-primary/15 rounded-full blur-[80px] -z-10" />
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-8 border border-primary/20 shadow-inner group-hover:scale-110 transition-transform duration-[350ms] ease-out">
               <QrCode className="h-8 w-8 text-primary" />
             </div>
-            
             <div className="relative z-10">
-              <h3 className="text-3xl md:text-4xl font-display tracking-tight mb-4 group-hover:text-primary transition-colors">QR tickets, zero drama</h3>
-              <p className="text-lg text-muted-foreground leading-relaxed font-medium max-w-md">Every ticket generates a unique, secure cryptographic QR code. Fast door scans, absolutely no double entries, just pure vibes and smooth access control.</p>
+              <h3 className="type-heading-lg mb-4 group-hover:text-primary transition-colors duration-[120ms]">QR tickets, zero drama</h3>
+              <p className="type-body text-muted-foreground font-medium max-w-md">Every ticket generates a unique, secure cryptographic QR code. Fast door scans, absolutely no double entries, just pure vibes and smooth access control.</p>
             </div>
           </div>
 
           {/* Card 2: Tall */}
-          <div className="group relative overflow-hidden rounded-[3rem] border border-white/10 bg-card/60 backdrop-blur-xl p-10 md:row-span-2 shadow-2xl hover:border-accent/40 transition-colors duration-500 flex flex-col justify-between">
-            <div className="absolute inset-0 bg-gradient-to-b from-accent/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-accent/20 rounded-full blur-[80px] -z-10 group-hover:bg-accent/30 transition-colors" />
-            
-            <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mb-8 border border-accent/20 shadow-inner group-hover:scale-110 transition-transform duration-500">
+          <div className="group relative overflow-hidden rounded-[3rem] border border-border/30 dark:border-white/8 bg-card/80 backdrop-blur-xl p-10 md:row-span-2 shadow-xl hover:border-accent/35 hover:shadow-2xl transition-all duration-[350ms] ease-out flex flex-col justify-between">
+            <div className="absolute inset-0 bg-gradient-to-b from-accent/8 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-accent/15 rounded-full blur-[80px] -z-10" />
+            <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mb-8 border border-accent/20 shadow-inner group-hover:scale-110 transition-transform duration-[350ms] ease-out">
               <CreditCard className="h-8 w-8 text-accent" />
             </div>
-            
             <div className="relative z-10 mt-auto">
-              <h3 className="text-3xl md:text-4xl font-display tracking-tight mb-4 group-hover:text-accent transition-colors">Pay with ease</h3>
-              <p className="text-lg text-muted-foreground leading-relaxed font-medium">Cards, bank transfers, USSD — we support all the payment methods Naija actually uses via our secure Paystack integration.</p>
+              <h3 className="type-heading-lg mb-4 group-hover:text-accent transition-colors duration-[120ms]">Pay with ease</h3>
+              <p className="type-body text-muted-foreground font-medium">Cards, bank transfers, USSD — we support all the payment methods Naija actually uses via our secure Paystack integration.</p>
             </div>
           </div>
 
           {/* Card 3: Standard */}
-          <div className="group relative overflow-hidden rounded-[3rem] border border-white/10 bg-card/60 backdrop-blur-xl p-10 shadow-2xl hover:border-primary/40 transition-colors duration-500 flex flex-col justify-between md:col-span-2">
-            <div className="absolute inset-0 bg-gradient-to-tl from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-            <div className="absolute right-10 top-10 w-32 h-32 bg-primary/20 rounded-full blur-[60px] -z-10 group-hover:bg-primary/30 transition-colors" />
-            
+          <div className="group relative overflow-hidden rounded-[3rem] border border-border/30 dark:border-white/8 bg-card/80 backdrop-blur-xl p-10 shadow-xl hover:border-primary/35 hover:shadow-2xl transition-all duration-[350ms] ease-out flex flex-col justify-between md:col-span-2">
+            <div className="absolute inset-0 bg-gradient-to-tl from-primary/8 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="flex justify-between items-start">
               <div className="relative z-10">
-                <h3 className="text-3xl md:text-4xl font-display tracking-tight mb-4 group-hover:text-primary transition-colors">Sell in minutes</h3>
-                <p className="text-lg text-muted-foreground leading-relaxed font-medium max-w-lg">Create your event, add ticket tiers, and share the link globally. Selling out has never been this ridiculously easy.</p>
+                <h3 className="type-heading-lg mb-4 group-hover:text-primary transition-colors duration-[120ms]">Sell in minutes</h3>
+                <p className="type-body text-muted-foreground font-medium max-w-lg">Create your event, add ticket tiers, and share the link globally. Selling out has never been this ridiculously easy.</p>
               </div>
-              <div className="w-16 h-16 rounded-2xl bg-primary/10 hidden sm:flex items-center justify-center border border-primary/20 shadow-inner group-hover:scale-110 transition-transform duration-500 shrink-0">
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 hidden sm:flex items-center justify-center border border-primary/20 shadow-inner group-hover:scale-110 transition-transform duration-[350ms] ease-out shrink-0">
                 <Ticket className="h-8 w-8 text-primary" />
               </div>
             </div>
@@ -290,7 +284,7 @@ function LandingPage() {
             <Zap className="h-10 w-10 text-primary" />
           </div>
           
-          <h2 className="font-display text-5xl md:text-7xl leading-tight text-foreground mb-6 drop-shadow-xl">
+          <h2 className="type-heading-xl mb-6">
             Selling tickets? <span className="text-gradient-sunset">Start here.</span>
           </h2>
           <p className="text-muted-foreground text-xl md:text-2xl font-medium leading-relaxed max-w-2xl mx-auto mb-12">
@@ -298,17 +292,12 @@ function LandingPage() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            <Button asChild size="lg" className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_40px_-10px_var(--theme-primary)] h-16 px-10 text-xl font-bold hover:scale-105 transition-all duration-300 w-full sm:w-auto">
+            <Button asChild size="lg" className="rounded-full gradient-sunset text-primary-foreground glow-primary h-16 px-10 text-xl font-bold press-sm transition-all duration-[220ms] ease-out hover:-translate-y-1 w-full sm:w-auto">
               <Link to="/auth" search={{ mode: "signup" }}>
                 Create your event
               </Link>
             </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="rounded-full border-2 border-white/10 bg-white/5 backdrop-blur-md text-foreground hover:bg-white/10 hover:border-white/20 h-16 px-10 text-xl font-bold transition-all duration-300 hover:-translate-y-1 w-full sm:w-auto"
-            >
+            <Button asChild size="lg" variant="outline" className="rounded-full border-2 border-border/60 bg-card/60 backdrop-blur-md text-foreground hover:bg-card hover:border-primary/40 hover:text-primary h-16 px-10 text-xl font-bold press-sm transition-all duration-[220ms] ease-out hover:-translate-y-1 w-full sm:w-auto">
               <Link to="/dashboard">Go to Dashboard</Link>
             </Button>
           </div>
@@ -319,14 +308,14 @@ function LandingPage() {
       <section className="mx-auto max-w-7xl px-4 pb-32">
         <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-border/40 pb-6">
           <div>
-            <h2 className="font-display text-4xl md:text-5xl mb-2">Coming up next</h2>
-            <p className="text-lg text-muted-foreground font-medium">
+            <h2 className="type-heading-lg mb-2">Coming up next</h2>
+            <p className="type-body text-muted-foreground font-medium">
               {upcoming.data && upcoming.data.length > 0
                 ? "Grab your tickets before they're gone."
                 : "Fresh events landing here soon."}
             </p>
           </div>
-          <Link to="/browse" className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-5 py-2.5 text-sm font-semibold hover:border-primary hover:text-primary transition-all shadow-sm">
+          <Link to="/browse" className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-5 py-2.5 text-sm font-semibold hover:border-primary hover:text-primary press-sm transition-all duration-[120ms] shadow-sm">
             Browse all <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -373,7 +362,7 @@ function LandingPage() {
                   <Link
                     to="/e/$slug"
                     params={{ slug: ev.slug }}
-                    className="group relative flex flex-col overflow-hidden rounded-[2.5rem] bg-card border border-white/5 shadow-lg transition-all duration-500 hover:-translate-y-3 hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/40 h-full"
+                    className="group relative flex flex-col overflow-hidden rounded-[2.5rem] bg-card border border-border/30 dark:border-white/5 shadow-lg transition-all duration-[350ms] ease-out hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/15 hover:border-primary/35 h-full"
                   >
                     <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary/50">
                       {ev.cover_image_url ? (

@@ -81,7 +81,7 @@ function GuestTicketsPage() {
           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-background border border-border/50 shadow-sm backdrop-blur-sm">
             <Ticket className="h-8 w-8 text-primary" />
           </div>
-          <h1 className="font-display text-4xl md:text-5xl tracking-tight font-semibold">Find Your Tickets</h1>
+          <h1 className="type-heading-lg tracking-tight font-semibold">Find Your Tickets</h1>
           <p className="mt-4 text-lg text-muted-foreground">
             Enter the email address you used at checkout to retrieve your tickets. No account needed.
           </p>
@@ -110,11 +110,11 @@ function GuestTicketsPage() {
             <div className="space-y-2">
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button
-                  type="submit"
-                  size="lg"
-                  className="h-12 w-full sm:w-auto px-8 font-semibold text-primary-foreground shadow-md hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
-                  disabled={lookup.isPending || !email.trim()}
-                >
+                   type="submit"
+                   size="lg"
+                   className="h-12 w-full sm:w-auto px-8 font-semibold text-primary-foreground shadow-md gradient-sunset press-sm transition-all duration-[120ms] hover:-translate-y-0.5"
+                   disabled={lookup.isPending || !email.trim()}
+                 >
                   {lookup.isPending ? (
                     <span className="flex items-center gap-2">
                       <span className="h-4 w-4 rounded-full border-2 border-primary-foreground/50 border-t-primary-foreground animate-spin" />
@@ -159,7 +159,7 @@ function GuestTicketsPage() {
                 {orders.map((order) => (
                   <div
                     key={order.id}
-                    className="group flex flex-col sm:flex-row overflow-hidden rounded-2xl border border-border/80 bg-card/60 backdrop-blur-sm shadow-sm hover:shadow-xl hover:shadow-primary/5 hover:border-primary/30 transition-all duration-300 hover:-translate-y-1"
+                    className="group flex flex-col sm:flex-row overflow-hidden rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm shadow-sm hover:shadow-xl hover:shadow-primary/5 hover:border-primary/30 transition-all duration-[350ms] ease-out hover:-translate-y-0.5"
                   >
                     {/* Cover */}
                     <div className="h-40 sm:h-auto sm:w-48 shrink-0 bg-secondary overflow-hidden relative">

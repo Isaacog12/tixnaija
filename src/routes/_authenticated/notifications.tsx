@@ -133,9 +133,9 @@ function NotificationsPage() {
           </div>
           <div className="flex items-center gap-4 mb-2">
             <BackButton />
-            <h1 className="font-display text-5xl md:text-6xl tracking-tight">
-              Your <span className="text-primary">Notifications</span>
-            </h1>
+            <h1 className="type-heading-lg">
+               Your <span className="text-primary">Notifications</span>
+             </h1>
           </div>
           <p className="text-muted-foreground text-lg max-w-md">Stay on top of your upcoming events, new tickets, and system announcements.</p>
         </div>
@@ -145,7 +145,7 @@ function NotificationsPage() {
             <Button 
               size="lg"
               variant="outline" 
-              className="border-primary/20 hover:bg-primary/5 text-foreground shadow-sm rounded-xl h-12 px-6"
+              className="border-primary/20 hover:bg-primary/5 text-foreground shadow-sm rounded-full h-12 px-6 press-sm transition-all duration-[120ms]"
               onClick={() => markAllRead.mutate()} 
               disabled={markAllRead.isPending}
             >
@@ -170,9 +170,9 @@ function NotificationsPage() {
               return (
                 <div
                   key={msg.id}
-                  className={`group cursor-pointer rounded-[1.5rem] border transition-all duration-300 overflow-hidden relative ${
+                  className={`group cursor-pointer rounded-[1.5rem] border transition-all duration-[350ms] ease-out overflow-hidden relative press-sm ${
                     msg.is_read 
-                      ? "border-border/60 bg-card/40 hover:bg-card/80 hover:shadow-md" 
+                      ? "border-border/50 bg-card/40 hover:bg-card/80 hover:shadow-md" 
                       : "border-primary/30 bg-primary/5 shadow-sm shadow-primary/5 hover:bg-primary/10"
                   }`}
                   onClick={() => {

@@ -269,7 +269,7 @@ function AccountPage() {
       <div className="mb-8">
         <div className="flex items-center gap-4 mb-2">
           <BackButton />
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Account Settings</h1>
+          <h1 className="type-heading-lg font-semibold tracking-tight text-foreground">Account Settings</h1>
         </div>
         <p className="text-muted-foreground text-sm">Manage your profile, organizer status, and payout methods.</p>
       </div>
@@ -354,9 +354,9 @@ function AccountPage() {
                   </Field>
                 </div>
                 <div className="mt-6 flex justify-end pt-4 border-t border-border">
-                  <Button type="submit" disabled={saving}>
-                    {saving ? "Saving…" : "Save changes"}
-                  </Button>
+                  <Button type="submit" disabled={saving} className="press-sm transition-transform duration-[120ms]">
+                     {saving ? "Saving…" : "Save changes"}
+                   </Button>
                 </div>
               </form>
             </div>
