@@ -27,6 +27,7 @@ export const Route = createFileRoute("/orders/$orderId/tickets")({
 async function fetchOrderTickets(orderId: string, guestEmail?: string) {
   // If guest mode: check email matches via RPC
   if (guestEmail) {
+    // TODO: Run `supabase gen types typescript` so `get_guest_order_full` resolves correctly.
     const { data, error } = await (supabase.rpc as any)("get_guest_order_full", {
       p_order_id: orderId,
       p_email: guestEmail.toLowerCase(),
@@ -104,6 +105,7 @@ function OrderTicketsPage() {
     if (!editingTicket) return;
     setIsUpdating(true);
     try {
+      // TODO: Run `supabase gen types typescript` so `update_ticket_attendee` resolves correctly.
       const { error } = await (supabase.rpc as any)("update_ticket_attendee", {
         p_ticket_id: editingTicket.id,
         p_attendee_name: editName,

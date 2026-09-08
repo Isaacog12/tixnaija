@@ -71,6 +71,7 @@ function AdminBannersPage() {
 
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      // TODO: Run `supabase gen types typescript` so `sponsored_banners` resolves correctly instead of `never`.
       const { error } = await (supabase as any).from("sponsored_banners").update({ is_active }).eq("id", id);
       if (error) throw error;
     },
@@ -204,10 +205,12 @@ function BannerDialog({ open, onOpenChange, banner, onSuccess }: { open: boolean
       };
 
       if (banner) {
+        // TODO: Run `supabase gen types typescript` so `sponsored_banners` resolves correctly instead of `never`.
         const { error } = await (supabase as any).from("sponsored_banners").update(payload).eq("id", banner.id);
         if (error) throw error;
         toast.success("Banner updated");
       } else {
+        // TODO: Run `supabase gen types typescript` so `sponsored_banners` resolves correctly instead of `never`.
         const { error } = await (supabase as any).from("sponsored_banners").insert(payload);
         if (error) throw error;
         toast.success("Banner created");
