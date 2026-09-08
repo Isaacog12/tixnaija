@@ -494,7 +494,7 @@ function AdminDashboard() {
         <p className="text-muted-foreground text-lg">Platform overview and moderation.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 mb-12">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6 mb-12">
         <StatCard icon={Users} label="Total Users" value={stats?.users.toLocaleString() ?? "—"} />
         <StatCard icon={Calendar} label="Total Events" value={stats?.events.toLocaleString() ?? "—"} />
         <StatCard icon={BarChart3} label="Total Volume" value={formatNaira(stats?.revenueKobo ?? 0)} className="text-gradient-sunset" />
