@@ -3,8 +3,9 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * TixNaija — Sunset Blaze design system.
- * Warm, dark, event-first. Vibrant orange primary, gold accent.
+ * TixNaija — Sunset Blaze design system v2.
+ * Apple design foundations: translucency, optical type, spring motion, dark/light.
+ * Primary ember orange (oklch 0.66 0.22 40) is locked — all other tokens are open.
  * All colors in oklch. Do NOT hardcode hex classes in components.
  */
 
@@ -18,8 +19,9 @@
   --radius-4xl: calc(var(--radius) + 16px);
 
   --font-display: "Cinzel", ui-serif, Georgia, serif;
-  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 
+  /* ── Color mappings to CSS custom properties ─────────────────────────── */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -54,92 +56,228 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  /* ── Gradients (sunset palette preserved) ────────────────────────────── */
   --gradient-sunset: linear-gradient(135deg, oklch(0.75 0.18 50) 0%, oklch(0.66 0.22 40) 50%, oklch(0.5 0.24 15) 100%);
   --gradient-ember: radial-gradient(circle at 20% 20%, oklch(0.85 0.15 85 / 0.25), transparent 60%),
                     radial-gradient(circle at 80% 90%, oklch(0.66 0.22 40 / 0.25), transparent 55%);
-  --shadow-glow: 0 10px 40px -10px oklch(0.66 0.22 40 / 0.3), inset 0 1px 0 0 oklch(1 0 0 / 0.1);
+  --shadow-glow: 0 10px 40px -10px oklch(0.66 0.22 40 / 0.35), inset 0 1px 0 0 oklch(1 0 0 / 0.1);
 
+  /* ── Spring / Motion tokens ──────────────────────────────────────────── */
+  /*
+   * ease-spring:   slight overshoot — for momentum / flick interactions.
+   * ease-snappy:   critically damped — default UI feel, no overshoot.
+   * ease-smooth:   smooth deceleration — page-level or large transitions.
+   */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-snappy: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-micro:   120ms;
+  --duration-fast:    220ms;
+  --duration-default: 350ms;
+  --duration-slow:    500ms;
+
+  /* ── Keyframes ───────────────────────────────────────────────────────── */
   --animate-loader-progress: loader-progress 2.5s ease-out forwards;
   @keyframes loader-progress {
-    0%   { transform: scaleX(0); transform-origin: left; opacity: 1; }
+    0%   { transform: scaleX(0);   transform-origin: left; opacity: 1; }
     70%  { transform: scaleX(0.9); transform-origin: left; opacity: 1; }
-    85%  { transform: scaleX(1); transform-origin: left; opacity: 1; }
-    100% { transform: scaleX(1); transform-origin: left; opacity: 0; }
+    85%  { transform: scaleX(1);   transform-origin: left; opacity: 1; }
+    100% { transform: scaleX(1);   transform-origin: left; opacity: 0; }
+  }
+
+  @keyframes scale-in {
+    from { transform: scale(0); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   LIGHT MODE  (:root = default, applied when .dark is NOT on <html>)
+   ══════════════════════════════════════════════════════════════════════════ */
 :root {
   --radius: 0.75rem;
 
-  /* Dark, warm sunset base */
-  --background: oklch(0.14 0.02 40);
-  --foreground: oklch(0.97 0.02 80);
+  /* Surfaces */
+  --background:    oklch(0.98 0.008 80);      /* warm ivory */
+  --foreground:    oklch(0.14 0.02  40);      /* near-black warm */
 
-  --card: oklch(0.18 0.03 40);
+  --card:          oklch(1    0     0);
+  --card-foreground: oklch(0.14 0.02 40);
+
+  --popover:       oklch(1    0     0);
+  --popover-foreground: oklch(0.14 0.02 40);
+
+  --primary:       oklch(0.66 0.22  40);      /* 🔒 Locked ember orange */
+  --primary-foreground: oklch(0.98 0.008 80);
+
+  --secondary:     oklch(0.93 0.01  80);      /* warm light gray */
+  --secondary-foreground: oklch(0.25 0.03 40);
+
+  --muted:         oklch(0.93 0.01  80);
+  --muted-foreground: oklch(0.48 0.03 60);
+
+  --accent:        oklch(0.62 0.20  42);      /* deeper ember for light surfaces */
+  --accent-foreground: oklch(0.98 0.008 80);
+
+  --destructive:   oklch(0.58 0.24  25);
+  --destructive-foreground: oklch(0.98 0.008 80);
+
+  --border:        oklch(0.88 0.01  80);
+  --input:         oklch(0.94 0.008 80);
+  --ring:          oklch(0.66 0.22  40);
+
+  /* Charts */
+  --chart-1: oklch(0.66 0.22 40);
+  --chart-2: oklch(0.75 0.18 50);
+  --chart-3: oklch(0.55 0.20 15);
+  --chart-4: oklch(0.70 0.17 60);
+  --chart-5: oklch(0.50 0.10 30);
+
+  /* Sidebar */
+  --sidebar:          oklch(0.96 0.008 80);
+  --sidebar-foreground: oklch(0.14 0.02 40);
+  --sidebar-primary:  oklch(0.66 0.22 40);
+  --sidebar-primary-foreground: oklch(0.98 0.008 80);
+  --sidebar-accent:   oklch(0.93 0.01 80);
+  --sidebar-accent-foreground: oklch(0.14 0.02 40);
+  --sidebar-border:   oklch(0.88 0.01 80);
+  --sidebar-ring:     oklch(0.66 0.22 40);
+
+  /* Glass material — light (brighter, very light translucency) */
+  --glass-bg:     oklch(1 0 0 / 0.72);
+  --glass-border: oklch(0 0 0 / 0.07);
+  --glass-blur:   blur(24px) saturate(180%);
+  --glass-shadow: 0 4px 24px -4px oklch(0 0 0 / 0.08), 0 1px 0 0 oklch(1 0 0 / 0.7) inset;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DARK MODE  (.dark class on <html>, set by the blocking script in __root)
+   ══════════════════════════════════════════════════════════════════════════ */
+.dark {
+  /* Surfaces — warm, dark sunset base (unchanged from original) */
+  --background:    oklch(0.14 0.02 40);
+  --foreground:    oklch(0.97 0.02 80);
+
+  --card:          oklch(0.18 0.03 40);
   --card-foreground: oklch(0.97 0.02 80);
 
-  --popover: oklch(0.18 0.03 40);
+  --popover:       oklch(0.18 0.03 40);
   --popover-foreground: oklch(0.97 0.02 80);
 
-  --primary: oklch(0.66 0.22 40);         /* vivid ember orange */
+  --primary:       oklch(0.66 0.22 40);       /* 🔒 Locked ember orange */
   --primary-foreground: oklch(0.14 0.02 40);
 
-  --secondary: oklch(0.24 0.03 40);
+  --secondary:     oklch(0.24 0.03 40);
   --secondary-foreground: oklch(0.97 0.02 80);
 
-  --muted: oklch(0.22 0.02 40);
+  --muted:         oklch(0.22 0.02 40);
   --muted-foreground: oklch(0.80 0.03 70);
 
-  --accent: oklch(0.85 0.15 85);          /* warm gold */
+  --accent:        oklch(0.85 0.15 85);       /* warm gold */
   --accent-foreground: oklch(0.14 0.02 40);
 
-  --destructive: oklch(0.6 0.24 25);
+  --destructive:   oklch(0.60 0.24 25);
   --destructive-foreground: oklch(0.97 0.02 80);
 
-  --border: oklch(0.25 0.02 40);
-  --input: oklch(0.20 0.02 40);
-  --ring: oklch(0.66 0.22 40);
+  --border:        oklch(0.25 0.02 40);
+  --input:         oklch(0.20 0.02 40);
+  --ring:          oklch(0.66 0.22 40);
 
+  /* Charts */
   --chart-1: oklch(0.66 0.22 40);
   --chart-2: oklch(0.85 0.15 85);
-  --chart-3: oklch(0.55 0.2 15);
-  --chart-4: oklch(0.7 0.17 60);
-  --chart-5: oklch(0.5 0.1 30);
+  --chart-3: oklch(0.55 0.20 15);
+  --chart-4: oklch(0.70 0.17 60);
+  --chart-5: oklch(0.50 0.10 30);
 
-  --sidebar: oklch(0.16 0.02 40);
+  /* Sidebar */
+  --sidebar:          oklch(0.16 0.02 40);
   --sidebar-foreground: oklch(0.97 0.02 80);
-  --sidebar-primary: oklch(0.66 0.22 40);
+  --sidebar-primary:  oklch(0.66 0.22 40);
   --sidebar-primary-foreground: oklch(0.14 0.02 40);
-  --sidebar-accent: oklch(0.22 0.03 40);
+  --sidebar-accent:   oklch(0.22 0.03 40);
   --sidebar-accent-foreground: oklch(0.97 0.02 80);
-  --sidebar-border: oklch(0.28 0.03 40);
-  --sidebar-ring: oklch(0.66 0.22 40);
+  --sidebar-border:   oklch(0.28 0.03 40);
+  --sidebar-ring:     oklch(0.66 0.22 40);
+
+  /* Glass material — dark (deeper, warm-tinted translucency) */
+  --glass-bg:     oklch(0.18 0.03 40 / 0.75);
+  --glass-border: oklch(1 0 0 / 0.07);
+  --glass-blur:   blur(24px) saturate(180%);
+  --glass-shadow: 0 4px 24px -4px oklch(0 0 0 / 0.45), 0 1px 0 0 oklch(1 0 0 / 0.05) inset;
 }
 
-.dark {
-  --background: oklch(0.14 0.02 40);
-  --foreground: oklch(0.97 0.02 80);
-}
-
+/* ══════════════════════════════════════════════════════════════════════════
+   BASE LAYER
+   ══════════════════════════════════════════════════════════════════════════ */
 @layer base {
   * {
     border-color: var(--color-border);
   }
   html {
     font-family: var(--font-sans);
+    font-optical-sizing: auto;
   }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    font-optical-sizing: auto;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
+
+  /*
+   * Display headings: Cinzel with Apple-grade tight tracking.
+   * Large text wants NEGATIVE tracking — letters look too far apart as they grow.
+   * Small text gets slightly positive tracking for legibility.
+   */
   h1, h2, .font-display {
     font-family: var(--font-display);
-    letter-spacing: 0.01em;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+
+  /* Smooth transitions between light/dark — never jarring */
+  html {
+    transition: background-color var(--duration-default) var(--ease-snappy),
+                color var(--duration-fast) var(--ease-snappy);
   }
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   ACCESSIBILITY — REDUCED MOTION / TRANSPARENCY / CONTRAST
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  /* Make glass surfaces solid when user prefers reduced transparency */
+  .glass {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: var(--color-card) !important;
+    border-color: var(--color-border) !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   UTILITY CLASSES
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Gradient utilities (preserved) ─────────────────────────────────────── */
 @utility gradient-sunset {
   background-image: var(--gradient-sunset);
 }
@@ -151,4 +289,96 @@
 }
 @utility shadow-glow {
   box-shadow: var(--shadow-glow);
+}
+
+/* ── Glass material surface ──────────────────────────────────────────────
+ * Use for: navbars, sheets, modals, floating cards.
+ * Hierarchy: heavier glass (lower --glass-bg alpha) for structural chrome;
+ *            lighter for interactive chips and tooltips.
+ */
+@utility glass {
+  background-color: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* ── Press micro-interactions ────────────────────────────────────────────
+ * Apple principle: respond on pointer-DOWN, not release.
+ * These add a subtle scale-down to communicate "this was pressed."
+ */
+@utility press-sm {
+  transition-property: transform;
+  transition-duration: var(--duration-micro);
+  transition-timing-function: var(--ease-snappy);
+  &:active {
+    transform: scale(0.97);
+  }
+}
+@utility press-md {
+  transition-property: transform;
+  transition-duration: var(--duration-micro);
+  transition-timing-function: var(--ease-snappy);
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+/* ── Primary glow shadow ─────────────────────────────────────────────────
+ * Use on primary CTA buttons for the "lit from within" look.
+ */
+@utility glow-primary {
+  box-shadow: 0 0 28px -6px color-mix(in oklch, var(--color-primary) 60%, transparent),
+              0 4px 16px -4px color-mix(in oklch, var(--color-primary) 35%, transparent);
+}
+
+/* ── Apple-grade type scale ──────────────────────────────────────────────
+ * Tracking is SIZE-SPECIFIC — large text tightens, small text opens.
+ * Leading is INVERSE to size — headings tight, body loose.
+ * Use these classes on the element itself, not on a wrapper.
+ */
+@utility type-display {
+  font-family: var(--font-display);
+  font-size: clamp(3.5rem, 8vw, 8.5rem);
+  line-height: 0.88;
+  letter-spacing: -0.03em;
+  font-optical-sizing: auto;
+}
+@utility type-heading-xl {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
+  line-height: 1.0;
+  letter-spacing: -0.025em;
+  font-optical-sizing: auto;
+}
+@utility type-heading-lg {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-optical-sizing: auto;
+}
+@utility type-heading-md {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+@utility type-body {
+  font-size: 1rem;
+  line-height: 1.6;
+  letter-spacing: 0em;
+}
+@utility type-caption {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  letter-spacing: 0.015em;
+}
+@utility type-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
