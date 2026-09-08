@@ -67,11 +67,13 @@ async function fetchAdminStats() {
     { count: eventCount },
     { data: orders },
     { count: pendingApps },
+    { count: pendingJobApps },
   ] = await Promise.all([
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase.from("events").select("*", { count: "exact", head: true }),
     supabase.from("orders").select("total_kobo").eq("status", "paid"),
     supabase.from("organizer_applications").select("*", { count: "exact", head: true }).eq("status", "pending"),
+    supabase.from("job_applications").select("*", { count: "exact", head: true }).eq("status", "new"),
   ]);
 
   const totalRevenueKobo = (orders ?? []).reduce((acc: number, o: any) => acc + (o.total_kobo || 0), 0);
@@ -80,6 +82,7 @@ async function fetchAdminStats() {
     events: eventCount ?? 0,
     revenueKobo: totalRevenueKobo,
     pendingApps: pendingApps ?? 0,
+    pendingJobApps: pendingJobApps ?? 0,
   };
 }
 
@@ -491,44 +494,35 @@ function AdminDashboard() {
         <p className="text-muted-foreground text-lg">Platform overview and moderation.</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-6 mb-12">
-        <StatCard icon={Users} label="Total Users" value={stats?.users.toLocaleString() ?? "—"} className="lg:col-span-1" />
-        <StatCard icon={Calendar} label="Total Events" value={stats?.events.toLocaleString() ?? "—"} className="lg:col-span-1" />
-        <StatCard icon={BarChart3} label="Total Volume" value={formatNaira(stats?.revenueKobo ?? 0)} className="text-gradient-sunset lg:col-span-2" />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 mb-12">
+        <StatCard icon={Users} label="Total Users" value={stats?.users.toLocaleString() ?? "—"} />
+        <StatCard icon={Calendar} label="Total Events" value={stats?.events.toLocaleString() ?? "—"} />
+        <StatCard icon={BarChart3} label="Total Volume" value={formatNaira(stats?.revenueKobo ?? 0)} className="text-gradient-sunset" />
         
-        <div className="lg:col-span-1">
-          <Link to="/admin/organizer-applications" className="group block cursor-pointer h-full">
-            <div className="rounded-3xl border border-amber-500/30 bg-card p-6 flex flex-col justify-between shadow-sm hover:border-amber-500/60 hover:shadow-amber-500/10 transition-all h-full">
-              <div className="flex items-start justify-between">
-                <div className="rounded-2xl bg-amber-500/10 p-3 text-amber-500 group-hover:bg-amber-500/20 transition-colors">
-                  <ClipboardList className="h-6 w-6" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <p className="text-sm font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Applications</p>
-                <h3 className="font-display text-4xl text-amber-500 mb-1">{stats?.pendingApps ?? 0}</h3>
-                <p className="text-sm font-medium text-amber-500/80 group-hover:text-amber-500 transition-colors">Review now &rarr;</p>
-              </div>
-            </div>
-          </Link>
-        </div>
-        
-        <div className="lg:col-span-1">
-          <Link to="/admin/banners" className="group block cursor-pointer h-full">
-            <div className="rounded-3xl border border-primary/30 bg-card p-6 flex flex-col justify-between shadow-sm hover:border-primary/60 hover:shadow-primary/10 transition-all h-full">
-              <div className="flex items-start justify-between">
-                <div className="rounded-2xl bg-primary/10 p-3 text-primary group-hover:bg-primary/20 transition-colors">
-                  <ImageIcon className="h-6 w-6" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <p className="text-sm font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Banners</p>
-                <h3 className="font-display text-4xl text-foreground mb-1">Ads</h3>
-                <p className="text-sm font-medium text-primary/80 group-hover:text-primary transition-colors">Manage slots &rarr;</p>
-              </div>
-            </div>
-          </Link>
-        </div>
+        <LinkCard 
+          to="/admin/organizer-applications"
+          icon={ClipboardList}
+          label="Org Apps"
+          value={stats?.pendingApps ?? 0}
+          subtext="Review now &rarr;"
+          colorClass="amber"
+        />
+        <LinkCard 
+          to="/admin/job-applications"
+          icon={Briefcase}
+          label="Job Apps"
+          value={stats?.pendingJobApps ?? 0}
+          subtext="Review now &rarr;"
+          colorClass="blue"
+        />
+        <LinkCard 
+          to="/admin/banners"
+          icon={ImageIcon}
+          label="Banners"
+          value="Ads"
+          subtext="Manage slots &rarr;"
+          colorClass="primary"
+        />
       </div>
 
       <div className="mb-12 rounded-3xl border border-destructive/20 bg-destructive/5 p-6">
@@ -668,16 +662,59 @@ function StatCard({
   className?: string;
 }) {
   return (
-    <div className={`rounded-3xl border border-border/60 bg-card p-6 flex flex-col justify-between shadow-sm transition-all hover:shadow-md ${className}`}>
+    <div className={`rounded-2xl border border-border/60 bg-card p-5 flex flex-col justify-between shadow-sm transition-all hover:shadow-md h-full ${className || ""}`}>
       <div className="flex items-start justify-between">
-        <div className="rounded-2xl bg-primary/10 p-3 text-primary">
-          <Icon className="h-6 w-6" />
+        <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
+          <Icon className="h-5 w-5" />
         </div>
       </div>
       <div className="mt-4">
-        <p className="text-sm font-semibold text-muted-foreground mb-1 uppercase tracking-wider">{label}</p>
-        <h3 className={`font-display text-4xl tracking-tight ${className?.includes('text-gradient') ? '' : 'text-foreground'}`}>{value}</h3>
+        <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">{label}</p>
+        <h3 className={`font-display text-3xl tracking-tight ${className?.includes('text-gradient') ? '' : 'text-foreground'}`}>{value}</h3>
       </div>
     </div>
+  );
+}
+
+function LinkCard({
+  to,
+  icon: Icon,
+  label,
+  value,
+  subtext,
+  colorClass,
+}: {
+  to: string;
+  icon: any;
+  label: string;
+  value: string | number;
+  subtext: string;
+  colorClass: "amber" | "blue" | "primary";
+}) {
+  const colorStyles = {
+    amber: "border-amber-500/30 text-amber-500 hover:border-amber-500/60 hover:shadow-amber-500/10 bg-amber-500/10 hover:bg-amber-500/20",
+    blue: "border-blue-500/30 text-blue-500 hover:border-blue-500/60 hover:shadow-blue-500/10 bg-blue-500/10 hover:bg-blue-500/20",
+    primary: "border-primary/30 text-primary hover:border-primary/60 hover:shadow-primary/10 bg-primary/10 hover:bg-primary/20",
+  };
+
+  const style = colorStyles[colorClass];
+  const bgClass = style.split(" bg-")[0];
+  const hoverBgClass = "bg-" + style.split(" bg-")[1];
+
+  return (
+    <Link to={to} className="group block cursor-pointer h-full">
+      <div className={`rounded-2xl border flex flex-col justify-between shadow-sm transition-all h-full p-5 bg-card ${bgClass}`}>
+        <div className="flex items-start justify-between">
+          <div className={`rounded-xl p-2.5 transition-colors ${hoverBgClass}`}>
+            <Icon className="h-5 w-5" />
+          </div>
+        </div>
+        <div className="mt-4">
+          <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">{label}</p>
+          <h3 className="font-display text-3xl tracking-tight mb-1">{value}</h3>
+          <p className="text-xs font-medium opacity-80 group-hover:opacity-100 transition-opacity">{subtext}</p>
+        </div>
+      </div>
+    </Link>
   );
 }
