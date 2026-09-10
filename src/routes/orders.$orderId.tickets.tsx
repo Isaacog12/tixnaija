@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { GlobalLoader } from "@/components/global-loader";
 import { BackButton } from "@/components/back-button";
 import { toast } from "sonner";
+import type { Tables } from "@/lib/database.types";
 
 // This route is intentionally NOT under _authenticated —
 // guests can reach it from /my-tickets with ?email=... query param.
@@ -24,11 +25,18 @@ export const Route = createFileRoute("/orders/$orderId/tickets")({
   }),
 });
 
+/** Shape returned by the get_guest_order_full RPC (a JSON blob). */
+interface GuestOrderFull {
+  order: Tables<"orders"> & { events: Tables<"events"> };
+  tickets: (Tables<"tickets"> & {
+    order_items: { order_id: string; ticket_types: Tables<"ticket_types"> };
+  })[];
+}
+
 async function fetchOrderTickets(orderId: string, guestEmail?: string) {
   // If guest mode: check email matches via RPC
   if (guestEmail) {
-    // TODO: Run `supabase gen types typescript` so `get_guest_order_full` resolves correctly.
-    const { data, error } = await (supabase.rpc as any)("get_guest_order_full", {
+    const { data, error } = await supabase.rpc("get_guest_order_full", {
       p_order_id: orderId,
       p_email: guestEmail.toLowerCase(),
     });
@@ -37,7 +45,9 @@ async function fetchOrderTickets(orderId: string, guestEmail?: string) {
       throw notFound();
     }
     
-    return { order: (data as any).order, tickets: (data as any).tickets || [], isGuest: true };
+    const result = data as unknown as GuestOrderFull;
+
+    return { order: result.order, tickets: result.tickets ?? [], isGuest: true };
   }
 
   // Fetch order and event for logged-in users via RLS
@@ -89,12 +99,12 @@ function OrderTicketsPage() {
     queryFn: () => fetchOrderTickets(orderId, searchEmail),
   });
 
-  const [editingTicket, setEditingTicket] = useState<any>(null);
+  const [editingTicket, setEditingTicket] = useState<GuestOrderFull["tickets"][number] | null>(null);
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleEditOpen = (ticket: any) => {
+  const handleEditOpen = (ticket: GuestOrderFull["tickets"][number]) => {
     setEditingTicket(ticket);
     setEditName(ticket.attendee_name || "");
     setEditEmail(ticket.attendee_email || "");
@@ -105,8 +115,7 @@ function OrderTicketsPage() {
     if (!editingTicket) return;
     setIsUpdating(true);
     try {
-      // TODO: Run `supabase gen types typescript` so `update_ticket_attendee` resolves correctly.
-      const { error } = await (supabase.rpc as any)("update_ticket_attendee", {
+      const { error } = await supabase.rpc("update_ticket_attendee", {
         p_ticket_id: editingTicket.id,
         p_attendee_name: editName,
         p_attendee_email: editEmail,
@@ -123,8 +132,8 @@ function OrderTicketsPage() {
         body: { orderId: data?.order?.id, ticketId: editingTicket.id },
       });
 
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update ticket.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to update ticket.");
     } finally {
       setIsUpdating(false);
     }
@@ -208,7 +217,7 @@ function OrderTicketsPage() {
           </div>
         ) : (
           <div className="space-y-12">
-            {data.tickets.map((ticket: any, index: number) => (
+            {data.tickets.map((ticket, index) => (
               <div 
                 key={ticket.id} 
                 className="animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-both"

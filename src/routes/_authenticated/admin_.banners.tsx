@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { BackButton } from "@/components/back-button";
 import { toast } from "sonner";
+import type { Tables } from "@/lib/database.types";
 
 export const Route = createFileRoute("/_authenticated/admin_/banners")({
   beforeLoad: async () => {
@@ -27,17 +28,7 @@ export const Route = createFileRoute("/_authenticated/admin_/banners")({
   component: AdminBannersPage,
 });
 
-interface Banner {
-  id: string;
-  title: string;
-  image_url: string;
-  link_url: string | null;
-  starts_at: string | null;
-  ends_at: string | null;
-  is_active: boolean;
-  display_order: number;
-  click_count: number;
-}
+type Banner = Tables<"sponsored_banners">;
 
 function AdminBannersPage() {
   const qc = useQueryClient();
@@ -47,13 +38,13 @@ function AdminBannersPage() {
   const { data: banners, isLoading } = useQuery({
     queryKey: ["admin-banners"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("sponsored_banners")
         .select("*")
         .order("display_order", { ascending: true })
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as Banner[];
+      return data;
     },
   });
 
@@ -66,17 +57,16 @@ function AdminBannersPage() {
       toast.success("Banner deleted");
       qc.invalidateQueries({ queryKey: ["admin-banners"] });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      // TODO: Run `supabase gen types typescript` so `sponsored_banners` resolves correctly instead of `never`.
-      const { error } = await (supabase as any).from("sponsored_banners").update({ is_active }).eq("id", id);
+      const { error } = await supabase.from("sponsored_banners").update({ is_active }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-banners"] }),
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: Error) => toast.error(e.message),
   });
 
   function handleEdit(banner: Banner) {
@@ -162,7 +152,7 @@ function BannerDialog({ open, onOpenChange, banner, onSuccess }: { open: boolean
   const [title, setTitle] = useState(banner?.title || "");
   const [linkUrl, setLinkUrl] = useState(banner?.link_url || "");
   const [displayOrder, setDisplayOrder] = useState(banner?.display_order?.toString() || "0");
-  const [isActive, setIsActive] = useState(banner ? banner.is_active : true);
+  const [isActive, setIsActive] = useState(banner ? banner.is_active ?? true : true);
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -171,7 +161,7 @@ function BannerDialog({ open, onOpenChange, banner, onSuccess }: { open: boolean
     setTitle(banner?.title || "");
     setLinkUrl(banner?.link_url || "");
     setDisplayOrder(banner?.display_order?.toString() || "0");
-    setIsActive(banner ? banner.is_active : true);
+    setIsActive(banner ? banner.is_active ?? true : true);
     setFile(null);
   });
 
@@ -198,26 +188,24 @@ function BannerDialog({ open, onOpenChange, banner, onSuccess }: { open: boolean
 
       const payload = {
         title,
-        image_url: imageUrl,
+        image_url: imageUrl!,
         link_url: linkUrl || null,
         display_order: parseInt(displayOrder) || 0,
         is_active: isActive,
       };
 
       if (banner) {
-        // TODO: Run `supabase gen types typescript` so `sponsored_banners` resolves correctly instead of `never`.
-        const { error } = await (supabase as any).from("sponsored_banners").update(payload).eq("id", banner.id);
+        const { error } = await supabase.from("sponsored_banners").update(payload).eq("id", banner.id);
         if (error) throw error;
         toast.success("Banner updated");
       } else {
-        // TODO: Run `supabase gen types typescript` so `sponsored_banners` resolves correctly instead of `never`.
-        const { error } = await (supabase as any).from("sponsored_banners").insert(payload);
+        const { error } = await supabase.from("sponsored_banners").insert(payload);
         if (error) throw error;
         toast.success("Banner created");
       }
       onSuccess();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
     }
