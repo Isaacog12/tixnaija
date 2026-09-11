@@ -769,7 +769,7 @@ function EventBody({
             <div className="mt-2 flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <BackButton />
-                <h1 className="font-display text-4xl leading-[0.95] md:text-6xl">{event.title}</h1>
+                <h1 className="font-display text-3xl leading-[0.95] md:text-5xl lg:text-6xl">{event.title}</h1>
               </div>
               <Button
                 variant="outline"
@@ -822,7 +822,7 @@ function EventBody({
 
         <aside className="md:sticky md:top-24 md:self-start">
           <div className="rounded-2xl border border-border bg-card/70 p-5 backdrop-blur">
-            <h2 className="font-display text-2xl">Tickets</h2>
+            <h2 className="font-display text-xl md:text-2xl">Tickets</h2>
             <p className="text-xs text-muted-foreground">Select how many of each tier.</p>
 
             <div className="mt-4 space-y-3">
@@ -860,7 +860,7 @@ function EventBody({
                         {t.description && (
                           <p className="mt-0.5 text-xs text-muted-foreground">{t.description}</p>
                         )}
-                        <p className="mt-1 font-display text-2xl text-gradient-sunset">
+                        <p className="mt-1 font-display text-xl md:text-2xl text-gradient-sunset">
                           {t.price_kobo === 0 ? "Free" : formatNaira(t.price_kobo)}
                         </p>
                         <p className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">
@@ -898,7 +898,7 @@ function EventBody({
 
             <div className="mt-5 flex items-baseline justify-between border-t border-border pt-4">
               <span className="text-sm text-muted-foreground">Total</span>
-              <span className="font-display text-3xl text-gradient-sunset">
+              <span className="font-display text-2xl md:text-3xl text-gradient-sunset">
                 {totalKobo ? formatNaira(totalKobo) : "—"}
               </span>
             </div>
