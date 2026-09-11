@@ -12,6 +12,20 @@ export const Route = createFileRoute("/t/$ticketCode")({
   component: SingleTicketPage,
 });
 
+interface TicketFull {
+  id: string;
+  ticket_code: string;
+  order_items: {
+    ticket_types: any;
+    orders: {
+      events: any;
+      [key: string]: any;
+    };
+    [key: string]: any;
+  };
+  [key: string]: any;
+}
+
 async function fetchSingleTicket(ticketCode: string) {
   const { data: ticket, error: ticketErr } = await supabase
     .rpc("get_ticket_by_code", { p_ticket_code: ticketCode });
@@ -20,7 +34,7 @@ async function fetchSingleTicket(ticketCode: string) {
     throw notFound();
   }
 
-  return ticket;
+  return ticket as unknown as TicketFull;
 }
 
 function SingleTicketPage() {

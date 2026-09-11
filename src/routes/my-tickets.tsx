@@ -209,7 +209,7 @@ function GuestTicketsPage() {
                           <Link
                             to="/orders/$orderId/tickets"
                             params={{ orderId: order.id }}
-                            search={{ email: submitted.email, accessCode: submitted.accessCode }}
+                            search={{ email: submitted.email }}
                           >
                             <QrCode className="mr-2 h-4 w-4" />
                             View Tickets

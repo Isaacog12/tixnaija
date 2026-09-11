@@ -205,18 +205,8 @@ function RefundRequestModal({ open, onClose, event, ticketId, buyerEmail, buyerN
   );
 }
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 }
-  }
-};
-
-const cardVariants = {
-  hidden: { opacity: 0, scale: 0.95, y: 20 },
-  show: { opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
-};
+/** Stagger delay per card (ms) — matches the original framer-motion staggerChildren: 0.1 */
+const STAGGER_MS = 80;
 
 function TicketsPage() {
   const { data: tickets, isLoading, error } = useQuery({
@@ -264,12 +254,7 @@ function TicketsPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 md:py-20 min-h-screen">
-      <div 
-        
-        
-        
-        className="mb-12"
-      >
+      <div className="mb-12">
         <div className="flex items-center gap-4 mb-4">
           <BackButton />
           <h1 className="font-display text-5xl md:text-6xl tracking-tight">Your Tickets</h1>
@@ -297,11 +282,7 @@ function TicketsPage() {
       )}
 
       {error && (
-        <div 
-           
-           
-          className="rounded-2xl border border-destructive/20 bg-destructive/5 p-8 text-center text-destructive max-w-2xl mx-auto"
-        >
+        <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-8 text-center text-destructive max-w-2xl mx-auto">
           <Frown className="h-10 w-10 mx-auto mb-4 opacity-50" />
           <h3 className="font-medium text-lg mb-1">Failed to load tickets</h3>
           <p className="text-destructive/80">{(error as Error).message}</p>
@@ -309,11 +290,7 @@ function TicketsPage() {
       )}
 
       {tickets && tickets.length === 0 ? (
-        <div 
-          
-          
-          className="flex flex-col items-center justify-center border border-dashed border-border/60 bg-card/30 p-16 md:p-24 text-center rounded-[2.5rem] mt-8 shadow-sm max-w-3xl mx-auto backdrop-blur-sm"
-        >
+        <div className="flex flex-col items-center justify-center border border-dashed border-border/60 bg-card/30 p-16 md:p-24 text-center rounded-[2.5rem] mt-8 shadow-sm max-w-3xl mx-auto backdrop-blur-sm stagger-card-in">
           <div className="mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-secondary/50 relative">
             <div className="absolute inset-0 bg-primary/10 rounded-full animate-ping opacity-20" />
             <TicketIcon className="h-12 w-12 text-muted-foreground/50" />
@@ -375,10 +352,7 @@ function EventList({ events, emptyMessage, type }: { events: any[]; emptyMessage
 
   if (events.length === 0) {
     return (
-      <div 
-         
-        className="rounded-3xl border border-dashed border-border/60 bg-card/30 py-20 text-center text-lg text-muted-foreground font-medium"
-      >
+      <div className="rounded-3xl border border-dashed border-border/60 bg-card/30 py-20 text-center text-lg text-muted-foreground font-medium stagger-card-in">
         {emptyMessage}
       </div>
     );
@@ -386,17 +360,12 @@ function EventList({ events, emptyMessage, type }: { events: any[]; emptyMessage
 
   return (
     <>
-      <div 
-        
-        initial="hidden"
-        animate="show"
-        className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:gap-8"
-      >
-        {events.map((ev) => (
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:gap-8">
+        {events.map((ev, i) => (
           <div
-            
             key={ev.id}
-            className="group relative flex flex-col overflow-hidden rounded-[2rem] bg-card border border-border/60 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/10 hover:border-primary/30"
+            className="group relative flex flex-col overflow-hidden rounded-[2rem] bg-card border border-border/60 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/10 hover:border-primary/30 stagger-card-in"
+            style={{ animationDelay: `${i * STAGGER_MS}ms` }}
           >
             <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary">
               {ev.cover_image_url ? (

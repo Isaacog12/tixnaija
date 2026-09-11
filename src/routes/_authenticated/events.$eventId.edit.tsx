@@ -138,7 +138,7 @@ function EditEventPage() {
         address: null,
         state: null,
         start_datetime: new Date(form.start_datetime).toISOString(),
-        end_datetime: form.end_datetime ? new Date(form.end_datetime).toISOString() : null,
+        end_datetime: form.end_datetime ? new Date(form.end_datetime).toISOString() : undefined,
         status: form.status,
       })
       .eq("id", eventId);
