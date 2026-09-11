@@ -203,7 +203,7 @@ function FAQSection({ section }: { section: FAQSection }) {
 
 function FAQPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <SiteNav />
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-border/50 bg-card/20 pb-16 pt-6 md:pb-24">

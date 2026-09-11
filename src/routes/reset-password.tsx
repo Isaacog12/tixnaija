@@ -68,7 +68,7 @@ function ResetPasswordPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center px-4 py-10">
+    <div className="relative flex min-h-dvh items-center justify-center px-4 py-10">
       <div className="pointer-events-none absolute inset-0 gradient-sunset opacity-10" />
       <div className="relative w-full max-w-md">
         <Link to="/" className="mb-6 flex items-baseline justify-center">

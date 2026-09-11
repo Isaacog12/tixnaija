@@ -90,7 +90,7 @@ function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-dvh relative overflow-hidden">
       <SiteNav />
 
       {/* Decorative Backgrounds */}

@@ -37,7 +37,7 @@ class AppErrorBoundary extends Component<
   render() {
     if (this.state.error) {
       return (
-        <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="flex min-h-dvh items-center justify-center bg-background px-4">
           <div className="max-w-md text-center">
             <h1 className="text-xl font-semibold tracking-tight">Something went wrong</h1>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -68,7 +68,7 @@ class AppErrorBoundary extends Component<
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
+    <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4">
       <div className="relative max-w-lg text-center">
         <div className="relative mb-2">
           <h1 className="font-display text-[120px] leading-none md:text-[160px] text-foreground select-none">
@@ -116,7 +116,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   }, [error]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="flex min-h-dvh items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight">Something went wrong</h1>
         <p className="mt-2 text-sm text-muted-foreground">

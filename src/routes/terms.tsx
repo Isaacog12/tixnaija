@@ -33,7 +33,7 @@ const LAST_UPDATED = "July 14, 2025";
 
 function TermsPage() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-dvh">
       <SiteNav />
       {/* ── Hero header ── */}
       <div className="relative overflow-hidden border-b border-border/60 pb-12 pt-6 md:pb-16">

@@ -419,7 +419,7 @@ function EventDetailPage() {
 
 
   return (
-    <div className="min-h-screen pb-32 md:pb-0">
+    <div className="min-h-dvh pb-32 md:pb-0">
       <SiteNav />
 
       {isLoading ? <EventSkeleton /> : isError || !data ? <EventMissing /> : (

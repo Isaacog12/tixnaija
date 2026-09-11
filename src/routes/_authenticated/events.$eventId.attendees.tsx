@@ -156,7 +156,7 @@ function AttendeesPage() {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <section className="bg-card border-b border-border shadow-sm mb-8 pt-8 pb-8 relative overflow-hidden">
         <div className="absolute inset-0 z-0 bg-gradient-to-r from-primary/5 to-transparent opacity-50" />
         <div className="mx-auto max-w-7xl px-4 relative z-10">

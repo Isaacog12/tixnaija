@@ -56,7 +56,7 @@ function SingleTicketPage() {
   }, [ticket, isLoading, isError]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <SiteNav />
       <section className="bg-card border-b border-border shadow-sm mb-10 pt-6 pb-8 relative overflow-hidden">
         <div className="mx-auto max-w-7xl px-4 w-full relative z-20 mb-4 md:mb-6">

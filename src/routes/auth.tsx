@@ -49,7 +49,7 @@ function AuthPage() {
   }, []);
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-background/50 p-4 sm:p-8">
+    <div className="relative flex min-h-dvh items-center justify-center bg-background/50 p-4 sm:p-8 pt-safe pb-safe">
       {/* Background decoration */}
       <div className="pointer-events-none absolute inset-0 gradient-sunset opacity-5" />
       

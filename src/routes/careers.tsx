@@ -40,7 +40,7 @@ const OPEN_ROLES = [
 
 function CareersPage() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-dvh">
       <SiteNav />
       {/* ── Hero header ── */}
       <div className="relative overflow-hidden border-b border-border/60 pb-12 pt-6 md:pb-16">

@@ -92,7 +92,7 @@ function Dashboard() {
 
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 md:py-12 min-h-screen">
+    <div className="mx-auto max-w-6xl px-4 py-8 md:py-12 min-h-dvh">
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-border pb-6">
         <div>
           <h1 className="type-heading-lg tracking-tight mb-2">Dashboard</h1>
@@ -103,16 +103,16 @@ function Dashboard() {
         <div className="flex flex-wrap items-center gap-3 shrink-0">
           {isAdmin && (
             <>
-              <Button asChild variant="outline" className="h-9 px-4 rounded-md border-border text-foreground hover:bg-secondary">
+              <Button asChild variant="outline" className="h-11 md:h-9 px-4 rounded-md border-border text-foreground hover:bg-secondary">
                 <Link to="/admin">Admin Panel</Link>
               </Button>
-              <Button asChild variant="outline" className="h-9 px-4 rounded-md border-border text-foreground hover:bg-secondary">
+              <Button asChild variant="outline" className="h-11 md:h-9 px-4 rounded-md border-border text-foreground hover:bg-secondary">
                 <Link to="/admin/organizer-applications">Review Apps</Link>
               </Button>
             </>
           )}
           {isOrganizer && (
-            <Button asChild className="h-9 px-5 rounded-full bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary/90 press-sm transition-transform duration-[120ms]">
+            <Button asChild className="h-11 md:h-9 px-5 rounded-full bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary/90 press-sm transition-transform duration-[120ms]">
               <Link to="/events/new">
                 <Plus className="mr-2 h-4 w-4" /> New Event
               </Link>

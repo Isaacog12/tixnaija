@@ -396,7 +396,7 @@ function AdminDashboard() {
   });
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 min-h-screen">
+    <div className="mx-auto max-w-7xl px-4 py-8 min-h-dvh">
       <AlertDialog open={!!takedownEvent} onOpenChange={() => setTakedownEvent(null)}>
         <AlertDialogContent className="rounded-3xl border-destructive/20 shadow-2xl">
           <AlertDialogHeader>

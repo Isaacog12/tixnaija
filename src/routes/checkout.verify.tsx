@@ -51,7 +51,7 @@ function VerifyCheckoutPage() {
   }, [reference]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <SiteNav />
       <div className="mx-auto max-w-7xl px-4 pt-6 w-full relative z-20">
         <BackButton />

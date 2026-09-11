@@ -253,7 +253,7 @@ function TicketsPage() {
   live.sort((a, b) => new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime());
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 md:py-20 min-h-screen">
+    <div className="mx-auto max-w-6xl px-4 py-12 md:py-20 min-h-dvh">
       <div className="mb-12">
         <div className="flex items-center gap-4 mb-4">
           <BackButton />

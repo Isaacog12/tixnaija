@@ -106,7 +106,7 @@ function AboutPage() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-dvh relative overflow-hidden">
       <SiteNav />
       <div className="mx-auto max-w-7xl px-4 pt-6 w-full relative z-20">
         <BackButton />

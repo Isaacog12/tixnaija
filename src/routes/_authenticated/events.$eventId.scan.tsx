@@ -158,7 +158,7 @@ function ScannerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black/95 text-white flex flex-col">
+    <div className="min-h-dvh bg-black/95 text-white flex flex-col">
       {/* Top Header */}
       <div className="p-4 flex items-center gap-4 bg-black/50 backdrop-blur-md sticky top-0 z-10 border-b border-white/10">
         <Button variant="ghost" size="icon" onClick={() => router.history.back()} className="text-white hover:bg-white/20">

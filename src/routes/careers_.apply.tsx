@@ -192,7 +192,7 @@ function ApplyPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-dvh">
         <SiteNav />
         <div className="mx-auto max-w-lg px-4 py-24 text-center">
           <div className="flex justify-center mb-6">
@@ -223,7 +223,7 @@ function ApplyPage() {
   const isLoading = submitting || isUploading;
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-dvh">
       <SiteNav />
 
       {/* Hero */}

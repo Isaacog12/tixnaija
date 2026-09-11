@@ -127,7 +127,7 @@ const staggerContainer = {
 
 function HowItWorksPage() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-dvh">
       <SiteNav />
       {/* ── Hero ── */}
       <div className="relative overflow-hidden border-b border-border/40 pt-6 pb-20 md:pb-32">

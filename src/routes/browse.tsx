@@ -151,7 +151,7 @@ function BrowsePage() {
   }, [query.data, activePrice]);
 
   return (
-    <div className="min-h-screen bg-background selection:bg-primary/20">
+    <div className="min-h-dvh bg-background selection:bg-primary/20">
       <SiteNav />
       
       {/* Compact Hero & Sticky Filter Section */}
@@ -191,7 +191,7 @@ function BrowsePage() {
                 <button
                   key={cat}
                   onClick={() => { setActiveCategory(cat); updateSearch({ c: cat }); }}
-                   className={`shrink-0 rounded-full px-5 py-1.5 text-xs font-semibold transition-all duration-[120ms] border press-sm ${
+                   className={`shrink-0 flex items-center justify-center rounded-full px-5 h-11 md:h-8 text-base md:text-xs font-semibold transition-all duration-[120ms] border press-sm ${
                     activeCategory === cat
                       ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
                       : "bg-card text-muted-foreground border-border/60 hover:bg-secondary hover:text-foreground hover:border-primary/30"
@@ -207,7 +207,7 @@ function BrowsePage() {
               <select
                 value={activeCategory}
                 onChange={(e) => { setActiveCategory(e.target.value); updateSearch({ c: e.target.value }); }}
-                className="w-full appearance-none bg-card border border-border/60 rounded-full pl-9 pr-9 py-2 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 hover:border-primary/40 transition-colors cursor-pointer shadow-sm"
+                className="w-full appearance-none bg-card border border-border/60 rounded-full pl-9 pr-9 h-11 md:h-9 text-base md:text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 hover:border-primary/40 transition-colors cursor-pointer shadow-sm"
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>
@@ -226,7 +226,7 @@ function BrowsePage() {
                  <select 
                    value={activeDate}
                    onChange={(e) => { setActiveDate(e.target.value as any); updateSearch({ date: e.target.value as any }); }}
-                   className="appearance-none bg-card border border-border/60 rounded-full pl-9 pr-9 py-2 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 hover:border-primary/40 transition-colors cursor-pointer shadow-sm"
+                   className="appearance-none bg-card border border-border/60 rounded-full pl-9 pr-9 h-11 md:h-9 text-base md:text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 hover:border-primary/40 transition-colors cursor-pointer shadow-sm"
                  >
                    <option value="all">Any Date</option>
                    <option value="today">Today</option>
@@ -242,7 +242,7 @@ function BrowsePage() {
                  <select 
                    value={activePrice}
                    onChange={(e) => { setActivePrice(e.target.value as any); updateSearch({ price: e.target.value as any }); }}
-                   className="appearance-none bg-card border border-border/60 rounded-full pl-9 pr-9 py-2 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 hover:border-primary/40 transition-colors cursor-pointer shadow-sm"
+                   className="appearance-none bg-card border border-border/60 rounded-full pl-9 pr-9 h-11 md:h-9 text-base md:text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 hover:border-primary/40 transition-colors cursor-pointer shadow-sm"
                  >
                    <option value="all">Any Price</option>
                    <option value="free">Free</option>
@@ -258,13 +258,13 @@ function BrowsePage() {
                <div className="flex items-center rounded-full border border-border/60 bg-card p-0.5 shadow-sm ml-2 hidden md:flex">
                  <button 
                    onClick={() => { setActiveView("grid"); updateSearch({ view: "grid" }); }}
-                   className={`p-1.5 rounded-full transition-all ${activeView === "grid" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                   className={`p-2 md:p-1.5 rounded-full transition-all ${activeView === "grid" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                  >
                    <Grid className="h-4 w-4" />
                  </button>
                  <button 
                    onClick={() => { setActiveView("list"); updateSearch({ view: "list" }); }}
-                   className={`p-1.5 rounded-full transition-all ${activeView === "list" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                   className={`p-2 md:p-1.5 rounded-full transition-all ${activeView === "list" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                  >
                    <List className="h-4 w-4" />
                  </button>

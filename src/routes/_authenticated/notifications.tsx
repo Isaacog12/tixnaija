@@ -125,7 +125,7 @@ function NotificationsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12 md:py-20 min-h-screen">
+    <div className="mx-auto max-w-4xl px-4 py-12 md:py-20 min-h-dvh">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between mb-12">
         <div className="relative z-10">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary mb-4 shadow-sm">

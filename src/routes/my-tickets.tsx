@@ -69,7 +69,7 @@ function GuestTicketsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <SiteNav />
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-border bg-card/30 pb-14 pt-6 md:pb-20">
