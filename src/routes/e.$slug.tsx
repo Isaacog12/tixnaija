@@ -115,6 +115,15 @@ export const Route = createFileRoute("/e/$slug")({
   },
 });
 
+// Helper for Supabase image transformations
+function optimizeImage(url: string | null | undefined, width: number): string | undefined {
+  if (!url) return undefined;
+  if (url.includes("/storage/v1/object/public/")) {
+    return url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/") + `?width=${width}&format=webp`;
+  }
+  return url;
+}
+
 type TicketType = {
   id: string;
   name: string;
@@ -128,27 +137,30 @@ type TicketType = {
 };
 
 async function fetchEventBySlug(slug: string) {
+  // We fetch event and ticket types in a single query via join
   const { data: _ev, error: eventErr } = await supabase
     .from("events")
-    .select("*, profiles!events_organizer_id_fkey(full_name)")
+    .select(`
+      id, title, slug, description, category, cover_image_url, venue_name, city, state, 
+      start_datetime, end_datetime, status, postponed_at, organizer_note, 
+      profiles!events_organizer_id_fkey(full_name),
+      ticket_types(id, name, description, price_kobo, quantity_available, quantity_sold, max_per_order, sales_start_at, sales_end_at)
+    `)
     .eq("slug", slug)
     .maybeSingle();
 
   if (eventErr) throw eventErr;
   if (!_ev) return null;
   const ev = _ev as any;
+  const types = ev.ticket_types || [];
+  delete ev.ticket_types; // keep structure identical for rest of code
 
-  const { data: types, error: typesErr } = await supabase
-    .from("ticket_types")
-    .select("*")
-    .eq("event_id", ev.id)
-    .order("price_kobo", { ascending: true });
-
-  if (typesErr) throw typesErr;
+  // Sort tickets by price locally since we fetched via join
+  types.sort((a: any, b: any) => a.price_kobo - b.price_kobo);
 
   return {
     event: ev,
-    types: (types || []) as TicketType[],
+    types: types as TicketType[],
   };
 }
 
@@ -205,6 +217,7 @@ function EventDetailPage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["event", slug],
     queryFn: () => fetchEventBySlug(slug),
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   const { data: similarEvents } = useQuery({
@@ -221,6 +234,7 @@ function EventDetailPage() {
       return evs || [];
     },
     enabled: !!data?.event,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   const [qty, setQty] = useState<Record<string, number>>({});
@@ -261,6 +275,7 @@ function EventDetailPage() {
       }
       return userData?.user ?? null;
     },
+    staleTime: 1000 * 60 * 5,
   });
 
   const userId = sessionUser?.id || null;
@@ -474,7 +489,7 @@ function EventDetailPage() {
               <FormField
                 control={form.control}
                 name="buyerName"
-                render={({ field }) => (
+                render={({ field }: { field: any }) => (
                   <FormItem>
                     <FormLabel>Your Full Name</FormLabel>
                     <FormControl>
@@ -488,7 +503,7 @@ function EventDetailPage() {
               <FormField
                 control={form.control}
                 name="buyerEmail"
-                render={({ field }) => (
+                render={({ field }: { field: any }) => (
                   <FormItem>
                     <FormLabel>Email Address</FormLabel>
                     <FormControl>
@@ -502,7 +517,7 @@ function EventDetailPage() {
               <FormField
                 control={form.control}
                 name="buyerPhone"
-                render={({ field }) => (
+                render={({ field }: { field: any }) => (
                   <FormItem>
                     <FormLabel>Phone Number (Optional)</FormLabel>
                     <FormControl>
@@ -517,7 +532,7 @@ function EventDetailPage() {
                 <FormField
                   control={form.control}
                   name="isGift"
-                  render={({ field }) => (
+                  render={({ field }: { field: any }) => (
                     <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-2">
                       <FormControl>
                         <Checkbox checked={field.value} onCheckedChange={field.onChange} />
@@ -534,7 +549,7 @@ function EventDetailPage() {
                     <FormField
                       control={form.control}
                       name="recipientName"
-                      render={({ field }) => (
+                      render={({ field }: { field: any }) => (
                         <FormItem>
                           <FormLabel>Recipient Name</FormLabel>
                           <FormControl>
@@ -547,7 +562,7 @@ function EventDetailPage() {
                     <FormField
                       control={form.control}
                       name="recipientEmail"
-                      render={({ field }) => (
+                      render={({ field }: { field: any }) => (
                         <FormItem>
                           <FormLabel>Recipient Email</FormLabel>
                           <FormControl>
@@ -560,7 +575,7 @@ function EventDetailPage() {
                     <FormField
                       control={form.control}
                       name="giftMessage"
-                      render={({ field }) => (
+                      render={({ field }: { field: any }) => (
                         <FormItem>
                           <FormLabel>Gift Message (Optional)</FormLabel>
                           <FormControl>
@@ -578,7 +593,7 @@ function EventDetailPage() {
                 <FormField
                   control={form.control}
                   name="promoCode"
-                  render={({ field }) => (
+                  render={({ field }: { field: any }) => (
                     <FormItem>
                       <FormLabel>Promo Code</FormLabel>
                       <div className="flex gap-2">
@@ -626,7 +641,7 @@ function EventDetailPage() {
                             <FormField
                               control={form.control}
                               name={`attendees.${it.type.id}.${idx}.name` as const}
-                              render={({ field }) => (
+                              render={({ field }: { field: any }) => (
                                 <FormItem>
                                   <FormControl>
                                     <Input placeholder="Attendee Name" {...field} />
@@ -638,7 +653,7 @@ function EventDetailPage() {
                             <FormField
                               control={form.control}
                               name={`attendees.${it.type.id}.${idx}.email` as const}
-                              render={({ field }) => (
+                              render={({ field }: { field: any }) => (
                                 <FormItem>
                                   <FormControl>
                                     <Input type="email" placeholder="Attendee Email" {...field} />
@@ -659,7 +674,7 @@ function EventDetailPage() {
                 <FormField
                   control={form.control}
                   name="termsAccepted"
-                  render={({ field }) => (
+                  render={({ field }: { field: any }) => (
                     <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-2">
                       <FormControl>
                         <Checkbox checked={field.value} onCheckedChange={field.onChange} />
@@ -734,7 +749,7 @@ function EventBody({
           <div className="relative overflow-hidden rounded-2xl border border-border">
             {event.cover_image_url ? (
               <img
-                src={event.cover_image_url}
+                src={optimizeImage(event.cover_image_url, 1200)}
                 alt={event.title}
                 fetchPriority="high"
                 decoding="async"
@@ -963,7 +978,7 @@ function SimilarEvents({ events }: { events: any[] }) {
             <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary">
               {ev.cover_image_url && (
                 <img
-                  src={ev.cover_image_url}
+                  src={optimizeImage(ev.cover_image_url, 400)}
                   alt={ev.title}
                   loading="lazy"
                   decoding="async"

@@ -6,21 +6,28 @@ import { Button } from "@/components/ui/button";
 import { SiteNav } from "@/components/site-nav";
 import { BackButton } from "@/components/back-button";
 
+import { z } from "zod";
+
+const verifySearchSchema = z.object({
+  reference: z.string().optional(),
+  trxref: z.string().optional(),
+});
+
 export const Route = createFileRoute("/checkout/verify")({
+  validateSearch: verifySearchSchema,
   component: VerifyCheckoutPage,
 });
 
 function VerifyCheckoutPage() {
-  const navigate = useNavigate();
-  const searchParams = new URLSearchParams(window.location.search);
-  const reference = searchParams.get("reference") || searchParams.get("trxref");
+  const searchParams = Route.useSearch();
+  const reference = searchParams.reference || searchParams.trxref;
   
   const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying");
   const [errorMsg, setErrorMsg] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setUserId(data.session?.user?.id || null));
+    supabase.auth.getSession().then(({ data }: { data: any }) => setUserId(data.session?.user?.id || null));
   }, []);
 
   useEffect(() => {

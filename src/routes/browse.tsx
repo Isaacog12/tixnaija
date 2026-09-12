@@ -35,7 +35,7 @@ export const Route = createFileRoute("/browse")({
 async function fetchEvents(q: string, category: string, dateFilter: string) {
   let query = supabase
     .from("events")
-    .select("id, title, slug, city, venue_name, start_datetime, end_datetime, cover_image_url, description, status, category")
+    .select("id, title, slug, city, venue_name, start_datetime, end_datetime, cover_image_url, description, status, category, ticket_types(price_kobo)")
     .in("status", ["published", "cancelled", "completed"])
     .order("start_datetime", { ascending: true })
     .limit(100);
@@ -82,20 +82,26 @@ async function fetchEvents(q: string, category: string, dateFilter: string) {
 
   const validEvents: any[] = data ?? [];
 
-  const ids = validEvents.map((e) => e.id);
   let minPrice: Record<string, number> = {};
-  if (ids.length) {
-    const { data: tts } = await supabase
-      .from("ticket_types")
-      .select("event_id, price_kobo")
-      .in("event_id", ids);
-    for (const t of tts ?? []) {
-      if (minPrice[t.event_id] === undefined || t.price_kobo < minPrice[t.event_id]) {
-        minPrice[t.event_id] = t.price_kobo;
-      }
+  for (const ev of validEvents) {
+    if (ev.ticket_types && ev.ticket_types.length > 0) {
+      minPrice[ev.id] = Math.min(...ev.ticket_types.map((t: any) => t.price_kobo));
+    } else {
+      minPrice[ev.id] = 0;
     }
+    delete ev.ticket_types; // Keep original object shape clean
   }
+  
   return { events: validEvents, minPrice };
+}
+
+// Helper for Supabase image transformations
+function optimizeImage(url: string | null | undefined, width: number): string | undefined {
+  if (!url) return undefined;
+  if (url.includes("/storage/v1/object/public/")) {
+    return url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/") + `?width=${width}&format=webp`;
+  }
+  return url;
 }
 
 const CATEGORIES = ["All", "Concerts", "Comedy", "Conferences", "Parties", "Church", "Campus", "Tech"];
@@ -121,12 +127,13 @@ function BrowsePage() {
   const query = useQuery({
     queryKey: ["browse", q ?? "", c ?? "All", date ?? "all"],
     queryFn: () => fetchEvents(q ?? "", c ?? "All", date ?? "all"),
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   const updateSearch = (updates: Partial<typeof searchSchema._type>) => {
     navigate({
       to: "/browse",
-      search: (prev) => ({
+      search: (prev: any) => ({
         ...prev,
         ...updates,
         q: updates.q !== undefined ? (updates.q || undefined) : prev.q,
@@ -348,7 +355,7 @@ function BrowsePage() {
                   <div className={`relative overflow-hidden bg-secondary/30 ${activeView === "list" ? "h-48 sm:h-full sm:w-2/5 shrink-0" : "aspect-[4/3] w-full"}`}>
                     {ev.cover_image_url ? (
                       <img
-                        src={ev.cover_image_url}
+                        src={optimizeImage(ev.cover_image_url, activeView === "list" ? 400 : 600)}
                         alt={ev.title}
                         loading="lazy"
                         decoding="async"

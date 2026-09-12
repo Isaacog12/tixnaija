@@ -5,9 +5,11 @@
 //     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { visualizer } from "rollup-plugin-visualizer";
 
 export default defineConfig({
   vite: {
+    plugins: [visualizer({ filename: "stats.html", gzipSize: true, template: "treemap" }) as any],
     optimizeDeps: {
       include: [
         "react",
