@@ -137,7 +137,7 @@ export function SiteNav() {
           </Link>
 
           {/* Desktop navigation with Motion-powered sliding pill */}
-          <nav className="hidden lg:flex items-center gap-0.5">
+          <nav className="hidden xl:flex items-center gap-0.5">
             {links.map((link) => (
               <Link
                 key={link.to}
@@ -198,6 +198,7 @@ export function SiteNav() {
                 asChild
                 variant="ghost"
                 size="icon"
+                aria-label="Notifications"
                 className="relative rounded-full h-10 w-10 sm:h-11 sm:w-11 hover:bg-secondary/60 press-sm transition-colors duration-[var(--duration-micro)]"
               >
                 <Link to="/notifications">
@@ -224,14 +225,12 @@ export function SiteNav() {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    size="sm"
-                    className="gap-2 sm:gap-3 rounded-full pl-1.5 sm:pl-2 pr-3 sm:pr-4 h-10 sm:h-11 press-sm border border-transparent hover:bg-secondary/60 hover:border-border/40 transition-all duration-[var(--duration-micro)]"
+                    size="icon"
+                    aria-label="Account menu"
+                    className="rounded-full h-10 w-10 sm:h-11 sm:w-11 press-sm border border-transparent hover:bg-secondary/60 hover:border-border/40 transition-all duration-[var(--duration-micro)]"
                   >
                     <span className="grid h-7 w-7 sm:h-8 sm:w-8 place-items-center rounded-full bg-primary/10 text-xs sm:text-sm font-bold text-primary shrink-0">
                       {(user.email ?? "?").slice(0, 1).toUpperCase()}
-                    </span>
-                    <span className="hidden max-w-[120px] sm:max-w-[160px] truncate text-sm md:inline font-semibold">
-                      {user.email}
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
@@ -300,7 +299,7 @@ export function SiteNav() {
               <Button
                 variant="outline"
                 size="icon"
-                className="lg:hidden rounded-full h-10 w-10 sm:h-11 sm:w-11 border-[var(--glass-border)] bg-[var(--glass-bg)] [backdrop-filter:var(--glass-blur)] press-sm"
+                className="xl:hidden rounded-full h-10 w-10 sm:h-11 sm:w-11 border-[var(--glass-border)] bg-[var(--glass-bg)] [backdrop-filter:var(--glass-blur)] press-sm"
               >
                 <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
                 <span className="sr-only">Toggle menu</span>
