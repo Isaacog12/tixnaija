@@ -180,7 +180,7 @@ export function SiteNav() {
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
-            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            aria-label="Toggle theme"
             className="rounded-full h-10 w-10 sm:h-11 sm:w-11 hover:bg-secondary/60 press-sm transition-colors duration-[var(--duration-micro)]"
           >
             {isDark ? (
@@ -321,7 +321,7 @@ export function SiteNav() {
                     variant="ghost"
                     size="icon"
                     onClick={toggleTheme}
-                    aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                    aria-label="Toggle theme"
                     className="rounded-full h-10 w-10 hover:bg-secondary/60 press-sm"
                   >
                     {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
