@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
 import { BackButton } from "@/components/back-button";
 
 export const Route = createFileRoute("/terms")({
@@ -307,6 +308,7 @@ function TermsPage() {
           </section>
         </main>
       </div>
+      <SiteFooter />
     </div>
   );
 }

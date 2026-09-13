@@ -5,6 +5,7 @@ import { Search, Calendar, MapPin, Compass, Flame, Frown, Grid, List, Tag, Calen
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
 import { BackButton } from "@/components/back-button";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -445,6 +446,7 @@ function BrowsePage() {
           </div>
         )}
       </section>
+      <SiteFooter />
     </div>
   );
 }

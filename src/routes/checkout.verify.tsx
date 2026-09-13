@@ -15,6 +15,9 @@ const verifySearchSchema = z.object({
 
 export const Route = createFileRoute("/checkout/verify")({
   validateSearch: verifySearchSchema,
+  head: () => ({
+    meta: [{ name: "robots", content: "noindex, nofollow" }],
+  }),
   component: VerifyCheckoutPage,
 });
 

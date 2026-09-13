@@ -452,7 +452,7 @@ function EventDetailPage() {
         const isPastEvent = end < new Date() || data.event.status === "completed";
         if (isPastEvent) return null;
         return (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-background/95 backdrop-blur md:hidden">
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-background/95 backdrop-blur md:hidden pb-[env(safe-area-inset-bottom)]">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
             <div className="min-w-0">
               <p className="text-xs uppercase tracking-widest text-muted-foreground">

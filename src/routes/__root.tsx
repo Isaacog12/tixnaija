@@ -145,41 +145,48 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" },
-      { title: "TixNaija — Nigerian event tickets, sold fast" },
-      {
-        name: "description",
-        content:
-          "Discover concerts, comedy shows, conferences and parties across Nigeria. Buy tickets and get an instant QR code from TixNaija.",
-      },
-      { name: "author", content: "TixNaija" },
-      { name: "theme-color", content: "#EA580C" },
-      { property: "og:title", content: "TixNaija — Nigerian event tickets, sold fast" },
-      {
-        property: "og:description",
-        content: "Discover concerts, comedy shows, conferences and parties across Nigeria. Buy tickets and get an instant QR code from TixNaija.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "TixNaija — Nigerian event tickets, sold fast" },
-      { name: "twitter:description", content: "Discover concerts, comedy shows, conferences and parties across Nigeria. Buy tickets and get an instant QR code from TixNaija." },
-      { property: "og:image", content: "/preview.jpg" },
-      { name: "twitter:image", content: "/preview.jpg" },
-    ],
-    links: [
-      { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/favicon.jpg", type: "image/jpeg" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
-      },
-    ],
-  }),
+  head: (ctx) => {
+    const pathname = ctx?.location?.pathname || "";
+    const canonicalUrl = `https://tixnaija.name.ng${pathname}`;
+
+    return {
+      meta: [
+        { charSet: "utf-8" },
+        { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" },
+        { title: "TixNaija — Nigerian event tickets, sold fast" },
+        {
+          name: "description",
+          content:
+            "Discover concerts, comedy shows, conferences and parties across Nigeria. Buy tickets and get an instant QR code from TixNaija.",
+        },
+        { name: "author", content: "TixNaija" },
+        { name: "theme-color", content: "#EA580C" },
+        { property: "og:title", content: "TixNaija — Nigerian event tickets, sold fast" },
+        {
+          property: "og:description",
+          content: "Discover concerts, comedy shows, conferences and parties across Nigeria. Buy tickets and get an instant QR code from TixNaija.",
+        },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: "TixNaija — Nigerian event tickets, sold fast" },
+        { name: "twitter:description", content: "Discover concerts, comedy shows, conferences and parties across Nigeria. Buy tickets and get an instant QR code from TixNaija." },
+        { property: "og:image", content: "/preview.jpg" },
+        { name: "twitter:image", content: "/preview.jpg" },
+      ],
+      links: [
+        { rel: "canonical", href: canonicalUrl },
+        { rel: "stylesheet", href: appCss },
+        { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+        { rel: "apple-touch-icon", href: "/logo.png" },
+        { rel: "preconnect", href: "https://fonts.googleapis.com" },
+        { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+        {
+          rel: "stylesheet",
+          href: "https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
+        },
+      ],
+    };
+  },
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,

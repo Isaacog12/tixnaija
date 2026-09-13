@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
 import { BackButton } from "@/components/back-button";
 import { useState } from "react";
 import { ChevronDown, LifeBuoy, Ticket, CreditCard, Calendar, MessageCircle, AlertCircle } from "lucide-react";
@@ -254,25 +255,7 @@ function FAQPage() {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="border-t border-border/50 py-8">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 text-xs text-muted-foreground md:flex-row">
-          <div className="flex items-baseline gap-0">
-            <span className="font-display text-xl leading-none tracking-[0.02em] text-foreground">TIX</span>
-            <span className="font-display text-xl leading-none tracking-[0.02em] font-light text-gradient-sunset">NAIJA</span>
-          </div>
-          <div className="flex gap-4">
-            <Link to="/how-it-works" className="hover:text-primary transition">Guide</Link>
-            <Link to="/faq" className="hover:text-primary transition text-primary font-medium">Help / FAQ</Link>
-            <Link to="/about" className="hover:text-primary transition">Contact</Link>
-            <Link to="/terms" className="hover:text-primary transition">Terms</Link>
-            <Link to="/privacy" className="hover:text-primary transition">Privacy</Link>
-            <Link to="/careers" className="hover:text-primary transition">Careers</Link>
-          </div>
-          <p>© {new Date().getFullYear()} — Buy tickets. Turn up. Repeat.</p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

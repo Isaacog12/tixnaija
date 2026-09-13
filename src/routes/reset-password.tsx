@@ -15,7 +15,7 @@ export const Route = createFileRoute("/reset-password")({
     meta: [
       { title: "Set a new password — TixNaija" },
       { name: "description", content: "Choose a new password for your TixNaija account." },
-      { name: "robots", content: "noindex" },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
 });
