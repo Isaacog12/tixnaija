@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { ArrowLeft, ImagePlus, Plus, Trash2, Loader2, Check, Calendar, MapPin, ChevronRight, ChevronLeft } from "lucide-react";
