@@ -67,26 +67,19 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "What if my event is cancelled?",
-        a: "If an organizer cancels an event, all ticket holders are eligible for a full refund. You'll receive an email notification and can request a refund directly from your My Tickets page.",
+        a: "If an event gets cancelled, the organizer will refund all money back to the ticket holders. You will receive an email notification regarding the cancellation and refund process.",
       },
       {
         q: "What if an event is postponed?",
-        a: "If an event is postponed, you can choose to keep your ticket (it remains valid for the new date) or request a refund. The choice is yours — check your email for the notice and options.",
+        a: "If an event is postponed, you can choose to keep your ticket (it remains valid for the new date) or contact us via email to request a refund.",
       },
       {
         q: "Can I get a refund if I just change my mind?",
-        a: "Change-of-mind refunds are at the organizer's discretion and are not guaranteed. We recommend checking the event's refund policy before purchasing. If you have a special circumstance, use the 'Request Refund' button on your ticket and explain your situation.",
+        a: "Change-of-mind refunds are at the organizer's discretion and are not guaranteed. We recommend checking the event's refund policy before purchasing. If you have a special circumstance, please send us an email explaining your situation.",
       },
       {
         q: "How do I request a refund?",
-        a: (
-          <>
-            Go to <strong>My Tickets</strong>, find the event, and click the{" "}
-            <strong>Request Refund</strong> button. Fill in the reason and submit — the
-            organizer and TixNaija team will review it and get back to you within 2 business
-            days.
-          </>
-        ),
+        a: "To request a refund, please send us an email with your order details and the reason for the request. The TixNaija team and the organizer will review it and get back to you.",
       },
     ],
   },

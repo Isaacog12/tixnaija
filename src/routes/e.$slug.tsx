@@ -22,7 +22,14 @@ import { SiteNav } from "@/components/site-nav";
 import { z } from "zod";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/e/$slug")({
@@ -32,14 +39,20 @@ export const Route = createFileRoute("/e/$slug")({
   },
   head: ({ loaderData, params }) => {
     if (!loaderData || !loaderData.event) {
-      return { meta: [{ title: 'Event - TixNaija' }] };
+      return { meta: [{ title: "Event - TixNaija" }] };
     }
     const { event, types } = loaderData;
-    
-    const dateStr = event.start_datetime ? new Date(event.start_datetime).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-    const cityPart = event.city ? ` — ${event.city}` : '';
+
+    const dateStr = event.start_datetime
+      ? new Date(event.start_datetime).toLocaleDateString("en-NG", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
+      : "";
+    const cityPart = event.city ? ` — ${event.city}` : "";
     const title = `${event.title}${cityPart} | TixNaija`;
-    
+
     let desc = `Get tickets for ${event.title}`;
     if (dateStr) desc += ` on ${dateStr}`;
     if (event.city) desc += ` in ${event.city}`;
@@ -71,18 +84,24 @@ export const Route = createFileRoute("/e/$slug")({
     let eventStatus = "https://schema.org/EventScheduled";
     if (event.status === "cancelled") eventStatus = "https://schema.org/EventCancelled";
     else if (event.postponed_at) eventStatus = "https://schema.org/EventPostponed";
-    else if (event.status === "completed" || new Date(event.end_datetime || event.start_datetime) < new Date()) {
+    else if (
+      event.status === "completed" ||
+      new Date(event.end_datetime || event.start_datetime) < new Date()
+    ) {
       availability = "https://schema.org/OutOfStock";
     }
 
     return {
       meta: [
         { title },
-        { name: 'description', content: desc },
-        { property: 'og:title', content: title },
-        { property: 'og:description', content: desc },
-        { property: 'og:image', content: event.cover_image_url || 'https://www.tixnaija.name.ng/preview.jpg' },
-        { property: 'twitter:card', content: 'summary_large_image' },
+        { name: "description", content: desc },
+        { property: "og:title", content: title },
+        { property: "og:description", content: desc },
+        {
+          property: "og:image",
+          content: event.cover_image_url || "https://www.tixnaija.name.ng/preview.jpg",
+        },
+        { property: "twitter:card", content: "summary_large_image" },
       ],
       scripts: [
         {
@@ -90,27 +109,27 @@ export const Route = createFileRoute("/e/$slug")({
           children: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "Event",
-            "name": event.title,
-            "description": desc,
-            "startDate": event.start_datetime,
-            "endDate": event.end_datetime || event.start_datetime,
-            "eventStatus": eventStatus,
-            "location": {
+            name: event.title,
+            description: desc,
+            startDate: event.start_datetime,
+            endDate: event.end_datetime || event.start_datetime,
+            eventStatus: eventStatus,
+            location: {
               "@type": "Place",
-              "name": event.venue_name || event.city || "TBD",
-              "address": [event.city, event.state].filter(Boolean).join(", ") || "Nigeria"
+              name: event.venue_name || event.city || "TBD",
+              address: [event.city, event.state].filter(Boolean).join(", ") || "Nigeria",
             },
-            "image": event.cover_image_url ? [event.cover_image_url] : [],
-            "offers": {
+            image: event.cover_image_url ? [event.cover_image_url] : [],
+            offers: {
               "@type": "Offer",
-              "price": minPrice,
-              "priceCurrency": "NGN",
-              "availability": availability,
-              "url": `https://www.tixnaija.name.ng/e/${params.slug}`
-            }
-          })
-        }
-      ]
+              price: minPrice,
+              priceCurrency: "NGN",
+              availability: availability,
+              url: `https://www.tixnaija.name.ng/e/${params.slug}`,
+            },
+          }),
+        },
+      ],
     };
   },
 });
@@ -119,7 +138,10 @@ export const Route = createFileRoute("/e/$slug")({
 function optimizeImage(url: string | null | undefined, width: number): string | undefined {
   if (!url) return undefined;
   if (url.includes("/storage/v1/object/public/")) {
-    return url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/") + `?width=${width}&format=webp`;
+    return (
+      url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/") +
+      `?width=${width}&format=webp`
+    );
   }
   return url;
 }
@@ -131,6 +153,7 @@ type TicketType = {
   price_kobo: number;
   quantity_available: number;
   quantity_sold: number;
+  quantity_cancelled?: number;
   max_per_order: number | null;
   sales_start_at: string | null;
   sales_end_at: string | null;
@@ -140,12 +163,14 @@ async function fetchEventBySlug(slug: string) {
   // We fetch event and ticket types in a single query via join
   const { data: _ev, error: eventErr } = await supabase
     .from("events")
-    .select(`
+    .select(
+      `
       id, title, slug, description, category, cover_image_url, venue_name, city, state, 
       start_datetime, end_datetime, status, postponed_at, organizer_note, 
       profiles!events_organizer_id_fkey(full_name),
       ticket_types(id, name, description, price_kobo, quantity_available, quantity_sold, max_per_order, sales_start_at, sales_end_at)
-    `)
+    `,
+    )
     .eq("slug", slug)
     .maybeSingle();
 
@@ -164,49 +189,69 @@ async function fetchEventBySlug(slug: string) {
   };
 }
 
-const checkoutSchema = z.object({
-  buyerName: z.string().min(1, "Full name is required"),
-  buyerEmail: z.string().email("Invalid email address"),
-  buyerPhone: z.string().optional(),
-  isGift: z.boolean(),
-  recipientName: z.string().optional(),
-  recipientEmail: z.string().optional(),
-  giftMessage: z.string().optional(),
-  promoCode: z.string().optional(),
-  termsAccepted: z.boolean().refine(val => val === true, "You must agree to the Terms of Service and Privacy Policy"),
-  attendees: z.record(
-    z.string(),
-    z.array(
-      z.object({
-        name: z.string(),
-        email: z.string(),
-      })
-    )
-  ),
-}).superRefine((data, ctx) => {
-  if (data.isGift) {
-    if (!data.recipientName || data.recipientName.trim().length === 0) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Recipient name is required", path: ["recipientName"] });
+const checkoutSchema = z
+  .object({
+    buyerName: z.string().min(1, "Full name is required"),
+    buyerEmail: z.string().email("Invalid email address"),
+    buyerPhone: z.string().optional(),
+    isGift: z.boolean(),
+    recipientName: z.string().optional(),
+    recipientEmail: z.string().optional(),
+    giftMessage: z.string().optional(),
+    promoCode: z.string().optional(),
+    termsAccepted: z
+      .boolean()
+      .refine((val) => val === true, "You must agree to the Terms of Service and Privacy Policy"),
+    attendees: z.record(
+      z.string(),
+      z.array(
+        z.object({
+          name: z.string(),
+          email: z.string(),
+        }),
+      ),
+    ),
+  })
+  .superRefine((data, ctx) => {
+    if (data.isGift) {
+      if (!data.recipientName || data.recipientName.trim().length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Recipient name is required",
+          path: ["recipientName"],
+        });
+      }
+      if (!data.recipientEmail || !/^\S+@\S+\.\S+$/.test(data.recipientEmail)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Valid recipient email is required",
+          path: ["recipientEmail"],
+        });
+      }
     }
-    if (!data.recipientEmail || !/^\S+@\S+\.\S+$/.test(data.recipientEmail)) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Valid recipient email is required", path: ["recipientEmail"] });
-    }
-  }
-  
-  const totalCount = Object.values(data.attendees).reduce((sum, arr) => sum + arr.length, 0);
-  if (totalCount > 1) {
-    Object.entries(data.attendees).forEach(([ticketId, arr]) => {
-      arr.forEach((attendee, idx) => {
-        if (!attendee.name || attendee.name.trim().length === 0) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Name is required", path: ["attendees", ticketId, idx, "name"] });
-        }
-        if (!attendee.email || !/^\S+@\S+\.\S+$/.test(attendee.email)) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Valid email is required", path: ["attendees", ticketId, idx, "email"] });
-        }
+
+    const totalCount = Object.values(data.attendees).reduce((sum, arr) => sum + arr.length, 0);
+    if (totalCount > 1) {
+      Object.entries(data.attendees).forEach(([ticketId, arr]) => {
+        arr.forEach((attendee, idx) => {
+          if (!attendee.name || attendee.name.trim().length === 0) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Name is required",
+              path: ["attendees", ticketId, idx, "name"],
+            });
+          }
+          if (!attendee.email || !/^\S+@\S+\.\S+$/.test(attendee.email)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Valid email is required",
+              path: ["attendees", ticketId, idx, "email"],
+            });
+          }
+        });
       });
-    });
-  }
-});
+    }
+  });
 
 type CheckoutFormValues = z.infer<typeof checkoutSchema>;
 
@@ -241,7 +286,19 @@ function EventDetailPage() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
 
-  const [appliedPromo, setAppliedPromo] = useState<{ id: string; discount_type: string; discount_value: number } | null>(null);
+  const [waitlistTier, setWaitlistTier] = useState<TicketType | null>(null);
+  const [waitlistOpen, setWaitlistOpen] = useState(false);
+  const [waitlistBusy, setWaitlistBusy] = useState(false);
+
+  const waitlistForm = useForm({
+    defaultValues: { name: "", email: "" },
+  });
+
+  const [appliedPromo, setAppliedPromo] = useState<{
+    id: string;
+    discount_type: string;
+    discount_value: number;
+  } | null>(null);
   const [validatingPromo, setValidatingPromo] = useState(false);
 
   const form = useForm<CheckoutFormValues>({
@@ -270,8 +327,16 @@ function EventDetailPage() {
       const { data: userData } = await supabase.auth.getUser();
       if (userData?.user) {
         form.setValue("buyerEmail", userData.user.email || "");
-        const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", userData.user.id).maybeSingle();
-        if ((profile as any)?.full_name) form.setValue("buyerName", (profile as any).full_name);
+        waitlistForm.setValue("email", userData.user.email || "");
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", userData.user.id)
+          .maybeSingle();
+        if ((profile as any)?.full_name) {
+          form.setValue("buyerName", (profile as any).full_name);
+          waitlistForm.setValue("name", (profile as any).full_name);
+        }
       }
       return userData?.user ?? null;
     },
@@ -283,7 +348,11 @@ function EventDetailPage() {
   const items = useMemo(() => {
     if (!data) return [] as { type: TicketType; count: number; subtotal: number }[];
     return data.types
-      .map((t: TicketType) => ({ type: t, count: qty[t.id] ?? 0, subtotal: (qty[t.id] ?? 0) * t.price_kobo }))
+      .map((t: TicketType) => ({
+        type: t,
+        count: qty[t.id] ?? 0,
+        subtotal: (qty[t.id] ?? 0) * t.price_kobo,
+      }))
       .filter((i: { count: number }) => i.count > 0);
   }, [data, qty]);
 
@@ -291,7 +360,7 @@ function EventDetailPage() {
   let discountKobo = 0;
   if (appliedPromo) {
     if (appliedPromo.discount_type === "percent") {
-      discountKobo = Math.floor(subtotalKobo * appliedPromo.discount_value / 100);
+      discountKobo = Math.floor((subtotalKobo * appliedPromo.discount_value) / 100);
     } else {
       discountKobo = appliedPromo.discount_value;
     }
@@ -319,9 +388,9 @@ function EventDetailPage() {
     if (!promoCodeValue || !promoCodeValue.trim() || !data) return;
     setValidatingPromo(true);
     try {
-      const { data: res, error } = await supabase.rpc('validate_promo_code', {
+      const { data: res, error } = await supabase.rpc("validate_promo_code", {
         p_event_id: data.event.id,
-        p_code: promoCodeValue.trim()
+        p_code: promoCodeValue.trim(),
       } as any);
       if (error) throw error;
       if (!res) throw new Error("Invalid promo code");
@@ -347,21 +416,48 @@ function EventDetailPage() {
     setCheckoutOpen(true);
   }
 
+  async function handleJoinWaitlist(values: { name: string; email: string }) {
+    if (!waitlistTier || !data?.event) return;
+    setWaitlistBusy(true);
+    try {
+      const { error } = await supabase.from("waitlist_entries").insert({
+        event_id: data.event.id,
+        ticket_tier_id: waitlistTier.id,
+        user_id: userId,
+        name: values.name,
+        email: values.email,
+        status: "waiting",
+      });
+      if (error) {
+        if (error.code === "23505")
+          throw new Error("You are already on the waitlist for this ticket tier.");
+        throw error;
+      }
+      toast.success("You've been added to the waitlist!");
+      setWaitlistOpen(false);
+      setWaitlistTier(null);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to join waitlist");
+    } finally {
+      setWaitlistBusy(false);
+    }
+  }
+
   async function handleCheckoutSubmit(values: CheckoutFormValues) {
     setCheckoutBusy(true);
     try {
       const ticketsPayload = items.map((i: { type: TicketType; count: number }) => ({
         ticketTypeId: i.type.id,
         count: i.count,
-        attendee_names: (values.attendees[i.type.id] ?? []).map(a => a.name || values.buyerName),
-        attendee_emails: (values.attendees[i.type.id] ?? []).map(a => a.email || values.buyerEmail),
+        attendee_names: (values.attendees[i.type.id] ?? []).map((a) => a.name || values.buyerName),
+        attendee_emails: (values.attendees[i.type.id] ?? []).map(
+          (a) => a.email || values.buyerEmail,
+        ),
       }));
-
-
 
       if (totalKobo === 0) {
         // Handle free tickets locally
-        const { data: orderId, error: checkoutError } = await supabase.rpc('process_checkout', {
+        const { data: orderId, error: checkoutError } = await supabase.rpc("process_checkout", {
           p_event_id: data!.event.id,
           p_user_id: (userId || null) as string,
           p_buyer_name: values.buyerName,
@@ -390,7 +486,9 @@ function EventDetailPage() {
         }
 
         if (!userId) {
-          toast.success("Free ticket claimed! View your ticket using the email you provided.", { duration: 6000 });
+          toast.success("Free ticket claimed! View your ticket using the email you provided.", {
+            duration: 6000,
+          });
           navigate({ to: "/my-tickets" });
         } else {
           toast.success("Free ticket claimed successfully!");
@@ -413,13 +511,16 @@ function EventDetailPage() {
         giftMessage: values.isGift ? values.giftMessage : null,
       };
 
-      const { data: initData, error: initErr } = await supabase.functions.invoke("initialize-payment", {
-        body: {
-          email: values.buyerEmail,
-          amount: totalKobo / 100, // edge fn multiplies by 100
-          metadata,
+      const { data: initData, error: initErr } = await supabase.functions.invoke(
+        "initialize-payment",
+        {
+          body: {
+            email: values.buyerEmail,
+            amount: totalKobo / 100, // edge fn multiplies by 100
+            metadata,
+          },
         },
-      });
+      );
       if (initErr) throw initErr;
       if (initData?.error) throw new Error(initData.error);
       if (!initData?.authorization_url) throw new Error("Could not start payment.");
@@ -432,55 +533,73 @@ function EventDetailPage() {
     }
   }
 
-
   return (
     <div className="min-h-dvh pb-32 md:pb-0">
       <SiteNav />
 
-      {isLoading ? <EventSkeleton /> : isError || !data ? <EventMissing /> : (
+      {isLoading ? (
+        <EventSkeleton />
+      ) : isError || !data ? (
+        <EventMissing />
+      ) : (
         <>
-          <EventBody event={data.event} types={data.types} qty={qty} setCount={setCount} onCheckout={onCheckout} totalCount={totalCount} totalKobo={totalKobo} />
-          {similarEvents && similarEvents.length > 0 && (
-            <SimilarEvents events={similarEvents} />
-          )}
+          <EventBody
+            event={data.event}
+            types={data.types}
+            qty={qty}
+            setCount={setCount}
+            onCheckout={onCheckout}
+            totalCount={totalCount}
+            totalKobo={totalKobo}
+            onJoinWaitlist={(t) => {
+              setWaitlistTier(t);
+              setWaitlistOpen(true);
+            }}
+          />
+          {similarEvents && similarEvents.length > 0 && <SimilarEvents events={similarEvents} />}
         </>
       )}
 
-      {data && data.event.status !== "cancelled" && (() => {
-        const start = new Date(data.event.start_datetime);
-        const end = data.event.end_datetime ? new Date(data.event.end_datetime) : start;
-        const isPastEvent = end < new Date() || data.event.status === "completed";
-        if (isPastEvent) return null;
-        return (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-background/95 backdrop-blur md:hidden pb-[env(safe-area-inset-bottom)]">
-          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
-            <div className="min-w-0">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                {totalCount ? `${totalCount} ticket${totalCount === 1 ? "" : "s"}` : "No tickets yet"}
-              </p>
-              <p className="truncate font-display text-xl leading-none">
-                {totalKobo ? formatNaira(totalKobo) : "Pick a tier"}
-              </p>
+      {data &&
+        data.event.status !== "cancelled" &&
+        (() => {
+          const start = new Date(data.event.start_datetime);
+          const end = data.event.end_datetime ? new Date(data.event.end_datetime) : start;
+          const isPastEvent = end < new Date() || data.event.status === "completed";
+          if (isPastEvent) return null;
+          return (
+            <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-background/95 backdrop-blur md:hidden pb-[env(safe-area-inset-bottom)]">
+              <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
+                <div className="min-w-0">
+                  <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                    {totalCount
+                      ? `${totalCount} ticket${totalCount === 1 ? "" : "s"}`
+                      : "No tickets yet"}
+                  </p>
+                  <p className="truncate font-display text-xl leading-none">
+                    {totalKobo ? formatNaira(totalKobo) : "Pick a tier"}
+                  </p>
+                </div>
+                <Button
+                  onClick={onCheckout}
+                  disabled={!totalCount}
+                  size="lg"
+                  className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90 disabled:opacity-40"
+                >
+                  Buy tickets
+                </Button>
+              </div>
             </div>
-            <Button
-              onClick={onCheckout}
-              disabled={!totalCount}
-              size="lg"
-              className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90 disabled:opacity-40"
-            >
-              Buy tickets
-            </Button>
-          </div>
-        </div>
-        );
-      })()}
+          );
+        })()}
 
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
         <DialogContent className="sm:max-w-[480px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Complete Checkout</DialogTitle>
             <DialogDescription>
-              You're buying {totalCount} ticket{totalCount === 1 ? "" : "s"} for {formatNaira(totalKobo)}.
+              You're buying {totalCount} ticket{totalCount === 1 ? "" : "s"} for{" "}
+              {formatNaira(totalKobo)}.
             </DialogDescription>
           </DialogHeader>
 
@@ -566,7 +685,11 @@ function EventDetailPage() {
                         <FormItem>
                           <FormLabel>Recipient Email</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="Where to send the tickets" {...field} />
+                            <Input
+                              type="email"
+                              placeholder="Where to send the tickets"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -598,14 +721,34 @@ function EventDetailPage() {
                       <FormLabel>Promo Code</FormLabel>
                       <div className="flex gap-2">
                         <FormControl>
-                          <Input placeholder="e.g. EARLYBIRD" disabled={!!appliedPromo} {...field} />
+                          <Input
+                            placeholder="e.g. EARLYBIRD"
+                            disabled={!!appliedPromo}
+                            {...field}
+                          />
                         </FormControl>
                         {!appliedPromo ? (
-                          <Button type="button" variant="secondary" onClick={applyPromo} disabled={validatingPromo || !field.value?.trim()}>
-                            {validatingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={applyPromo}
+                            disabled={validatingPromo || !field.value?.trim()}
+                          >
+                            {validatingPromo ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              "Apply"
+                            )}
                           </Button>
                         ) : (
-                          <Button type="button" variant="destructive" onClick={() => { setAppliedPromo(null); form.setValue("promoCode", ""); }}>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            onClick={() => {
+                              setAppliedPromo(null);
+                              form.setValue("promoCode", "");
+                            }}
+                          >
                             Remove
                           </Button>
                         )}
@@ -616,7 +759,10 @@ function EventDetailPage() {
                 />
                 {appliedPromo && (
                   <p className="text-xs text-green-500 font-medium">
-                    {appliedPromo.discount_type === "percent" ? `${appliedPromo.discount_value}%` : formatNaira(appliedPromo.discount_value)} discount applied!
+                    {appliedPromo.discount_type === "percent"
+                      ? `${appliedPromo.discount_value}%`
+                      : formatNaira(appliedPromo.discount_value)}{" "}
+                    discount applied!
                   </p>
                 )}
               </div>
@@ -626,7 +772,8 @@ function EventDetailPage() {
                   <div>
                     <p className="text-sm font-semibold">Ticket Assignments</p>
                     <p className="text-xs text-muted-foreground">
-                      Since you're buying {totalCount} tickets, please assign them to the attendees. Each person will receive their own ticket via email.
+                      Since you're buying {totalCount} tickets, please assign them to the attendees.
+                      Each person will receive their own ticket via email.
                     </p>
                   </div>
                   {items.map((it) => (
@@ -635,7 +782,10 @@ function EventDetailPage() {
                         {it.type.name}
                       </p>
                       {Array.from({ length: it.count }).map((_, idx) => (
-                        <div key={idx} className="flex flex-col gap-2 rounded-lg bg-secondary/20 p-3">
+                        <div
+                          key={idx}
+                          className="flex flex-col gap-2 rounded-lg bg-secondary/20 p-3"
+                        >
                           <p className="text-xs font-medium text-foreground/80">Ticket {idx + 1}</p>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                             <FormField
@@ -681,7 +831,23 @@ function EventDetailPage() {
                       </FormControl>
                       <div className="space-y-1 leading-none">
                         <FormLabel className="text-xs text-muted-foreground font-normal leading-relaxed">
-                          I agree to the <Link to="/terms" target="_blank" className="text-primary hover:underline">Terms of Service</Link> and <Link to="/privacy" target="_blank" className="text-primary hover:underline">Privacy Policy</Link>.
+                          I agree to the{" "}
+                          <Link
+                            to="/terms"
+                            target="_blank"
+                            className="text-primary hover:underline"
+                          >
+                            Terms of Service
+                          </Link>{" "}
+                          and{" "}
+                          <Link
+                            to="/privacy"
+                            target="_blank"
+                            className="text-primary hover:underline"
+                          >
+                            Privacy Policy
+                          </Link>
+                          .
                         </FormLabel>
                         <FormMessage />
                       </div>
@@ -690,9 +856,62 @@ function EventDetailPage() {
                 />
               </div>
 
-              <Button type="submit" disabled={checkoutBusy} className="w-full gradient-sunset text-primary-foreground shadow-glow mt-4">
+              <Button
+                type="submit"
+                disabled={checkoutBusy}
+                className="w-full gradient-sunset text-primary-foreground shadow-glow mt-4"
+              >
                 {checkoutBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 {totalKobo === 0 ? "Get free tickets" : `Pay ${formatNaira(totalKobo)}`}
+              </Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={waitlistOpen} onOpenChange={setWaitlistOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Join Waitlist</DialogTitle>
+            <DialogDescription>
+              {waitlistTier?.name} is currently sold out. Join the waitlist to be notified if
+              tickets become available.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...waitlistForm}>
+            <form
+              onSubmit={waitlistForm.handleSubmit(handleJoinWaitlist)}
+              className="space-y-4 pt-4"
+            >
+              <FormField
+                control={waitlistForm.control}
+                name="name"
+                render={({ field }: { field: any }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Your name" required {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={waitlistForm.control}
+                name="email"
+                render={({ field }: { field: any }) => (
+                  <FormItem>
+                    <FormLabel>Email Address</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="Your email" required {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" disabled={waitlistBusy} className="w-full mt-4">
+                {waitlistBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Join Waitlist
               </Button>
             </form>
           </Form>
@@ -710,6 +929,7 @@ function EventBody({
   onCheckout,
   totalCount,
   totalKobo,
+  onJoinWaitlist,
 }: {
   event: NonNullable<Awaited<ReturnType<typeof fetchEventBySlug>>>["event"];
   types: TicketType[];
@@ -718,9 +938,12 @@ function EventBody({
   onCheckout: () => void;
   totalCount: number;
   totalKobo: number;
+  onJoinWaitlist: (tier: TicketType) => void;
 }) {
   const start = new Date(event.start_datetime);
-  const end = event.end_datetime ? new Date(event.end_datetime) : new Date(start.getTime() + 24 * 60 * 60 * 1000);
+  const end = event.end_datetime
+    ? new Date(event.end_datetime)
+    : new Date(start.getTime() + 24 * 60 * 60 * 1000);
   const now = new Date();
   const isPastEvent = end < now || event.status === "completed";
 
@@ -729,19 +952,27 @@ function EventBody({
       {event.status === "cancelled" && (
         <div className="mb-8 rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-destructive">
           <h2 className="font-semibold text-lg">Event Cancelled</h2>
-          <p className="text-sm mt-1">{event.organizer_note || "This event has been cancelled by the organizer. Ticket holders have been notified regarding refunds."}</p>
+          <p className="text-sm mt-1">
+            {event.organizer_note ||
+              "This event has been cancelled by the organizer. Ticket holders have been notified regarding refunds."}
+          </p>
         </div>
       )}
       {isPastEvent && event.status !== "cancelled" && (
         <div className="mb-8 rounded-xl border border-muted-foreground/30 bg-muted/20 p-4 text-muted-foreground">
           <h2 className="font-semibold text-lg">Event Ended</h2>
-          <p className="text-sm mt-1">This event has already ended. Tickets are no longer available for purchase.</p>
+          <p className="text-sm mt-1">
+            This event has already ended. Tickets are no longer available for purchase.
+          </p>
         </div>
       )}
       {event.postponed_at && event.status !== "cancelled" && !isPastEvent && (
         <div className="mb-8 rounded-xl border border-amber-500/50 bg-amber-500/10 p-4 text-amber-600 dark:text-amber-400">
           <h2 className="font-semibold text-lg">Event Postponed</h2>
-          <p className="text-sm mt-1">{event.organizer_note || "This event has been postponed to a new date. Previously purchased tickets remain valid."}</p>
+          <p className="text-sm mt-1">
+            {event.organizer_note ||
+              "This event has been postponed to a new date. Previously purchased tickets remain valid."}
+          </p>
         </div>
       )}
       <div className="grid gap-8 md:grid-cols-[1.4fr_1fr] md:gap-10">
@@ -784,7 +1015,9 @@ function EventBody({
             <div className="mt-2 flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <BackButton />
-                <h1 className="font-display text-3xl leading-[0.95] md:text-5xl lg:text-6xl">{event.title}</h1>
+                <h1 className="font-display text-3xl leading-[0.95] md:text-5xl lg:text-6xl">
+                  {event.title}
+                </h1>
               </div>
               <Button
                 variant="outline"
@@ -792,11 +1025,13 @@ function EventBody({
                 className="shrink-0"
                 onClick={() => {
                   if (navigator.share) {
-                    navigator.share({
-                      title: event.title,
-                      text: "Check out this event on TixNaija!",
-                      url: window.location.href,
-                    }).catch(() => {});
+                    navigator
+                      .share({
+                        title: event.title,
+                        text: "Check out this event on TixNaija!",
+                        url: window.location.href,
+                      })
+                      .catch(() => {});
                   } else {
                     navigator.clipboard.writeText(window.location.href);
                     toast.success("Link copied to clipboard");
@@ -852,11 +1087,15 @@ function EventBody({
                 const salesEnd = t.sales_end_at ? new Date(t.sales_end_at) : null;
                 const isStarted = !salesStart || now >= salesStart;
                 const isEnded = salesEnd && now >= salesEnd;
-                const remaining = Math.max(0, t.quantity_available - t.quantity_sold);
-                const soldOut = remaining === 0;
-                const unavailable = !isStarted || isEnded || soldOut || event.status === "cancelled" || isPastEvent;
+                const remaining = Math.max(
+                  0,
+                  t.quantity_available - (t.quantity_sold - (t.quantity_cancelled || 0)),
+                );
+                const soldOut = remaining <= 0;
+                const unavailable =
+                  !isStarted || isEnded || soldOut || event.status === "cancelled" || isPastEvent;
                 const count = qty[t.id] ?? 0;
-                
+
                 let statusText = `${remaining} left`;
                 if (event.status === "cancelled") statusText = "Sales closed";
                 else if (isPastEvent) statusText = "Event ended";
@@ -867,7 +1106,7 @@ function EventBody({
                 return (
                   <div
                     key={t.id}
-                    className={`rounded-xl border border-border p-4 transition ${unavailable ? 'bg-muted/30 opacity-75' : 'bg-background/40 hover:border-primary/40'}`}
+                    className={`rounded-xl border border-border p-4 transition ${unavailable ? "bg-muted/30 opacity-75" : "bg-background/40 hover:border-primary/40"}`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -883,27 +1122,42 @@ function EventBody({
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="outline"
-                          disabled={count === 0}
-                          onClick={() => setCount(t, count - 1)}
-                          aria-label={`Remove one ${t.name}`}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <span className="w-6 text-center font-semibold tabular-nums">{count}</span>
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="outline"
-                          disabled={unavailable}
-                          onClick={() => setCount(t, count + 1)}
-                          aria-label={`Add one ${t.name}`}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
+                        {soldOut && event.status !== "cancelled" && !isPastEvent ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-8 text-xs font-semibold"
+                            onClick={() => onJoinWaitlist(t)}
+                          >
+                            Join Waitlist
+                          </Button>
+                        ) : (
+                          <>
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="outline"
+                              disabled={count === 0}
+                              onClick={() => setCount(t, count - 1)}
+                              aria-label={`Remove one ${t.name}`}
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                            <span className="w-6 text-center font-semibold tabular-nums">
+                              {count}
+                            </span>
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="outline"
+                              disabled={unavailable}
+                              onClick={() => setCount(t, count + 1)}
+                              aria-label={`Add one ${t.name}`}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -923,7 +1177,11 @@ function EventBody({
               className="mt-4 hidden w-full gradient-sunset text-primary-foreground shadow-glow hover:opacity-90 disabled:opacity-40 md:inline-flex"
               size="lg"
             >
-              {isPastEvent ? "Event ended" : event.status === "cancelled" ? "Sales closed" : "Buy tickets"}
+              {isPastEvent
+                ? "Event ended"
+                : event.status === "cancelled"
+                  ? "Sales closed"
+                  : "Buy tickets"}
             </Button>
           </div>
         </aside>
@@ -954,7 +1212,10 @@ function EventMissing() {
       <p className="mt-2 text-sm text-muted-foreground">
         This event may have been unpublished or removed.
       </p>
-      <Button asChild className="mt-6 gradient-sunset text-primary-foreground shadow-glow hover:opacity-90">
+      <Button
+        asChild
+        className="mt-6 gradient-sunset text-primary-foreground shadow-glow hover:opacity-90"
+      >
         <Link to="/">Back to events</Link>
       </Button>
     </div>
@@ -963,7 +1224,7 @@ function EventMissing() {
 
 function SimilarEvents({ events }: { events: any[] }) {
   if (!events || events.length === 0) return null;
-  
+
   return (
     <section className="mx-auto max-w-6xl px-4 py-16 md:py-24 border-t border-border/40 mt-12 md:mt-20">
       <h2 className="font-display text-3xl md:text-4xl mb-8">You might also like</h2>
@@ -992,7 +1253,7 @@ function SimilarEvents({ events }: { events: any[] }) {
                 </div>
               )}
             </div>
-            
+
             <div className="flex flex-1 flex-col p-5">
               <div className="mb-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary">
                 <Calendar className="h-3.5 w-3.5" />
@@ -1000,18 +1261,16 @@ function SimilarEvents({ events }: { events: any[] }) {
                   month: "short",
                   day: "numeric",
                   hour: "numeric",
-                  minute: "2-digit"
+                  minute: "2-digit",
                 })}
               </div>
-              
+
               <h3 className="font-display text-lg leading-tight group-hover:text-primary line-clamp-2">
                 {ev.title}
               </h3>
-              
+
               {ev.venue_name && (
-                <p className="mt-2 text-sm text-muted-foreground line-clamp-1">
-                  {ev.venue_name}
-                </p>
+                <p className="mt-2 text-sm text-muted-foreground line-clamp-1">{ev.venue_name}</p>
               )}
             </div>
           </Link>

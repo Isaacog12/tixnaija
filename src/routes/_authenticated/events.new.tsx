@@ -2,7 +2,18 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { ArrowLeft, ImagePlus, Plus, Trash2, Loader2, Check, Calendar, MapPin, ChevronRight, ChevronLeft } from "lucide-react";
+import {
+  ArrowLeft,
+  ImagePlus,
+  Plus,
+  Trash2,
+  Loader2,
+  Check,
+  Calendar,
+  MapPin,
+  ChevronRight,
+  ChevronLeft,
+} from "lucide-react";
 import { BackButton } from "@/components/back-button";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -35,18 +46,33 @@ const CATEGORIES = [
   { value: "other", label: "Other" },
 ] as const;
 
-const detailsSchema = z.object({
-  title: z.string().trim().min(3, "Title must be at least 3 characters").max(120),
-  description: z.string().trim().max(4000).optional(),
-  category: z.enum(["music", "comedy", "conference", "church", "campus", "party", "sport", "other"]),
-  venue_name: z.string().trim().min(2, "Venue name is required").max(120),
-  city: z.string().trim().min(2, "City is required").max(60),
-  start_datetime: z.string().min(1, "Pick a start date & time"),
-  end_datetime: z.string().min(1, "Pick an end date & time"),
-}).refine((d) => !d.start_datetime || !d.end_datetime || new Date(d.end_datetime) > new Date(d.start_datetime), {
-  message: "End time must be after start time",
-  path: ["end_datetime"],
-});
+const detailsSchema = z
+  .object({
+    title: z.string().trim().min(3, "Title must be at least 3 characters").max(120),
+    description: z.string().trim().max(4000).optional(),
+    category: z.enum([
+      "music",
+      "comedy",
+      "conference",
+      "church",
+      "campus",
+      "party",
+      "sport",
+      "other",
+    ]),
+    venue_name: z.string().trim().min(2, "Venue name is required").max(120),
+    city: z.string().trim().min(2, "City is required").max(60),
+    start_datetime: z.string().min(1, "Pick a start date & time"),
+    end_datetime: z.string().min(1, "Pick an end date & time"),
+  })
+  .refine(
+    (d) =>
+      !d.start_datetime || !d.end_datetime || new Date(d.end_datetime) > new Date(d.start_datetime),
+    {
+      message: "End time must be after start time",
+      path: ["end_datetime"],
+    },
+  );
 
 interface TicketDraft {
   name: string;
@@ -57,7 +83,13 @@ interface TicketDraft {
 }
 
 function emptyTicket(): TicketDraft {
-  return { name: "", price_naira: "", quantity_available: "", max_per_order: "10", description: "" };
+  return {
+    name: "",
+    price_naira: "",
+    quantity_available: "",
+    max_per_order: "10",
+    description: "",
+  };
 }
 
 const STEPS = ["Details", "Cover Image", "Tickets", "Review"];
@@ -67,7 +99,7 @@ function NewEventPage() {
   const [isCheckingRole, setIsCheckingRole] = useState(true);
   const [hasOrganizerRole, setHasOrganizerRole] = useState(false);
   const [hasPayoutAccount, setHasPayoutAccount] = useState(false);
-  
+
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     title: "",
@@ -78,12 +110,21 @@ function NewEventPage() {
     start_datetime: "",
     end_datetime: "",
     is_free: false,
+    is_recurring: false,
+    recurrence_interval: "WEEKLY" as "DAILY" | "WEEKLY" | "MONTHLY",
+    recurrence_count: 1,
   });
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string>("");
   const [isDraggingCover, setIsDraggingCover] = useState(false);
   const [tickets, setTickets] = useState<TicketDraft[]>([
-    { name: "Regular", price_naira: "5000", quantity_available: "100", max_per_order: "10", description: "" },
+    {
+      name: "Regular",
+      price_naira: "5000",
+      quantity_available: "100",
+      max_per_order: "10",
+      description: "",
+    },
   ]);
   const [busy, setBusy] = useState(false);
 
@@ -95,8 +136,17 @@ function NewEventPage() {
         return;
       }
       const [rolesResult, profileResult] = await Promise.all([
-        supabase.from("user_roles").select("role").eq("user_id", userData.user.id).in("role", ["organizer", "admin"]).limit(1),
-        supabase.from("profiles").select("paystack_subaccount_code").eq("id", userData.user.id).maybeSingle(),
+        supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userData.user.id)
+          .in("role", ["organizer", "admin"])
+          .limit(1),
+        supabase
+          .from("profiles")
+          .select("paystack_subaccount_code")
+          .eq("id", userData.user.id)
+          .maybeSingle(),
       ]);
       if (!rolesResult.error && rolesResult.data && rolesResult.data.length > 0) {
         setHasOrganizerRole(true);
@@ -134,6 +184,10 @@ function NewEventPage() {
         toast.error(parsed.error.issues[0]?.message ?? "Check the event details");
         return;
       }
+      if (form.is_recurring && (form.recurrence_count < 2 || form.recurrence_count > 52)) {
+        toast.error("Recurrence count must be between 2 and 52");
+        return;
+      }
     }
     if (step === 3) {
       if (tickets.length === 0) {
@@ -147,8 +201,10 @@ function NewEventPage() {
         const qty = Number(t.quantity_available);
         const max = Number(t.max_per_order || "10");
         if (Number.isNaN(price) || price < 0) return toast.error(`Ticket #${i + 1}: invalid price`);
-        if (!Number.isInteger(qty) || qty < 1) return toast.error(`Ticket #${i + 1}: quantity must be ≥ 1`);
-        if (!Number.isInteger(max) || max < 1) return toast.error(`Ticket #${i + 1}: max per order must be ≥ 1`);
+        if (!Number.isInteger(qty) || qty < 1)
+          return toast.error(`Ticket #${i + 1}: quantity must be ≥ 1`);
+        if (!Number.isInteger(max) || max < 1)
+          return toast.error(`Ticket #${i + 1}: max per order must be ≥ 1`);
       }
     }
     setStep((s) => Math.min(s + 1, 4));
@@ -175,43 +231,95 @@ function NewEventPage() {
       if (coverFile) {
         const ext = coverFile.name.split(".").pop() ?? "jpg";
         const path = `${currentUserId}/${crypto.randomUUID()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("event-covers").upload(path, coverFile, { cacheControl: "3600", upsert: false });
+        const { error: upErr } = await supabase.storage
+          .from("event-covers")
+          .upload(path, coverFile, { cacheControl: "3600", upsert: false });
         if (upErr) throw new Error(`Failed to upload cover: ${upErr.message}`);
         const { data: pub } = supabase.storage.from("event-covers").getPublicUrl(path);
         coverUrl = pub.publicUrl;
       }
 
-      const slug = slugify(form.title);
-      const payload = {
-        organizer_id: currentUserId,
-        title: form.title,
-        slug,
-        description: form.description || null,
-        category: form.category,
-        cover_image_url: coverUrl,
-        venue_name: form.venue_name,
-        address: null,
-        city: form.city,
-        state: null,
-        start_datetime: new Date(form.start_datetime).toISOString(),
-        end_datetime: new Date(form.end_datetime).toISOString(),
-        status: (publish ? "published" : "draft") as "published" | "draft",
-      };
-      
-      const { data: event, error: evErr } = await supabase.from("events").insert(payload).select("id").single();
-      if (evErr) throw new Error(`Database error: ${evErr.message}`);
+      let seriesId = null;
+      if (form.is_recurring && form.recurrence_count > 1) {
+        const rrule = `FREQ=${form.recurrence_interval};INTERVAL=1;COUNT=${form.recurrence_count}`;
+        const { data: sId, error: sErr } = await supabase.rpc("create_event_series", {
+          p_title: form.title,
+          p_recurrence_rule: rrule,
+        });
+        if (sErr) throw new Error(`Failed to create series: ${sErr.message}`);
+        seriesId = sId;
+      }
 
-      const parsedTickets = tickets.map((t, i) => ({
-        event_id: event.id,
-        name: t.name.trim(),
-        price_kobo: nairaToKobo(Number(t.price_naira)),
-        quantity_available: Number(t.quantity_available),
-        max_per_order: Number(t.max_per_order),
-        description: t.description.trim() || null,
-        sort_order: i,
-      }));
+      const numOccurrences = form.is_recurring ? Number(form.recurrence_count) : 1;
+      let currentDate = new Date(form.start_datetime);
+      let currentEndDate = new Date(form.end_datetime);
 
-      const { error: ttErr } = await supabase.from("ticket_types").insert(parsedTickets);
+      const occurrences = [];
+      for (let i = 0; i < numOccurrences; i++) {
+        let slugSuffix = "";
+        if (numOccurrences > 1) {
+          slugSuffix = `-${i + 1}`;
+        }
+
+        let slugBase = slugify(form.title);
+        // Add random string to avoid conflict
+        const randomString = Math.random().toString(36).substring(2, 6);
+        const slug = `${slugBase}${slugSuffix}-${randomString}`;
+
+        occurrences.push({
+          organizer_id: currentUserId,
+          series_id: seriesId,
+          title: form.is_recurring ? `${form.title} (Instance ${i + 1})` : form.title,
+          slug,
+          description: form.description || null,
+          category: form.category,
+          cover_image_url: coverUrl,
+          venue_name: form.venue_name,
+          address: null,
+          city: form.city,
+          state: null,
+          start_datetime: new Date(currentDate).toISOString(),
+          end_datetime: new Date(currentEndDate).toISOString(),
+          status: (publish ? "published" : "draft") as "published" | "draft",
+        });
+
+        // Advance date
+        if (form.recurrence_interval === "DAILY") {
+          currentDate.setDate(currentDate.getDate() + 1);
+          currentEndDate.setDate(currentEndDate.getDate() + 1);
+        } else if (form.recurrence_interval === "WEEKLY") {
+          currentDate.setDate(currentDate.getDate() + 7);
+          currentEndDate.setDate(currentEndDate.getDate() + 7);
+        } else if (form.recurrence_interval === "MONTHLY") {
+          currentDate.setMonth(currentDate.getMonth() + 1);
+          currentEndDate.setMonth(currentEndDate.getMonth() + 1);
+        }
+      }
+
+      const { data: insertedEvents, error: evErr } = await supabase
+        .from("events")
+        .insert(occurrences)
+        .select("id");
+      if (evErr || !insertedEvents)
+        throw new Error(`Database error: ${evErr?.message || "Failed to create events"}`);
+
+      const allTickets = [];
+      for (const ev of insertedEvents) {
+        for (let i = 0; i < tickets.length; i++) {
+          const t = tickets[i];
+          allTickets.push({
+            event_id: ev.id,
+            name: t.name.trim(),
+            price_kobo: nairaToKobo(Number(t.price_naira)),
+            quantity_available: Number(t.quantity_available),
+            max_per_order: Number(t.max_per_order),
+            description: t.description.trim() || null,
+            sort_order: i,
+          });
+        }
+      }
+
+      const { error: ttErr } = await supabase.from("ticket_types").insert(allTickets);
       if (ttErr) throw new Error(`Ticket error: ${ttErr.message}`);
 
       toast.success(publish ? "Event published successfully" : "Event saved as draft");
@@ -224,7 +332,11 @@ function NewEventPage() {
   }
 
   if (isCheckingRole) {
-    return <div className="flex min-h-[50vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   if (!hasOrganizerRole) {
@@ -234,8 +346,16 @@ function NewEventPage() {
           <BackButton />
           <h1 className="font-display text-4xl text-gradient-sunset">Organizer Access Required</h1>
         </div>
-        <p className="mt-4 text-muted-foreground">You need an approved organizer account to create events. Submit an application from your Account Settings page.</p>
-        <Button asChild className="mt-8 gradient-sunset text-primary-foreground shadow-glow hover:opacity-90"><Link to="/account">Go to Account Settings</Link></Button>
+        <p className="mt-4 text-muted-foreground">
+          You need an approved organizer account to create events. Submit an application from your
+          Account Settings page.
+        </p>
+        <Button
+          asChild
+          className="mt-8 gradient-sunset text-primary-foreground shadow-glow hover:opacity-90"
+        >
+          <Link to="/account">Go to Account Settings</Link>
+        </Button>
       </div>
     );
   }
@@ -244,9 +364,14 @@ function NewEventPage() {
     <div className="group flex flex-col overflow-hidden rounded-2xl bg-card/60 transition-all border border-border/50 max-w-sm mx-auto shadow-glow">
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary">
         {coverPreview ? (
-          <img src={coverPreview} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+          <img
+            src={coverPreview}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
         ) : (
-          <div className="flex h-full items-center justify-center text-muted-foreground font-display text-2xl opacity-50 bg-gradient-to-br from-secondary to-background">No Cover Image</div>
+          <div className="flex h-full items-center justify-center text-muted-foreground font-display text-2xl opacity-50 bg-gradient-to-br from-secondary to-background">
+            No Cover Image
+          </div>
         )}
         {form.city && (
           <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/80 px-2.5 py-1 text-xs font-medium backdrop-blur-md z-20">
@@ -258,7 +383,14 @@ function NewEventPage() {
       <div className="flex flex-1 flex-col p-5">
         <div className="mb-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary">
           <Calendar className="h-3.5 w-3.5" />
-          {form.start_datetime ? new Date(form.start_datetime).toLocaleString("en-NG", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "Date TBD"}
+          {form.start_datetime
+            ? new Date(form.start_datetime).toLocaleString("en-NG", {
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+              })
+            : "Date TBD"}
         </div>
         <h3 className="font-display text-xl leading-tight line-clamp-2 mb-2 group-hover:text-primary transition-colors">
           {form.title || "Your Event Title"}
@@ -269,7 +401,9 @@ function NewEventPage() {
         <div className="mt-auto pt-4 flex items-center justify-between border-t border-border/50">
           <div className="text-xs text-muted-foreground">Tickets from</div>
           <div className="font-display text-lg text-gradient-sunset">
-            {tickets.length ? formatNaira(Math.min(...tickets.map(t => Number(t.price_naira || 0) * 100))) : "Free"}
+            {tickets.length
+              ? formatNaira(Math.min(...tickets.map((t) => Number(t.price_naira || 0) * 100)))
+              : "Free"}
           </div>
         </div>
       </div>
@@ -283,7 +417,9 @@ function NewEventPage() {
           <BackButton />
           <h1 className="font-display text-4xl md:text-5xl text-gradient-sunset">Create Event</h1>
         </div>
-        <p className="text-muted-foreground mt-2">Follow the steps to get your event published and ready for sales.</p>
+        <p className="text-muted-foreground mt-2">
+          Follow the steps to get your event published and ready for sales.
+        </p>
       </div>
 
       {/* Stepper */}
@@ -296,14 +432,22 @@ function NewEventPage() {
           return (
             <div key={label} className={`flex items-center ${isLast ? "" : "flex-1"}`}>
               <div className="flex flex-col items-center gap-2 relative">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-full border-2 font-bold transition-all duration-500 ${isActive ? "border-primary bg-primary text-primary-foreground shadow-glow scale-110" : isPast ? "border-primary bg-primary/20 text-primary" : "border-border bg-card text-muted-foreground"}`}>
+                <div
+                  className={`flex h-10 w-10 items-center justify-center rounded-full border-2 font-bold transition-all duration-500 ${isActive ? "border-primary bg-primary text-primary-foreground shadow-glow scale-110" : isPast ? "border-primary bg-primary/20 text-primary" : "border-border bg-card text-muted-foreground"}`}
+                >
                   {isPast ? <Check className="h-5 w-5" /> : stepNum}
                 </div>
-                <span className={`absolute -bottom-6 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.15em] transition-colors duration-300 ${isActive ? "text-primary" : isPast ? "text-foreground" : "text-muted-foreground/60"}`}>
+                <span
+                  className={`absolute -bottom-6 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.15em] transition-colors duration-300 ${isActive ? "text-primary" : isPast ? "text-foreground" : "text-muted-foreground/60"}`}
+                >
                   {label}
                 </span>
               </div>
-              {!isLast && <div className={`h-[2px] flex-1 mx-2 sm:mx-4 rounded-full transition-colors duration-500 ${isPast ? "bg-primary/50" : "bg-border"}`} />}
+              {!isLast && (
+                <div
+                  className={`h-[2px] flex-1 mx-2 sm:mx-4 rounded-full transition-colors duration-500 ${isPast ? "bg-primary/50" : "bg-border"}`}
+                />
+              )}
             </div>
           );
         })}
@@ -317,32 +461,54 @@ function NewEventPage() {
               <h2 className="mb-6 font-display text-2xl">Event Details</h2>
               <div className="grid gap-6">
                 <Field label="Event title" required>
-                  <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Detty December Concert 2026" className="text-lg py-6" />
+                  <Input
+                    value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    placeholder="e.g. Detty December Concert 2026"
+                    className="text-lg py-6"
+                  />
                 </Field>
                 <div className="grid gap-6 sm:grid-cols-2 items-end">
                   <Field label="Category" required>
-                    <Select value={form.category} onValueChange={(v: typeof form.category) => setForm({ ...form, category: v })}>
-                      <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
-                      <SelectContent>{CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+                    <Select
+                      value={form.category}
+                      onValueChange={(v: typeof form.category) => setForm({ ...form, category: v })}
+                    >
+                      <SelectTrigger className="h-11">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CATEGORIES.map((c) => (
+                          <SelectItem key={c.value} value={c.value}>
+                            {c.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
                     </Select>
                   </Field>
                   <div className="flex items-center justify-between rounded-lg border border-border p-4 bg-background/50 h-11 mb-0 mt-auto">
                     <div className="space-y-0.5">
                       <Label className="text-sm font-semibold">Free Event</Label>
                     </div>
-                    <Switch 
-                      checked={form.is_free} 
+                    <Switch
+                      checked={form.is_free}
                       onCheckedChange={(c) => {
                         setForm({ ...form, is_free: c });
                         if (c) {
-                          setTickets(prev => prev.map(t => ({ ...t, price_naira: "0" })));
+                          setTickets((prev) => prev.map((t) => ({ ...t, price_naira: "0" })));
                         }
-                      }} 
+                      }}
                     />
                   </div>
                 </div>
                 <Field label="Description">
-                  <Textarea rows={6} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Tell people what to expect: line-up, dress code, schedule..." className="resize-none" />
+                  <Textarea
+                    rows={6}
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    placeholder="Tell people what to expect: line-up, dress code, schedule..."
+                    className="resize-none"
+                  />
                 </Field>
               </div>
             </section>
@@ -351,17 +517,87 @@ function NewEventPage() {
               <h2 className="mb-6 font-display text-2xl">Where & When</h2>
               <div className="grid gap-6 sm:grid-cols-2">
                 <Field label="Venue name" required>
-                  <Input value={form.venue_name} onChange={(e) => setForm({ ...form, venue_name: e.target.value })} placeholder="e.g. Eko Hotel" className="h-11" />
+                  <Input
+                    value={form.venue_name}
+                    onChange={(e) => setForm({ ...form, venue_name: e.target.value })}
+                    placeholder="e.g. Eko Hotel"
+                    className="h-11"
+                  />
                 </Field>
                 <Field label="City" required>
-                  <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Lagos" className="h-11" />
+                  <Input
+                    value={form.city}
+                    onChange={(e) => setForm({ ...form, city: e.target.value })}
+                    placeholder="Lagos"
+                    className="h-11"
+                  />
                 </Field>
                 <Field label="Starts at" required>
-                  <Input type="datetime-local" value={form.start_datetime} onChange={(e) => setForm({ ...form, start_datetime: e.target.value })} className="h-11" />
+                  <Input
+                    type="datetime-local"
+                    value={form.start_datetime}
+                    onChange={(e) => setForm({ ...form, start_datetime: e.target.value })}
+                    className="h-11"
+                  />
                 </Field>
                 <Field label="Ends at" required>
-                  <Input type="datetime-local" value={form.end_datetime} onChange={(e) => setForm({ ...form, end_datetime: e.target.value })} className="h-11" min={form.start_datetime || undefined} />
+                  <Input
+                    type="datetime-local"
+                    value={form.end_datetime}
+                    onChange={(e) => setForm({ ...form, end_datetime: e.target.value })}
+                    className="h-11"
+                    min={form.start_datetime || undefined}
+                  />
                 </Field>
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-border/50">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-semibold text-foreground">Recurring Event</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Repeat this event over multiple dates
+                    </p>
+                  </div>
+                  <Switch
+                    checked={form.is_recurring}
+                    onCheckedChange={(c) =>
+                      setForm({ ...form, is_recurring: c, recurrence_count: c ? 2 : 1 })
+                    }
+                  />
+                </div>
+
+                {form.is_recurring && (
+                  <div className="grid gap-6 sm:grid-cols-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <Field label="Repeat Every">
+                      <Select
+                        value={form.recurrence_interval}
+                        onValueChange={(v: any) => setForm({ ...form, recurrence_interval: v })}
+                      >
+                        <SelectTrigger className="h-11">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="DAILY">Daily</SelectItem>
+                          <SelectItem value="WEEKLY">Weekly</SelectItem>
+                          <SelectItem value="MONTHLY">Monthly</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                    <Field label="Number of occurrences">
+                      <Input
+                        type="number"
+                        min={2}
+                        max={52}
+                        value={form.recurrence_count}
+                        onChange={(e) =>
+                          setForm({ ...form, recurrence_count: parseInt(e.target.value) || 2 })
+                        }
+                        className="h-11"
+                      />
+                    </Field>
+                  </div>
+                )}
               </div>
             </section>
           </div>
@@ -373,16 +609,35 @@ function NewEventPage() {
             <section className="rounded-3xl border border-border bg-card/40 p-6 md:p-8 shadow-sm backdrop-blur-sm">
               <div className="mb-6">
                 <h2 className="font-display text-2xl">Cover Image</h2>
-                <p className="text-muted-foreground mt-1 text-sm">Upload a high-quality image to make your event stand out. Recommended ratio is 16:9 or 4:3.</p>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  Upload a high-quality image to make your event stand out. Recommended ratio is
+                  16:9 or 4:3.
+                </p>
               </div>
               <label
-                onDragOver={(e) => { e.preventDefault(); setIsDraggingCover(true); }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDraggingCover(true);
+                }}
                 onDragLeave={() => setIsDraggingCover(false)}
                 onDrop={handleCoverDrop}
                 className={`relative flex min-h-[300px] md:min-h-[400px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition-all duration-300 ${isDraggingCover ? "border-primary bg-primary/10" : coverPreview ? "border-border bg-secondary/20 hover:border-primary/50" : "border-border bg-secondary/40 hover:border-primary/50 hover:bg-secondary/60"}`}
-                style={coverPreview ? { backgroundImage: `url(${coverPreview})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
+                style={
+                  coverPreview
+                    ? {
+                        backgroundImage: `url(${coverPreview})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                      }
+                    : undefined
+                }
               >
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => onPickCover(e.target.files?.[0] ?? null)} />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => onPickCover(e.target.files?.[0] ?? null)}
+                />
                 {!coverPreview && (
                   <div className="text-center p-6">
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-background shadow-sm">
@@ -394,7 +649,9 @@ function NewEventPage() {
                 )}
                 {coverPreview && (
                   <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity hover:opacity-100 flex items-center justify-center backdrop-blur-sm">
-                    <p className="text-white font-medium flex items-center gap-2"><ImagePlus className="h-5 w-5" /> Change cover image</p>
+                    <p className="text-white font-medium flex items-center gap-2">
+                      <ImagePlus className="h-5 w-5" /> Change cover image
+                    </p>
                   </div>
                 )}
               </label>
@@ -410,23 +667,39 @@ function NewEventPage() {
                 <div>
                   <h2 className="font-display text-2xl">Ticket Types</h2>
                   <p className="text-muted-foreground mt-1 text-sm">
-                    {form.is_free ? "Add the different tickets you want to offer. Since this is a free event, the price is automatically set to 0." : "Add the different tickets you want to sell. Set price to 0 for free events."}
+                    {form.is_free
+                      ? "Add the different tickets you want to offer. Since this is a free event, the price is automatically set to 0."
+                      : "Add the different tickets you want to sell. Set price to 0 for free events."}
                   </p>
                 </div>
-                <Button type="button" onClick={() => setTickets([...tickets, { ...emptyTicket(), price_naira: form.is_free ? "0" : "" }])} className="shrink-0 bg-secondary text-secondary-foreground hover:bg-secondary/80">
+                <Button
+                  type="button"
+                  onClick={() =>
+                    setTickets([
+                      ...tickets,
+                      { ...emptyTicket(), price_naira: form.is_free ? "0" : "" },
+                    ])
+                  }
+                  className="shrink-0 bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                >
                   <Plus className="mr-2 h-4 w-4" /> Add Ticket Tier
                 </Button>
               </div>
 
               <div className="space-y-6">
                 {tickets.map((t, i) => (
-                  <div key={i} className="relative rounded-2xl border border-primary/20 bg-background/50 p-5 pt-8 shadow-sm transition-all hover:border-primary/40 group">
+                  <div
+                    key={i}
+                    className="relative rounded-2xl border border-primary/20 bg-background/50 p-5 pt-8 shadow-sm transition-all hover:border-primary/40 group"
+                  >
                     <div className="absolute -top-3 left-4 bg-background px-2 text-xs font-bold uppercase tracking-widest text-primary">
                       Tier {i + 1}
                     </div>
                     {tickets.length > 1 && (
                       <Button
-                        type="button" variant="ghost" size="icon"
+                        type="button"
+                        variant="ghost"
+                        size="icon"
                         className="absolute right-3 top-3 h-8 w-8 text-muted-foreground opacity-50 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 transition-opacity"
                         onClick={() => setTickets(tickets.filter((_, idx) => idx !== i))}
                       >
@@ -436,29 +709,62 @@ function NewEventPage() {
                     <div className="grid gap-5 sm:grid-cols-12">
                       <div className={form.is_free ? "sm:col-span-8" : "sm:col-span-5"}>
                         <Field label="Ticket name" required>
-                          <Input value={t.name} onChange={(e) => updateTicket(i, { name: e.target.value })} placeholder="e.g. VIP, Early Bird" className="h-11" />
+                          <Input
+                            value={t.name}
+                            onChange={(e) => updateTicket(i, { name: e.target.value })}
+                            placeholder="e.g. VIP, Early Bird"
+                            className="h-11"
+                          />
                         </Field>
                       </div>
                       {!form.is_free && (
                         <div className="sm:col-span-3">
                           <Field label="Price (₦)" required>
-                            <Input type="number" min="0" value={t.price_naira} onChange={(e) => updateTicket(i, { price_naira: e.target.value })} placeholder="0 for free" className="h-11" />
+                            <Input
+                              type="number"
+                              min="0"
+                              value={t.price_naira}
+                              onChange={(e) => updateTicket(i, { price_naira: e.target.value })}
+                              placeholder="0 for free"
+                              className="h-11"
+                            />
                           </Field>
                         </div>
                       )}
                       <div className="sm:col-span-2">
                         <Field label="Available" required>
-                          <Input type="number" min="1" value={t.quantity_available} onChange={(e) => updateTicket(i, { quantity_available: e.target.value })} placeholder="100" className="h-11" />
+                          <Input
+                            type="number"
+                            min="1"
+                            value={t.quantity_available}
+                            onChange={(e) =>
+                              updateTicket(i, { quantity_available: e.target.value })
+                            }
+                            placeholder="100"
+                            className="h-11"
+                          />
                         </Field>
                       </div>
                       <div className="sm:col-span-2">
                         <Field label="Max/Order">
-                          <Input type="number" min="1" value={t.max_per_order} onChange={(e) => updateTicket(i, { max_per_order: e.target.value })} placeholder="10" className="h-11" />
+                          <Input
+                            type="number"
+                            min="1"
+                            value={t.max_per_order}
+                            onChange={(e) => updateTicket(i, { max_per_order: e.target.value })}
+                            placeholder="10"
+                            className="h-11"
+                          />
                         </Field>
                       </div>
                       <div className="sm:col-span-12">
                         <Field label="Description (optional)">
-                          <Input value={t.description} onChange={(e) => updateTicket(i, { description: e.target.value })} placeholder="What does this ticket include? e.g. Includes drinks and backstage access" className="h-11" />
+                          <Input
+                            value={t.description}
+                            onChange={(e) => updateTicket(i, { description: e.target.value })}
+                            placeholder="What does this ticket include? e.g. Includes drinks and backstage access"
+                            className="h-11"
+                          />
                         </Field>
                       </div>
                     </div>
@@ -475,38 +781,72 @@ function NewEventPage() {
             <section className="rounded-3xl border border-border bg-card/40 p-6 md:p-8 shadow-sm backdrop-blur-sm">
               <div className="mb-8 text-center">
                 <h2 className="font-display text-3xl">Ready to go live?</h2>
-                <p className="text-muted-foreground mt-2">Review how your event will appear to buyers.</p>
+                <p className="text-muted-foreground mt-2">
+                  Review how your event will appear to buyers.
+                </p>
               </div>
 
               <div className="grid md:grid-cols-[1fr_auto_1fr] gap-10 items-center max-w-4xl mx-auto">
                 {/* Details Summary */}
                 <div className="space-y-6 bg-secondary/30 p-6 rounded-2xl border border-border/50">
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Event Name</h4>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                      Event Name
+                    </h4>
                     <p className="font-display text-2xl">{form.title}</p>
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Timing</h4>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                      Timing
+                    </h4>
                     <p className="font-medium text-primary">
-                      {form.start_datetime ? new Date(form.start_datetime).toLocaleString("en-NG", { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : "Not set"}
+                      {form.start_datetime
+                        ? new Date(form.start_datetime).toLocaleString("en-NG", {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })
+                        : "Not set"}
                     </p>
                     {form.end_datetime && (
                       <p className="text-sm text-muted-foreground mt-0.5">
-                        Ends: {new Date(form.end_datetime).toLocaleString("en-NG", { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                        Ends:{" "}
+                        {new Date(form.end_datetime).toLocaleString("en-NG", {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
                       </p>
                     )}
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Location</h4>
-                    <p className="font-medium">{[form.venue_name, form.city].filter(Boolean).join(", ")}</p>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                      Location
+                    </h4>
+                    <p className="font-medium">
+                      {[form.venue_name, form.city].filter(Boolean).join(", ")}
+                    </p>
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Tickets ({tickets.length})</h4>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                      Tickets ({tickets.length})
+                    </h4>
                     <div className="space-y-2">
                       {tickets.map((t, i) => (
-                        <div key={i} className="flex justify-between items-center bg-background/60 p-2 px-3 rounded-md text-sm border border-border/50">
+                        <div
+                          key={i}
+                          className="flex justify-between items-center bg-background/60 p-2 px-3 rounded-md text-sm border border-border/50"
+                        >
                           <span className="font-medium">{t.name}</span>
-                          <span className="font-bold">{t.price_naira === "0" ? "Free" : formatNaira(Number(t.price_naira) * 100)}</span>
+                          <span className="font-bold">
+                            {t.price_naira === "0"
+                              ? "Free"
+                              : formatNaira(Number(t.price_naira) * 100)}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -517,7 +857,9 @@ function NewEventPage() {
 
                 {/* Preview Card */}
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 text-center">Live Card Preview</h4>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 text-center">
+                    Live Card Preview
+                  </h4>
                   {livePreview}
                 </div>
               </div>
@@ -525,7 +867,13 @@ function NewEventPage() {
               {!hasPayoutAccount && (
                 <div className="mt-8 rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-center text-destructive">
                   <p className="font-medium">⚠️ Payout Account Missing</p>
-                  <p className="text-sm mt-1">You must connect your payout account in <Link to="/account" className="underline hover:text-destructive/80 font-bold">Account Settings</Link> before you can publish.</p>
+                  <p className="text-sm mt-1">
+                    You must connect your payout account in{" "}
+                    <Link to="/account" className="underline hover:text-destructive/80 font-bold">
+                      Account Settings
+                    </Link>{" "}
+                    before you can publish.
+                  </p>
                 </div>
               )}
             </section>
@@ -535,20 +883,40 @@ function NewEventPage() {
 
       {/* Navigation Footer */}
       <div className="mt-8 flex items-center justify-between border-t border-border/50 pt-6">
-        <Button variant="ghost" onClick={prevStep} disabled={step === 1} className="text-muted-foreground hover:text-foreground">
+        <Button
+          variant="ghost"
+          onClick={prevStep}
+          disabled={step === 1}
+          className="text-muted-foreground hover:text-foreground"
+        >
           <ChevronLeft className="mr-2 h-4 w-4" /> Back
         </Button>
-        
+
         {step < 4 ? (
-          <Button onClick={nextStep} size="lg" className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90 min-w-[120px]">
+          <Button
+            onClick={nextStep}
+            size="lg"
+            className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90 min-w-[120px]"
+          >
             Continue <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
         ) : (
           <div className="flex gap-3">
-            <Button disabled={busy} onClick={() => submit(false)} variant="outline" size="lg" className="bg-background">
+            <Button
+              disabled={busy}
+              onClick={() => submit(false)}
+              variant="outline"
+              size="lg"
+              className="bg-background"
+            >
               Save Draft
             </Button>
-            <Button disabled={busy || !hasPayoutAccount} onClick={() => submit(true)} size="lg" className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90 min-w-[140px]">
+            <Button
+              disabled={busy || !hasPayoutAccount}
+              onClick={() => submit(true)}
+              size="lg"
+              className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90 min-w-[140px]"
+            >
               {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Publish Now
             </Button>
@@ -559,7 +927,15 @@ function NewEventPage() {
   );
 }
 
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+function Field({
+  label,
+  required,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-2">
       <Label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">

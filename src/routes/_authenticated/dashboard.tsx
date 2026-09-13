@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatNaira } from "@/lib/currency";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PromoCodesTab } from "@/components/promo-codes-tab";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -38,7 +40,7 @@ async function fetchMyEvents() {
 
   const { data: events, error } = (await supabase
     .from("events")
-    .select("id, title, slug, city, start_datetime, status, cover_image_url")
+    .select("id, title, slug, city, start_datetime, status, cover_image_url, event_series(title)")
     .eq("organizer_id", userId)
     .order("start_datetime", { ascending: true })) as { data: any[] | null, error: any };
   if (error) throw error;
@@ -89,8 +91,6 @@ function Dashboard() {
   const isAdmin = data?.isAdmin ?? false;
   const latestApp = data?.latestApp ?? null;
 
-
-
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 md:py-12 min-h-dvh">
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-border pb-6">
@@ -121,123 +121,6 @@ function Dashboard() {
         </div>
       </div>
 
-
-
-      {!isOrganizer && !isLoading && (
-        <div className="space-y-12">
-          {/* Hero CTA */}
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-8 md:p-12 shadow-sm">
-            <div className="relative grid gap-12 lg:grid-cols-2 lg:items-center">
-              <div>
-                <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary mb-6 shadow-sm">
-                  <Zap className="h-3.5 w-3.5" /> For creators
-                </span>
-                 <h2 className="type-heading-lg mb-6">
-                   Start selling<br />
-                   <span className="text-primary">in minutes.</span>
-                 </h2>
-                <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-md">
-                  Create your event, set ticket tiers, track sales in real-time, and scan attendees seamlessly at the door.
-                </p>
-                
-                <div className="flex flex-col sm:flex-row flex-wrap gap-4">
-                  {latestApp?.status === "pending" ? (
-                    <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-5 py-3 text-sm font-semibold text-amber-500">
-                      <Clock className="h-4 w-4" />
-                      Application pending review
-                    </div>
-                  ) : latestApp?.status === "rejected" ? (
-                    <div className="flex flex-col gap-3">
-                      <div className="inline-flex items-center gap-2 rounded-full border border-destructive/30 bg-destructive/10 px-5 py-3 text-sm font-semibold text-destructive">
-                        <XCircle className="h-4 w-4" />
-                        Application not approved
-                      </div>
-                      <Button asChild size="lg" className="w-fit">
-                        <Link to="/account">Apply again</Link>
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button asChild size="lg" className="text-base px-8 gradient-sunset text-primary-foreground glow-primary press-sm transition-all duration-[120ms]">
-                       <Link to="/account">Become an Organizer</Link>
-                     </Button>
-                  )}
-                  <Button asChild size="lg" variant="outline" className="border-border/60 hover:bg-secondary text-base px-8 group">
-                    <Link to="/browse">
-                      Explore events <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-
-              {/* Sample event card mock */}
-              <div className="relative mx-auto w-full max-w-sm lg:max-w-md">
-                <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-                  <div className="h-40 w-full bg-secondary relative flex items-end p-6">
-                    <span className="relative font-display text-sm uppercase tracking-[0.4em] text-secondary-foreground drop-shadow-md">Admit One</span>
-                  </div>
-                  <div className="p-5">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <p className="text-[10px] uppercase tracking-widest text-primary font-bold mb-1">Music · Lagos</p>
-                        <h3 className="font-display text-xl leading-tight">Afrobeats Live 2025</h3>
-                      </div>
-                      <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary border border-primary/20">Live</span>
-                    </div>
-                    <p className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
-                      <CalendarDays className="h-3 w-3" /> Sat, Aug 23 · 7:00 PM
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Feature grid */}
-          <div>
-            <div className="flex items-center gap-4 mb-8">
-              <h3 className="font-display text-2xl">Toolkit</h3>
-              <div className="h-px flex-1 bg-border/60" />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
-              {[
-                {
-                  icon: Ticket,
-                  title: "Ticket Tiers",
-                  desc: "Create Early Bird, VIP, and GA tiers with custom pricing.",
-                },
-                {
-                  icon: BarChart2,
-                  title: "Live Analytics",
-                  desc: "Track sales, revenue, and capacity in real-time.",
-                },
-                {
-                  icon: QrCode,
-                  title: "QR Scanning",
-                  desc: "Check in attendees instantly with our built-in scanner.",
-                },
-                {
-                  icon: Users,
-                  title: "Comp Tickets",
-                  desc: "Issue free tickets to guests, press, or VIPs easily.",
-                },
-              ].map((f) => (
-                <div 
-                  key={f.title}
-                  className="rounded-xl border border-border bg-card p-6 shadow-sm"
-                >
-                  <div className="inline-flex rounded-lg bg-secondary p-3 mb-4">
-                    <f.icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <h3 className="font-semibold text-base mb-1.5">{f.title}</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{f.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       {isLoading && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-8">
            {[1, 2, 3].map((i) => (
@@ -264,8 +147,133 @@ function Dashboard() {
         </div>
       )}
 
-      {isOrganizer && data && data.events.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 bg-card/40 py-20 px-6 text-center shadow-sm max-w-4xl mx-auto">
+      {!isLoading && !error && (
+        <>
+          {isOrganizer ? (
+            <Tabs defaultValue="events" className="space-y-6">
+              <TabsList className="bg-secondary/50 border border-border p-1">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="events">Events</TabsTrigger>
+                <TabsTrigger value="promo-codes">Promo Codes</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="overview">
+                {renderOverview()}
+              </TabsContent>
+              <TabsContent value="events">
+                {renderEvents()}
+              </TabsContent>
+              <TabsContent value="promo-codes">
+                <PromoCodesTab events={data?.events || []} />
+              </TabsContent>
+            </Tabs>
+          ) : (
+            renderOverview()
+          )}
+        </>
+      )}
+    </div>
+  );
+
+  function renderOverview() {
+    return (
+      <div className="space-y-12 mt-2">
+        <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-8 md:p-12 shadow-sm">
+          <div className="relative grid gap-12 lg:grid-cols-2 lg:items-center">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary mb-6 shadow-sm">
+                <Zap className="h-3.5 w-3.5" /> For creators
+              </span>
+               <h2 className="type-heading-lg mb-6">
+                 Start selling<br />
+                 <span className="text-primary">in minutes.</span>
+               </h2>
+              <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-md">
+                Create your event, set ticket tiers, track sales in real-time, and scan attendees seamlessly at the door.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row flex-wrap gap-4">
+                {latestApp?.status === "pending" ? (
+                  <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-5 py-3 text-sm font-semibold text-amber-500">
+                    <Clock className="h-4 w-4" />
+                    Application pending review
+                  </div>
+                ) : latestApp?.status === "rejected" ? (
+                  <div className="flex flex-col gap-3">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-destructive/30 bg-destructive/10 px-5 py-3 text-sm font-semibold text-destructive">
+                      <XCircle className="h-4 w-4" />
+                      Application not approved
+                    </div>
+                    <Button asChild size="lg" className="w-fit">
+                      <Link to="/account">Apply again</Link>
+                    </Button>
+                  </div>
+                ) : (
+                  <Button asChild size="lg" className="text-base px-8 gradient-sunset text-primary-foreground glow-primary press-sm transition-all duration-[120ms]">
+                     <Link to="/account">Become an Organizer</Link>
+                   </Button>
+                )}
+                <Button asChild size="lg" variant="outline" className="border-border/60 hover:bg-secondary text-base px-8 group">
+                  <Link to="/browse">
+                    Explore events <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+
+            <div className="relative mx-auto w-full max-w-sm lg:max-w-md">
+              <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+                <div className="h-40 w-full bg-secondary relative flex items-end p-6">
+                  <span className="relative font-display text-sm uppercase tracking-[0.4em] text-secondary-foreground drop-shadow-md">Admit One</span>
+                </div>
+                <div className="p-5">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-widest text-primary font-bold mb-1">Music · Lagos</p>
+                      <h3 className="font-display text-xl leading-tight">Afrobeats Live 2025</h3>
+                    </div>
+                    <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary border border-primary/20">Live</span>
+                  </div>
+                  <p className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
+                    <CalendarDays className="h-3 w-3" /> Sat, Aug 23 · 7:00 PM
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div className="flex items-center gap-4 mb-8">
+            <h3 className="font-display text-2xl">Toolkit</h3>
+            <div className="h-px flex-1 bg-border/60" />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+            {[
+              { icon: Ticket, title: "Ticket Tiers", desc: "Create Early Bird, VIP, and GA tiers with custom pricing." },
+              { icon: BarChart2, title: "Live Analytics", desc: "Track sales, revenue, and capacity in real-time." },
+              { icon: QrCode, title: "QR Scanning", desc: "Check in attendees instantly with our built-in scanner." },
+              { icon: Users, title: "Comp Tickets", desc: "Issue free tickets to guests, press, or VIPs easily." },
+            ].map((f) => (
+              <div key={f.title} className="rounded-xl border border-border bg-card p-6 shadow-sm">
+                <div className="inline-flex rounded-lg bg-secondary p-3 mb-4">
+                  <f.icon className="h-5 w-5 text-primary" />
+                </div>
+                <h3 className="font-semibold text-base mb-1.5">{f.title}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function renderEvents() {
+    if (data?.events.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 bg-card/40 py-20 px-6 text-center shadow-sm max-w-4xl mx-auto mt-2">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary/50 mb-6 relative">
             <Ticket className="h-8 w-8 text-muted-foreground/50" />
           </div>
@@ -279,106 +287,111 @@ function Dashboard() {
             </Link>
           </Button>
         </div>
-      )}
+      );
+    }
 
-      {isOrganizer && data && data.events.length > 0 && (
-        <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden mb-8">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="bg-secondary/30 text-muted-foreground">
-                <tr>
-                  <th className="px-5 py-3 font-semibold w-12"></th>
-                  <th className="px-5 py-3 font-semibold">Event</th>
-                  <th className="px-5 py-3 font-semibold">Date</th>
-                  <th className="px-5 py-3 font-semibold">Status</th>
-                  <th className="px-5 py-3 font-semibold text-right">Sold</th>
-                  <th className="px-5 py-3 font-semibold text-right">Revenue</th>
-                  <th className="px-5 py-3 font-semibold text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {data.events.map((ev) => {
-                  const stats = data.statsByEvent[ev.id] ?? { sold: 0, revenueKobo: 0 };
-                  const evDate = new Date(ev.start_datetime);
-                  return (
-                    <tr key={ev.id} className="hover:bg-muted/30 transition-colors group">
-                      <td className="px-5 py-4">
-                        <div className="h-10 w-10 shrink-0 rounded bg-secondary border border-border overflow-hidden">
-                          {ev.cover_image_url ? (
-                            <img src={ev.cover_image_url} alt={ev.title} className="h-full w-full object-cover" />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center bg-muted">
-                              <Ticket className="h-4 w-4 text-muted-foreground/50" />
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <Link to="/events/$eventId/edit" params={{ eventId: ev.id }} className="font-semibold text-sm hover:text-primary transition-colors">
+    return (
+      <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden mb-8 mt-2">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm whitespace-nowrap">
+            <thead className="bg-secondary/30 text-muted-foreground">
+              <tr>
+                <th className="px-5 py-3 font-semibold w-12"></th>
+                <th className="px-5 py-3 font-semibold">Event</th>
+                <th className="px-5 py-3 font-semibold">Date</th>
+                <th className="px-5 py-3 font-semibold">Status</th>
+                <th className="px-5 py-3 font-semibold text-right">Sold</th>
+                <th className="px-5 py-3 font-semibold text-right">Revenue</th>
+                <th className="px-5 py-3 font-semibold text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {data?.events.map((ev) => {
+                const stats = data.statsByEvent[ev.id] ?? { sold: 0, revenueKobo: 0 };
+                const evDate = new Date(ev.start_datetime);
+                return (
+                  <tr key={ev.id} className="hover:bg-muted/30 transition-colors group">
+                    <td className="px-5 py-4">
+                      <div className="h-10 w-10 shrink-0 rounded bg-secondary border border-border overflow-hidden">
+                        {ev.cover_image_url ? (
+                          <img src={ev.cover_image_url} alt={ev.title} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="h-full w-full flex items-center justify-center bg-muted">
+                            <Ticket className="h-4 w-4 text-muted-foreground/50" />
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex flex-col gap-0.5">
+                        <Link to="/events/$eventId/edit" params={{ eventId: ev.id }} className="font-semibold text-sm hover:text-primary transition-colors line-clamp-1">
                           {ev.title}
                         </Link>
-                        {ev.city && <div className="text-muted-foreground text-xs mt-0.5">{ev.city}</div>}
-                      </td>
-                      <td className="px-5 py-4 text-muted-foreground text-xs">
-                        {evDate.toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric" })}
-                        <div className="text-[10px] mt-0.5">{evDate.toLocaleTimeString("en-NG", { hour: "numeric", minute: "2-digit" })}</div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <StatusBadge status={ev.status} />
-                      </td>
-                      <td className="px-5 py-4 text-right font-medium">
-                        {stats.sold}
-                      </td>
-                      <td className="px-5 py-4 text-right font-medium text-primary">
-                        {formatNaira(stats.revenueKobo)}
-                      </td>
-                      <td className="px-5 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                          {ev.status === "published" && (
-                            <>
-                              <Button asChild variant="outline" size="icon" className="h-8 w-8 rounded hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors" title="Scan Tickets">
-                                <Link to="/events/$eventId/scan" params={{ eventId: ev.id }}>
-                                  <QrCode className="h-4 w-4" />
-                                </Link>
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8 rounded hover:bg-secondary transition-colors"
-                                title="Copy public link"
-                                onClick={() => {
-                                  const url = `${window.location.origin}/e/${ev.slug}`;
-                                  navigator.clipboard.writeText(url);
-                                  toast.success("Link copied", { icon: <Copy className="h-4 w-4" /> });
-                                }}
-                              >
-                                <Copy className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                          <Button asChild variant="outline" size="icon" className="h-8 w-8 rounded hover:bg-secondary transition-colors" title="Manage Attendees">
-                            <Link to="/events/$eventId/attendees" params={{ eventId: ev.id }}>
-                              <Users className="h-4 w-4" />
-                            </Link>
-                          </Button>
-                          <Button asChild variant="outline" size="icon" className="h-8 w-8 rounded hover:bg-secondary transition-colors" title="Edit Event">
-                            <Link to="/events/$eventId/edit" params={{ eventId: ev.id }}>
-                              <FileEdit className="h-4 w-4" />
-                            </Link>
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        {ev.event_series?.title && (
+                          <div className="text-[10px] font-bold text-primary/80 uppercase tracking-wider">Series: {ev.event_series.title}</div>
+                        )}
+                        {ev.city && <div className="text-muted-foreground text-xs">{ev.city}</div>}
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 text-muted-foreground text-xs">
+                      {evDate.toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric" })}
+                      <div className="text-[10px] mt-0.5">{evDate.toLocaleTimeString("en-NG", { hour: "numeric", minute: "2-digit" })}</div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <StatusBadge status={ev.status} />
+                    </td>
+                    <td className="px-5 py-4 text-right font-medium">
+                      {stats.sold}
+                    </td>
+                    <td className="px-5 py-4 text-right font-medium text-primary">
+                      {formatNaira(stats.revenueKobo)}
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                        {ev.status === "published" && (
+                          <>
+                            <Button asChild variant="outline" size="icon" className="h-8 w-8 rounded hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors" title="Scan Tickets">
+                              <Link to="/events/$eventId/scan" params={{ eventId: ev.id }}>
+                                <QrCode className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 rounded hover:bg-secondary transition-colors"
+                              title="Copy public link"
+                              onClick={() => {
+                                const url = `${window.location.origin}/e/${ev.slug}`;
+                                navigator.clipboard.writeText(url);
+                                toast.success("Link copied", { icon: <Copy className="h-4 w-4" /> });
+                              }}
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                        <Button asChild variant="outline" size="icon" className="h-8 w-8 rounded hover:bg-secondary transition-colors" title="Manage Attendees">
+                          <Link to="/events/$eventId/attendees" params={{ eventId: ev.id }}>
+                            <Users className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        <Button asChild variant="outline" size="icon" className="h-8 w-8 rounded hover:bg-secondary transition-colors" title="Edit Event">
+                          <Link to="/events/$eventId/edit" params={{ eventId: ev.id }}>
+                            <FileEdit className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      )}
-    </div>
-  );
+      </div>
+    );
+  }
 }
 
 function StatusBadge({ status }: { status: string }) {

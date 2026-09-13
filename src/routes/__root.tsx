@@ -145,9 +145,8 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: (ctx) => {
-    const pathname = ctx?.location?.pathname || "";
-    const canonicalUrl = `https://tixnaija.name.ng${pathname}`;
+  head: () => {
+    const canonicalUrl = `https://tixnaija.name.ng`;
 
     return {
       meta: [

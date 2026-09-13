@@ -50,8 +50,7 @@ export type Database = {
           phone: string
           topic: string | null
         }
-        Insert: {
-          created_at?: string
+        Insert: {created_at?: string
           email: string
           id?: string
           is_read?: boolean
@@ -74,6 +73,7 @@ export type Database = {
       }
       events: {
         Row: {
+          series_id: string | null
           address: string | null
           admin_cancelled: boolean
           cancelled_at: string | null
@@ -96,6 +96,7 @@ export type Database = {
           venue_name: string | null
         }
         Insert: {
+          series_id?: string | null
           address?: string | null
           admin_cancelled?: boolean
           cancelled_at?: string | null
@@ -118,6 +119,7 @@ export type Database = {
           venue_name?: string | null
         }
         Update: {
+          series_id?: string | null
           address?: string | null
           admin_cancelled?: boolean
           cancelled_at?: string | null
@@ -681,6 +683,60 @@ export type Database = {
         }
         Relationships: []
       }
+      event_series: {
+        Row: {
+          id: string
+          organizer_id: string
+          title: string
+          recurrence_rule: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organizer_id: string
+          title: string
+          recurrence_rule: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organizer_id?: string
+          title?: string
+          recurrence_rule?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      waitlist_entries: {
+        Row: {
+          id: string
+          event_id: string
+          ticket_tier_id: string | null
+          name: string
+          email: string
+          status: 'waiting' | 'notified'
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          event_id: string
+          ticket_tier_id?: string | null
+          name: string
+          email: string
+          status?: 'waiting' | 'notified'
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          event_id?: string
+          ticket_tier_id?: string | null
+          name?: string
+          email?: string
+          status?: 'waiting' | 'notified'
+          created_at?: string
+        }
+        Relationships: []
+      }
       ticket_types: {
         Row: {
           created_at: string
@@ -691,13 +747,13 @@ export type Database = {
           name: string
           price_kobo: number
           quantity_available: number
+          quantity_cancelled?: number
           quantity_sold: number
           sales_end_at: string | null
           sales_start_at: string | null
           sort_order: number
         }
-        Insert: {
-          created_at?: string
+        Insert: {created_at?: string
           description?: string | null
           event_id: string
           id?: string
@@ -705,6 +761,7 @@ export type Database = {
           name: string
           price_kobo?: number
           quantity_available: number
+          quantity_cancelled?: number
           quantity_sold?: number
           sales_end_at?: string | null
           sales_start_at?: string | null
@@ -719,6 +776,7 @@ export type Database = {
           name?: string
           price_kobo?: number
           quantity_available?: number
+          quantity_cancelled?: number
           quantity_sold?: number
           sales_end_at?: string | null
           sales_start_at?: string | null
@@ -963,6 +1021,13 @@ export type Database = {
           p_ticket_id: string
         }
         Returns: undefined
+      }
+      create_event_series: {
+        Args: {
+          p_title: string
+          p_recurrence_rule: string
+        }
+        Returns: string
       }
       validate_promo_code: {
         Args: { p_code: string; p_event_id: string }
