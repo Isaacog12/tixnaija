@@ -15,7 +15,7 @@ serve(async (req) => {
 
     const { data: events, error: eventsError } = await supabase
       .from("events")
-      .select("id, title, start_datetime, venue_name")
+      .select("id, title, start_datetime, venue_name, address, city, state")
       .gte("start_datetime", in24Hours.toISOString())
       .lt("start_datetime", in25Hours.toISOString());
 
@@ -43,6 +43,7 @@ serve(async (req) => {
 
       const dateStr = new Date(event.start_datetime).toLocaleDateString();
       const subject = `Reminder: ${event.title} is happening tomorrow!`;
+      const location = [event.venue_name, event.address, event.city, event.state].filter(Boolean).join(", ") || "Online";
 
       const sentEmails = new Set();
 
@@ -75,7 +76,7 @@ serve(async (req) => {
                 
                 <div style="background-color: #f3f4f6; border-left: 4px solid #ea580c; padding: 16px; margin-bottom: 24px; border-radius: 0 4px 4px 0;">
                   <p style="margin: 0 0 8px; color: #4b5563; font-size: 15px;"><strong style="color: #111827;">Date:</strong> ${dateStr}</p>
-                  <p style="margin: 0; color: #4b5563; font-size: 15px;"><strong style="color: #111827;">Location:</strong> ${event.venue_name || 'Online'}</p>
+                  <p style="margin: 0; color: #4b5563; font-size: 15px;"><strong style="color: #111827;">Location:</strong> ${location}</p>
                 </div>
                 
                 <p style="margin: 0 0 32px; color: #4b5563; font-size: 16px; line-height: 1.6;">
