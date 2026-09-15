@@ -38,21 +38,26 @@ class AppErrorBoundary extends Component<
     if (this.state.error) {
       return (
         <div className="flex min-h-dvh items-center justify-center bg-background px-4">
-          <div className="max-w-md text-center">
-            <h1 className="text-xl font-semibold tracking-tight">Something went wrong</h1>
+          <div className="max-w-md w-full rounded-2xl border border-border bg-card p-8 shadow-sm text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+              <svg className="h-6 w-6 text-destructive" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Application Error</h1>
             <p className="mt-2 text-sm text-muted-foreground">
               An unexpected error occurred. Try refreshing — if it keeps happening, please contact us.
             </p>
             <div className="mt-6">
               <a
                 href="/"
-                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground shadow transition-colors hover:bg-primary/90"
               >
                 Reload app
               </a>
             </div>
             {import.meta.env.DEV && (
-              <pre className="mt-6 text-left text-xs text-destructive bg-destructive/5 border border-destructive/20 rounded-lg p-4 overflow-auto max-h-48">
+              <pre className="mt-6 text-left text-xs text-destructive bg-destructive/5 border border-destructive/20 rounded-lg p-4 overflow-auto max-h-48 whitespace-pre-wrap break-words">
                 {(this.state.error as Error).message}
                 {"\n"}
                 {(this.state.error as Error).stack}
@@ -70,38 +75,44 @@ function NotFoundComponent() {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4">
       <div className="relative max-w-lg text-center">
-        <div className="relative mb-2">
-          <h1 className="font-display text-[120px] leading-none md:text-[160px] text-foreground select-none">
+        <div className="relative mb-6">
+          <h1 className="font-display text-[120px] leading-none md:text-[160px] font-bold text-foreground/5 select-none">
             404
           </h1>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">Page not found</h2>
+          </div>
         </div>
 
-        <h2 className="text-2xl font-semibold tracking-tight">Page not found</h2>
-        <p className="mt-3 text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
+        <p className="mt-4 text-base text-muted-foreground max-w-sm mx-auto leading-relaxed">
           The event or page you're looking for doesn't exist, may have moved, or the link might be broken.
         </p>
 
-        <div className="mt-8">
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
             to="/browse"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+            className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-8 text-sm font-semibold text-primary-foreground shadow transition-colors hover:bg-primary/90"
           >
             Browse events
+          </Link>
+          <Link
+            to="/"
+            className="inline-flex h-11 items-center justify-center rounded-md border border-input bg-background px-8 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            Go home
           </Link>
         </div>
 
         {/* Secondary links */}
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
-          <Link to="/" className="hover:text-primary transition-colors">Home</Link>
+        <div className="mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground/60">
+          <Link to="/faq" className="hover:text-foreground transition-colors">Help / FAQ</Link>
           <span className="text-border">·</span>
-          <Link to="/faq" className="hover:text-primary transition-colors">Help / FAQ</Link>
-          <span className="text-border">·</span>
-          <Link to="/about" className="hover:text-primary transition-colors">Contact us</Link>
+          <Link to="/about" className="hover:text-foreground transition-colors">Contact us</Link>
         </div>
 
-        <div className="mt-12 flex items-baseline justify-center gap-0">
-          <span className="font-display text-lg leading-none tracking-[0.02em] text-foreground/40">TIX</span>
-          <span className="font-display text-lg leading-none tracking-[0.02em] font-light text-foreground/40">NAIJA</span>
+        <div className="mt-12 flex items-baseline justify-center gap-0 opacity-50">
+          <span className="font-display text-lg leading-none tracking-[0.02em] text-foreground">TIX</span>
+          <span className="font-display text-lg leading-none tracking-[0.02em] font-light text-foreground">NAIJA</span>
         </div>
       </div>
     </div>
@@ -117,24 +128,29 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight">Something went wrong</h1>
+      <div className="max-w-md w-full rounded-2xl border border-border bg-card p-8 shadow-sm text-center">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+           <svg className="h-6 w-6 text-muted-foreground" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+           </svg>
+        </div>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Something went wrong</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Try refreshing, or head back home.
+          We encountered an unexpected issue while loading this page.
         </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
           <button
             onClick={() => {
               router.invalidate();
               reset();
             }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+            className="inline-flex h-10 w-full sm:w-auto items-center justify-center rounded-md bg-primary px-6 text-sm font-semibold text-primary-foreground shadow transition-colors hover:bg-primary/90"
           >
             Try again
           </button>
           <a
             href="/"
-            className="inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:bg-accent hover:text-accent-foreground"
+            className="inline-flex h-10 w-full sm:w-auto items-center justify-center rounded-md border border-input bg-background px-6 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
           >
             Go home
           </a>
@@ -272,7 +288,7 @@ function RootComponent() {
           <Outlet />
         </main>
       </AppErrorBoundary>
-      <Toaster position="top-center" richColors />
+      <Toaster position="bottom-center" />
       <CookieBanner />
     </QueryClientProvider>
   );
