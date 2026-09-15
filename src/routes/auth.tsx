@@ -413,16 +413,14 @@ function SignUpForm() {
 
 function SocialLogins({ mode, termsAccepted = true }: { mode: "signin" | "signup", termsAccepted?: boolean }) {
   const [isGoogleBusy, setIsGoogleBusy] = useState(false);
-  const [isAppleBusy, setIsAppleBusy] = useState(false);
 
-  const handleOAuth = async (provider: "google" | "apple") => {
+  const handleOAuth = async (provider: "google") => {
     if (mode === "signup" && !termsAccepted) {
       toast.error("You must agree to the Terms & Privacy Policy.");
       return;
     }
     
-    if (provider === "google") setIsGoogleBusy(true);
-    if (provider === "apple") setIsAppleBusy(true);
+    setIsGoogleBusy(true);
 
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -434,17 +432,16 @@ function SocialLogins({ mode, termsAccepted = true }: { mode: "signin" | "signup
       toast.error(error.message ?? `${provider} sign-in failed`);
     } finally {
       setIsGoogleBusy(false);
-      setIsAppleBusy(false);
     }
   };
 
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="flex flex-col gap-4">
       <Button 
         type="button"
         variant="outline" 
         onClick={() => handleOAuth("google")}
-        disabled={isGoogleBusy || isAppleBusy || (mode === "signup" && !termsAccepted)}
+        disabled={isGoogleBusy || (mode === "signup" && !termsAccepted)}
         className="w-full bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 text-white rounded-xl h-12 transition-all"
       >
         {isGoogleBusy ? (
@@ -458,23 +455,6 @@ function SocialLogins({ mode, termsAccepted = true }: { mode: "signin" | "signup
           </svg>
         )}
         Google
-      </Button>
-
-      <Button 
-        type="button"
-        variant="outline" 
-        onClick={() => handleOAuth("apple")}
-        disabled={isGoogleBusy || isAppleBusy || (mode === "signup" && !termsAccepted)}
-        className="w-full bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 text-white rounded-xl h-12 transition-all"
-      >
-        {isAppleBusy ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        ) : (
-          <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.19 2.31-.88 3.5-.8 1.53.06 2.8.64 3.63 1.8-3.06 1.83-2.58 5.92.31 7.1-1.04 2.58-1.55 3.12-2.52 4.07zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
-          </svg>
-        )}
-        Apple
       </Button>
     </div>
   );
