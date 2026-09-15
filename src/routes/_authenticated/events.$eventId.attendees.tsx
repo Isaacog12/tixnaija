@@ -190,7 +190,7 @@ function AttendeesPage() {
             <Ticket className="mx-auto h-12 w-12 text-muted-foreground/50" />
             <h3 className="mt-4 font-semibold">No attendees found</h3>
             <p className="text-sm text-muted-foreground">
-              {search ? "No tickets matched your search." : "No one has purchased a ticket yet."}
+              {search ? "No tickets matched your search." : "No attendees yet — check back once tickets start selling."}
             </p>
           </div>
         ) : (

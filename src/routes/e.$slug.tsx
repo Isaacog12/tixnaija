@@ -397,7 +397,7 @@ function EventDetailPage() {
       setAppliedPromo(res as any);
       toast.success("Promo code applied!");
     } catch (err: any) {
-      toast.error(err.message || "Invalid promo code");
+      toast.error(err.message || "Hmm, that promo code doesn't seem right.");
       setAppliedPromo(null);
     } finally {
       setValidatingPromo(false);
@@ -527,7 +527,7 @@ function EventDetailPage() {
 
       window.location.href = initData.authorization_url;
     } catch (err: any) {
-      toast.error(err.message || "Checkout failed");
+      toast.error(err.message || "We couldn't process your payment. Please try again or use a different payment method.");
     } finally {
       setCheckoutBusy(false);
     }

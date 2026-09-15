@@ -53,7 +53,7 @@ function VerifyCheckoutPage() {
       } catch (err: any) {
         console.error("Verification error:", err);
         setStatus("error");
-        setErrorMsg(err.message || "Failed to verify payment");
+        setErrorMsg(err.message || "Payment verification failed. If you were charged, please contact support.");
       }
     }
 

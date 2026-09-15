@@ -57,15 +57,35 @@ serve(async (req) => {
           sentEmails.add(email);
 
           const htmlBody = `
-            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h2>Your event is tomorrow!</h2>
-              <p>Hi ${name},</p>
-              <p>This is a quick reminder that <strong>${event.title}</strong> is happening tomorrow.</p>
-              <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                <strong>Date:</strong> ${dateStr}<br>
-                <strong>Location:</strong> ${event.venue_name || 'Online'}<br>
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f9fafb; padding: 40px 20px; text-align: center;">
+              <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; padding: 40px 32px; text-align: left; border: 1px solid #e5e7eb;">
+                
+                <div style="margin-bottom: 32px;">
+                  <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: #ea580c; letter-spacing: -0.5px;">TixNaija</h1>
+                </div>
+                
+                <h2 style="font-size: 20px; font-weight: 600; margin: 0 0 16px; color: #111827;">
+                  Your event is tomorrow!
+                </h2>
+                <p style="margin: 0 0 24px; color: #4b5563; font-size: 16px; line-height: 1.6;">Hi ${name},</p>
+                
+                <p style="margin: 0 0 24px; color: #4b5563; font-size: 16px; line-height: 1.6;">
+                  This is a quick reminder that <strong>${event.title}</strong> is happening tomorrow.
+                </p>
+                
+                <div style="background-color: #f3f4f6; border-left: 4px solid #ea580c; padding: 16px; margin-bottom: 24px; border-radius: 0 4px 4px 0;">
+                  <p style="margin: 0 0 8px; color: #4b5563; font-size: 15px;"><strong style="color: #111827;">Date:</strong> ${dateStr}</p>
+                  <p style="margin: 0; color: #4b5563; font-size: 15px;"><strong style="color: #111827;">Location:</strong> ${event.venue_name || 'Online'}</p>
+                </div>
+                
+                <p style="margin: 0 0 32px; color: #4b5563; font-size: 16px; line-height: 1.6;">
+                  Don't forget to have your tickets ready!
+                </p>
+                
+                <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 40px 0 24px;" />
+                
+                <p style="margin: 0; font-size: 13px; color: #9ca3af;">TixNaija — Buy tickets. Turn up. Repeat.</p>
               </div>
-              <p>Don't forget to have your tickets ready!</p>
             </div>
           `;
 

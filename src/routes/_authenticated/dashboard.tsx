@@ -277,7 +277,7 @@ function Dashboard() {
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary/50 mb-6 relative">
             <Ticket className="h-8 w-8 text-muted-foreground/50" />
           </div>
-          <h3 className="font-display text-3xl mb-3">No events yet</h3>
+          <h3 className="font-display text-3xl mb-3">Your stage is empty. Create your first event to get started.</h3>
           <p className="max-w-md text-muted-foreground text-base mb-8 leading-relaxed">
             Your dashboard is looking a little empty. Create your first event and start selling tickets globally.
           </p>

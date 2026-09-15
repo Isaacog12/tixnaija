@@ -295,7 +295,7 @@ function TicketsPage() {
             <div className="absolute inset-0 bg-primary/10 rounded-full animate-ping opacity-20" />
             <TicketIcon className="h-12 w-12 text-muted-foreground/50" />
           </div>
-          <h3 className="font-display text-4xl mb-4 text-foreground">No tickets yet</h3>
+          <h3 className="font-display text-4xl mb-4 text-foreground">Your ticket stash is empty. Let's fix that.</h3>
           <p className="text-muted-foreground text-lg max-w-md mx-auto mb-10 leading-relaxed">
             You haven't purchased any tickets. Discover amazing concerts, comedy shows, and parties happening near you.
           </p>

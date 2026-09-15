@@ -142,7 +142,7 @@ function GuestTicketsPage() {
             {orders.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-border py-14 text-center">
                 <Mail className="mx-auto h-10 w-10 text-muted-foreground/40" />
-                <h3 className="mt-4 font-semibold">No tickets found</h3>
+                <h3 className="mt-4 font-semibold font-display text-xl text-foreground">Your ticket stash is empty. Let's fix that.</h3>
                 <p className="mt-1 text-sm text-muted-foreground max-w-xs mx-auto">
                   No paid orders found for <strong>{submitted.email}</strong>. Check your spelling or try another email.
                 </p>

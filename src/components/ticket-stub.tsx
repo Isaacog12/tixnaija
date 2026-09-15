@@ -111,7 +111,10 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
       {/* Visual Ticket Element */}
       <div 
         ref={ticketRef} 
-        className="flex flex-col md:flex-row w-full bg-card/95 backdrop-blur-sm rounded-2xl overflow-hidden shadow-2xl shadow-black/5 dark:shadow-primary/5 border border-border/60 relative transition-transform duration-300 hover:shadow-primary/10"
+        className="flex flex-col md:flex-row w-full bg-card/95 backdrop-blur-sm rounded-2xl overflow-hidden shadow-2xl shadow-black/5 border border-border/60 relative transition-transform duration-300 hover:shadow-primary/20"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239C92AC' fill-opacity='0.03' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E")`
+        }}
       >
         
         {/* Main Content Area */}
@@ -128,9 +131,9 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-primary/80 to-primary" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-            <div className="absolute bottom-4 left-6 right-6 text-white">
-              <h2 className="font-display text-3xl font-bold truncate tracking-tight shadow-sm drop-shadow-md">
+            <div className="absolute inset-0 bg-gradient-to-t from-card/95 via-card/40 to-transparent" />
+            <div className="absolute bottom-4 left-6 right-6 text-white drop-shadow-lg">
+              <h2 className="font-display text-4xl font-extrabold truncate tracking-tight">
                 {event.title}
               </h2>
             </div>
@@ -138,25 +141,25 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
 
           {/* Details Area */}
           <div className="p-6 flex-1 flex flex-col justify-between gap-6 relative">
-            <div className="space-y-5">
+            <div className="space-y-6">
               <div className="flex items-start gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <Calendar className="w-5 h-5" />
+                <div className="shrink-0 mt-0.5">
+                  <Calendar className="w-6 h-6 text-primary drop-shadow-sm" />
                 </div>
                 <div>
-                  <p className="font-semibold text-foreground text-lg leading-tight">{formattedDate}</p>
-                  <p className="text-muted-foreground">{formattedTime}</p>
+                  <p className="font-semibold text-foreground text-lg leading-tight tracking-tight">{formattedDate}</p>
+                  <p className="text-muted-foreground font-medium">{formattedTime}</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <MapPin className="w-5 h-5" />
+                <div className="shrink-0 mt-0.5">
+                  <MapPin className="w-6 h-6 text-primary drop-shadow-sm" />
                 </div>
                 <div>
-                  <p className="font-semibold text-foreground text-lg leading-tight">{event.venue_name || "Online Event"}</p>
+                  <p className="font-semibold text-foreground text-lg leading-tight tracking-tight">{event.venue_name || "Online Event"}</p>
                   {(event.address || event.city || event.state) && (
-                    <p className="text-muted-foreground">
+                    <p className="text-muted-foreground font-medium">
                       {[event.address, event.city, event.state].filter(Boolean).join(", ")}
                     </p>
                   )}
@@ -177,18 +180,20 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
 
         {/* Perforated Divider (Hidden on mobile, visible on desktop) */}
         <div className="hidden md:flex flex-col items-center justify-between relative w-0 border-l-2 border-dashed border-border/80">
-          <div className="w-6 h-6 bg-background rounded-full absolute -top-3 -left-3 border-b border-border/40 shadow-inner" />
-          <div className="w-6 h-6 bg-background rounded-full absolute -bottom-3 -left-3 border-t border-border/40 shadow-inner" />
+          <div className="w-6 h-6 bg-background rounded-full absolute -top-3 -left-3" />
+          <div className="w-6 h-6 bg-background rounded-full absolute -bottom-3 -left-3" />
         </div>
         
         {/* Mobile Perforated Divider */}
         <div className="md:hidden flex items-center justify-between relative h-0 border-t-2 border-dashed border-border/80">
-          <div className="w-6 h-6 bg-background rounded-full absolute -left-3 -top-3 shadow-inner border-r border-border/40" />
-          <div className="w-6 h-6 bg-background rounded-full absolute -right-3 -top-3 shadow-inner border-l border-border/40" />
+          <div className="w-6 h-6 bg-background rounded-full absolute -left-3 -top-3" />
+          <div className="w-6 h-6 bg-background rounded-full absolute -right-3 -top-3" />
         </div>
 
         {/* Stub Area (QR Code) */}
-        <div className="w-full md:w-72 bg-gradient-to-b from-card/80 to-muted/20 p-6 flex flex-col items-center justify-center shrink-0 relative overflow-hidden">
+        <div className="w-full md:w-72 p-6 flex flex-col items-center justify-center shrink-0 relative overflow-hidden bg-primary/5">
+          {/* Subtle sunset gradient wash on the stub */}
+          <div className="absolute inset-0 opacity-10 gradient-sunset pointer-events-none" />
           {/* Decorative Barcode on the right edge */}
           <div className="absolute right-0 top-0 bottom-0 w-8 opacity-5" 
                style={{ backgroundImage: 'repeating-linear-gradient(to bottom, currentColor, currentColor 2px, transparent 2px, transparent 5px, currentColor 5px, currentColor 6px, transparent 6px, transparent 10px)' }}>

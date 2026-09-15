@@ -212,7 +212,7 @@ function OrderTicketsPage() {
         ) : data.tickets.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border py-24 text-center">
             <Ticket className="mx-auto h-12 w-12 text-muted-foreground/50" />
-            <h3 className="mt-4 font-semibold">No tickets found</h3>
+            <h3 className="mt-4 font-semibold font-display text-xl text-foreground">Your ticket stash is empty. Let's fix that.</h3>
             <p className="text-sm text-muted-foreground">We couldn't find any tickets for this order.</p>
           </div>
         ) : (

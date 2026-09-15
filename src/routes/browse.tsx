@@ -318,7 +318,7 @@ function BrowsePage() {
         {query.error && (
           <div className="rounded-3xl border border-destructive/20 bg-destructive/5 p-12 text-center text-destructive max-w-2xl mx-auto shadow-sm backdrop-blur-sm">
             <Frown className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <h3 className="font-display text-2xl mb-2">Oops, something went wrong</h3>
+            <h3 className="font-display text-2xl mb-2">Something went wrong. Please refresh the page or try again.</h3>
             <p className="text-destructive/80 font-medium">{(query.error as Error).message}</p>
           </div>
         )}
@@ -329,9 +329,9 @@ function BrowsePage() {
               <div className="absolute inset-0 bg-primary/10 rounded-full animate-ping opacity-30" />
               <Search className="h-10 w-10 text-muted-foreground/50" />
             </div>
-            <h3 className="font-display text-3xl md:text-4xl text-foreground mb-4">No events found</h3>
+            <h3 className="font-display text-3xl md:text-4xl text-foreground mb-4">Looks quiet in here.</h3>
             <p className="max-w-md text-muted-foreground text-lg mb-8 font-medium leading-relaxed">
-              We couldn't find any events matching your current filters. Try adjusting your search, date, or price criteria.
+              We couldn't find any events matching your filters. Try adjusting your search or dates.
             </p>
             <Button size="lg" className="rounded-full shadow-lg h-12 px-8 gradient-sunset" onClick={() => updateSearch({ q: undefined, c: "All", date: "all", price: "all" })}>
               Clear All Filters
