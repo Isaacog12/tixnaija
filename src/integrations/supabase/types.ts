@@ -712,7 +712,8 @@ export type Database = {
           id: string
           event_id: string
           ticket_tier_id: string | null
-          name: string
+            user_id: string | null
+            name: string
           email: string
           status: 'waiting' | 'notified'
           created_at: string
@@ -721,7 +722,8 @@ export type Database = {
           id?: string
           event_id: string
           ticket_tier_id?: string | null
-          name: string
+            user_id?: string | null
+            name: string
           email: string
           status?: 'waiting' | 'notified'
           created_at?: string
