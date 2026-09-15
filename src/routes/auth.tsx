@@ -13,6 +13,29 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 
+function getAuthErrorMessage(err: any): string {
+  if (!err) return "An unknown error occurred.";
+  const message = err.message || err.error_description || String(err);
+  
+  if (message.includes("Invalid login credentials")) {
+    return "Incorrect email or password. Please try again.";
+  }
+  if (message.includes("Email rate limit exceeded") || message.includes("Too many requests")) {
+    return "You're doing that too fast. Please wait a minute before trying again.";
+  }
+  if (message.includes("User already registered")) {
+    return "An account with this email already exists. Try signing in.";
+  }
+  if (message.includes("Password should be at least")) {
+    return "Your password is too weak. Please use at least 6 characters.";
+  }
+  if (message.includes("email link is invalid or has expired")) {
+    return "The sign-in link is invalid or has expired. Please request a new one.";
+  }
+  
+  return message;
+}
+
 const searchSchema = z.object({
   mode: z.enum(["signin", "signup"]).optional(),
 });
@@ -40,7 +63,7 @@ function AuthPage() {
       const params = new URLSearchParams(hash.substring(1));
       const errorDesc = params.get("error_description");
       if (errorDesc) {
-        toast.error(errorDesc.replace(/\+/g, " "));
+        toast.error(getAuthErrorMessage(errorDesc.replace(/\+/g, " ")));
         window.history.replaceState(null, "", window.location.pathname);
       }
     }
@@ -135,8 +158,8 @@ function SignInForm() {
       if (error) throw error;
       toast.success("Welcome back!");
       navigate({ to: "/dashboard", replace: true });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Sign in failed");
+    } catch (err: any) {
+      toast.error(getAuthErrorMessage(err));
     }
   };
 
@@ -274,8 +297,8 @@ function SignUpForm() {
       if (error) throw error;
       toast.success("Account created! You're signed in.");
       navigate({ to: "/dashboard", replace: true });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Sign up failed");
+    } catch (err: any) {
+      toast.error(getAuthErrorMessage(err));
     }
   };
 
@@ -429,7 +452,7 @@ function SocialLogins({ mode, termsAccepted = true }: { mode: "signin" | "signup
       });
       if (error) throw error;
     } catch (error: any) {
-      toast.error(error.message ?? `${provider} sign-in failed`);
+      toast.error(getAuthErrorMessage(error));
     } finally {
       setIsGoogleBusy(false);
     }
