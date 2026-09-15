@@ -77,7 +77,7 @@ function AuthPage() {
   };
 
   return (
-    <div className="relative flex min-h-dvh items-center justify-center bg-[#0a0a0a] p-4 sm:p-8 pt-safe pb-safe overflow-hidden font-sans">
+    <div className="relative flex min-h-dvh items-center justify-center bg-background p-4 sm:p-8 pt-safe pb-safe overflow-hidden font-sans">
       {/* Background Cinematic Glows */}
       <div className="pointer-events-none absolute left-1/4 top-1/4 w-[500px] h-[500px] bg-white/5 rounded-full blur-[120px]" />
       <div className="pointer-events-none absolute right-1/4 bottom-1/4 w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px]" />
@@ -238,7 +238,7 @@ function SignInForm() {
           <span className="w-full border-t border-white/10" />
         </div>
         <div className="relative flex justify-center text-xs">
-          <span className="bg-[#0a0a0a] px-3 text-white/40">OR CONTINUE WITH</span>
+          <span className="bg-background px-3 text-white/40">OR CONTINUE WITH</span>
         </div>
       </div>
 
@@ -414,7 +414,7 @@ function SignUpForm() {
           <span className="w-full border-t border-white/10" />
         </div>
         <div className="relative flex justify-center text-xs">
-          <span className="bg-[#0a0a0a] px-3 text-white/40">OR CONTINUE WITH</span>
+          <span className="bg-background px-3 text-white/40">OR CONTINUE WITH</span>
         </div>
       </div>
 
