@@ -259,6 +259,34 @@
     transition: background-color var(--duration-default) var(--ease-snappy),
                 color var(--duration-fast) var(--ease-snappy);
   }
+
+  /* ── Custom Scrollbars ───────────────────────────────────────────────── */
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 9999px;
+    border: 3px solid var(--color-background);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-muted-foreground);
+  }
+  * {
+    scrollbar-color: var(--color-border) transparent;
+    scrollbar-width: thin;
+  }
+
+  /* ── Brand-aligned Focus States ───────────────────────────────────────── */
+  *:focus-visible {
+    outline: 2px solid var(--color-primary) !important;
+    outline-offset: 2px !important;
+    box-shadow: none !important; /* Override shadcn's ring utilities */
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
