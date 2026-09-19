@@ -105,6 +105,29 @@
       transform: scale(1) translateY(0);
     }
   }
+
+  /* ── Demo page keyframes ─────────────────────────────────────────────── */
+  @keyframes checkmark-circle-draw {
+    from { stroke-dashoffset: 166; }
+    to   { stroke-dashoffset: 0; }
+  }
+  @keyframes checkmark-path-draw {
+    from { stroke-dashoffset: 48; }
+    to   { stroke-dashoffset: 0; }
+  }
+  @keyframes ember-streak {
+    0%   { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+    100% { transform: translateX(100%)  translateY(100%)  rotate(45deg); }
+  }
+  @keyframes otp-glow-pulse {
+    0%, 100% { box-shadow: 0 0 8px 2px oklch(0.66 0.22 40 / 0.3); }
+    50%      { box-shadow: 0 0 16px 4px oklch(0.66 0.22 40 / 0.55); }
+  }
+  @keyframes success-circle-scale {
+    0%   { transform: scale(0); opacity: 0; }
+    60%  { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
