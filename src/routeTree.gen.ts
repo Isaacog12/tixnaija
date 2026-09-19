@@ -20,6 +20,7 @@ import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as MyTicketsRouteImport } from './routes/my-tickets'
+import { Route as OtpRouteImport } from './routes/otp'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
@@ -30,8 +31,6 @@ import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authen
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
 import { Route as CareersApplyRouteImport } from './routes/careers_.apply'
 import { Route as CheckoutVerifyRouteImport } from './routes/checkout.verify'
-import { Route as DemoAuthRouteImport } from './routes/demo.auth'
-import { Route as DemoOtpRouteImport } from './routes/demo.otp'
 import { Route as ESlugRouteImport } from './routes/e.$slug'
 import { Route as TTicketCodeRouteImport } from './routes/t.$ticketCode'
 import { Route as AuthenticatedAdminBannersRouteImport } from './routes/_authenticated/admin_.banners'
@@ -97,6 +96,11 @@ const MyTicketsRoute = MyTicketsRouteImport.update({
   path: '/my-tickets',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OtpRoute = OtpRouteImport.update({
+  id: '/otp',
+  path: '/otp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
@@ -146,16 +150,6 @@ const CareersApplyRoute = CareersApplyRouteImport.update({
 const CheckoutVerifyRoute = CheckoutVerifyRouteImport.update({
   id: '/checkout/verify',
   path: '/checkout/verify',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoAuthRoute = DemoAuthRouteImport.update({
-  id: '/demo/auth',
-  path: '/demo/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoOtpRoute = DemoOtpRouteImport.update({
-  id: '/demo/otp',
-  path: '/demo/otp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ESlugRoute = ESlugRouteImport.update({
@@ -226,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/how-it-works': typeof HowItWorksRoute
   '/my-tickets': typeof MyTicketsRoute
+  '/otp': typeof OtpRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
@@ -236,8 +231,6 @@ export interface FileRoutesByFullPath {
   '/tickets': typeof AuthenticatedTicketsRoute
   '/careers/apply': typeof CareersApplyRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
-  '/demo/auth': typeof DemoAuthRoute
-  '/demo/otp': typeof DemoOtpRoute
   '/e/$slug': typeof ESlugRoute
   '/t/$ticketCode': typeof TTicketCodeRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
@@ -260,6 +253,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/how-it-works': typeof HowItWorksRoute
   '/my-tickets': typeof MyTicketsRoute
+  '/otp': typeof OtpRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
@@ -270,8 +264,6 @@ export interface FileRoutesByTo {
   '/tickets': typeof AuthenticatedTicketsRoute
   '/careers/apply': typeof CareersApplyRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
-  '/demo/auth': typeof DemoAuthRoute
-  '/demo/otp': typeof DemoOtpRoute
   '/e/$slug': typeof ESlugRoute
   '/t/$ticketCode': typeof TTicketCodeRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
@@ -296,6 +288,7 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/how-it-works': typeof HowItWorksRoute
   '/my-tickets': typeof MyTicketsRoute
+  '/otp': typeof OtpRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
@@ -306,8 +299,6 @@ export interface FileRoutesById {
   '/_authenticated/tickets': typeof AuthenticatedTicketsRoute
   '/careers_/apply': typeof CareersApplyRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
-  '/demo/auth': typeof DemoAuthRoute
-  '/demo/otp': typeof DemoOtpRoute
   '/e/$slug': typeof ESlugRoute
   '/t/$ticketCode': typeof TTicketCodeRoute
   '/_authenticated/admin_/banners': typeof AuthenticatedAdminBannersRoute
@@ -332,6 +323,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/how-it-works'
     | '/my-tickets'
+    | '/otp'
     | '/privacy'
     | '/reset-password'
     | '/terms'
@@ -342,8 +334,6 @@ export interface FileRouteTypes {
     | '/tickets'
     | '/careers/apply'
     | '/checkout/verify'
-    | '/demo/auth'
-    | '/demo/otp'
     | '/e/$slug'
     | '/t/$ticketCode'
     | '/admin/banners'
@@ -366,6 +356,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/how-it-works'
     | '/my-tickets'
+    | '/otp'
     | '/privacy'
     | '/reset-password'
     | '/terms'
@@ -376,8 +367,6 @@ export interface FileRouteTypes {
     | '/tickets'
     | '/careers/apply'
     | '/checkout/verify'
-    | '/demo/auth'
-    | '/demo/otp'
     | '/e/$slug'
     | '/t/$ticketCode'
     | '/admin/banners'
@@ -401,6 +390,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/how-it-works'
     | '/my-tickets'
+    | '/otp'
     | '/privacy'
     | '/reset-password'
     | '/terms'
@@ -411,8 +401,6 @@ export interface FileRouteTypes {
     | '/_authenticated/tickets'
     | '/careers_/apply'
     | '/checkout/verify'
-    | '/demo/auth'
-    | '/demo/otp'
     | '/e/$slug'
     | '/t/$ticketCode'
     | '/_authenticated/admin_/banners'
@@ -437,13 +425,12 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   HowItWorksRoute: typeof HowItWorksRoute
   MyTicketsRoute: typeof MyTicketsRoute
+  OtpRoute: typeof OtpRoute
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
   CareersApplyRoute: typeof CareersApplyRoute
   CheckoutVerifyRoute: typeof CheckoutVerifyRoute
-  DemoAuthRoute: typeof DemoAuthRoute
-  DemoOtpRoute: typeof DemoOtpRoute
   ESlugRoute: typeof ESlugRoute
   TTicketCodeRoute: typeof TTicketCodeRoute
   OrdersOrderIdTicketsRoute: typeof OrdersOrderIdTicketsRoute
@@ -528,6 +515,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MyTicketsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/otp': {
+      id: '/otp'
+      path: '/otp'
+      fullPath: '/otp'
+      preLoaderRoute: typeof OtpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
@@ -596,20 +590,6 @@ declare module '@tanstack/react-router' {
       path: '/checkout/verify'
       fullPath: '/checkout/verify'
       preLoaderRoute: typeof CheckoutVerifyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/auth': {
-      id: '/demo/auth'
-      path: '/demo/auth'
-      fullPath: '/demo/auth'
-      preLoaderRoute: typeof DemoAuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/otp': {
-      id: '/demo/otp'
-      path: '/demo/otp'
-      fullPath: '/demo/otp'
-      preLoaderRoute: typeof DemoOtpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/e/$slug': {
@@ -733,13 +713,12 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   HowItWorksRoute: HowItWorksRoute,
   MyTicketsRoute: MyTicketsRoute,
+  OtpRoute: OtpRoute,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
   CareersApplyRoute: CareersApplyRoute,
   CheckoutVerifyRoute: CheckoutVerifyRoute,
-  DemoAuthRoute: DemoAuthRoute,
-  DemoOtpRoute: DemoOtpRoute,
   ESlugRoute: ESlugRoute,
   TTicketCodeRoute: TTicketCodeRoute,
   OrdersOrderIdTicketsRoute: OrdersOrderIdTicketsRoute,

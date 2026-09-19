@@ -8,14 +8,14 @@ import { supabase } from "@/integrations/supabase/client";
 
 import { SuccessCheckmark } from "@/components/demo/success-checkmark";
 
-export const Route = createFileRoute("/demo/otp")({
+export const Route = createFileRoute("/otp")({
   validateSearch: z.object({
     email: z.string().email().optional(),
   }),
-  component: DemoOtpPage,
+  component: OtpPage,
   head: () => ({
     meta: [
-      { title: "OTP Demo — TixNaija" },
+      { title: "Verify OTP — TixNaija" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -25,7 +25,7 @@ type OtpState = "email_input" | "input" | "verifying" | "success";
 const OTP_LENGTH = 8;
 const RESEND_SECONDS = 60;
 
-function DemoOtpPage() {
+function OtpPage() {
   const { email: initialEmail } = Route.useSearch();
   const navigate = useNavigate();
 

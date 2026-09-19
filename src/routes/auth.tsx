@@ -474,7 +474,15 @@ function SocialLogins({ mode, termsAccepted = true }: { mode: "signin" | "signup
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
+      <Link 
+        to="/otp" 
+        className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/5 font-semibold text-white transition-all duration-200 hover:bg-white/10 active:scale-[0.98]"
+      >
+        <Mail className="h-5 w-5 text-white/70" />
+        Sign in with Email OTP
+      </Link>
+
       <Button 
         type="button"
         variant="outline" 
