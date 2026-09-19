@@ -22,7 +22,7 @@ export const Route = createFileRoute("/demo/otp")({
 });
 
 type OtpState = "email_input" | "input" | "verifying" | "success";
-const OTP_LENGTH = 6;
+const OTP_LENGTH = 8;
 const RESEND_SECONDS = 60;
 
 function DemoOtpPage() {
