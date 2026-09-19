@@ -195,7 +195,7 @@ function DemoOtpPage() {
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 w-full max-w-[400px] overflow-hidden rounded-3xl border border-white/10 bg-[oklch(0.13_0.02_40/0.7)] p-8 shadow-[0_8px_60px_-12px_oklch(0_0_0/0.5)] backdrop-blur-2xl sm:p-10"
+        className="relative z-10 w-full max-w-[460px] overflow-hidden rounded-3xl border border-white/10 bg-[oklch(0.13_0.02_40/0.7)] p-6 shadow-[0_8px_60px_-12px_oklch(0_0_0/0.5)] backdrop-blur-2xl sm:p-10"
       >
         {/* Top edge glow */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[oklch(0.66_0.22_40/0.3)] to-transparent" />
@@ -299,7 +299,7 @@ function DemoOtpPage() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
-              className="flex flex-col items-center text-center"
+              className="flex flex-col items-center text-center w-full"
             >
               {/* Key icon */}
               <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
@@ -313,11 +313,11 @@ function DemoOtpPage() {
                 </span>
               </h1>
               <p className="mt-2 text-sm text-white/50">
-                Enter the {OTP_LENGTH}-digit security code sent to <strong>{email}</strong>
+                Enter the {OTP_LENGTH}-digit security code sent to <br/><strong className="text-white/80">{email}</strong>
               </p>
 
               {/* ── OTP Boxes ──────────────────────────────────────── */}
-              <div className="my-8 flex gap-2 sm:gap-3" onPaste={handlePaste}>
+              <div className="my-8 flex w-full justify-between gap-1 sm:gap-2" onPaste={handlePaste}>
                 {digits.map((digit, idx) => (
                   <motion.div
                     key={idx}
@@ -333,7 +333,7 @@ function DemoOtpPage() {
                           }
                     }
                     transition={{ duration: 0.25 }}
-                    className="rounded-lg border bg-white/5"
+                    className="flex-1 rounded-lg border bg-white/5"
                   >
                     <input
                       ref={(el) => { inputRefs.current[idx] = el; }}
@@ -344,7 +344,7 @@ function DemoOtpPage() {
                       onChange={(e) => handleDigitChange(idx, e.target.value)}
                       onKeyDown={(e) => handleKeyDown(idx, e)}
                       disabled={state === "verifying"}
-                      className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg bg-transparent text-center text-xl sm:text-2xl font-bold text-white outline-none transition-colors placeholder:text-white/15 disabled:opacity-50"
+                      className="h-10 w-full sm:h-12 rounded-lg bg-transparent text-center text-lg sm:text-xl font-bold text-white outline-none transition-colors placeholder:text-white/15 disabled:opacity-50"
                       placeholder="·"
                     />
                   </motion.div>
