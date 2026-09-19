@@ -71,6 +71,7 @@ async function fetchMyApplication() {
 
 const profileSchema = z.object({
   full_name: z.string().trim().max(80).optional().nullable(),
+  username: z.string().trim().max(30).optional().nullable(),
   phone: z.string().trim().max(20).optional().nullable(),
   city: z.string().trim().max(60).optional().nullable(),
   bank_name: z.string().trim().max(60).optional().nullable(),
@@ -111,6 +112,7 @@ function AccountPage() {
 
   const [form, setForm] = useState({
     full_name: "",
+    username: "",
     phone: "",
     city: "",
     bank_name: "",
@@ -123,6 +125,7 @@ function AccountPage() {
     if (data?.profile) {
       setForm({
         full_name: data.profile.full_name ?? "",
+        username: data.profile.username ?? "",
         phone: data.profile.phone ?? "",
         city: data.profile.city ?? "",
         bank_name: data.profile.bank_name ?? "",
@@ -333,6 +336,13 @@ function AccountPage() {
                     <Input
                       value={form.full_name}
                       onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Username">
+                    <Input
+                      value={form.username}
+                      onChange={(e) => setForm({ ...form, username: e.target.value })}
+                      placeholder="e.g. alexj"
                     />
                   </Field>
                   <Field label="Phone">

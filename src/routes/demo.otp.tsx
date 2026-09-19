@@ -1,11 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { KeyRound, ShieldCheck, Loader2, Check } from "lucide-react";
+import { KeyRound, ShieldCheck, Loader2, Check, Mail, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { z } from "zod";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 import { SuccessCheckmark } from "@/components/demo/success-checkmark";
 
 export const Route = createFileRoute("/demo/otp")({
+  validateSearch: z.object({
+    email: z.string().email().optional(),
+  }),
   component: DemoOtpPage,
   head: () => ({
     meta: [
@@ -15,15 +21,35 @@ export const Route = createFileRoute("/demo/otp")({
   }),
 });
 
-type OtpState = "input" | "verifying" | "success";
-const OTP_LENGTH = 4;
-const RESEND_SECONDS = 40;
+type OtpState = "email_input" | "input" | "verifying" | "success";
+const OTP_LENGTH = 6;
+const RESEND_SECONDS = 60;
 
 function DemoOtpPage() {
+  const { email: initialEmail } = Route.useSearch();
+  const navigate = useNavigate();
+
+  const [email, setEmail] = useState(initialEmail || "");
   const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(""));
-  const [state, setState] = useState<OtpState>("input");
-  const [countdown, setCountdown] = useState(RESEND_SECONDS);
+  const [state, setState] = useState<OtpState>(initialEmail ? "input" : "email_input");
+  const [countdown, setCountdown] = useState(initialEmail ? RESEND_SECONDS : 0);
+  const [loading, setLoading] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  // ── Send initial OTP if email is passed via URL ──────────────────────
+  useEffect(() => {
+    if (initialEmail && state === "input" && countdown === RESEND_SECONDS) {
+      // Send OTP quietly when entering the page with an email
+      supabase.auth.signInWithOtp({ email: initialEmail }).then(({ error }) => {
+        if (error) {
+          toast.error(error.message);
+          setState("email_input");
+        } else {
+          toast.success("Verification code sent to your email!");
+        }
+      });
+    }
+  }, [initialEmail]);
 
   // ── Countdown timer ──────────────────────────────────────────────────
   useEffect(() => {
@@ -80,14 +106,54 @@ function DemoOtpPage() {
   );
 
   // ── Verification flow ────────────────────────────────────────────────
-  const handleVerify = () => {
-    if (digits.some((d) => !d)) return;
-    setState("verifying");
-    setTimeout(() => setState("success"), 2200);
+  const handleRequestOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setLoading(true);
+    
+    const { error } = await supabase.auth.signInWithOtp({ email });
+    setLoading(false);
+    
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    
+    toast.success("Verification code sent!");
+    setState("input");
+    setCountdown(RESEND_SECONDS);
   };
 
-  const handleResend = () => {
+  const handleVerify = async () => {
+    if (digits.some((d) => !d)) return;
+    setState("verifying");
+    
+    const token = digits.join("");
+    const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
+    
+    if (error) {
+      toast.error(error.message);
+      setState("input");
+      setDigits(Array(OTP_LENGTH).fill(""));
+      inputRefs.current[0]?.focus();
+    } else {
+      setState("success");
+      setTimeout(() => {
+        navigate({ to: "/dashboard" });
+      }, 2500);
+    }
+  };
+
+  const handleResend = async () => {
     if (countdown > 0) return;
+    
+    const { error } = await supabase.auth.signInWithOtp({ email });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    
+    toast.success("Code resent to your email.");
     setDigits(Array(OTP_LENGTH).fill(""));
     setState("input");
     setCountdown(RESEND_SECONDS);
@@ -164,19 +230,66 @@ function DemoOtpPage() {
                 <SuccessCheckmark show size={80} />
               </div>
 
-              {/* Resend line (persists) */}
-              <p className="mb-5 text-sm text-white/40">
-                Didn't receive the code?{" "}
-                <span className="font-semibold text-primary">
-                  Resend in {formatCountdown(countdown)}
-                </span>
-              </p>
-
               {/* Success button */}
               <button className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[oklch(0.65_0.2_145)] font-semibold text-white shadow-[0_0_20px_oklch(0.65_0.2_145/0.25)] transition-all duration-200 hover:shadow-[0_0_28px_oklch(0.65_0.2_145/0.35)]">
                 <Check className="h-4 w-4" />
                 Verified & Secured
               </button>
+            </motion.div>
+          ) : state === "email_input" ? (
+            /* ── EMAIL INPUT STATE ────────────────────────────────── */
+            <motion.div
+              key="email_input"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
+              className="flex flex-col items-center text-center"
+            >
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
+                <Mail className="h-6 w-6 text-primary" />
+              </div>
+
+              <h1 className="text-2xl font-bold text-white">
+                Sign in with{" "}
+                <span className="bg-gradient-to-r from-primary to-[oklch(0.85_0.15_85)] bg-clip-text text-transparent">
+                  OTP
+                </span>
+              </h1>
+              <p className="mt-2 text-sm text-white/50">
+                Enter your email address to receive a secure login code.
+              </p>
+
+              <form onSubmit={handleRequestOtp} className="mt-8 w-full space-y-4">
+                <div className="relative group text-left">
+                  <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30 transition-colors group-focus-within:text-primary" />
+                  <input
+                    type="email"
+                    placeholder="name@domain.com"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-12 w-full rounded-xl border border-white/10 bg-white/5 pl-11 pr-4 text-sm text-white placeholder:text-white/30 outline-none transition-all duration-200 focus:border-primary/40 focus:ring-1 focus:ring-primary/20"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || !email}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-xl font-semibold text-[oklch(0.12_0.02_40)] shadow-[0_0_20px_oklch(0.66_0.22_40/0.2)] transition-all duration-200 hover:shadow-[0_0_28px_oklch(0.66_0.22_40/0.3)] active:scale-[0.98] disabled:opacity-50 disabled:shadow-none"
+                  style={{
+                    background: "linear-gradient(135deg, oklch(0.75 0.18 50) 0%, oklch(0.66 0.22 40) 50%, oklch(0.5 0.24 15) 100%)",
+                  }}
+                >
+                  {loading ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-[oklch(0.12_0.02_40)]" />
+                  ) : (
+                    <>
+                      Send Code <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </button>
+              </form>
             </motion.div>
           ) : (
             /* ── INPUT / VERIFYING STATE ──────────────────────────── */
@@ -200,11 +313,11 @@ function DemoOtpPage() {
                 </span>
               </h1>
               <p className="mt-2 text-sm text-white/50">
-                Enter the {OTP_LENGTH}-digit security code sent to your device
+                Enter the {OTP_LENGTH}-digit security code sent to <strong>{email}</strong>
               </p>
 
               {/* ── OTP Boxes ──────────────────────────────────────── */}
-              <div className="my-8 flex gap-3 sm:gap-4" onPaste={handlePaste}>
+              <div className="my-8 flex gap-2 sm:gap-3" onPaste={handlePaste}>
                 {digits.map((digit, idx) => (
                   <motion.div
                     key={idx}
@@ -220,7 +333,7 @@ function DemoOtpPage() {
                           }
                     }
                     transition={{ duration: 0.25 }}
-                    className="rounded-xl border bg-white/5"
+                    className="rounded-lg border bg-white/5"
                   >
                     <input
                       ref={(el) => { inputRefs.current[idx] = el; }}
@@ -231,7 +344,7 @@ function DemoOtpPage() {
                       onChange={(e) => handleDigitChange(idx, e.target.value)}
                       onKeyDown={(e) => handleKeyDown(idx, e)}
                       disabled={state === "verifying"}
-                      className="h-14 w-14 rounded-xl bg-transparent text-center text-2xl font-bold text-white outline-none transition-colors placeholder:text-white/15 disabled:opacity-50 sm:h-16 sm:w-16"
+                      className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg bg-transparent text-center text-xl sm:text-2xl font-bold text-white outline-none transition-colors placeholder:text-white/15 disabled:opacity-50"
                       placeholder="·"
                     />
                   </motion.div>
@@ -269,8 +382,8 @@ function DemoOtpPage() {
               >
                 {state === "verifying" ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin text-white" />
-                    <span className="text-white">Verifying Code…</span>
+                    <Loader2 className="h-4 w-4 animate-spin text-[oklch(0.12_0.02_40)]" />
+                    <span className="text-[oklch(0.12_0.02_40)]">Verifying Code…</span>
                   </>
                 ) : (
                   "Verify Code"

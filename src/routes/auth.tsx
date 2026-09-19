@@ -4,7 +4,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Loader2, AtSign } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -260,6 +260,7 @@ function SignInForm() {
 
 const signupSchema = z.object({
   fullName: z.string().trim().min(2, "Name must be at least 2 characters"),
+  username: z.string().trim().min(3, "Username must be at least 3 characters").regex(/^[a-zA-Z0-9_]+$/, "Only letters, numbers, and underscores"),
   email: z.string().trim().email("Enter a valid email"),
   password: z.string().min(6, "At least 6 characters"),
   confirmPassword: z.string(),
@@ -279,7 +280,7 @@ function SignUpForm() {
   
   const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<SignupValues>({
     resolver: zodResolver(signupSchema),
-    defaultValues: { fullName: "", email: "", password: "", confirmPassword: "", termsAccepted: false },
+    defaultValues: { fullName: "", username: "", email: "", password: "", confirmPassword: "", termsAccepted: false },
   });
 
   const termsAccepted = watch("termsAccepted");
@@ -291,7 +292,7 @@ function SignUpForm() {
         password: data.password,
         options: {
           emailRedirectTo: window.location.origin,
-          data: { full_name: data.fullName },
+          data: { full_name: data.fullName, username: data.username },
         },
       });
       if (error) throw error;
@@ -316,6 +317,20 @@ function SignUpForm() {
           />
         </div>
         {errors.fullName && <p className="text-xs text-red-400 ml-1">{errors.fullName.message}</p>}
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="signup-username" className="text-white/70 text-xs uppercase tracking-wider ml-1">Username</Label>
+        <div className="relative group">
+          <AtSign className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40 group-focus-within:text-white transition-colors" />
+          <Input 
+            id="signup-username" 
+            placeholder="alexj" 
+            className="pl-11 h-12 bg-white/5 border-white/10 rounded-xl text-white placeholder:text-white/30 focus-visible:ring-1 focus-visible:ring-white/20 focus-visible:border-white/30 transition-all"
+            {...register("username")}
+          />
+        </div>
+        {errors.username && <p className="text-xs text-red-400 ml-1">{errors.username.message}</p>}
       </div>
 
       <div className="space-y-1.5">
