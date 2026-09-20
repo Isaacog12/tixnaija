@@ -87,7 +87,7 @@ function AuthPage() {
               transition={{ duration: 0.35, ease: "easeInOut" }}
             >
               <div className="mb-8 text-center">
-                <h1 className="text-3xl font-semibold text-white tracking-tight mb-2">
+                <h1 className="text-3xl font-semibold text-zinc-900 dark:text-white tracking-tight mb-2">
                   Welcome Back
                 </h1>
                 <p className="text-sm text-zinc-500 dark:text-white/50">
