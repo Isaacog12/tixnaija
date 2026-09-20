@@ -6,9 +6,15 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { visualizer } from "rollup-plugin-visualizer";
+import path from "path";
 
 export default defineConfig({
   vite: {
+    resolve: {
+      alias: {
+        "node:async_hooks": path.resolve("./src/lib/empty-mock.ts"),
+      },
+    },
     plugins: [visualizer({ filename: "stats.html", gzipSize: true, template: "treemap" }) as any],
     optimizeDeps: {
       exclude: ["@tanstack/start-storage-context", "node:async_hooks"],
