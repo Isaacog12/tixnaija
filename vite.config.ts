@@ -11,6 +11,7 @@ export default defineConfig({
   vite: {
     plugins: [visualizer({ filename: "stats.html", gzipSize: true, template: "treemap" }) as any],
     optimizeDeps: {
+      exclude: ["@tanstack/start-storage-context", "node:async_hooks"],
       include: [
         "react",
         "react-dom",
@@ -39,6 +40,10 @@ export default defineConfig({
         "@radix-ui/react-label",
         "@radix-ui/react-select"
       ],
+    },
+    ssr: {
+      noExternal: ["@tanstack/start"],
+      external: ["node:async_hooks"],
     },
   },
   tanstackStart: {
