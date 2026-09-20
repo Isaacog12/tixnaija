@@ -1,18 +1,25 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Loader2, AtSign } from "lucide-react";
+import { Mail, Loader2, User, AtSign } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthErrorMessage } from "@/utils/auth-errors";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+
+import { useRedirectIfAuthenticated } from "@/hooks/useRedirectIfAuthenticated";
+import { useHashErrorHandler } from "@/hooks/useHashErrorHandler";
+import { usePasswordVisibility } from "@/hooks/usePasswordVisibility";
+
+import { AuthField } from "@/components/auth/AuthField";
+import { PasswordInput } from "@/components/auth/PasswordInput";
+import { Divider } from "@/components/auth/Divider";
+import { SubmitButton } from "@/components/auth/SubmitButton";
 
 const searchSchema = z.object({
   mode: z.enum(["signin", "signup"]).optional(),
@@ -25,32 +32,10 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const { mode } = Route.useSearch();
-  const navigate = useNavigate();
   const isSignUp = mode === "signup";
 
-  useEffect(() => {
-    supabase.auth
-      .getSession()
-      .then(({ data }) => {
-        if (data.session) navigate({ to: "/dashboard", replace: true });
-      })
-      .catch((err: unknown) => {
-        console.error("Failed to check session:", err);
-        toast.error(getAuthErrorMessage(err));
-      });
-  }, [navigate]);
-
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (hash && hash.includes("error_description=")) {
-      const params = new URLSearchParams(hash.substring(1));
-      const errorDesc = params.get("error_description");
-      if (errorDesc) {
-        toast.error(getAuthErrorMessage(errorDesc.replace(/\+/g, " ")));
-        window.history.replaceState(null, "", window.location.pathname);
-      }
-    }
-  }, []);
+  useRedirectIfAuthenticated();
+  useHashErrorHandler();
 
   // Liquid Transition Settings
   const variants = {
@@ -60,17 +45,17 @@ function AuthPage() {
   };
 
   return (
-    <div className="relative flex min-h-dvh items-center justify-center bg-background p-4 sm:p-8 pt-safe pb-safe overflow-hidden font-sans">
+    <div className="relative flex min-h-dvh items-center justify-center bg-zinc-50/50 dark:bg-background p-4 sm:p-8 pt-safe pb-safe overflow-hidden font-sans">
       {/* Background Cinematic Glows */}
-      <div className="pointer-events-none absolute left-1/4 top-1/4 w-[500px] h-[500px] bg-black/5 dark:bg-white/5 rounded-full blur-[120px]" />
-      <div className="pointer-events-none absolute right-1/4 bottom-1/4 w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px]" />
+      <div className="pointer-events-none absolute left-1/4 top-1/4 w-[500px] h-[500px] bg-blue-500/10 dark:bg-white/5 rounded-full blur-[100px] dark:blur-[120px]" />
+      <div className="pointer-events-none absolute right-1/4 bottom-1/4 w-[400px] h-[400px] bg-purple-500/10 dark:bg-primary/10 rounded-full blur-[80px] dark:blur-[100px]" />
 
       {/* True Glassmorphism Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-[460px] p-8 sm:p-10 shadow-2xl rounded-[2.5rem] bg-black/[0.02] dark:bg-white/[0.03] backdrop-blur-2xl border border-black/10 dark:border-white/10"
+        className="relative w-full max-w-[460px] p-8 sm:p-10 shadow-[0_8px_40px_rgb(0,0,0,0.04)] dark:shadow-2xl rounded-[2.5rem] bg-white/60 dark:bg-white/[0.03] backdrop-blur-2xl border border-white dark:border-white/10"
       >
         <AnimatePresence mode="wait">
           {isSignUp ? (
@@ -131,7 +116,7 @@ type SigninValues = z.infer<typeof signinSchema>;
 
 function SignInForm() {
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
+  const { showPassword, togglePasswordVisibility } = usePasswordVisibility();
   const {
     register,
     handleSubmit,
@@ -161,52 +146,23 @@ function SignInForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-      <div className="space-y-1.5">
-        <Label
-          htmlFor="signin-email"
-          className="text-zinc-600 dark:text-white/70 text-xs uppercase tracking-wider ml-1"
-        >
-          Email Address
-        </Label>
-        <div className="relative group">
-          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 dark:text-white/40 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
-          <Input
-            id="signin-email"
-            placeholder="name@domain.com"
-            className="pl-11 h-12 bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-white/30 focus-visible:ring-1 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 focus-visible:border-black/30 dark:focus-visible:border-white/30 transition-all"
-            {...register("email")}
-          />
-        </div>
-        {errors.email && <p className="text-xs text-red-400 ml-1">{errors.email.message}</p>}
-      </div>
-
-      <div className="space-y-1.5">
-        <Label
-          htmlFor="signin-password"
-          className="text-zinc-600 dark:text-white/70 text-xs uppercase tracking-wider ml-1"
-        >
-          Password
-        </Label>
-        <div className="relative group">
-          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 dark:text-white/40 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
-          <Input
-            id="signin-password"
-            type={showPassword ? "text" : "password"}
-            placeholder="••••••••"
-            className="pl-11 pr-11 h-12 bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-white/30 focus-visible:ring-1 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 focus-visible:border-black/30 dark:focus-visible:border-white/30 transition-all"
-            {...register("password")}
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-white/40 hover:text-zinc-900 dark:hover:text-white transition-colors outline-none"
-            tabIndex={-1}
-          >
-            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </button>
-        </div>
-        {errors.password && <p className="text-xs text-red-400 ml-1">{errors.password.message}</p>}
-      </div>
+      <AuthField
+        id="signin-email"
+        label="Email Address"
+        icon={Mail}
+        placeholder="name@domain.com"
+        error={errors.email?.message}
+        {...register("email")}
+      />
+      <PasswordInput
+        id="signin-password"
+        label="Password"
+        placeholder="••••••••"
+        showPassword={showPassword}
+        onToggleVisibility={togglePasswordVisibility}
+        error={errors.password?.message}
+        {...register("password")}
+      />
 
       <div className="flex items-center justify-between text-sm pt-2">
         <div className="flex items-center space-x-2">
@@ -231,30 +187,9 @@ function SignInForm() {
         </Link>
       </div>
 
-      <Button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full h-12 mt-4 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl shadow-[0_0_20px_hsl(var(--primary)/0.2)] transition-all"
-      >
-        {isSubmitting ? (
-          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-        ) : (
-          <span className="flex items-center text-base">
-            Sign In <ArrowRight className="ml-2 h-4 w-4" />
-          </span>
-        )}
-      </Button>
+      <SubmitButton isSubmitting={isSubmitting} text="Sign In" />
 
-      <div className="relative py-4">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-black/10 dark:border-white/10" />
-        </div>
-        <div className="relative flex justify-center text-xs">
-          <span className="bg-background px-3 text-zinc-400 dark:text-white/40">
-            OR CONTINUE WITH
-          </span>
-        </div>
-      </div>
+      <Divider />
 
       <SocialLogins mode="signin" />
 
@@ -299,8 +234,9 @@ type SignupValues = z.infer<typeof signupSchema>;
 
 function SignUpForm() {
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { showPassword, togglePasswordVisibility: togglePassword } = usePasswordVisibility();
+  const { showPassword: showConfirmPassword, togglePasswordVisibility: toggleConfirmPassword } =
+    usePasswordVisibility();
 
   const {
     register,
@@ -342,123 +278,53 @@ function SignUpForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="space-y-1.5">
-        <Label
-          htmlFor="signup-name"
-          className="text-zinc-600 dark:text-white/70 text-xs uppercase tracking-wider ml-1"
-        >
-          Full Name
-        </Label>
-        <div className="relative group">
-          <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 dark:text-white/40 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
-          <Input
-            id="signup-name"
-            placeholder="Alex Johnson"
-            className="pl-11 h-12 bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-white/30 focus-visible:ring-1 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 focus-visible:border-black/30 dark:focus-visible:border-white/30 transition-all"
-            {...register("fullName")}
-          />
-        </div>
-        {errors.fullName && <p className="text-xs text-red-400 ml-1">{errors.fullName.message}</p>}
-      </div>
+      <AuthField
+        id="signup-name"
+        label="Full Name"
+        icon={User}
+        placeholder="Alex Johnson"
+        error={errors.fullName?.message}
+        {...register("fullName")}
+      />
 
-      <div className="space-y-1.5">
-        <Label
-          htmlFor="signup-username"
-          className="text-zinc-600 dark:text-white/70 text-xs uppercase tracking-wider ml-1"
-        >
-          Username
-        </Label>
-        <div className="relative group">
-          <AtSign className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 dark:text-white/40 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
-          <Input
-            id="signup-username"
-            placeholder="alexj"
-            className="pl-11 h-12 bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-white/30 focus-visible:ring-1 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 focus-visible:border-black/30 dark:focus-visible:border-white/30 transition-all"
-            {...register("username")}
-          />
-        </div>
-        {errors.username && <p className="text-xs text-red-400 ml-1">{errors.username.message}</p>}
-      </div>
+      <AuthField
+        id="signup-username"
+        label="Username"
+        icon={AtSign}
+        placeholder="alexj"
+        error={errors.username?.message}
+        {...register("username")}
+      />
 
-      <div className="space-y-1.5">
-        <Label
-          htmlFor="signup-email"
-          className="text-zinc-600 dark:text-white/70 text-xs uppercase tracking-wider ml-1"
-        >
-          Email Address
-        </Label>
-        <div className="relative group">
-          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 dark:text-white/40 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
-          <Input
-            id="signup-email"
-            placeholder="name@domain.com"
-            className="pl-11 h-12 bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-white/30 focus-visible:ring-1 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 focus-visible:border-black/30 dark:focus-visible:border-white/30 transition-all"
-            {...register("email")}
-          />
-        </div>
-        {errors.email && <p className="text-xs text-red-400 ml-1">{errors.email.message}</p>}
-      </div>
+      <AuthField
+        id="signup-email"
+        label="Email Address"
+        icon={Mail}
+        placeholder="name@domain.com"
+        error={errors.email?.message}
+        {...register("email")}
+      />
 
       <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1 space-y-1.5">
-          <Label
-            htmlFor="signup-password"
-            className="text-zinc-600 dark:text-white/70 text-xs uppercase tracking-wider ml-1"
-          >
-            Password
-          </Label>
-          <div className="relative group">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 dark:text-white/40 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
-            <Input
-              id="signup-password"
-              type={showPassword ? "text" : "password"}
-              placeholder="••••••••"
-              className="pl-11 pr-11 h-12 bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-white/30 focus-visible:ring-1 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 focus-visible:border-black/30 dark:focus-visible:border-white/30 transition-all"
-              {...register("password")}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-white/40 hover:text-zinc-900 dark:hover:text-white transition-colors outline-none"
-              tabIndex={-1}
-            >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
-          </div>
-          {errors.password && (
-            <p className="text-xs text-red-400 ml-1">{errors.password.message}</p>
-          )}
-        </div>
+        <PasswordInput
+          id="signup-password"
+          label="Password"
+          placeholder="••••••••"
+          showPassword={showPassword}
+          onToggleVisibility={togglePassword}
+          error={errors.password?.message}
+          {...register("password")}
+        />
 
-        <div className="flex-1 space-y-1.5">
-          <Label
-            htmlFor="signup-confirm"
-            className="text-zinc-600 dark:text-white/70 text-xs uppercase tracking-wider ml-1"
-          >
-            Confirm Password
-          </Label>
-          <div className="relative group">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 dark:text-white/40 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
-            <Input
-              id="signup-confirm"
-              type={showConfirmPassword ? "text" : "password"}
-              placeholder="••••••••"
-              className="pl-11 pr-11 h-12 bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-white/30 focus-visible:ring-1 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 focus-visible:border-black/30 dark:focus-visible:border-white/30 transition-all"
-              {...register("confirmPassword")}
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-white/40 hover:text-zinc-900 dark:hover:text-white transition-colors outline-none"
-              tabIndex={-1}
-            >
-              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
-          </div>
-          {errors.confirmPassword && (
-            <p className="text-xs text-red-400 ml-1">{errors.confirmPassword.message}</p>
-          )}
-        </div>
+        <PasswordInput
+          id="signup-confirm"
+          label="Confirm Password"
+          placeholder="••••••••"
+          showPassword={showConfirmPassword}
+          onToggleVisibility={toggleConfirmPassword}
+          error={errors.confirmPassword?.message}
+          {...register("confirmPassword")}
+        />
       </div>
 
       <div className="flex items-start space-x-2 pt-2 pb-2">
@@ -483,30 +349,14 @@ function SignUpForm() {
         </div>
       </div>
 
-      <Button
-        type="submit"
-        disabled={isSubmitting || !termsAccepted}
-        className="w-full h-12 mt-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl shadow-[0_0_20px_hsl(var(--primary)/0.2)] transition-all disabled:opacity-50 disabled:shadow-none"
-      >
-        {isSubmitting ? (
-          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-        ) : (
-          <span className="flex items-center text-base">
-            Create Account <ArrowRight className="ml-2 h-4 w-4" />
-          </span>
-        )}
-      </Button>
+      <SubmitButton
+        isSubmitting={isSubmitting}
+        disabled={!termsAccepted}
+        text="Create Account"
+        className="!mt-2"
+      />
 
-      <div className="relative py-4">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-black/10 dark:border-white/10" />
-        </div>
-        <div className="relative flex justify-center text-xs">
-          <span className="bg-background px-3 text-zinc-400 dark:text-white/40">
-            OR CONTINUE WITH
-          </span>
-        </div>
-      </div>
+      <Divider />
 
       <SocialLogins mode="signup" termsAccepted={termsAccepted} />
 
@@ -563,7 +413,7 @@ function SocialLogins({
       {mode === "signin" && (
         <Link
           to="/otp"
-          className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 font-semibold text-zinc-900 dark:text-white transition-all duration-200 hover:bg-black/10 dark:hover:bg-white/10 active:scale-[0.98]"
+          className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm dark:shadow-none font-semibold text-zinc-900 dark:text-white transition-all duration-200 hover:bg-zinc-50 dark:hover:bg-white/10 active:scale-[0.98]"
         >
           <Mail className="h-5 w-5 text-zinc-600 dark:text-white/70" />
           Sign in with Email OTP
@@ -575,7 +425,7 @@ function SocialLogins({
         variant="outline"
         onClick={() => handleOAuth("google")}
         disabled={isGoogleBusy || (mode === "signup" && !termsAccepted)}
-        className="w-full bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 hover:border-black/20 dark:hover:border-white/20 text-zinc-900 dark:text-white rounded-xl h-12 transition-all"
+        className="w-full bg-white dark:bg-white/5 shadow-sm dark:shadow-none border-black/10 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/10 hover:border-black/20 dark:hover:border-white/20 text-zinc-900 dark:text-white rounded-xl h-12 transition-all"
       >
         {isGoogleBusy ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
