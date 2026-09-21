@@ -1,4 +1,4 @@
-project_id = "xyfhhoaqlczaslarwlfp"
+project_id = "bjijftxksykbjknbleul"
 [functions.connect-payout-account]
 enabled = true
 verify_jwt = false
