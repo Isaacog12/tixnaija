@@ -24,9 +24,11 @@ import { Route as OtpRouteImport } from './routes/otp'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as V2RouteImport } from './routes/v2'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedDashboardV2RouteImport } from './routes/_authenticated/dashboard-v2'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
 import { Route as CareersApplyRouteImport } from './routes/careers_.apply'
@@ -116,6 +118,11 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const V2Route = V2RouteImport.update({
+  id: '/v2',
+  path: '/v2',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
   id: '/account',
   path: '/account',
@@ -131,6 +138,12 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDashboardV2Route =
+  AuthenticatedDashboardV2RouteImport.update({
+    id: '/dashboard-v2',
+    path: '/dashboard-v2',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedNotificationsRoute =
   AuthenticatedNotificationsRouteImport.update({
     id: '/notifications',
@@ -224,9 +237,11 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/v2': typeof V2Route
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/dashboard-v2': typeof AuthenticatedDashboardV2Route
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/tickets': typeof AuthenticatedTicketsRoute
   '/careers/apply': typeof CareersApplyRoute
@@ -257,9 +272,11 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/v2': typeof V2Route
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/dashboard-v2': typeof AuthenticatedDashboardV2Route
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/tickets': typeof AuthenticatedTicketsRoute
   '/careers/apply': typeof CareersApplyRoute
@@ -292,9 +309,11 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/v2': typeof V2Route
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/dashboard-v2': typeof AuthenticatedDashboardV2Route
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/tickets': typeof AuthenticatedTicketsRoute
   '/careers_/apply': typeof CareersApplyRoute
@@ -327,9 +346,11 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
+    | '/v2'
     | '/account'
     | '/admin'
     | '/dashboard'
+    | '/dashboard-v2'
     | '/notifications'
     | '/tickets'
     | '/careers/apply'
@@ -360,9 +381,11 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
+    | '/v2'
     | '/account'
     | '/admin'
     | '/dashboard'
+    | '/dashboard-v2'
     | '/notifications'
     | '/tickets'
     | '/careers/apply'
@@ -394,9 +417,11 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
+    | '/v2'
     | '/_authenticated/account'
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
+    | '/_authenticated/dashboard-v2'
     | '/_authenticated/notifications'
     | '/_authenticated/tickets'
     | '/careers_/apply'
@@ -429,6 +454,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
+  V2Route: typeof V2Route
   CareersApplyRoute: typeof CareersApplyRoute
   CheckoutVerifyRoute: typeof CheckoutVerifyRoute
   ESlugRoute: typeof ESlugRoute
@@ -543,6 +569,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/v2': {
+      id: '/v2'
+      path: '/v2'
+      fullPath: '/v2'
+      preLoaderRoute: typeof V2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/account': {
       id: '/_authenticated/account'
       path: '/account'
@@ -562,6 +595,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard-v2': {
+      id: '/_authenticated/dashboard-v2'
+      path: '/dashboard-v2'
+      fullPath: '/dashboard-v2'
+      preLoaderRoute: typeof AuthenticatedDashboardV2RouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/notifications': {
@@ -669,6 +709,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDashboardV2Route: typeof AuthenticatedDashboardV2Route
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRoute
   AuthenticatedAdminBannersRoute: typeof AuthenticatedAdminBannersRoute
@@ -684,6 +725,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDashboardV2Route: AuthenticatedDashboardV2Route,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedTicketsRoute: AuthenticatedTicketsRoute,
   AuthenticatedAdminBannersRoute: AuthenticatedAdminBannersRoute,
@@ -717,6 +759,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
+  V2Route: V2Route,
   CareersApplyRoute: CareersApplyRoute,
   CheckoutVerifyRoute: CheckoutVerifyRoute,
   ESlugRoute: ESlugRoute,
