@@ -40,7 +40,6 @@ export const Route = createFileRoute("/_authenticated/events/$eventId/scan")({
 type ScanResult = {
   status: "idle" | "loading" | "success" | "error" | "warning";
   message: string;
-  ticket?: any;
 };
 
 function ScannerPage() {
@@ -72,64 +71,39 @@ function ScannerPage() {
     setScanResult({ status: "loading", message: "Verifying ticket..." });
 
     try {
-      // 1. Fetch the ticket by ticket_code and ensure it belongs to this event
-      // We join order_items -> orders to verify the event_id matches
-      const { data: ticketData, error: fetchError } = await supabase
-        .from("tickets")
-        .select(`
-          *,
-          order_items!inner(
-            orders!inner(event_id)
-          )
-        `)
-        .eq("ticket_code", text)
-        .eq("order_items.orders.event_id", eventId)
-        .maybeSingle();
+      // Call the secure server-side check_in_ticket RPC.
+      // This validates organizer ownership, ticket event membership,
+      // and ticket status — and writes only the check-in columns.
+      const { data: result, error: rpcError } = await (supabase.rpc as any)("check_in_ticket", {
+        p_ticket_code: text,
+        p_event_id: eventId,
+      });
 
-      if (fetchError) throw fetchError;
+      if (rpcError) throw rpcError;
 
-      if (!ticketData) {
-        setScanResult({ 
-          status: "error", 
-          message: "Invalid Ticket: Not found for this event." 
-        });
+      const res = result as { success: boolean; reason: string; message: string; checked_in_at?: string };
+
+      if (!res.success) {
+        if (res.reason === "already_scanned") {
+          const time = res.checked_in_at
+            ? new Date(res.checked_in_at).toLocaleTimeString()
+            : "unknown time";
+          setScanResult({
+            status: "warning",
+            message: `Already scanned at ${time}!`,
+          });
+        } else {
+          setScanResult({
+            status: "error",
+            message: res.message,
+          });
+        }
         return;
       }
 
-      // 2. Check ticket status
-      if ((ticketData as any).status === 'checked_in') {
-        const time = new Date((ticketData as any).checked_in_at ?? Date.now()).toLocaleTimeString();
-        setScanResult({ 
-          status: "warning", 
-          message: `Already scanned at ${time}!`,
-          ticket: ticketData
-        });
-        return;
-      }
-
-      if ((ticketData as any).status === 'cancelled') {
-        setScanResult({ 
-          status: "error", 
-          message: "Ticket is cancelled and invalid.",
-          ticket: ticketData
-        });
-        return;
-      }
-
-      // 3. Update the ticket to checked_in
-      const { error: updateError } = await (supabase.from("tickets") as any)
-        .update({ 
-          status: "checked_in", 
-          checked_in_at: new Date().toISOString(),
-        })
-        .eq("id", (ticketData as any).id);
-
-      if (updateError) throw updateError;
-
-      setScanResult({ 
-        status: "success", 
+      setScanResult({
+        status: "success",
         message: "Check-in Successful!",
-        ticket: ticketData
       });
 
     } catch (err: any) {
@@ -205,13 +179,6 @@ function ScannerPage() {
           }`}>
             <CardContent className="p-6 text-center">
               <h2 className="text-xl font-semibold mb-2">{scanResult.message}</h2>
-              
-              {scanResult.ticket && (
-                <div className="mt-4 pt-4 border-t border-current/20 text-sm opacity-90 text-left space-y-1">
-                  <p><strong>Name:</strong> {scanResult.ticket.attendee_name || "Guest"}</p>
-                  <p><strong>Ticket ID:</strong> {scanResult.ticket.ticket_code.split("-")[0]}</p>
-                </div>
-              )}
               
               {scanResult.status === "idle" && (
                 <p className="text-sm opacity-70 animate-pulse mt-2">
