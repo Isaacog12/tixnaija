@@ -13,7 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthV2RouteImport } from './routes/auth-v2'
 import { Route as BrowseRouteImport } from './routes/browse'
+import { Route as BrowseV2RouteImport } from './routes/browse-v2'
 import { Route as CareersRouteImport } from './routes/careers'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FaqRouteImport } from './routes/faq'
@@ -21,6 +23,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as MyTicketsRouteImport } from './routes/my-tickets'
 import { Route as OtpRouteImport } from './routes/otp'
+import { Route as OtpV2RouteImport } from './routes/otp-v2'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
@@ -33,6 +36,7 @@ import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authen
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
 import { Route as CareersApplyRouteImport } from './routes/careers_.apply'
 import { Route as CheckoutVerifyRouteImport } from './routes/checkout.verify'
+import { Route as EV2SlugRouteImport } from './routes/e-v2.$slug'
 import { Route as ESlugRouteImport } from './routes/e.$slug'
 import { Route as TTicketCodeRouteImport } from './routes/t.$ticketCode'
 import { Route as AuthenticatedAdminBannersRouteImport } from './routes/_authenticated/admin_.banners'
@@ -63,9 +67,19 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthV2Route = AuthV2RouteImport.update({
+  id: '/auth-v2',
+  path: '/auth-v2',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BrowseRoute = BrowseRouteImport.update({
   id: '/browse',
   path: '/browse',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrowseV2Route = BrowseV2RouteImport.update({
+  id: '/browse-v2',
+  path: '/browse-v2',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CareersRoute = CareersRouteImport.update({
@@ -101,6 +115,11 @@ const MyTicketsRoute = MyTicketsRouteImport.update({
 const OtpRoute = OtpRouteImport.update({
   id: '/otp',
   path: '/otp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OtpV2Route = OtpV2RouteImport.update({
+  id: '/otp-v2',
+  path: '/otp-v2',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -165,6 +184,11 @@ const CheckoutVerifyRoute = CheckoutVerifyRouteImport.update({
   path: '/checkout/verify',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EV2SlugRoute = EV2SlugRouteImport.update({
+  id: '/e-v2/$slug',
+  path: '/e-v2/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ESlugRoute = ESlugRouteImport.update({
   id: '/e/$slug',
   path: '/e/$slug',
@@ -226,7 +250,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/auth-v2': typeof AuthV2Route
   '/browse': typeof BrowseRoute
+  '/browse-v2': typeof BrowseV2Route
   '/careers': typeof CareersRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
@@ -234,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/how-it-works': typeof HowItWorksRoute
   '/my-tickets': typeof MyTicketsRoute
   '/otp': typeof OtpRoute
+  '/otp-v2': typeof OtpV2Route
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
@@ -246,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/tickets': typeof AuthenticatedTicketsRoute
   '/careers/apply': typeof CareersApplyRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
+  '/e-v2/$slug': typeof EV2SlugRoute
   '/e/$slug': typeof ESlugRoute
   '/t/$ticketCode': typeof TTicketCodeRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
@@ -261,7 +289,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/auth-v2': typeof AuthV2Route
   '/browse': typeof BrowseRoute
+  '/browse-v2': typeof BrowseV2Route
   '/careers': typeof CareersRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
@@ -269,6 +299,7 @@ export interface FileRoutesByTo {
   '/how-it-works': typeof HowItWorksRoute
   '/my-tickets': typeof MyTicketsRoute
   '/otp': typeof OtpRoute
+  '/otp-v2': typeof OtpV2Route
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
@@ -281,6 +312,7 @@ export interface FileRoutesByTo {
   '/tickets': typeof AuthenticatedTicketsRoute
   '/careers/apply': typeof CareersApplyRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
+  '/e-v2/$slug': typeof EV2SlugRoute
   '/e/$slug': typeof ESlugRoute
   '/t/$ticketCode': typeof TTicketCodeRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
@@ -298,7 +330,9 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/auth-v2': typeof AuthV2Route
   '/browse': typeof BrowseRoute
+  '/browse-v2': typeof BrowseV2Route
   '/careers': typeof CareersRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
@@ -306,6 +340,7 @@ export interface FileRoutesById {
   '/how-it-works': typeof HowItWorksRoute
   '/my-tickets': typeof MyTicketsRoute
   '/otp': typeof OtpRoute
+  '/otp-v2': typeof OtpV2Route
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
@@ -318,6 +353,7 @@ export interface FileRoutesById {
   '/_authenticated/tickets': typeof AuthenticatedTicketsRoute
   '/careers_/apply': typeof CareersApplyRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
+  '/e-v2/$slug': typeof EV2SlugRoute
   '/e/$slug': typeof ESlugRoute
   '/t/$ticketCode': typeof TTicketCodeRoute
   '/_authenticated/admin_/banners': typeof AuthenticatedAdminBannersRoute
@@ -335,7 +371,9 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/auth'
+    | '/auth-v2'
     | '/browse'
+    | '/browse-v2'
     | '/careers'
     | '/contact'
     | '/faq'
@@ -343,6 +381,7 @@ export interface FileRouteTypes {
     | '/how-it-works'
     | '/my-tickets'
     | '/otp'
+    | '/otp-v2'
     | '/privacy'
     | '/reset-password'
     | '/terms'
@@ -355,6 +394,7 @@ export interface FileRouteTypes {
     | '/tickets'
     | '/careers/apply'
     | '/checkout/verify'
+    | '/e-v2/$slug'
     | '/e/$slug'
     | '/t/$ticketCode'
     | '/admin/banners'
@@ -370,7 +410,9 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/auth'
+    | '/auth-v2'
     | '/browse'
+    | '/browse-v2'
     | '/careers'
     | '/contact'
     | '/faq'
@@ -378,6 +420,7 @@ export interface FileRouteTypes {
     | '/how-it-works'
     | '/my-tickets'
     | '/otp'
+    | '/otp-v2'
     | '/privacy'
     | '/reset-password'
     | '/terms'
@@ -390,6 +433,7 @@ export interface FileRouteTypes {
     | '/tickets'
     | '/careers/apply'
     | '/checkout/verify'
+    | '/e-v2/$slug'
     | '/e/$slug'
     | '/t/$ticketCode'
     | '/admin/banners'
@@ -406,7 +450,9 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/about'
     | '/auth'
+    | '/auth-v2'
     | '/browse'
+    | '/browse-v2'
     | '/careers'
     | '/contact'
     | '/faq'
@@ -414,6 +460,7 @@ export interface FileRouteTypes {
     | '/how-it-works'
     | '/my-tickets'
     | '/otp'
+    | '/otp-v2'
     | '/privacy'
     | '/reset-password'
     | '/terms'
@@ -426,6 +473,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tickets'
     | '/careers_/apply'
     | '/checkout/verify'
+    | '/e-v2/$slug'
     | '/e/$slug'
     | '/t/$ticketCode'
     | '/_authenticated/admin_/banners'
@@ -443,7 +491,9 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
+  AuthV2Route: typeof AuthV2Route
   BrowseRoute: typeof BrowseRoute
+  BrowseV2Route: typeof BrowseV2Route
   CareersRoute: typeof CareersRoute
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
@@ -451,12 +501,14 @@ export interface RootRouteChildren {
   HowItWorksRoute: typeof HowItWorksRoute
   MyTicketsRoute: typeof MyTicketsRoute
   OtpRoute: typeof OtpRoute
+  OtpV2Route: typeof OtpV2Route
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
   V2Route: typeof V2Route
   CareersApplyRoute: typeof CareersApplyRoute
   CheckoutVerifyRoute: typeof CheckoutVerifyRoute
+  EV2SlugRoute: typeof EV2SlugRoute
   ESlugRoute: typeof ESlugRoute
   TTicketCodeRoute: typeof TTicketCodeRoute
   OrdersOrderIdTicketsRoute: typeof OrdersOrderIdTicketsRoute
@@ -492,11 +544,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth-v2': {
+      id: '/auth-v2'
+      path: '/auth-v2'
+      fullPath: '/auth-v2'
+      preLoaderRoute: typeof AuthV2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/browse': {
       id: '/browse'
       path: '/browse'
       fullPath: '/browse'
       preLoaderRoute: typeof BrowseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/browse-v2': {
+      id: '/browse-v2'
+      path: '/browse-v2'
+      fullPath: '/browse-v2'
+      preLoaderRoute: typeof BrowseV2RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/careers': {
@@ -546,6 +612,13 @@ declare module '@tanstack/react-router' {
       path: '/otp'
       fullPath: '/otp'
       preLoaderRoute: typeof OtpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/otp-v2': {
+      id: '/otp-v2'
+      path: '/otp-v2'
+      fullPath: '/otp-v2'
+      preLoaderRoute: typeof OtpV2RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -630,6 +703,13 @@ declare module '@tanstack/react-router' {
       path: '/checkout/verify'
       fullPath: '/checkout/verify'
       preLoaderRoute: typeof CheckoutVerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/e-v2/$slug': {
+      id: '/e-v2/$slug'
+      path: '/e-v2/$slug'
+      fullPath: '/e-v2/$slug'
+      preLoaderRoute: typeof EV2SlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/e/$slug': {
@@ -748,7 +828,9 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
+  AuthV2Route: AuthV2Route,
   BrowseRoute: BrowseRoute,
+  BrowseV2Route: BrowseV2Route,
   CareersRoute: CareersRoute,
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
@@ -756,12 +838,14 @@ const rootRouteChildren: RootRouteChildren = {
   HowItWorksRoute: HowItWorksRoute,
   MyTicketsRoute: MyTicketsRoute,
   OtpRoute: OtpRoute,
+  OtpV2Route: OtpV2Route,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
   V2Route: V2Route,
   CareersApplyRoute: CareersApplyRoute,
   CheckoutVerifyRoute: CheckoutVerifyRoute,
+  EV2SlugRoute: EV2SlugRoute,
   ESlugRoute: ESlugRoute,
   TTicketCodeRoute: TTicketCodeRoute,
   OrdersOrderIdTicketsRoute: OrdersOrderIdTicketsRoute,
