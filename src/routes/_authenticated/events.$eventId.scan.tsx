@@ -74,7 +74,7 @@ function ScannerPage() {
       // Call the secure server-side check_in_ticket RPC.
       // This validates organizer ownership, ticket event membership,
       // and ticket status — and writes only the check-in columns.
-      const { data: result, error: rpcError } = await (supabase.rpc as any)("check_in_ticket", {
+      const { data: result, error: rpcError } = await supabase.rpc("check_in_ticket", {
         p_ticket_code: text,
         p_event_id: eventId,
       });
