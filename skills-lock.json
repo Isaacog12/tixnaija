@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "video-automation": {
+      "source": "nguyenphp/antigravity-marketing",
+      "sourceType": "github",
+      "skillPath": "templates/.agent/skills/video-automation/SKILL.md",
+      "computedHash": "aa12f509d3503866c694d08f6e217d8c074ff921fc496577a8039c4152858156"
+    }
+  }
+}
