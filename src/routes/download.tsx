@@ -16,7 +16,7 @@ export const Route = createFileRoute("/download")({
 });
 
 // ── Replace this URL after running PWABuilder and uploading the APK ──────────
-const APK_DOWNLOAD_URL: string | null = null; // e.g. "https://xyz.supabase.co/storage/v1/object/public/app-releases/tixnaija.apk"
+const APK_DOWNLOAD_URL: string | null = "https://bjijftxksykbjknbleul.supabase.co/storage/v1/object/public/app-releases/TixNaija.apk";
 const APK_VERSION = "1.0.0"; // bump when you re-upload
 
 function DownloadPage() {
