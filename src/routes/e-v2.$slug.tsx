@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo, useEffect } from "react";
-import { Calendar, MapPin, Loader2, Minus, Plus, Share2 } from "lucide-react";
+import { Calendar, MapPin, Loader2, Minus, Plus, Share2, Frown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 import { BackButton } from "@/components/back-button";
@@ -1253,7 +1253,7 @@ function SimilarEvents({ events }: { events: any[] }) {
         {events.map((ev) => (
           <Link
             key={ev.id}
-            to="/e/$slug-v2"
+            to="/e-v2/$slug"
             params={{ slug: ev.slug }}
             className="group block relative h-full overflow-hidden rounded-[2rem] bg-white/5 border border-white/10 transition-all duration-300 hover:-translate-y-1 hover:border-orange-500/30 hover:bg-white/10 hover:shadow-2xl hover:shadow-orange-500/10"
           >
