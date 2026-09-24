@@ -279,7 +279,7 @@ export function SiteNav() {
                         {/* Nav Links (hidden on desktop where they are visible in top bar) */}
                         <div className="xl:hidden">
                           {user && <DropdownMenuSeparator className="mx-2" />}
-                          {links.map((link) => (
+                          {links.filter(link => link.name !== "Dashboard").map((link) => (
                             <DropdownMenuItem asChild key={link.to} className="cursor-pointer rounded-xl px-3 py-2.5 focus:bg-secondary">
                               <Link to={link.to} onClick={() => setMenuOpen(false)}>
                                 <link.icon className="mr-3 h-4 w-4 text-muted-foreground shrink-0" />
