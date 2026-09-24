@@ -177,6 +177,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         },
         { name: "author", content: "TixNaija" },
         { name: "theme-color", content: "#EA580C" },
+        // PWA / mobile-web-app meta
+        { name: "mobile-web-app-capable", content: "yes" },
+        { name: "apple-mobile-web-app-capable", content: "yes" },
+        { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+        { name: "apple-mobile-web-app-title", content: "TixNaija" },
         { property: "og:title", content: "TixNaija — Nigerian event tickets, sold fast" },
         {
           property: "og:description",
@@ -191,9 +196,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       ],
       links: [
         { rel: "canonical", href: canonicalUrl },
+        { rel: "manifest", href: "/manifest.json" },
         { rel: "stylesheet", href: appCss },
         { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
-        { rel: "apple-touch-icon", href: "/logo.png" },
+        { rel: "apple-touch-icon", href: "/icon-192.png" },
         { rel: "preconnect", href: "https://fonts.googleapis.com" },
         { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
         {
@@ -252,6 +258,14 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
+    // Register service worker (production only — avoids dev-mode stale cache issues)
+    if (import.meta.env.PROD && "serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/sw.js", { scope: "/" })
+        .then((reg) => console.log("[SW] Registered, scope:", reg.scope))
+        .catch((err) => console.warn("[SW] Registration failed:", err));
+    }
+
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       const errorMsg = event.reason?.message || event.reason?.toString() || "";
       if (
