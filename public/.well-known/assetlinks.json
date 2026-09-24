@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "ng.tixnaija.app",
+    "sha256_cert_fingerprints": ["2E:CC:07:2D:BF:A4:25:0B:D6:8E:75:87:CD:49:A5:AE:C2:F6:EF:08:6A:86:60:A9:C8:FA:F3:D8:10:89:1F:2E"]
+  }
+}]
