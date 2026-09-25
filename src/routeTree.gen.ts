@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as DownloadRouteImport } from './routes/download'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AboutRouteImport } from './routes/about'
@@ -19,6 +18,7 @@ import { Route as BrowseRouteImport } from './routes/browse'
 import { Route as BrowseV2RouteImport } from './routes/browse-v2'
 import { Route as CareersRouteImport } from './routes/careers'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as DownloadRouteImport } from './routes/download'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
@@ -52,11 +52,6 @@ import { Route as AuthenticatedEventsEventIdScanRouteImport } from './routes/_au
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DownloadRoute = DownloadRouteImport.update({
-  id: '/download',
-  path: '/download',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -96,6 +91,11 @@ const CareersRoute = CareersRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DownloadRoute = DownloadRouteImport.update({
+  id: '/download',
+  path: '/download',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FaqRoute = FaqRouteImport.update({
@@ -254,7 +254,6 @@ const AuthenticatedEventsEventIdScanRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/download': typeof DownloadRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/auth-v2': typeof AuthV2Route
@@ -262,6 +261,7 @@ export interface FileRoutesByFullPath {
   '/browse-v2': typeof BrowseV2Route
   '/careers': typeof CareersRoute
   '/contact': typeof ContactRoute
+  '/download': typeof DownloadRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/how-it-works': typeof HowItWorksRoute
@@ -294,7 +294,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/download': typeof DownloadRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/auth-v2': typeof AuthV2Route
@@ -302,6 +301,7 @@ export interface FileRoutesByTo {
   '/browse-v2': typeof BrowseV2Route
   '/careers': typeof CareersRoute
   '/contact': typeof ContactRoute
+  '/download': typeof DownloadRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/how-it-works': typeof HowItWorksRoute
@@ -335,7 +335,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/download': typeof DownloadRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
@@ -344,6 +343,7 @@ export interface FileRoutesById {
   '/browse-v2': typeof BrowseV2Route
   '/careers': typeof CareersRoute
   '/contact': typeof ContactRoute
+  '/download': typeof DownloadRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/how-it-works': typeof HowItWorksRoute
@@ -378,7 +378,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/download'
     | '/about'
     | '/auth'
     | '/auth-v2'
@@ -386,6 +385,7 @@ export interface FileRouteTypes {
     | '/browse-v2'
     | '/careers'
     | '/contact'
+    | '/download'
     | '/faq'
     | '/forgot-password'
     | '/how-it-works'
@@ -418,7 +418,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/download'
     | '/about'
     | '/auth'
     | '/auth-v2'
@@ -426,6 +425,7 @@ export interface FileRouteTypes {
     | '/browse-v2'
     | '/careers'
     | '/contact'
+    | '/download'
     | '/faq'
     | '/forgot-password'
     | '/how-it-works'
@@ -458,7 +458,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/download'
     | '/_authenticated'
     | '/about'
     | '/auth'
@@ -467,6 +466,7 @@ export interface FileRouteTypes {
     | '/browse-v2'
     | '/careers'
     | '/contact'
+    | '/download'
     | '/faq'
     | '/forgot-password'
     | '/how-it-works'
@@ -500,7 +500,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DownloadRoute: typeof DownloadRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
@@ -509,6 +508,7 @@ export interface RootRouteChildren {
   BrowseV2Route: typeof BrowseV2Route
   CareersRoute: typeof CareersRoute
   ContactRoute: typeof ContactRoute
+  DownloadRoute: typeof DownloadRoute
   FaqRoute: typeof FaqRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   HowItWorksRoute: typeof HowItWorksRoute
@@ -534,13 +534,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/download': {
-      id: '/download'
-      path: '/download'
-      fullPath: '/download'
-      preLoaderRoute: typeof DownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -597,6 +590,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/download': {
+      id: '/download'
+      path: '/download'
+      fullPath: '/download'
+      preLoaderRoute: typeof DownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/faq': {
@@ -845,7 +845,6 @@ const AuthenticatedRouteRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DownloadRoute: DownloadRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
@@ -854,6 +853,7 @@ const rootRouteChildren: RootRouteChildren = {
   BrowseV2Route: BrowseV2Route,
   CareersRoute: CareersRoute,
   ContactRoute: ContactRoute,
+  DownloadRoute: DownloadRoute,
   FaqRoute: FaqRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   HowItWorksRoute: HowItWorksRoute,

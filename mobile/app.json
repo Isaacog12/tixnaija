@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "TixNaija",
+    "slug": "mobile",
+    "scheme": "tixnaija",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#22201e"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "ng.tixnaija.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#22201e",
+        "foregroundImage": "./assets/icon.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-web-browser"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "87928ff1-f32b-4a1b-8d41-ea77c28f71d0"
+      }
+    }
+  }
+}
