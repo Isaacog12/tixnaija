@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatNaira } from "@/lib/currency";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PromoCodesTab } from "@/components/promo-codes-tab";
+import { PromotersTab } from "@/components/promoters-tab";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -155,6 +156,7 @@ function Dashboard() {
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="events">Events</TabsTrigger>
                 <TabsTrigger value="promo-codes">Promo Codes</TabsTrigger>
+                <TabsTrigger value="promoters">Promoters</TabsTrigger>
               </TabsList>
               
               <TabsContent value="overview">
@@ -165,6 +167,9 @@ function Dashboard() {
               </TabsContent>
               <TabsContent value="promo-codes">
                 <PromoCodesTab events={data?.events || []} />
+              </TabsContent>
+              <TabsContent value="promoters">
+                <PromotersTab events={data?.events || []} />
               </TabsContent>
             </Tabs>
           ) : (

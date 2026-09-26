@@ -16,6 +16,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { PromoCodesTab } from "@/components/promo-codes-tab";
+import { PromotersTab } from "@/components/promoters-tab";
 
 export const Route = createFileRoute("/_authenticated/dashboard-v2")({
   component: DashboardV2,
@@ -136,6 +137,22 @@ function DashboardV2() {
                     </DialogHeader>
                     <div className="p-6 overflow-y-auto max-h-[70vh]">
                       <PromoCodesTab events={data?.events || []} />
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <button className="h-9 px-4 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 flex items-center gap-2 text-sm font-medium transition-colors">
+                      <Users className="w-4 h-4" /> Promoters
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-3xl bg-[#0A0A0A] border-white/10 text-white p-0">
+                    <DialogHeader className="p-6 border-b border-white/10">
+                      <DialogTitle>Promoters</DialogTitle>
+                    </DialogHeader>
+                    <div className="p-6 overflow-y-auto max-h-[70vh]">
+                      <PromotersTab events={data?.events || []} />
                     </div>
                   </DialogContent>
                 </Dialog>

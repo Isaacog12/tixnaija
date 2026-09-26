@@ -40,6 +40,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/e/$slug")({
   component: EventDetailPage,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      ref: search.ref as string | undefined,
+    };
+  },
   loader: async ({ params }) => {
     return await fetchEventBySlug(params.slug);
   },
@@ -288,6 +293,26 @@ function EventDetailPage() {
   } | null>(null);
   const [validatingPromo, setValidatingPromo] = useState(false);
 
+  const { ref } = Route.useSearch();
+  const [appliedPromoterLink, setAppliedPromoterLink] = useState<{
+    link_id: string;
+    ticket_type_id: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    async function validatePromoter() {
+      if (!ref || !data?.event) return;
+      const { data: res, error } = await supabase.rpc("validate_promoter_code", {
+        p_event_id: data.event.id,
+        p_code: ref.trim(),
+      });
+      if (!error && res && res.length > 0) {
+        setAppliedPromoterLink(res[0]);
+      }
+    }
+    validatePromoter();
+  }, [ref, data?.event]);
+
   const form = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
@@ -458,6 +483,7 @@ function EventDetailPage() {
           p_recipient_name: values.isGift ? values.recipientName : null,
           p_recipient_email: values.isGift ? values.recipientEmail : null,
           p_gift_message: values.isGift ? values.giftMessage : null,
+          p_promoter_link_id: appliedPromoterLink?.link_id ?? undefined,
         } as any);
 
         if (checkoutError) {
@@ -496,6 +522,7 @@ function EventDetailPage() {
         recipientName: values.isGift ? values.recipientName : null,
         recipientEmail: values.isGift ? values.recipientEmail : null,
         giftMessage: values.isGift ? values.giftMessage : null,
+        promoterLinkId: appliedPromoterLink?.link_id || null,
       };
 
       const { data: initData, error: initErr } = await supabase.functions.invoke(
