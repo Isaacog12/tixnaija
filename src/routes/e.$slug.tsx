@@ -173,7 +173,7 @@ async function fetchEventBySlug(slug: string) {
       `
       id, title, slug, description, category, cover_image_url, venue_name, city, state, 
       start_datetime, end_datetime, status, postponed_at, organizer_note, 
-      profiles!events_organizer_id_fkey(full_name),
+      profiles!events_organizer_id_fkey(full_name, organizer_slug, avatar_url),
       ticket_types(id, name, description, price_kobo, quantity_available, quantity_sold, max_per_order, sales_start_at, sales_end_at)
     `,
     )
@@ -1081,6 +1081,30 @@ function EventBody({
               )}
             </div>
           </div>
+          {event.profiles && (
+            <div className="mt-8 flex items-center gap-3 rounded-xl border border-border bg-card/50 p-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                {event.profiles.avatar_url ? (
+                  <img src={event.profiles.avatar_url} alt="" className="h-full w-full rounded-full object-cover" />
+                ) : (
+                  <span className="font-display font-bold uppercase">{event.profiles.full_name?.charAt(0) || "O"}</span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Organized by</p>
+                <p className="truncate font-semibold">{event.profiles.full_name}</p>
+              </div>
+              {event.profiles.organizer_slug && (
+                <Link
+                  to="/box-office/$organizerSlug"
+                  params={{ organizerSlug: event.profiles.organizer_slug }}
+                  className="shrink-0 text-sm font-medium text-primary hover:underline press-sm"
+                >
+                  View Profile
+                </Link>
+              )}
+            </div>
+          )}
 
           {event.description && (
             <div className="mt-8 whitespace-pre-wrap text-[15px] leading-relaxed text-foreground/90">

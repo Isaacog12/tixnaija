@@ -72,6 +72,9 @@ async function fetchMyApplication() {
 const profileSchema = z.object({
   full_name: z.string().trim().max(80).optional().nullable(),
   username: z.string().trim().max(30).optional().nullable(),
+  organizer_slug: z.string().trim().regex(/^[a-z0-9-]+$/, "Only lowercase letters, numbers, and hyphens").max(40).optional().nullable().or(z.literal("")),
+  bio: z.string().trim().max(300).optional().nullable(),
+  banner_url: z.string().trim().url().optional().nullable().or(z.literal("")),
   phone: z.string().trim().max(20).optional().nullable(),
   city: z.string().trim().max(60).optional().nullable(),
   bank_name: z.string().trim().max(60).optional().nullable(),
@@ -113,6 +116,9 @@ function AccountPage() {
   const [form, setForm] = useState({
     full_name: "",
     username: "",
+    organizer_slug: "",
+    bio: "",
+    banner_url: "",
     phone: "",
     city: "",
     bank_name: "",
@@ -126,6 +132,9 @@ function AccountPage() {
       setForm({
         full_name: data.profile.full_name ?? "",
         username: data.profile.username ?? "",
+        organizer_slug: data.profile.organizer_slug ?? "",
+        bio: data.profile.bio ?? "",
+        banner_url: data.profile.banner_url ?? "",
         phone: data.profile.phone ?? "",
         city: data.profile.city ?? "",
         bank_name: data.profile.bank_name ?? "",
@@ -363,6 +372,39 @@ function AccountPage() {
                     />
                   </Field>
                 </div>
+
+                {data?.profile?.is_organizer && (
+                  <div className="mt-8 pt-6 border-t border-border">
+                    <h3 className="mb-4 text-lg font-medium text-foreground">Box Office Profile</h3>
+                    <div className="grid gap-5 sm:grid-cols-2">
+                      <Field label="Box Office Link Slug">
+                        <Input
+                          value={form.organizer_slug}
+                          onChange={(e) => setForm({ ...form, organizer_slug: e.target.value.toLowerCase() })}
+                          placeholder="e.g. your-brand-name"
+                        />
+                      </Field>
+                      <Field label="Banner Image URL">
+                        <Input
+                          value={form.banner_url}
+                          onChange={(e) => setForm({ ...form, banner_url: e.target.value })}
+                          placeholder="https://example.com/banner.jpg"
+                        />
+                      </Field>
+                      <div className="sm:col-span-2">
+                        <Field label="Bio">
+                          <textarea
+                            className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                            value={form.bio}
+                            onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                            placeholder="Tell attendees about yourself or your organization..."
+                          />
+                        </Field>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="mt-6 flex justify-end pt-4 border-t border-border">
                   <Button type="submit" disabled={saving} className="press-sm transition-transform duration-[120ms]">
                      {saving ? "Saving…" : "Save changes"}

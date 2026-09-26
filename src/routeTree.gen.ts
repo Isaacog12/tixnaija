@@ -35,6 +35,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDashboardV2RouteImport } from './routes/_authenticated/dashboard-v2'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
+import { Route as BoxOfficeOrganizerSlugRouteImport } from './routes/box-office.$organizerSlug'
 import { Route as CareersApplyRouteImport } from './routes/careers_.apply'
 import { Route as CheckoutVerifyRouteImport } from './routes/checkout.verify'
 import { Route as EV2SlugRouteImport } from './routes/e-v2.$slug'
@@ -180,6 +181,11 @@ const AuthenticatedTicketsRoute = AuthenticatedTicketsRouteImport.update({
   path: '/tickets',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const BoxOfficeOrganizerSlugRoute = BoxOfficeOrganizerSlugRouteImport.update({
+  id: '/box-office/$organizerSlug',
+  path: '/box-office/$organizerSlug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CareersApplyRoute = CareersApplyRouteImport.update({
   id: '/careers_/apply',
   path: '/careers/apply',
@@ -278,6 +284,7 @@ export interface FileRoutesByFullPath {
   '/dashboard-v2': typeof AuthenticatedDashboardV2Route
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/tickets': typeof AuthenticatedTicketsRoute
+  '/box-office/$organizerSlug': typeof BoxOfficeOrganizerSlugRoute
   '/careers/apply': typeof CareersApplyRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
   '/e-v2/$slug': typeof EV2SlugRoute
@@ -318,6 +325,7 @@ export interface FileRoutesByTo {
   '/dashboard-v2': typeof AuthenticatedDashboardV2Route
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/tickets': typeof AuthenticatedTicketsRoute
+  '/box-office/$organizerSlug': typeof BoxOfficeOrganizerSlugRoute
   '/careers/apply': typeof CareersApplyRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
   '/e-v2/$slug': typeof EV2SlugRoute
@@ -360,6 +368,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard-v2': typeof AuthenticatedDashboardV2Route
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/tickets': typeof AuthenticatedTicketsRoute
+  '/box-office/$organizerSlug': typeof BoxOfficeOrganizerSlugRoute
   '/careers_/apply': typeof CareersApplyRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
   '/e-v2/$slug': typeof EV2SlugRoute
@@ -402,6 +411,7 @@ export interface FileRouteTypes {
     | '/dashboard-v2'
     | '/notifications'
     | '/tickets'
+    | '/box-office/$organizerSlug'
     | '/careers/apply'
     | '/checkout/verify'
     | '/e-v2/$slug'
@@ -442,6 +452,7 @@ export interface FileRouteTypes {
     | '/dashboard-v2'
     | '/notifications'
     | '/tickets'
+    | '/box-office/$organizerSlug'
     | '/careers/apply'
     | '/checkout/verify'
     | '/e-v2/$slug'
@@ -483,6 +494,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard-v2'
     | '/_authenticated/notifications'
     | '/_authenticated/tickets'
+    | '/box-office/$organizerSlug'
     | '/careers_/apply'
     | '/checkout/verify'
     | '/e-v2/$slug'
@@ -519,6 +531,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
   V2Route: typeof V2Route
+  BoxOfficeOrganizerSlugRoute: typeof BoxOfficeOrganizerSlugRoute
   CareersApplyRoute: typeof CareersApplyRoute
   CheckoutVerifyRoute: typeof CheckoutVerifyRoute
   EV2SlugRoute: typeof EV2SlugRoute
@@ -711,6 +724,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTicketsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/box-office/$organizerSlug': {
+      id: '/box-office/$organizerSlug'
+      path: '/box-office/$organizerSlug'
+      fullPath: '/box-office/$organizerSlug'
+      preLoaderRoute: typeof BoxOfficeOrganizerSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/careers_/apply': {
       id: '/careers_/apply'
       path: '/careers/apply'
@@ -864,6 +884,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
   V2Route: V2Route,
+  BoxOfficeOrganizerSlugRoute: BoxOfficeOrganizerSlugRoute,
   CareersApplyRoute: CareersApplyRoute,
   CheckoutVerifyRoute: CheckoutVerifyRoute,
   EV2SlugRoute: EV2SlugRoute,
