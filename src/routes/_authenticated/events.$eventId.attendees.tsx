@@ -3,13 +3,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteNav } from "@/components/site-nav";
 import { Button } from "@/components/ui/button";
-import { Ticket, ArrowLeft, XCircle, Search, ShieldAlert, CheckCircle } from "lucide-react";
+import { Ticket, ArrowLeft, XCircle, Search, ShieldAlert, CheckCircle, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { BackButton } from "@/components/back-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { format } from "date-fns";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -210,6 +211,7 @@ function AttendeesPage() {
               className="pl-9"
             />
           </div>
+          <MassEmailDialog eventId={eventId} />
         </div>
 
         {ticketsLoading ? (
@@ -409,5 +411,99 @@ function AttendeesPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function MassEmailDialog({ eventId }: { eventId: string }) {
+  const [open, setOpen] = useState(false);
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [busy, setBusy] = useState(false);
+  const qc = useQueryClient();
+
+  async function handleSend() {
+    if (!subject.trim() || !body.trim()) {
+      toast.error("Subject and message are required.");
+      return;
+    }
+    
+    if (!confirm("Are you sure you want to send this to all attendees? This cannot be undone.")) return;
+
+    setBusy(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      
+      // 1. Create broadcast record
+      const { data: broadcast, error: insertErr } = await supabase
+        .from("event_broadcasts")
+        .insert({
+          event_id: eventId,
+          organizer_id: userData.user!.id,
+          subject: subject.trim(),
+          message: body.trim(),
+        })
+        .select("id")
+        .single();
+        
+      if (insertErr || !broadcast) throw new Error(insertErr?.message || "Failed to create broadcast record");
+
+      // 2. Trigger edge function to send emails
+      const { error: invokeErr } = await supabase.functions.invoke("send-event-broadcast", {
+        body: { broadcastId: broadcast.id }
+      });
+
+      if (invokeErr) throw new Error(invokeErr.message || "Failed to trigger email delivery");
+
+      toast.success("Emails are being sent!");
+      setOpen(false);
+      setSubject("");
+      setBody("");
+      qc.invalidateQueries({ queryKey: ["event-broadcasts", eventId] });
+    } catch (err: any) {
+      toast.error(err.message || "An error occurred");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <Button variant="outline" onClick={() => setOpen(true)} className="shrink-0 gap-2">
+        <Mail className="h-4 w-4" /> Message Attendees
+      </Button>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Message All Attendees</DialogTitle>
+          <DialogDescription>
+            Send an email update to everyone who purchased a ticket for this event.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label>Subject Line</Label>
+            <Input 
+              value={subject} 
+              onChange={(e) => setSubject(e.target.value)} 
+              placeholder="e.g. Venue Update: Doors open at 5 PM!" 
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Message Body</Label>
+            <Textarea 
+              rows={6}
+              value={body} 
+              onChange={(e) => setBody(e.target.value)} 
+              placeholder="Write your message here. Attendees will receive this in their inbox." 
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>Cancel</Button>
+          <Button onClick={handleSend} disabled={busy || !subject.trim() || !body.trim()}>
+            {busy ? "Sending..." : "Send to All"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

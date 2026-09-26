@@ -36,7 +36,7 @@ export const Route = createFileRoute("/browse")({
 async function fetchEvents(q: string, category: string, dateFilter: string) {
   let query = supabase
     .from("events")
-    .select("id, title, slug, city, venue_name, start_datetime, end_datetime, cover_image_url, description, status, category, ticket_types(price_kobo)")
+    .select("id, title, slug, city, venue_name, start_datetime, end_datetime, cover_image_url, description, status, category, tags, ticket_types(price_kobo)")
     .in("status", ["published", "cancelled", "completed"])
     .order("start_datetime", { ascending: true })
     .limit(100);
@@ -415,6 +415,19 @@ function BrowsePage() {
                         <MapPin className="h-3.5 w-3.5 opacity-70" />
                         {ev.venue_name}
                       </p>
+                    )}
+                    
+                    {ev.tags && ev.tags.length > 0 && (
+                      <div className="flex gap-1.5 flex-wrap mt-3 pt-3 border-t border-border/50">
+                        {ev.tags.slice(0, 3).map((tag: string) => (
+                          <span key={tag} className="text-[10px] font-semibold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded border border-border/40">
+                            #{tag}
+                          </span>
+                        ))}
+                        {ev.tags.length > 3 && (
+                          <span className="text-[10px] font-semibold text-muted-foreground px-1 py-0.5">+{ev.tags.length - 3}</span>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>

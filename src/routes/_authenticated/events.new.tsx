@@ -113,6 +113,7 @@ function NewEventPage() {
     is_recurring: false,
     recurrence_interval: "WEEKLY" as "DAILY" | "WEEKLY" | "MONTHLY",
     recurrence_count: 1,
+    tags: "",
   });
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string>("");
@@ -281,6 +282,7 @@ function NewEventPage() {
           start_datetime: new Date(currentDate).toISOString(),
           end_datetime: new Date(currentEndDate).toISOString(),
           status: (publish ? "published" : "draft") as "published" | "draft",
+          tags: form.tags.split(",").map(t => t.trim()).filter(Boolean),
         });
 
         // Advance date
@@ -509,6 +511,14 @@ function NewEventPage() {
                     placeholder="Tell people what to expect: line-up, dress code, schedule..."
                     className="resize-none"
                   />
+                </Field>
+                <Field label="Tags (Comma separated)">
+                  <Input
+                    value={form.tags}
+                    onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                    placeholder="e.g. Afrobeats, Tech, Free"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Tags help attendees find your event.</p>
                 </Field>
               </div>
             </section>

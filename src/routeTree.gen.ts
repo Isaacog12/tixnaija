@@ -46,6 +46,7 @@ import { Route as AuthenticatedAdminJobApplicationsRouteImport } from './routes/
 import { Route as AuthenticatedAdminOrganizerApplicationsRouteImport } from './routes/_authenticated/admin_.organizer-applications'
 import { Route as AuthenticatedEventsNewRouteImport } from './routes/_authenticated/events.new'
 import { Route as OrdersOrderIdTicketsRouteImport } from './routes/orders.$orderId.tickets'
+import { Route as AuthenticatedEventsEventIdAnalyticsRouteImport } from './routes/_authenticated/events.$eventId.analytics'
 import { Route as AuthenticatedEventsEventIdAttendeesRouteImport } from './routes/_authenticated/events.$eventId.attendees'
 import { Route as AuthenticatedEventsEventIdEditRouteImport } from './routes/_authenticated/events.$eventId.edit'
 import { Route as AuthenticatedEventsEventIdScanRouteImport } from './routes/_authenticated/events.$eventId.scan'
@@ -239,6 +240,12 @@ const OrdersOrderIdTicketsRoute = OrdersOrderIdTicketsRouteImport.update({
   path: '/orders/$orderId/tickets',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedEventsEventIdAnalyticsRoute =
+  AuthenticatedEventsEventIdAnalyticsRouteImport.update({
+    id: '/events/$eventId/analytics',
+    path: '/events/$eventId/analytics',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEventsEventIdAttendeesRoute =
   AuthenticatedEventsEventIdAttendeesRouteImport.update({
     id: '/events/$eventId/attendees',
@@ -295,6 +302,7 @@ export interface FileRoutesByFullPath {
   '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
+  '/events/$eventId/analytics': typeof AuthenticatedEventsEventIdAnalyticsRoute
   '/events/$eventId/attendees': typeof AuthenticatedEventsEventIdAttendeesRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/events/$eventId/scan': typeof AuthenticatedEventsEventIdScanRoute
@@ -336,6 +344,7 @@ export interface FileRoutesByTo {
   '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
+  '/events/$eventId/analytics': typeof AuthenticatedEventsEventIdAnalyticsRoute
   '/events/$eventId/attendees': typeof AuthenticatedEventsEventIdAttendeesRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/events/$eventId/scan': typeof AuthenticatedEventsEventIdScanRoute
@@ -379,6 +388,7 @@ export interface FileRoutesById {
   '/_authenticated/admin_/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/_authenticated/events/new': typeof AuthenticatedEventsNewRoute
   '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
+  '/_authenticated/events/$eventId/analytics': typeof AuthenticatedEventsEventIdAnalyticsRoute
   '/_authenticated/events/$eventId/attendees': typeof AuthenticatedEventsEventIdAttendeesRoute
   '/_authenticated/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/_authenticated/events/$eventId/scan': typeof AuthenticatedEventsEventIdScanRoute
@@ -422,6 +432,7 @@ export interface FileRouteTypes {
     | '/admin/organizer-applications'
     | '/events/new'
     | '/orders/$orderId/tickets'
+    | '/events/$eventId/analytics'
     | '/events/$eventId/attendees'
     | '/events/$eventId/edit'
     | '/events/$eventId/scan'
@@ -463,6 +474,7 @@ export interface FileRouteTypes {
     | '/admin/organizer-applications'
     | '/events/new'
     | '/orders/$orderId/tickets'
+    | '/events/$eventId/analytics'
     | '/events/$eventId/attendees'
     | '/events/$eventId/edit'
     | '/events/$eventId/scan'
@@ -505,6 +517,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin_/organizer-applications'
     | '/_authenticated/events/new'
     | '/orders/$orderId/tickets'
+    | '/_authenticated/events/$eventId/analytics'
     | '/_authenticated/events/$eventId/attendees'
     | '/_authenticated/events/$eventId/edit'
     | '/_authenticated/events/$eventId/scan'
@@ -801,6 +814,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrdersOrderIdTicketsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/events/$eventId/analytics': {
+      id: '/_authenticated/events/$eventId/analytics'
+      path: '/events/$eventId/analytics'
+      fullPath: '/events/$eventId/analytics'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/events/$eventId/attendees': {
       id: '/_authenticated/events/$eventId/attendees'
       path: '/events/$eventId/attendees'
@@ -836,6 +856,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminJobApplicationsRoute: typeof AuthenticatedAdminJobApplicationsRoute
   AuthenticatedAdminOrganizerApplicationsRoute: typeof AuthenticatedAdminOrganizerApplicationsRoute
   AuthenticatedEventsNewRoute: typeof AuthenticatedEventsNewRoute
+  AuthenticatedEventsEventIdAnalyticsRoute: typeof AuthenticatedEventsEventIdAnalyticsRoute
   AuthenticatedEventsEventIdAttendeesRoute: typeof AuthenticatedEventsEventIdAttendeesRoute
   AuthenticatedEventsEventIdEditRoute: typeof AuthenticatedEventsEventIdEditRoute
   AuthenticatedEventsEventIdScanRoute: typeof AuthenticatedEventsEventIdScanRoute
@@ -854,6 +875,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminOrganizerApplicationsRoute:
     AuthenticatedAdminOrganizerApplicationsRoute,
   AuthenticatedEventsNewRoute: AuthenticatedEventsNewRoute,
+  AuthenticatedEventsEventIdAnalyticsRoute:
+    AuthenticatedEventsEventIdAnalyticsRoute,
   AuthenticatedEventsEventIdAttendeesRoute:
     AuthenticatedEventsEventIdAttendeesRoute,
   AuthenticatedEventsEventIdEditRoute: AuthenticatedEventsEventIdEditRoute,

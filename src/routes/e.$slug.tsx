@@ -177,7 +177,7 @@ async function fetchEventBySlug(slug: string) {
     .from("events")
     .select(
       `
-      id, title, slug, description, category, cover_image_url, venue_name, city, state, 
+      id, title, slug, description, category, tags, cover_image_url, venue_name, city, state, 
       start_datetime, end_datetime, status, postponed_at, organizer_note, theme_color,
       checkout_questions(id, question_text, type, options, required, position),
       profiles!events_organizer_id_fkey(full_name, organizer_slug, avatar_url),
@@ -1110,6 +1110,15 @@ function EventBody({
             <span className="text-xs font-semibold uppercase tracking-[0.35em] text-primary">
               {event.category}
             </span>
+            {event.tags && event.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {event.tags.map((tag: string) => (
+                  <span key={tag} className="text-xs font-medium text-muted-foreground bg-muted/80 px-2.5 py-1 rounded-full border border-border/50">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
             <div className="mt-2 flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <BackButton />

@@ -9,6 +9,7 @@ import { formatNaira } from "@/lib/currency";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PromoCodesTab } from "@/components/promo-codes-tab";
 import { PromotersTab } from "@/components/promoters-tab";
+import { PayoutsTab } from "@/components/payouts-tab";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -21,7 +22,7 @@ async function fetchMyEvents() {
 
   const { data: profile } = (await supabase
     .from("profiles")
-    .select("is_organizer, is_admin, full_name")
+    .select("is_organizer, is_admin, full_name, paystack_subaccount_code")
     .eq("id", userId)
     .maybeSingle()) as { data: any };
 
@@ -157,6 +158,7 @@ function Dashboard() {
                 <TabsTrigger value="events">Events</TabsTrigger>
                 <TabsTrigger value="promo-codes">Promo Codes</TabsTrigger>
                 <TabsTrigger value="promoters">Promoters</TabsTrigger>
+                <TabsTrigger value="payouts">Payouts</TabsTrigger>
               </TabsList>
               
               <TabsContent value="overview">
@@ -170,6 +172,9 @@ function Dashboard() {
               </TabsContent>
               <TabsContent value="promoters">
                 <PromotersTab events={data?.events || []} />
+              </TabsContent>
+              <TabsContent value="payouts">
+                <PayoutsTab events={data?.events || []} statsByEvent={data?.statsByEvent || {}} hasPayoutAccount={!!data?.profile?.paystack_subaccount_code} />
               </TabsContent>
             </Tabs>
           ) : (
@@ -379,6 +384,11 @@ function Dashboard() {
                         <Button asChild variant="outline" size="icon" className="h-8 w-8 rounded hover:bg-secondary transition-colors" title="Manage Attendees">
                           <Link to="/events/$eventId/attendees" params={{ eventId: ev.id }}>
                             <Users className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        <Button asChild variant="outline" size="icon" className="h-8 w-8 rounded hover:bg-secondary transition-colors" title="Analytics">
+                          <Link to="/events/$eventId/analytics" params={{ eventId: ev.id }}>
+                            <BarChart2 className="h-4 w-4" />
                           </Link>
                         </Button>
                         <Button asChild variant="outline" size="icon" className="h-8 w-8 rounded hover:bg-secondary transition-colors" title="Edit Event">

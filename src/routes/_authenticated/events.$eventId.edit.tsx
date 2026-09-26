@@ -132,6 +132,7 @@ function EditEventPage() {
     slug: "",
     theme_color: "",
     custom_order_confirmation: "",
+    tags: "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -151,6 +152,7 @@ function EditEventPage() {
         slug: ev.slug ?? "",
         theme_color: ev.theme_color ?? "",
         custom_order_confirmation: ev.custom_order_confirmation ?? "",
+        tags: ev.tags ? ev.tags.join(", ") : "",
       });
     }
   }, [data]);
@@ -181,6 +183,7 @@ function EditEventPage() {
         slug: form.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
         theme_color: form.theme_color || null,
         custom_order_confirmation: form.custom_order_confirmation || null,
+        tags: form.tags.split(",").map(t => t.trim()).filter(Boolean),
       })
       .eq("id", eventId);
     setSaving(false);
@@ -408,6 +411,14 @@ function EditEventPage() {
                 className="flex-1 uppercase font-mono"
               />
             </div>
+          </Field>
+          <Field label="Event Tags (Comma separated)" className="md:col-span-2">
+            <Input
+              value={form.tags || ""}
+              onChange={(e) => setForm({ ...form, tags: e.target.value })}
+              placeholder="e.g. Afrobeats, Tech, Conference"
+            />
+            <p className="text-xs text-muted-foreground mt-1">Tags help attendees find your event in the Browse section.</p>
           </Field>
           <Field label="Custom Order Confirmation Message" className="md:col-span-2">
             <Textarea
