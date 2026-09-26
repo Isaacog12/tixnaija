@@ -55,7 +55,7 @@ function DownloadPage() {
                     className="inline-flex items-center justify-center w-full sm:w-auto gap-3 h-14 px-8 rounded-xl bg-primary text-primary-foreground font-semibold text-base shadow-lg hover:bg-primary/90 active:scale-95 transition-all duration-200"
                   >
                     <Download className="h-5 w-5 shrink-0" />
-                    Download from GitHub
+                    Download
                   </a>
                 )}
                 {GDRIVE_APK_URL && (
