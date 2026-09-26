@@ -256,6 +256,7 @@
   html {
     font-family: var(--font-sans);
     font-optical-sizing: auto;
+    overflow-x: hidden;
   }
   body {
     background-color: var(--color-background);
@@ -264,6 +265,7 @@
     font-optical-sizing: auto;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
   }
 
   /*
