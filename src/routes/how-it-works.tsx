@@ -64,22 +64,27 @@ const ORGANIZER_STEPS = [
   {
     icon: Ticket,
     title: "Publish and share",
-    body: "Hit Publish and your event goes live instantly. Share your unique event link on WhatsApp, Instagram, X — anywhere your audience is.",
+    body: "Hit Publish and your event goes live instantly. Customize your event page with colors, tags, and checkout questions, then share your unique link anywhere.",
   },
   {
     icon: BarChart3,
-    title: "Track sales in real time",
-    body: "Watch ticket sales roll in from your organizer dashboard. See revenue totals, ticket type breakdowns, and buyer details at a glance.",
+    title: "Track sales & payouts",
+    body: "Watch ticket sales roll in from your organizer dashboard. See real-time analytics, track conversion rates, and view your estimated net payouts.",
+  },
+  {
+    icon: MessageSquare,
+    title: "Message attendees",
+    body: "Easily send announcements, venue changes, or thank-you emails to all your ticket buyers at once via the built-in mass email tool.",
   },
   {
     icon: ScanLine,
     title: "Scan tickets at the door",
-    body: "Use the built-in QR scanner on the event management page to check in attendees. Fast, reliable, works offline.",
+    body: "Use the built-in QR scanner on the event management page to check in attendees. Fast, real-time validation ensures no duplicate tickets are used.",
   },
   {
     icon: CreditCard,
     title: "Get paid directly",
-    body: "Connect your Nigerian bank account via your Account page. After your event, your earnings (minus the platform fee) are settled directly to your account.",
+    body: "Connect your Paystack account via your Settings page. Payouts are automated and settled directly to your connected bank account.",
   },
 ];
 
