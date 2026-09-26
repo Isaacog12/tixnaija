@@ -16,11 +16,12 @@ export const Route = createFileRoute("/download")({
 });
 
 // ── Replace this URL after running PWABuilder and uploading the APK ──────────
-const APK_DOWNLOAD_URL: string | null = "https://drive.google.com/uc?export=download&id=1VFGfmxKIZMu16MYw1opF0w6paAW0mE3n";
+const GITHUB_APK_URL: string | null = "https://github.com/Isaacog12/tixnaija/releases/download/V1.0.1/Tixnaijav1.apk";
+const GDRIVE_APK_URL: string | null = "https://drive.google.com/uc?export=download&id=1VFGfmxKIZMu16MYw1opF0w6paAW0mE3n";
 const APK_VERSION = "1.0.1"; // bump when you re-upload
 
 function DownloadPage() {
-  const hasApk = Boolean(APK_DOWNLOAD_URL);
+  const hasApk = Boolean(GITHUB_APK_URL) || Boolean(GDRIVE_APK_URL);
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
@@ -43,17 +44,32 @@ function DownloadPage() {
           </p>
 
           {/* ── Download CTA ─────────────────────────────────────────────── */}
-          <div className="mt-8">
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
             {hasApk ? (
-              <a
-                id="android-apk-download"
-                href={APK_DOWNLOAD_URL!}
-                download="tixnaija.apk"
-                className="inline-flex items-center gap-3 h-14 px-8 rounded-xl bg-primary text-primary-foreground font-semibold text-base shadow-lg hover:bg-primary/90 active:scale-95 transition-all duration-200"
-              >
-                <Download className="h-5 w-5 shrink-0" />
-                Download APK &nbsp;·&nbsp; v{APK_VERSION}
-              </a>
+              <>
+                {GITHUB_APK_URL && (
+                  <a
+                    id="android-apk-download-github"
+                    href={GITHUB_APK_URL}
+                    download="tixnaija.apk"
+                    className="inline-flex items-center justify-center w-full sm:w-auto gap-3 h-14 px-8 rounded-xl bg-primary text-primary-foreground font-semibold text-base shadow-lg hover:bg-primary/90 active:scale-95 transition-all duration-200"
+                  >
+                    <Download className="h-5 w-5 shrink-0" />
+                    Download from GitHub
+                  </a>
+                )}
+                {GDRIVE_APK_URL && (
+                  <a
+                    id="android-apk-download-gdrive"
+                    href={GDRIVE_APK_URL}
+                    download="tixnaija.apk"
+                    className="inline-flex items-center justify-center w-full sm:w-auto gap-3 h-14 px-8 rounded-xl bg-secondary text-secondary-foreground font-semibold text-base shadow-sm hover:bg-secondary/80 active:scale-95 transition-all duration-200 border border-border"
+                  >
+                    <Download className="h-5 w-5 shrink-0" />
+                    Download via Google
+                  </a>
+                )}
+              </>
             ) : (
               <div className="inline-flex items-center gap-3 h-14 px-8 rounded-xl bg-muted text-muted-foreground font-semibold text-base cursor-not-allowed select-none border border-border">
                 <Package className="h-5 w-5 shrink-0" />
@@ -61,7 +77,7 @@ function DownloadPage() {
               </div>
             )}
           </div>
-          <p className="mt-3 text-xs text-muted-foreground/60">Android only · Free download</p>
+          <p className="mt-3 text-xs text-muted-foreground/60">Android only · Free download · v{APK_VERSION}</p>
         </div>
       </div>
 
