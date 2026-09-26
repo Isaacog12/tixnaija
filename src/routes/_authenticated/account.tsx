@@ -126,6 +126,7 @@ function AccountPage() {
     bank_account_name: "",
   });
   const [saving, setSaving] = useState(false);
+  const [slugError, setSlugError] = useState("");
 
   useEffect(() => {
     if (data?.profile) {
@@ -261,8 +262,26 @@ function AccountPage() {
       error = insertError;
     }
     setSaving(false);
-    if (error) toast.error(error.message);
-    else {
+    if (error) {
+      if (error.code === "23505" && error.message?.includes("profiles_organizer_slug_key")) {
+        setSlugError("This URL is already taken — try a different one.");
+        
+        // The previous update failed atomically. We re-save without the slug so other fields succeed.
+        const fallbackData = { ...parsed.data };
+        delete (fallbackData as any).organizer_slug;
+        
+        if (data.profile) {
+          await supabase.from("profiles").update(fallbackData as any).eq("id", data.userId);
+        } else {
+          await supabase.from("profiles").insert({ id: data.userId, ...fallbackData } as any);
+        }
+        
+        toast.success("Other profile fields saved");
+        qc.invalidateQueries({ queryKey: ["me"] });
+      } else {
+        toast.error("Something went wrong, please try again.");
+      }
+    } else {
       toast.success("Profile saved");
       qc.invalidateQueries({ queryKey: ["me"] });
     }
@@ -380,9 +399,13 @@ function AccountPage() {
                       <Field label="Box Office Link Slug">
                         <Input
                           value={form.organizer_slug}
-                          onChange={(e) => setForm({ ...form, organizer_slug: e.target.value.toLowerCase() })}
+                          onChange={(e) => {
+                            setForm({ ...form, organizer_slug: e.target.value.toLowerCase() });
+                            setSlugError("");
+                          }}
                           placeholder="e.g. your-brand-name"
                         />
+                        {slugError && <p className="text-[13px] font-medium text-destructive mt-1">{slugError}</p>}
                       </Field>
                       <Field label="Banner Image URL">
                         <Input
