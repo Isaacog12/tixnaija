@@ -185,7 +185,7 @@ function ScannerPage() {
         <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
           <motion.div 
             animate={{ scale: isScanning ? 1 : 0.95, opacity: isScanning ? 1 : 0 }}
-            transition={{ type: "spring", damping: 1.0, bounce: 0, duration: 0.4 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
             className="w-64 h-64 border-2 border-white/40 rounded-3xl relative"
           >
             {/* Corner Markers */}
@@ -223,16 +223,16 @@ function ScannerPage() {
           <motion.div 
             initial={{ y: "100%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: "100%", opacity: 0, transition: { type: "spring", bounce: 0, duration: 0.3 } }}
-            transition={{ type: "spring", damping: 1.0, bounce: 0.3, duration: 0.6 }} // Fluid bounce for momentum
+            exit={{ y: "100%", opacity: 0, transition: { duration: 0.3, ease: "easeIn" } }}
+            transition={{ duration: 0.4, ease: "easeOut" }} // Removed bounce
             className="absolute bottom-0 left-0 right-0 z-50 p-4"
           >
             <div className={`p-8 rounded-[2rem] shadow-2xl backdrop-blur-3xl flex flex-col items-center text-center ${getStatusColor(scanResult.status)}`}>
               
               <motion.div
-                initial={{ scale: 0.5, opacity: 0 }}
+                initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: "spring", damping: 12, stiffness: 200, delay: 0.1 }}
+                transition={{ duration: 0.3, ease: "easeOut", delay: 0.1 }}
               >
                 {getStatusIcon(scanResult.status)}
               </motion.div>
