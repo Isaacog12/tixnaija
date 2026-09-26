@@ -36,7 +36,9 @@ async function fetchMyTickets() {
       status,
       attendee_name,
       order_items!inner(
+        order_id,
         orders!inner(
+          id,
           events!inner(
             id,
             title,
@@ -219,10 +221,12 @@ function TicketsPage() {
   
   if (tickets) {
     for (const t of tickets) {
-      const event = t.order_items.orders.events;
+      const order = t.order_items.orders;
+      const event = order.events;
       if (!eventsMap.has(event.id)) {
         eventsMap.set(event.id, {
           ...event,
+          orderId: order.id,
           tickets: [],
         });
       }
@@ -435,11 +439,21 @@ function EventList({ events, emptyMessage, type }: { events: any[]; emptyMessage
               )}
               
               <div className="mt-auto pt-6 flex flex-col gap-3 border-t border-border/60">
-                <div className="text-sm text-muted-foreground flex justify-between items-center font-bold uppercase tracking-wider">
-                  <span>Admit: {ev.tickets.length} {ev.tickets.length !== 1 ? 'tickets' : 'ticket'}</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground font-bold uppercase tracking-wider">
+                    Admit: {ev.tickets.length} {ev.tickets.length !== 1 ? "tickets" : "ticket"}
+                  </span>
+                  {ev.tickets.some((t: any) => !t.attendee_name) && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-600">
+                      Unassigned
+                    </span>
+                  )}
                 </div>
-                <Button asChild className="w-full justify-between h-12 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground font-semibold transition-all shadow-none mt-2">
-                  <Link to="/e/$slug" params={{ slug: ev.slug }}>
+                <Button
+                  asChild
+                  className="w-full justify-between h-12 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground font-semibold transition-all shadow-none mt-2"
+                >
+                  <Link to="/orders/$orderId/tickets" params={{ orderId: ev.orderId }}>
                     View Tickets <QrCode className="h-5 w-5 ml-2" />
                   </Link>
                 </Button>

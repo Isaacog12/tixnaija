@@ -86,6 +86,7 @@ function AttendeesPage() {
         .select(`
           *,
           order_items!inner (
+            quantity,
             ticket_types ( name ),
             orders!inner (
               id,
@@ -155,6 +156,33 @@ function AttendeesPage() {
     return name.includes(q) || email.includes(q) || code.includes(q);
   });
 
+  // Build a lookup: order_id -> { shortId, groupSize }
+  const orderMeta = new Map<string, { shortId: string; groupSize: number }>();
+  if (filteredTickets) {
+    for (const t of filteredTickets as any[]) {
+      const oid: string = t.order_items.orders.id;
+      if (!orderMeta.has(oid)) {
+        orderMeta.set(oid, {
+          shortId: oid.split("-")[0].toUpperCase(),
+          groupSize: t.order_items.quantity ?? 1,
+        });
+      }
+    }
+  }
+
+  // Assign alternating stripe indices so consecutive tickets from the same order
+  // share a tinted background that's distinct from the next order's rows.
+  const orderStripeIndex = new Map<string, number>();
+  let stripeCounter = 0;
+  if (filteredTickets) {
+    for (const t of filteredTickets as any[]) {
+      const oid: string = t.order_items.orders.id;
+      if (!orderStripeIndex.has(oid)) {
+        orderStripeIndex.set(oid, stripeCounter++);
+      }
+    }
+  }
+
   return (
     <div className="min-h-dvh bg-background">
       <section className="bg-card border-b border-border shadow-sm mb-8 pt-8 pb-8 relative overflow-hidden">
@@ -202,6 +230,7 @@ function AttendeesPage() {
                     <th className="px-5 py-3 font-semibold">Attendee</th>
                     <th className="px-5 py-3 font-semibold">Code</th>
                     <th className="px-5 py-3 font-semibold">Tier</th>
+                    <th className="px-5 py-3 font-semibold">Order</th>
                     <th className="px-5 py-3 font-semibold">Status</th>
                     <th className="px-5 py-3 font-semibold">Purchased</th>
                     <th className="px-5 py-3 font-semibold text-right">Actions</th>
@@ -214,15 +243,37 @@ function AttendeesPage() {
                     const tierName = t.order_items.ticket_types?.name || "General Admission";
                     const code = t.ticket_code.split("-")[0].toUpperCase();
                     const purchasedAt = format(new Date(t.created_at), "MMM d, yyyy");
+                    const orderId: string = t.order_items.orders.id;
+                    const meta = orderMeta.get(orderId);
+                    const isGroup = (meta?.groupSize ?? 1) > 1;
+                    const stripeIdx = orderStripeIndex.get(orderId) ?? 0;
+                    const isStriped = stripeIdx % 2 === 1;
 
                     return (
-                      <tr key={t.id} className="hover:bg-muted/30 transition-colors">
+                      <tr
+                        key={t.id}
+                        className={`transition-colors ${
+                          isStriped ? "bg-muted/20 hover:bg-muted/40" : "hover:bg-muted/30"
+                        }`}
+                      >
                         <td className="px-5 py-4">
                           <p className="font-medium">{name}</p>
                           <p className="text-xs text-muted-foreground">{email}</p>
                         </td>
                         <td className="px-5 py-4 font-mono text-xs tracking-wider">{code}</td>
                         <td className="px-5 py-4">{tierName}</td>
+                        <td className="px-5 py-4">
+                          <div className="flex flex-col gap-1">
+                            <span className="font-mono text-xs text-muted-foreground">
+                              {meta?.shortId ?? orderId.split("-")[0].toUpperCase()}
+                            </span>
+                            {isGroup && (
+                              <span className="inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                                Group of {meta?.groupSize}
+                              </span>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-5 py-4">
                           {t.status === "valid" ? (
                             <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2 py-1 text-xs font-medium text-green-500">

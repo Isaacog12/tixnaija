@@ -213,6 +213,9 @@ const checkoutSchema = z
     ),
   })
   .superRefine((data, ctx) => {
+    // Only validate gift recipient fields — per-attendee name/email are optional.
+    // The RPC defaults to the buyer's own name/email for any blank attendee entries,
+    // and tickets can be reassigned later via the Reassign Ticket flow.
     if (data.isGift) {
       if (!data.recipientName || data.recipientName.trim().length === 0) {
         ctx.addIssue({
@@ -228,28 +231,6 @@ const checkoutSchema = z
           path: ["recipientEmail"],
         });
       }
-    }
-
-    const totalCount = Object.values(data.attendees).reduce((sum, arr) => sum + arr.length, 0);
-    if (totalCount > 1) {
-      Object.entries(data.attendees).forEach(([ticketId, arr]) => {
-        arr.forEach((attendee, idx) => {
-          if (!attendee.name || attendee.name.trim().length === 0) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: "Name is required",
-              path: ["attendees", ticketId, idx, "name"],
-            });
-          }
-          if (!attendee.email || !/^\S+@\S+\.\S+$/.test(attendee.email)) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: "Valid email is required",
-              path: ["attendees", ticketId, idx, "email"],
-            });
-          }
-        });
-      });
     }
   });
 
@@ -770,10 +751,9 @@ function EventDetailPage() {
               {totalCount > 1 && (
                 <div className="space-y-4 border-t border-border pt-4">
                   <div>
-                    <p className="text-sm font-semibold">Ticket Assignments</p>
+                    <p className="text-sm font-semibold">Ticket Assignments <span className="text-muted-foreground font-normal">(Optional)</span></p>
                     <p className="text-xs text-muted-foreground">
-                      Since you're buying {totalCount} tickets, please assign them to the attendees.
-                      Each person will receive their own ticket via email.
+                      You're buying {totalCount} tickets. Optionally assign each ticket to an attendee now — or leave them blank and fill in the names later from your ticket page.
                     </p>
                   </div>
                   {items.map((it) => (
