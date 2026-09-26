@@ -1,12 +1,18 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo, useEffect } from "react";
-import { Calendar, MapPin, Loader2, Minus, Plus, Share2 } from "lucide-react";
+import { Calendar, MapPin, Loader2, Minus, Plus, Share2, Facebook, Twitter, MessageCircle, Link2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 import { BackButton } from "@/components/back-button";
 import { formatNaira } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -999,28 +1005,61 @@ function EventBody({
                   {event.title}
                 </h1>
               </div>
-              <Button
-                variant="outline"
-                size="icon"
-                className="shrink-0"
-                onClick={() => {
-                  if (navigator.share) {
-                    navigator
-                      .share({
-                        title: event.title,
-                        text: "Check out this event on TixNaija!",
-                        url: window.location.href,
-                      })
-                      .catch(() => {});
-                  } else {
-                    navigator.clipboard.writeText(window.location.href);
-                    toast.success("Link copied to clipboard");
-                  }
-                }}
-                aria-label="Share Event"
-              >
-                <Share2 className="h-4 w-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="shrink-0" aria-label="Share Event">
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const url = encodeURIComponent(window.location.href);
+                      const text = encodeURIComponent(`Check out ${event.title} on TixNaija!`);
+                      window.open(`https://wa.me/?text=${text}%20${url}`, "_blank");
+                    }}
+                  >
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    WhatsApp
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const url = encodeURIComponent(window.location.href);
+                      const text = encodeURIComponent(`Check out ${event.title} on TixNaija!`);
+                      window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, "_blank");
+                    }}
+                  >
+                    <Twitter className="mr-2 h-4 w-4" />
+                    X (Twitter)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const url = encodeURIComponent(window.location.href);
+                      window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, "_blank");
+                    }}
+                  >
+                    <Facebook className="mr-2 h-4 w-4" />
+                    Facebook
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (navigator.share) {
+                        navigator.share({
+                          title: event.title,
+                          text: "Check out this event on TixNaija!",
+                          url: window.location.href,
+                        }).catch(() => {});
+                      } else {
+                        navigator.clipboard.writeText(window.location.href);
+                        toast.success("Link copied to clipboard");
+                      }
+                    }}
+                  >
+                    <Link2 className="mr-2 h-4 w-4" />
+                    More / Copy Link
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-2">
