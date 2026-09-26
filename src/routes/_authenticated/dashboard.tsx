@@ -94,7 +94,7 @@ function Dashboard() {
   const latestApp = data?.latestApp ?? null;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 md:py-12 min-h-dvh">
+    <div className="mx-auto max-w-6xl px-4 py-8 md:py-12 min-h-dvh w-full max-w-[100vw] overflow-x-hidden">
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-border pb-6">
         <div>
           <h1 className="type-heading-lg tracking-tight mb-2">Dashboard</h1>
@@ -152,8 +152,8 @@ function Dashboard() {
       {!isLoading && !error && (
         <>
           {isOrganizer ? (
-            <Tabs defaultValue="events" className="space-y-6">
-              <TabsList className="bg-secondary/50 border border-border p-1">
+            <Tabs defaultValue="events" className="space-y-6 w-full max-w-full">
+              <TabsList className="bg-secondary/50 border border-border p-1 h-auto flex-wrap justify-start">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="events">Events</TabsTrigger>
                 <TabsTrigger value="promo-codes">Promo Codes</TabsTrigger>

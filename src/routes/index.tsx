@@ -41,7 +41,7 @@ async function fetchUpcoming() {
 async function fetchBanners() {
   const { data, error } = await supabase
     .from("sponsored_banners")
-    .select("id, image_url, destination_url, title, starts_at, ends_at")
+    .select("id, image_url, link_url, title, starts_at, ends_at")
     .eq("is_active", true)
     .order("display_order", { ascending: true })
     .order("created_at", { ascending: false });
