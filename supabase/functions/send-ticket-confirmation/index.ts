@@ -52,7 +52,8 @@ serve(async (req: Request) => {
           title,
           start_datetime,
           venue_name,
-          address
+          address,
+          custom_order_confirmation
         ),
         order_items (
           quantity,
@@ -109,6 +110,15 @@ serve(async (req: Request) => {
         <div style="background: #2a1510; border-left: 4px solid #FF5A1F; padding: 16px; margin-bottom: 32px; border-radius: 4px;">
           <p style="margin: 0; font-size: 15px; color: #fff;">This is a gift from <strong>${order.buyer_name}</strong>!</p>
           ${order.gift_message ? `<p style="margin: 12px 0 0; font-style: italic; color: #fb923c;">"${order.gift_message}"</p>` : ''}
+        </div>
+      `;
+    }
+
+    if (order.events?.custom_order_confirmation) {
+      masterHtmlBody += `
+        <div style="background: #1e293b; border-left: 4px solid #0ea5e9; padding: 16px; margin-bottom: 32px; border-radius: 4px;">
+          <h3 style="margin: 0 0 8px; font-size: 15px; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;">Message from the Organizer</h3>
+          <p style="margin: 0; font-size: 15px; color: #e2e8f0; white-space: pre-wrap;">${order.events.custom_order_confirmation}</p>
         </div>
       `;
     }
@@ -215,7 +225,18 @@ serve(async (req: Request) => {
             You've got a ticket! 🎟️
           </h1>
           <p style="margin: 0 0 32px; color: #e4e4e7; font-size: 16px;">Hi ${attendeeName}, <strong>${order.buyer_name}</strong> sent you a ticket for <strong>${eventTitle}</strong>.</p>
-          
+      `;
+
+      if (order.events?.custom_order_confirmation) {
+        attHtmlBody += `
+          <div style="background: #1e293b; border-left: 4px solid #0ea5e9; padding: 16px; margin-bottom: 32px; border-radius: 4px;">
+            <h3 style="margin: 0 0 8px; font-size: 15px; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;">Message from the Organizer</h3>
+            <p style="margin: 0; font-size: 15px; color: #e2e8f0; white-space: pre-wrap;">${order.events.custom_order_confirmation}</p>
+          </div>
+        `;
+      }
+
+      attHtmlBody += `
           <table style="width: 100%; border-collapse: collapse; background: #1f222b; border-radius: 12px; margin-bottom: 32px; font-size: 15px;">
             <tr>
               <td style="padding: 16px 20px; border-bottom: 1px solid #2a2e37;">

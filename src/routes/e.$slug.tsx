@@ -24,6 +24,9 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { SiteNav } from "@/components/site-nav";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { z } from "zod";
 import { useForm, useFieldArray } from "react-hook-form";
@@ -40,11 +43,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/e/$slug")({
   component: EventDetailPage,
-  validateSearch: (search: Record<string, unknown>) => {
-    return {
-      ref: search.ref as string | undefined,
-    };
-  },
+  validateSearch: z.object({
+    ref: z.string().optional(),
+  }),
   loader: async ({ params }) => {
     return await fetchEventBySlug(params.slug);
   },
@@ -177,7 +178,8 @@ async function fetchEventBySlug(slug: string) {
     .select(
       `
       id, title, slug, description, category, cover_image_url, venue_name, city, state, 
-      start_datetime, end_datetime, status, postponed_at, organizer_note, 
+      start_datetime, end_datetime, status, postponed_at, organizer_note, theme_color,
+      checkout_questions(id, question_text, type, options, required, position),
       profiles!events_organizer_id_fkey(full_name, organizer_slug, avatar_url),
       ticket_types(id, name, description, price_kobo, quantity_available, quantity_sold, max_per_order, sales_start_at, sales_end_at)
     `,
@@ -189,7 +191,9 @@ async function fetchEventBySlug(slug: string) {
   if (!_ev) return null;
   const ev = _ev as any;
   const types = ev.ticket_types || [];
+  const questions = ev.checkout_questions || [];
   delete ev.ticket_types; // keep structure identical for rest of code
+  delete ev.checkout_questions;
 
   // Sort tickets by price locally since we fetched via join
   types.sort((a: any, b: any) => a.price_kobo - b.price_kobo);
@@ -197,6 +201,7 @@ async function fetchEventBySlug(slug: string) {
   return {
     event: ev,
     types: types as TicketType[],
+    questions: questions.sort((a: any, b: any) => a.position - b.position),
   };
 }
 
@@ -222,6 +227,7 @@ const checkoutSchema = z
         }),
       ),
     ),
+    answers: z.record(z.string(), z.any()).optional(),
   })
   .superRefine((data, ctx) => {
     // Only validate gift recipient fields — per-attendee name/email are optional.
@@ -326,6 +332,7 @@ function EventDetailPage() {
       promoCode: "",
       termsAccepted: false,
       attendees: {},
+      answers: {},
     },
   });
 
@@ -456,6 +463,19 @@ function EventDetailPage() {
   }
 
   async function handleCheckoutSubmit(values: CheckoutFormValues) {
+    // Validate custom questions
+    if (data?.questions && data.questions.length > 0) {
+      const answers = values.answers || {};
+      for (const q of data.questions) {
+        if (q.required) {
+          const ans = answers[q.id];
+          if (ans === undefined || ans === null || ans === "" || (Array.isArray(ans) && ans.length === 0)) {
+            toast.error(`Please answer the required question: ${q.question_text}`);
+            return;
+          }
+        }
+      }
+    }
     setCheckoutBusy(true);
     try {
       const ticketsPayload = items.map((i: { type: TicketType; count: number }) => ({
@@ -484,6 +504,7 @@ function EventDetailPage() {
           p_recipient_email: values.isGift ? values.recipientEmail : null,
           p_gift_message: values.isGift ? values.giftMessage : null,
           p_promoter_link_id: appliedPromoterLink?.link_id ?? undefined,
+          p_checkout_answers: values.answers || {},
         } as any);
 
         if (checkoutError) {
@@ -523,6 +544,7 @@ function EventDetailPage() {
         recipientEmail: values.isGift ? values.recipientEmail : null,
         giftMessage: values.isGift ? values.giftMessage : null,
         promoterLinkId: appliedPromoterLink?.link_id || null,
+        checkoutAnswers: values.answers || {},
       };
 
       const { data: initData, error: initErr } = await supabase.functions.invoke(
@@ -548,7 +570,7 @@ function EventDetailPage() {
   }
 
   return (
-    <div className="min-h-dvh pb-32 md:pb-0">
+    <div className="min-h-dvh pb-32 md:pb-0" style={data?.event?.theme_color ? { "--primary": data.event.theme_color } as React.CSSProperties : undefined}>
       <SiteNav />
 
       {isLoading ? (
@@ -829,6 +851,69 @@ function EventDetailPage() {
                         </div>
                       ))}
                     </div>
+                  ))}
+                </div>
+              )}
+
+              {data?.questions && data.questions.length > 0 && (
+                <div className="space-y-4 border-t border-border pt-4">
+                  <div>
+                    <p className="text-sm font-semibold">Additional Information</p>
+                    <p className="text-xs text-muted-foreground">
+                      The organizer requires some extra details for this event.
+                    </p>
+                  </div>
+                  {data.questions.map((q: any) => (
+                    <FormField
+                      key={q.id}
+                      control={form.control}
+                      name={`answers.${q.id}` as const}
+                      render={({ field }: { field: any }) => (
+                        <FormItem>
+                          <FormLabel>{q.question_text} {q.required && <span className="text-destructive">*</span>}</FormLabel>
+                          <FormControl>
+                            {q.type === 'long_text' ? (
+                               <Textarea placeholder="Your answer" {...field} value={field.value || ""} />
+                            ) : q.type === 'select' ? (
+                               <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                 <FormControl>
+                                   <SelectTrigger>
+                                     <SelectValue placeholder="Select an option" />
+                                   </SelectTrigger>
+                                 </FormControl>
+                                 <SelectContent>
+                                   {(q.options || []).map((opt: string) => (
+                                     <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                                   ))}
+                                 </SelectContent>
+                               </Select>
+                            ) : q.type === 'checkbox' ? (
+                               <div className="flex flex-col gap-2 mt-2">
+                                 {(q.options || []).map((opt: string) => {
+                                   const isChecked = Array.isArray(field.value) && field.value.includes(opt);
+                                   return (
+                                     <div key={opt} className="flex items-center space-x-2">
+                                       <Checkbox 
+                                          checked={isChecked}
+                                          onCheckedChange={(checked) => {
+                                            const current = Array.isArray(field.value) ? field.value : [];
+                                            const updated = checked ? [...current, opt] : current.filter((c: string) => c !== opt);
+                                            field.onChange(updated);
+                                          }}
+                                       />
+                                       <Label className="text-sm font-normal cursor-pointer">{opt}</Label>
+                                     </div>
+                                   );
+                                 })}
+                               </div>
+                            ) : (
+                               <Input placeholder="Your answer" {...field} value={field.value || ""} />
+                            )}
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   ))}
                 </div>
               )}

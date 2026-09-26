@@ -92,7 +92,8 @@ function AttendeesPage() {
               id,
               event_id,
               buyer_email,
-              buyer_name
+              buyer_name,
+              checkout_answers
             )
           )
         `)
@@ -378,6 +379,21 @@ function AttendeesPage() {
               <Label>Attendee Email</Label>
               <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} placeholder="nneka@example.com" />
             </div>
+            
+            {editingTicket?.order_items?.orders?.checkout_answers && Object.keys(editingTicket.order_items.orders.checkout_answers).length > 0 && (
+              <div className="space-y-2 pt-4 border-t border-border mt-4">
+                <Label>Checkout Answers</Label>
+                <div className="text-sm bg-muted/50 p-3 rounded-md space-y-2">
+                  {Object.entries(editingTicket.order_items.orders.checkout_answers).map(([qid, ans]) => (
+                    <div key={qid}>
+                      <span className="font-medium text-muted-foreground">Question {qid}: </span>
+                      <span>{Array.isArray(ans) ? ans.join(", ") : String(ans)}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Note: Question text not available here. Reference the form settings for question IDs.</p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingTicket(null)} disabled={updateTicketMutation.isPending}>

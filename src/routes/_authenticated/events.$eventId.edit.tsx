@@ -25,6 +25,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { CheckoutQuestionsManager } from "@/components/checkout-questions-manager";
 
 export const Route = createFileRoute("/_authenticated/events/$eventId/edit")({
   component: EditEventPage,
@@ -128,6 +129,9 @@ function EditEventPage() {
     start_datetime: "",
     end_datetime: "",
     status: "draft" as (typeof STATUSES)[number]["value"],
+    slug: "",
+    theme_color: "",
+    custom_order_confirmation: "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -144,6 +148,9 @@ function EditEventPage() {
           : "",
         end_datetime: ev.end_datetime ? new Date(ev.end_datetime).toISOString().slice(0, 16) : "",
         status: (ev.status as typeof form.status) ?? "draft",
+        slug: ev.slug ?? "",
+        theme_color: ev.theme_color ?? "",
+        custom_order_confirmation: ev.custom_order_confirmation ?? "",
       });
     }
   }, [data]);
@@ -171,6 +178,9 @@ function EditEventPage() {
         start_datetime: new Date(form.start_datetime).toISOString(),
         end_datetime: form.end_datetime ? new Date(form.end_datetime).toISOString() : undefined,
         status: form.status,
+        slug: form.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
+        theme_color: form.theme_color || null,
+        custom_order_confirmation: form.custom_order_confirmation || null,
       })
       .eq("id", eventId);
     setSaving(false);
@@ -367,6 +377,62 @@ function EditEventPage() {
           </div>
         </section>
       )}
+
+      {/* Customization */}
+      <section className="mt-10 rounded-2xl border border-border bg-card/60 p-6">
+        <h2 className="mb-4 text-lg font-semibold">Event Customization</h2>
+        <div className="grid gap-6 md:grid-cols-2">
+          <Field label="Event URL Slug">
+            <div className="flex items-center">
+              <span className="text-muted-foreground bg-muted border border-r-0 border-input rounded-l-md px-3 py-2 text-sm h-10">tixnaija.com/e/</span>
+              <Input
+                value={form.slug}
+                onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
+                className="rounded-l-none"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">This forms the public link to your event. Must be unique.</p>
+          </Field>
+          <Field label="Theme Color">
+            <div className="flex items-center gap-2">
+              <Input
+                type="color"
+                value={form.theme_color || "#ff6b00"}
+                onChange={(e) => setForm({ ...form, theme_color: e.target.value })}
+                className="h-10 w-14 p-1 cursor-pointer"
+              />
+              <Input
+                value={form.theme_color || ""}
+                onChange={(e) => setForm({ ...form, theme_color: e.target.value })}
+                placeholder="#ff6b00"
+                className="flex-1 uppercase font-mono"
+              />
+            </div>
+          </Field>
+          <Field label="Custom Order Confirmation Message" className="md:col-span-2">
+            <Textarea
+              rows={3}
+              value={form.custom_order_confirmation}
+              onChange={(e) => setForm({ ...form, custom_order_confirmation: e.target.value })}
+              placeholder="e.g. Thanks for buying! Don't forget to join our WhatsApp group..."
+            />
+            <p className="text-xs text-muted-foreground mt-1">This message will be shown to attendees on the success page after they purchase tickets.</p>
+          </Field>
+          <div className="md:col-span-2 flex justify-end">
+             <Button
+                type="button"
+                onClick={save}
+                disabled={saving || isAdminCancelled}
+              >
+                {saving ? "Saving…" : "Save Customizations"}
+              </Button>
+          </div>
+          <div className="md:col-span-2 pt-6 border-t border-border/50">
+            <h3 className="mb-4 text-md font-semibold">Custom Checkout Questions</h3>
+            <CheckoutQuestionsManager eventId={eventId} />
+          </div>
+        </div>
+      </section>
 
       {/* Ticket types */}
       <section className="mt-10 rounded-2xl border border-border bg-card/60 p-6">
