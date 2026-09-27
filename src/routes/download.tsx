@@ -16,7 +16,7 @@ export const Route = createFileRoute("/download")({
 });
 
 // ── Replace this URL after running PWABuilder and uploading the APK ──────────
-const APK_DOWNLOAD_URL: string | null = "/Tixnaijav1.apk";
+const APK_DOWNLOAD_URL: string | null = "/Tixnaija.apk";
 const APK_VERSION = "1.0.1"; // bump when you re-upload
 
 function DownloadPage() {
@@ -88,12 +88,12 @@ function DownloadPage() {
             {
               step: 1,
               title: "Download the APK",
-              body: "Tap the Download button above. Your browser will save tixnaija.apk to your Downloads folder.",
+              body: "Tap the Download button above. Your browser will save TixNaija to your Downloads folder.",
             },
             {
               step: 2,
               title: "Open the file",
-              body: 'Tap the downloaded file in your notification bar, or open your Files app → Downloads → tixnaija.apk.',
+              body: 'Tap the downloaded file in your notification bar, or open your Files app → Downloads → TixNaija.',
             },
             {
               step: 3,
