@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Image, SafeAreaView } from 'react-native';
 import { supabase } from '../../supabase/client';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import { MapPin, Calendar } from 'lucide-react-native';
 
 export default function HomeScreen({ navigation }: any) {
   const [events, setEvents] = useState<any[]>([]);
@@ -15,7 +15,7 @@ export default function HomeScreen({ navigation }: any) {
     try {
       const { data, error } = await supabase
         .from('events')
-        .select('id, title, start_datetime, location_type, venue_name')
+        .select('id, title, start_datetime, location_type, venue_name, cover_image')
         .eq('status', 'published')
         .order('start_datetime', { ascending: true })
         .limit(10);
@@ -33,14 +33,32 @@ export default function HomeScreen({ navigation }: any) {
     <TouchableOpacity 
       style={styles.eventCard}
       onPress={() => navigation.navigate('EventDetail', { eventId: item.id })}
+      activeOpacity={0.8}
     >
-      <Text style={styles.eventTitle}>{item.title}</Text>
-      <Text style={styles.eventDate}>
-        {new Date(item.start_datetime).toLocaleDateString()}
-      </Text>
-      <Text style={styles.eventLocation}>
-        {item.location_type === 'physical' ? item.venue_name : 'Online Event'}
-      </Text>
+      <View style={styles.imagePlaceholder}>
+        {item.cover_image ? (
+          <Image source={{ uri: item.cover_image }} style={styles.coverImage} />
+        ) : (
+          <View style={styles.placeholderBox} />
+        )}
+      </View>
+      <View style={styles.eventDetails}>
+        <Text style={styles.eventTitle} numberOfLines={2}>{item.title}</Text>
+        
+        <View style={styles.metaRow}>
+          <Calendar size={14} color="#f2611e" />
+          <Text style={styles.eventDate}>
+            {new Date(item.start_datetime).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+          </Text>
+        </View>
+
+        <View style={styles.metaRow}>
+          <MapPin size={14} color="#c2bdb8" />
+          <Text style={styles.eventLocation} numberOfLines={1}>
+            {item.location_type === 'physical' ? item.venue_name : 'Online Event'}
+          </Text>
+        </View>
+      </View>
     </TouchableOpacity>
   );
 
@@ -53,69 +71,128 @@ export default function HomeScreen({ navigation }: any) {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <FlatList
         data={events}
         keyExtractor={(item) => item.id}
         renderItem={renderEvent}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
-          <Text style={styles.headerTitle}>Upcoming Events</Text>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Discover</Text>
+            <Text style={styles.headerSubtitle}>Find the best events happening around you</Text>
+          </View>
         }
         ListEmptyComponent={
-          <Text style={styles.emptyText}>No upcoming events found.</Text>
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyTitle}>No Events Found</Text>
+            <Text style={styles.emptyText}>There are no upcoming published events right now. Check back later!</Text>
+          </View>
         }
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#22201e',
+    backgroundColor: '#121212',
   },
   centerContainer: {
     flex: 1,
-    backgroundColor: '#22201e',
+    backgroundColor: '#121212',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  listContent: {
-    padding: 16,
+  header: {
+    marginBottom: 24,
+    paddingHorizontal: 8,
+    marginTop: 16,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#f4f2f0',
-    marginBottom: 16,
+    fontSize: 34,
+    fontWeight: '800',
+    color: '#ffffff',
+    letterSpacing: 0.5,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: '#a1a1aa',
+    marginTop: 6,
+  },
+  listContent: {
+    padding: 16,
+    paddingBottom: 40,
   },
   eventCard: {
-    backgroundColor: 'rgba(46, 42, 40, 0.75)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.07)',
-    borderRadius: 12,
+    backgroundColor: '#1e1e1e',
+    borderRadius: 16,
+    marginBottom: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  imagePlaceholder: {
+    height: 180,
+    backgroundColor: '#2a2a2a',
+    width: '100%',
+  },
+  coverImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  placeholderBox: {
+    flex: 1,
+    backgroundColor: '#2a2a2a',
+  },
+  eventDetails: {
     padding: 16,
-    marginBottom: 12,
   },
   eventTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#f4f2f0',
-    marginBottom: 8,
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 12,
+    letterSpacing: 0.3,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
   },
   eventDate: {
     fontSize: 14,
+    fontWeight: '600',
     color: '#f2611e',
-    marginBottom: 4,
+    marginLeft: 6,
   },
   eventLocation: {
     fontSize: 14,
     color: '#c2bdb8',
+    marginLeft: 6,
+    flex: 1,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 60,
+    paddingHorizontal: 20,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 8,
   },
   emptyText: {
-    color: '#c2bdb8',
+    color: '#a1a1aa',
     textAlign: 'center',
-    marginTop: 32,
+    fontSize: 15,
+    lineHeight: 22,
   },
 });

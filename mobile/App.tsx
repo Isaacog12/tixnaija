@@ -19,7 +19,53 @@ import CheckoutScreen from './src/screens/CheckoutScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import MyTicketsScreen from './src/screens/MyTicketsScreen';
 
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Home, Ticket, Settings as SettingsIcon } from 'lucide-react-native';
+
 const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
+
+function MainTabNavigator() {
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: '#22201e' },
+        headerTintColor: '#f4f2f0',
+        tabBarStyle: {
+          backgroundColor: '#22201e',
+          borderTopColor: 'rgba(255, 255, 255, 0.1)',
+        },
+        tabBarActiveTintColor: '#f2611e',
+        tabBarInactiveTintColor: '#c2bdb8',
+      }}
+    >
+      <Tab.Screen 
+        name="HomeTab" 
+        component={HomeScreen} 
+        options={{ 
+          title: 'Events',
+          tabBarIcon: ({ color, size }) => <Home color={color} size={size} />
+        }} 
+      />
+      <Tab.Screen 
+        name="MyTickets" 
+        component={MyTicketsScreen} 
+        options={{ 
+          title: 'My Tickets',
+          tabBarIcon: ({ color, size }) => <Ticket color={color} size={size} />
+        }} 
+      />
+      <Tab.Screen 
+        name="Settings" 
+        component={SettingsScreen} 
+        options={{ 
+          title: 'Settings',
+          tabBarIcon: ({ color, size }) => <SettingsIcon color={color} size={size} />
+        }} 
+      />
+    </Tab.Navigator>
+  );
+}
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -81,13 +127,11 @@ export default function App() {
             <Stack.Screen name="Signup" component={SignupScreen} options={{ headerShown: false }} />
           </>
         ) : (
-          // Main Stack
+          // Main Stack (Tabs + Modals/Details)
           <>
-            <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'TixNaija' }} />
+            <Stack.Screen name="MainTabs" component={MainTabNavigator} options={{ headerShown: false }} />
             <Stack.Screen name="EventDetail" component={EventDetailScreen} options={{ title: 'Event' }} />
             <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ title: 'Checkout' }} />
-            <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
-            <Stack.Screen name="MyTickets" component={MyTicketsScreen} options={{ title: 'My Tickets' }} />
           </>
         )}
       </Stack.Navigator>
