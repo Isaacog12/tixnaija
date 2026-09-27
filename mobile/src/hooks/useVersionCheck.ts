@@ -13,18 +13,23 @@ export function useVersionCheck() {
       if (!currentVersion) return;
 
       const { data, error } = await supabase
-        .from('app_version')
+        .from('app_version' as any)
         .select('version, apk_url')
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (error || !data) {
+      if (error) {
         if (manual) Alert.alert("Error", "Could not check for updates.");
         return;
       }
 
-      const remoteVersion = data.version;
+      if (!data) {
+        if (manual) Alert.alert("Up to Date", "You are using the latest version.");
+        return;
+      }
+
+      const remoteVersion = (data as any).version;
       const currentParts = currentVersion.split('.').map(Number);
       const remoteParts = remoteVersion.split('.').map(Number);
 
@@ -42,14 +47,14 @@ export function useVersionCheck() {
 
       if (isNewer) {
         setHasUpdate(true);
-        setUpdateUrl(data.apk_url);
+        setUpdateUrl((data as any).apk_url);
         if (manual) {
           Alert.alert(
             "Update Available", 
             `A new version (${remoteVersion}) is available.`,
             [
               { text: "Cancel", style: "cancel" },
-              { text: "Download", onPress: () => Linking.openURL(data.apk_url) }
+              { text: "Download", onPress: () => Linking.openURL((data as any).apk_url) }
             ]
           );
         }
