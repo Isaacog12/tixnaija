@@ -31,6 +31,12 @@
     "plugins": [
       "expo-web-browser"
     ],
+    "updates": {
+      "url": "https://u.expo.dev/87928ff1-f32b-4a1b-8d41-ea77c28f71d0"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "extra": {
       "eas": {
         "projectId": "87928ff1-f32b-4a1b-8d41-ea77c28f71d0"
