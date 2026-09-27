@@ -1136,8 +1136,7 @@ function EventBody({
                   <DropdownMenuItem
                     onClick={() => {
                       const url = encodeURIComponent(window.location.href);
-                      const text = encodeURIComponent(`Check out ${event.title} on TixNaija!`);
-                      window.open(`https://wa.me/?text=${text}%20${url}`, "_blank");
+                      window.open(`https://wa.me/?text=${url}`, "_blank");
                     }}
                   >
                     <MessageCircle className="mr-2 h-4 w-4" />
@@ -1146,8 +1145,7 @@ function EventBody({
                   <DropdownMenuItem
                     onClick={() => {
                       const url = encodeURIComponent(window.location.href);
-                      const text = encodeURIComponent(`Check out ${event.title} on TixNaija!`);
-                      window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, "_blank");
+                      window.open(`https://twitter.com/intent/tweet?url=${url}`, "_blank");
                     }}
                   >
                     <Twitter className="mr-2 h-4 w-4" />
@@ -1167,7 +1165,6 @@ function EventBody({
                       if (navigator.share) {
                         navigator.share({
                           title: event.title,
-                          text: "Check out this event on TixNaija!",
                           url: window.location.href,
                         }).catch(() => {});
                       } else {

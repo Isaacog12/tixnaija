@@ -1021,7 +1021,6 @@ function EventBody({
                     navigator
                       .share({
                         title: event.title,
-                        text: "Check out this event on TixNaija!",
                         url: window.location.href,
                       })
                       .catch(() => {});
