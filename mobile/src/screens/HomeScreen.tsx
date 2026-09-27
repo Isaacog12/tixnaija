@@ -15,7 +15,7 @@ export default function HomeScreen({ navigation }: any) {
     try {
       const { data, error } = await supabase
         .from('events')
-        .select('id, title, start_datetime, location_type, venue_name, cover_image')
+        .select('id, title, start_datetime, location_type, venue_name, cover_image_url')
         .eq('status', 'published')
         .order('start_datetime', { ascending: true })
         .limit(10);
@@ -36,8 +36,8 @@ export default function HomeScreen({ navigation }: any) {
       activeOpacity={0.8}
     >
       <View style={styles.imagePlaceholder}>
-        {item.cover_image ? (
-          <Image source={{ uri: item.cover_image }} style={styles.coverImage} />
+        {item.cover_image_url ? (
+          <Image source={{ uri: item.cover_image_url }} style={styles.coverImage} />
         ) : (
           <View style={styles.placeholderBox} />
         )}
