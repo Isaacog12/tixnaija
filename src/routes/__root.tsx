@@ -258,15 +258,6 @@ function RootComponent() {
 
   const router = useRouter();
 
-  useEffect(() => {
-    // Register service worker (production only — avoids dev-mode stale cache issues)
-    if (import.meta.env.PROD && "serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("/sw.js", { scope: "/" })
-        .then((reg) => console.log("[SW] Registered, scope:", reg.scope))
-        .catch((err) => console.warn("[SW] Registration failed:", err));
-    }
-
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       const errorMsg = event.reason?.message || event.reason?.toString() || "";
       if (
