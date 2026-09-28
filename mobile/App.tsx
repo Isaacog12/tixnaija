@@ -3,6 +3,8 @@ import { ActivityIndicator, View, StyleSheet, Alert, Linking } from 'react-nativ
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Session } from '@supabase/supabase-js';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+// @ts-expect-error NativeWind css import
 import './global.css';
 
 import { supabase } from './supabase/client';
@@ -27,6 +29,8 @@ export default function App() {
   const [isInitializing, setIsInitializing] = useState(true);
   const [role, setRole] = useState<{ is_organizer: boolean; is_admin: boolean | null } | null>(null);
   const { hasUpdate, updateUrl } = useVersionCheck();
+
+  const MainDrawer = React.useCallback((props: any) => <DrawerNavigator {...props} role={role} />, [role]);
 
   useEffect(() => {
     // Check for updates
@@ -98,33 +102,33 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator 
-        screenOptions={{
-          headerStyle: { backgroundColor: '#22201e' },
-          headerTintColor: '#f4f2f0',
-        }}
-      >
-        {!session ? (
-          // Auth Stack
-          <>
-            <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="Signup" component={SignupScreen} options={{ headerShown: false }} />
-          </>
-        ) : (
-          // Main Stack
-          <>
-            <Stack.Screen name="MainDrawer" options={{ headerShown: false }}>
-              {() => <DrawerNavigator role={role} />}
-            </Stack.Screen>
-            <Stack.Screen name="EventDetail" component={EventDetailScreen} options={{ title: 'Event' }} />
-            <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ title: 'Checkout' }} />
-            <Stack.Screen name="CreateEvent" component={CreateEventScreen} options={{ title: 'Create Event' }} />
-            <Stack.Screen name="EditEvent" component={EditEventScreen} options={{ title: 'Edit Event' }} />
-          </>
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <NavigationContainer>
+        <Stack.Navigator 
+          screenOptions={{
+            headerStyle: { backgroundColor: '#22201e' },
+            headerTintColor: '#f4f2f0',
+          }}
+        >
+          {!session ? (
+            // Auth Stack
+            <>
+              <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+              <Stack.Screen name="Signup" component={SignupScreen} options={{ headerShown: false }} />
+            </>
+          ) : (
+            // Main Stack
+            <>
+              <Stack.Screen name="MainDrawer" component={MainDrawer} options={{ headerShown: false }} />
+              <Stack.Screen name="EventDetail" component={EventDetailScreen} options={{ title: 'Event' }} />
+              <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ title: 'Checkout' }} />
+              <Stack.Screen name="CreateEvent" component={CreateEventScreen} options={{ title: 'Create Event' }} />
+              <Stack.Screen name="EditEvent" component={EditEventScreen} options={{ title: 'Edit Event' }} />
+            </>
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </GestureHandlerRootView>
   );
 }
 

@@ -31,3 +31,6 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Mobile App builds
+*.apk
