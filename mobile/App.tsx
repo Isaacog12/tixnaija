@@ -20,7 +20,7 @@ import CheckoutScreen from './src/screens/CheckoutScreen';
 import CreateEventScreen from './src/screens/CreateEventScreen';
 import EditEventScreen from './src/screens/EditEventScreen';
 
-import DrawerNavigator from './src/navigation/DrawerNavigator';
+import TabNavigator from './src/navigation/TabNavigator';
 
 const Stack = createNativeStackNavigator();
 
@@ -30,7 +30,7 @@ export default function App() {
   const [role, setRole] = useState<{ is_organizer: boolean; is_admin: boolean | null } | null>(null);
   const { hasUpdate, updateUrl } = useVersionCheck();
 
-  const MainDrawer = React.useCallback((props: any) => <DrawerNavigator {...props} role={role} />, [role]);
+  const MainTabs = React.useCallback((props: any) => <TabNavigator {...props} role={role} />, [role]);
 
   useEffect(() => {
     // Check for updates
@@ -125,7 +125,7 @@ export default function App() {
           ) : (
             // Main Stack
             <>
-              <Stack.Screen name="MainDrawer" component={MainDrawer} options={{ headerShown: false }} />
+              <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
               <Stack.Screen name="EventDetail" component={EventDetailScreen} options={{ title: 'Event' }} />
               <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ title: 'Checkout' }} />
               <Stack.Screen name="CreateEvent" component={CreateEventScreen} options={{ title: 'Create Event' }} />
