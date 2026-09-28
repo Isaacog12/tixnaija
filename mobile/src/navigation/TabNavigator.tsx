@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Home, Calendar, QrCode, ShieldAlert, MoreHorizontal, Ticket } from 'lucide-react-native';
+import { Home, Calendar, QrCode, ShieldAlert, MoreHorizontal, Ticket, Search } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 
 import HomeScreen from '../screens/HomeScreen';
+import ExploreScreen from '../screens/ExploreScreen';
 import MyEventsScreen from '../screens/MyEventsScreen';
 import MyTicketsScreen from '../screens/MyTicketsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
@@ -52,6 +53,16 @@ export default function TabNavigator({ role }: { role: { is_organizer: boolean; 
           title: 'Home',
           headerShown: false,
           tabBarIcon: ({ color, size }) => <Home color={color} size={size} /> 
+        }} 
+      />
+
+      <Tab.Screen 
+        name="Explore" 
+        component={ExploreScreen} 
+        options={{ 
+          title: 'Explore',
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => <Search color={color} size={size} /> 
         }} 
       />
       

@@ -53,7 +53,7 @@ function EventCard({ item, onPress }: { item: any; onPress: () => void }) {
   );
 }
 
-export default function HomeScreen({ navigation }: any) {
+export default function ExploreScreen({ navigation }: any) {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -118,7 +118,7 @@ export default function HomeScreen({ navigation }: any) {
       <BlurView intensity={85} tint="dark" style={styles.headerBlur}>
         <SafeAreaView>
           <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>Discover</Text>
+            <Text style={styles.headerTitle}>Explore</Text>
             
             <View style={styles.searchContainer}>
               <Search color="#8E8E93" size={20} style={styles.searchIcon} />

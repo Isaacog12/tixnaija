@@ -1,51 +1,77 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image, SafeAreaView, TextInput, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, SafeAreaView, Pressable, Dimensions } from 'react-native';
 import { supabase } from '../../supabase/client';
-import { MapPin, Calendar, Search } from 'lucide-react-native';
+import { MapPin, Calendar, ChevronRight } from 'lucide-react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 
+const { width } = Dimensions.get('window');
+const FEATURED_CARD_WIDTH = width * 0.85;
+const UPCOMING_CARD_WIDTH = width * 0.6;
+
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-function EventCard({ item, onPress }: { item: any; onPress: () => void }) {
+function FeaturedCard({ item, onPress }: { item: any; onPress: () => void }) {
   const scale = useSharedValue(1);
-
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }]
   }));
 
   return (
     <AnimatedPressable
-      onPressIn={() => {
-        scale.value = withSpring(0.96, { damping: 20, stiffness: 400 });
-      }}
-      onPressOut={() => {
-        scale.value = withSpring(1, { damping: 20, stiffness: 400 });
-      }}
+      onPressIn={() => { scale.value = withSpring(0.96, { damping: 20, stiffness: 400 }); }}
+      onPressOut={() => { scale.value = withSpring(1, { damping: 20, stiffness: 400 }); }}
       onPress={onPress}
-      style={[styles.eventCard, animatedStyle]}
+      style={[styles.featuredCard, animatedStyle]}
     >
-      <View style={styles.imagePlaceholder}>
+      <View style={styles.featuredImageContainer}>
         {item.cover_image_url ? (
-          <Image source={{ uri: item.cover_image_url }} style={styles.coverImage} />
+          <Image source={{ uri: item.cover_image_url }} style={styles.featuredImage} />
         ) : (
-          <View style={styles.placeholderBox} />
+          <View style={[styles.featuredImage, { backgroundColor: '#2C2C2E' }]} />
+        )}
+        <View style={styles.featuredOverlay}>
+          <View style={styles.featuredBadge}>
+            <Text style={styles.featuredBadgeText}>Featured</Text>
+          </View>
+        </View>
+      </View>
+      <View style={styles.featuredDetails}>
+        <Text style={styles.featuredTitle} numberOfLines={2}>{item.title}</Text>
+        <Text style={styles.featuredDate}>
+          {new Date(item.start_datetime).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+        </Text>
+      </View>
+    </AnimatedPressable>
+  );
+}
+
+function UpcomingCard({ item, onPress }: { item: any; onPress: () => void }) {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }]
+  }));
+
+  return (
+    <AnimatedPressable
+      onPressIn={() => { scale.value = withSpring(0.96, { damping: 20, stiffness: 400 }); }}
+      onPressOut={() => { scale.value = withSpring(1, { damping: 20, stiffness: 400 }); }}
+      onPress={onPress}
+      style={[styles.upcomingCard, animatedStyle]}
+    >
+      <View style={styles.upcomingImageContainer}>
+        {item.cover_image_url ? (
+          <Image source={{ uri: item.cover_image_url }} style={styles.upcomingImage} />
+        ) : (
+          <View style={[styles.upcomingImage, { backgroundColor: '#2C2C2E' }]} />
         )}
       </View>
-      <View style={styles.eventDetails}>
-        <Text style={styles.eventTitle} numberOfLines={2}>{item.title}</Text>
-        
+      <View style={styles.upcomingDetails}>
+        <Text style={styles.upcomingTitle} numberOfLines={1}>{item.title}</Text>
         <View style={styles.metaRow}>
-          <Calendar size={14} color="#f2611e" />
-          <Text style={styles.eventDate}>
-            {new Date(item.start_datetime).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-          </Text>
-        </View>
-
-        <View style={styles.metaRow}>
-          <MapPin size={14} color="#c2bdb8" />
-          <Text style={styles.eventLocation} numberOfLines={1}>
-            {item.venue_name ? item.venue_name : 'Online Event'}
+          <MapPin size={12} color="#8E8E93" />
+          <Text style={styles.upcomingLocation} numberOfLines={1}>
+            {item.venue_name || 'Online'}
           </Text>
         </View>
       </View>
@@ -54,9 +80,9 @@ function EventCard({ item, onPress }: { item: any; onPress: () => void }) {
 }
 
 export default function HomeScreen({ navigation }: any) {
-  const [events, setEvents] = useState<any[]>([]);
+  const [featuredEvents, setFeaturedEvents] = useState<any[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchEvents();
@@ -69,18 +95,20 @@ export default function HomeScreen({ navigation }: any) {
         .select('id, title, start_datetime, venue_name, cover_image_url')
         .eq('status', 'published')
         .order('start_datetime', { ascending: true })
-        .limit(20);
+        .limit(10);
       
       if (error) throw error;
-      setEvents(data || []);
+      
+      const events = data || [];
+      // Just visually splitting them for the UI
+      setFeaturedEvents(events.slice(0, 3));
+      setUpcomingEvents(events.slice(3, 10));
     } catch (error) {
       console.error('Error fetching events:', error);
     } finally {
       setLoading(false);
     }
   };
-
-  const filteredEvents = events.filter(e => e.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
   if (loading) {
     return (
@@ -92,48 +120,70 @@ export default function HomeScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      {/* Background Content */}
-      <FlatList
-        data={filteredEvents}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <EventCard 
-            item={item} 
-            onPress={() => navigation.navigate('EventDetail', { eventId: item.id })} 
-          />
-        )}
-        contentContainerStyle={styles.listContent}
-        indicatorStyle="white"
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyTitle}>No Events Found</Text>
-            <Text style={styles.emptyText}>
-              {searchQuery ? "No events match your search." : "There are no upcoming published events right now. Check back later!"}
-            </Text>
-          </View>
-        }
-      />
-
       {/* Liquid Glass Header */}
       <BlurView intensity={85} tint="dark" style={styles.headerBlur}>
         <SafeAreaView>
           <View style={styles.headerContent}>
             <Text style={styles.headerTitle}>Discover</Text>
-            
-            <View style={styles.searchContainer}>
-              <Search color="#8E8E93" size={20} style={styles.searchIcon} />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search events"
-                placeholderTextColor="#8E8E93"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                clearButtonMode="while-editing"
-              />
-            </View>
           </View>
         </SafeAreaView>
       </BlurView>
+
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Featured Section */}
+        {featuredEvents.length > 0 && (
+          <View style={styles.section}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={FEATURED_CARD_WIDTH + 16}
+              decelerationRate="fast"
+              contentContainerStyle={styles.horizontalScrollPadding}
+            >
+              {featuredEvents.map((item) => (
+                <FeaturedCard 
+                  key={item.id} 
+                  item={item} 
+                  onPress={() => navigation.navigate('EventDetail', { eventId: item.id })} 
+                />
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Upcoming Section */}
+        {upcomingEvents.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Upcoming Near You</Text>
+              <Pressable style={styles.seeAllBtn} onPress={() => navigation.navigate('Explore')}>
+                <Text style={styles.seeAllText}>See All</Text>
+                <ChevronRight size={16} color="#8E8E93" />
+              </Pressable>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={UPCOMING_CARD_WIDTH + 16}
+              decelerationRate="fast"
+              contentContainerStyle={styles.horizontalScrollPadding}
+            >
+              {upcomingEvents.map((item) => (
+                <UpcomingCard 
+                  key={item.id} 
+                  item={item} 
+                  onPress={() => navigation.navigate('EventDetail', { eventId: item.id })} 
+                />
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        <View style={styles.bottomPadding} />
+      </ScrollView>
     </View>
   );
 }
@@ -151,9 +201,7 @@ const styles = StyleSheet.create({
   },
   headerBlur: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
+    top: 0, left: 0, right: 0,
     zIndex: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: 'rgba(255, 255, 255, 0.15)',
@@ -168,97 +216,129 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#ffffff',
     letterSpacing: -0.8, 
-    marginBottom: 12,
   },
-  searchContainer: {
+  scrollContent: {
+    paddingTop: 110, // Space for header
+  },
+  section: {
+    marginBottom: 32,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#ffffff',
+    letterSpacing: -0.5,
+  },
+  seeAllBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(118, 118, 128, 0.24)', // iOS standard search bar fill over blur
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    height: 36,
   },
-  searchIcon: {
-    marginHorizontal: 4,
+  seeAllText: {
+    fontSize: 15,
+    color: '#8E8E93',
+    marginRight: 2,
   },
-  searchInput: {
-    flex: 1,
-    fontSize: 17, 
-    color: '#ffffff',
-    paddingVertical: 0,
-    height: '100%',
+  horizontalScrollPadding: {
+    paddingHorizontal: 16,
   },
-  listContent: {
-    paddingTop: 160, // Space for the absolute Liquid Glass header
-    paddingBottom: 40,
-  },
-  eventCard: {
+  
+  // Featured Card
+  featuredCard: {
+    width: FEATURED_CARD_WIDTH,
+    marginRight: 16,
     backgroundColor: '#1C1C1E',
-    borderRadius: 20, 
-    marginHorizontal: 16,
-    marginBottom: 16,
+    borderRadius: 24,
     overflow: 'hidden',
   },
-  imagePlaceholder: {
-    height: 200, 
-    backgroundColor: '#2C2C2E',
+  featuredImageContainer: {
     width: '100%',
+    height: FEATURED_CARD_WIDTH * 1.1,
+    position: 'relative',
   },
-  coverImage: {
+  featuredImage: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
   },
-  placeholderBox: {
-    flex: 1,
-    backgroundColor: '#2C2C2E',
-  },
-  eventDetails: {
+  featuredOverlay: {
+    ...StyleSheet.absoluteFillObject,
     padding: 16,
-    paddingTop: 14,
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
   },
-  eventTitle: {
-    fontSize: 19,
-    fontWeight: '700',
+  featuredBadge: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  featuredBadgeText: {
     color: '#ffffff',
-    marginBottom: 8,
-    letterSpacing: -0.3, 
-    lineHeight: 24, 
+    fontWeight: 'bold',
+    fontSize: 12,
+    textTransform: 'uppercase',
   },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
+  featuredDetails: {
+    padding: 20,
   },
-  eventDate: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#f2611e',
-    marginLeft: 6,
-  },
-  eventLocation: {
-    fontSize: 15,
-    color: '#8E8E93', 
-    marginLeft: 6,
-    flex: 1,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 60,
-    paddingHorizontal: 32,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+  featuredTitle: {
+    fontSize: 22,
+    fontWeight: '800',
     color: '#ffffff',
     marginBottom: 8,
     letterSpacing: -0.5,
   },
-  emptyText: {
-    color: '#8E8E93',
-    textAlign: 'center',
-    fontSize: 16,
-    lineHeight: 22,
+  featuredDate: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#f2611e',
   },
+
+  // Upcoming Card
+  upcomingCard: {
+    width: UPCOMING_CARD_WIDTH,
+    marginRight: 16,
+    backgroundColor: '#1C1C1E',
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  upcomingImageContainer: {
+    width: '100%',
+    height: UPCOMING_CARD_WIDTH,
+  },
+  upcomingImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  upcomingDetails: {
+    padding: 12,
+  },
+  upcomingTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 4,
+    letterSpacing: -0.3,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  upcomingLocation: {
+    fontSize: 13,
+    color: '#8E8E93',
+    marginLeft: 4,
+    flex: 1,
+  },
+  bottomPadding: {
+    height: 100, // padding for bottom tab bar
+  }
 });
