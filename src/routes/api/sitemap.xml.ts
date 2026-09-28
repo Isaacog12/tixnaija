@@ -1,4 +1,5 @@
-import { createAPIFileRoute } from "@tanstack/react-start";
+// @ts-expect-error - Virtual module resolved by Vite plugin
+import { createAPIFileRoute } from "@tanstack/react-start/api";
 import { supabase } from "@/integrations/supabase/client";
 
 export const APIRoute = createAPIFileRoute("/api/sitemap.xml")({
