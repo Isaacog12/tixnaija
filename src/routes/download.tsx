@@ -17,7 +17,7 @@ export const Route = createFileRoute("/download")({
 
 // ── Replace this URL after running PWABuilder and uploading the APK ──────────
 const APK_DOWNLOAD_URL: string | null = "/Tixnaija.apk";
-const APK_VERSION = "1.0.1"; // bump when you re-upload
+const APK_VERSION = "1.0.2"; // bump when you re-upload
 
 function DownloadPage() {
   const hasApk = Boolean(APK_DOWNLOAD_URL);
