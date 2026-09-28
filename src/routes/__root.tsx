@@ -258,6 +258,7 @@ function RootComponent() {
 
   const router = useRouter();
 
+  useEffect(() => {
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       const errorMsg = event.reason?.message || event.reason?.toString() || "";
       if (
