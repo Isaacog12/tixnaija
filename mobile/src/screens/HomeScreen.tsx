@@ -15,7 +15,7 @@ export default function HomeScreen({ navigation }: any) {
     try {
       const { data, error } = await supabase
         .from('events')
-        .select('id, title, start_datetime, location_type, venue_name, cover_image_url')
+        .select('id, title, start_datetime, venue_name, cover_image_url')
         .eq('status', 'published')
         .order('start_datetime', { ascending: true })
         .limit(10);
@@ -55,7 +55,7 @@ export default function HomeScreen({ navigation }: any) {
         <View style={styles.metaRow}>
           <MapPin size={14} color="#c2bdb8" />
           <Text style={styles.eventLocation} numberOfLines={1}>
-            {item.location_type === 'physical' ? item.venue_name : 'Online Event'}
+            {item.venue_name ? item.venue_name : 'Online Event'}
           </Text>
         </View>
       </View>

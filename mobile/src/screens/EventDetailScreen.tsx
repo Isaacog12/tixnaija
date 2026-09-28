@@ -77,7 +77,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
           
           <Text style={[styles.metaLabel, { marginTop: 12 }]}>Location</Text>
           <Text style={styles.metaText}>
-            {event.location_type === 'physical' ? event.venue_name : 'Online'}
+            {event.venue_name ? event.venue_name : 'Online'}
           </Text>
         </View>
 

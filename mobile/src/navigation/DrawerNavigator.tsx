@@ -14,12 +14,12 @@ import ScanTicketsScreen from '../screens/ScanTicketsScreen';
 const Drawer = createDrawerNavigator();
 
 function CustomDrawerContent(props: any) {
-  const { role } = props;
+  const { role, ...restProps } = props;
   const isOrganizer = role?.is_organizer || false;
   const isAdmin = role?.is_admin || false;
 
   return (
-    <DrawerContentScrollView {...props} style={styles.drawerContainer}>
+    <DrawerContentScrollView {...restProps} style={styles.drawerContainer}>
       <View style={styles.section}>
         <Text style={styles.sectionHeader}>Attendee</Text>
         <DrawerItem
