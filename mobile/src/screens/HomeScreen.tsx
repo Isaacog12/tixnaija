@@ -1,39 +1,29 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Image, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image, SafeAreaView, TextInput, Pressable } from 'react-native';
 import { supabase } from '../../supabase/client';
-import { MapPin, Calendar } from 'lucide-react-native';
+import { MapPin, Calendar, Search } from 'lucide-react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import { BlurView } from 'expo-blur';
 
-export default function HomeScreen({ navigation }: any) {
-  const [events, setEvents] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-  useEffect(() => {
-    fetchEvents();
-  }, []);
+function EventCard({ item, onPress }: { item: any; onPress: () => void }) {
+  const scale = useSharedValue(1);
 
-  const fetchEvents = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('events')
-        .select('id, title, start_datetime, venue_name, cover_image_url')
-        .eq('status', 'published')
-        .order('start_datetime', { ascending: true })
-        .limit(10);
-      
-      if (error) throw error;
-      setEvents(data || []);
-    } catch (error) {
-      console.error('Error fetching events:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }]
+  }));
 
-  const renderEvent = ({ item }: { item: any }) => (
-    <TouchableOpacity 
-      style={styles.eventCard}
-      onPress={() => navigation.navigate('EventDetail', { eventId: item.id })}
-      activeOpacity={0.8}
+  return (
+    <AnimatedPressable
+      onPressIn={() => {
+        scale.value = withSpring(0.96, { damping: 20, stiffness: 400 });
+      }}
+      onPressOut={() => {
+        scale.value = withSpring(1, { damping: 20, stiffness: 400 });
+      }}
+      onPress={onPress}
+      style={[styles.eventCard, animatedStyle]}
     >
       <View style={styles.imagePlaceholder}>
         {item.cover_image_url ? (
@@ -59,8 +49,38 @@ export default function HomeScreen({ navigation }: any) {
           </Text>
         </View>
       </View>
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
+}
+
+export default function HomeScreen({ navigation }: any) {
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('id, title, start_datetime, venue_name, cover_image_url')
+        .eq('status', 'published')
+        .order('start_datetime', { ascending: true })
+        .limit(20);
+      
+      if (error) throw error;
+      setEvents(data || []);
+    } catch (error) {
+      console.error('Error fetching events:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredEvents = events.filter(e => e.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
   if (loading) {
     return (
@@ -71,74 +91,117 @@ export default function HomeScreen({ navigation }: any) {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      {/* Background Content */}
       <FlatList
-        data={events}
+        data={filteredEvents}
         keyExtractor={(item) => item.id}
-        renderItem={renderEvent}
+        renderItem={({ item }) => (
+          <EventCard 
+            item={item} 
+            onPress={() => navigation.navigate('EventDetail', { eventId: item.id })} 
+          />
+        )}
         contentContainerStyle={styles.listContent}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Discover</Text>
-            <Text style={styles.headerSubtitle}>Find the best events happening around you</Text>
-          </View>
-        }
+        indicatorStyle="white"
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyTitle}>No Events Found</Text>
-            <Text style={styles.emptyText}>There are no upcoming published events right now. Check back later!</Text>
+            <Text style={styles.emptyText}>
+              {searchQuery ? "No events match your search." : "There are no upcoming published events right now. Check back later!"}
+            </Text>
           </View>
         }
       />
-    </SafeAreaView>
+
+      {/* Liquid Glass Header */}
+      <BlurView intensity={85} tint="dark" style={styles.headerBlur}>
+        <SafeAreaView>
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>Discover</Text>
+            
+            <View style={styles.searchContainer}>
+              <Search color="#8E8E93" size={20} style={styles.searchIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search events"
+                placeholderTextColor="#8E8E93"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                clearButtonMode="while-editing"
+              />
+            </View>
+          </View>
+        </SafeAreaView>
+      </BlurView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: '#000000', 
   },
   centerContainer: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: '#000000',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  header: {
-    marginBottom: 24,
-    paddingHorizontal: 8,
-    marginTop: 16,
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  headerContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    paddingTop: 8,
   },
   headerTitle: {
     fontSize: 34,
     fontWeight: '800',
     color: '#ffffff',
-    letterSpacing: 0.5,
+    letterSpacing: -0.8, 
+    marginBottom: 12,
   },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#a1a1aa',
-    marginTop: 6,
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(118, 118, 128, 0.24)', // iOS standard search bar fill over blur
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    height: 36,
+  },
+  searchIcon: {
+    marginHorizontal: 4,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 17, 
+    color: '#ffffff',
+    paddingVertical: 0,
+    height: '100%',
   },
   listContent: {
-    padding: 16,
+    paddingTop: 160, // Space for the absolute Liquid Glass header
     paddingBottom: 40,
   },
   eventCard: {
-    backgroundColor: '#1e1e1e',
-    borderRadius: 16,
-    marginBottom: 20,
+    backgroundColor: '#1C1C1E',
+    borderRadius: 20, 
+    marginHorizontal: 16,
+    marginBottom: 16,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
   },
   imagePlaceholder: {
-    height: 180,
-    backgroundColor: '#2a2a2a',
+    height: 200, 
+    backgroundColor: '#2C2C2E',
     width: '100%',
   },
   coverImage: {
@@ -148,17 +211,19 @@ const styles = StyleSheet.create({
   },
   placeholderBox: {
     flex: 1,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: '#2C2C2E',
   },
   eventDetails: {
     padding: 16,
+    paddingTop: 14,
   },
   eventTitle: {
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: '700',
     color: '#ffffff',
-    marginBottom: 12,
-    letterSpacing: 0.3,
+    marginBottom: 8,
+    letterSpacing: -0.3, 
+    lineHeight: 24, 
   },
   metaRow: {
     flexDirection: 'row',
@@ -166,14 +231,14 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   eventDate: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#f2611e',
     marginLeft: 6,
   },
   eventLocation: {
-    fontSize: 14,
-    color: '#c2bdb8',
+    fontSize: 15,
+    color: '#8E8E93', 
     marginLeft: 6,
     flex: 1,
   },
@@ -181,18 +246,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 60,
-    paddingHorizontal: 20,
+    paddingHorizontal: 32,
   },
   emptyTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: '#ffffff',
     marginBottom: 8,
+    letterSpacing: -0.5,
   },
   emptyText: {
-    color: '#a1a1aa',
+    color: '#8E8E93',
     textAlign: 'center',
-    fontSize: 15,
+    fontSize: 16,
     lineHeight: 22,
   },
 });

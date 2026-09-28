@@ -1,12 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { supabase } from '../../supabase/client';
 
 export default function CheckoutScreen({ route, navigation }: any) {
-  const { eventId, tickets, promoCodeId } = route.params || {};
+  const { eventId, tickets, promoCodeId, totalAmount = 0 } = route.params || {};
 
-  const [loadingText, setLoadingText] = useState('Initializing checkout...');
+  const [formVisible, setFormVisible] = useState(true);
+  const [buyerName, setBuyerName] = useState('');
+  const [buyerEmail, setBuyerEmail] = useState('');
+  const [buyerPhone, setBuyerPhone] = useState('');
+
+  const [loadingText, setLoadingText] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  
   const [authorizationUrl, setAuthorizationUrl] = useState<string | null>(null);
   const [reference, setReference] = useState<string | null>(null);
   
@@ -20,23 +27,79 @@ export default function CheckoutScreen({ route, navigation }: any) {
   const verifyStarted = useRef(false);
 
   useEffect(() => {
-    initializePayment();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setBuyerEmail(session.user.email || '');
+        setBuyerName(session.user.user_metadata?.full_name || '');
+      }
+    });
   }, []);
 
-  const initializePayment = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
+  const handleProceed = async () => {
+    if (!buyerName || !buyerEmail) {
+      Alert.alert('Validation Error', 'Please enter your full name and email address.');
+      return;
+    }
+    
+    setIsProcessing(true);
+    setFormVisible(false);
+    
+    // Prepare the tickets payload with attendee data
+    const enrichedTickets = tickets.map((t: any) => ({
+       ...t,
+       attendee_names: Array(t.count).fill(buyerName),
+       attendee_emails: Array(t.count).fill(buyerEmail),
+    }));
 
+    if (totalAmount === 0) {
+       // Free checkout
+       try {
+         setLoadingText('Securing free tickets...');
+         const { data: { session } } = await supabase.auth.getSession();
+         const userId = session?.user?.id || null;
+         
+         const { data, error } = await supabase.rpc('process_checkout', {
+            p_event_id: eventId,
+            p_user_id: (userId || null) as string,
+            p_buyer_name: buyerName,
+            p_buyer_email: buyerEmail,
+            p_buyer_phone: (buyerPhone || null) as string,
+            p_tickets: enrichedTickets,
+            p_amount_paid: 0,
+            p_payment_reference: `FREE_${Date.now()}_${Math.random().toString(36).substring(7)}`
+         });
+         
+         if (error) throw error;
+         
+         // Trigger confirmation email silently
+         supabase.functions.invoke('send-ticket-confirmation', { body: { orderId: data } }).catch(console.error);
+         
+         setOrderId(data as string);
+       } catch (error: any) {
+         setFailureReason(error.message);
+         setPaymentFailed(true);
+       } finally {
+         setIsProcessing(false);
+       }
+       return;
+    }
+    
+    // Paid checkout
+    try {
+      setLoadingText('Initializing payment...');
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const payload = {
-        email: session.user.email,
+        email: buyerEmail,
+        amount: totalAmount / 100, // edge fn multiplies by 100
         metadata: {
           eventId,
-          tickets,
+          tickets: enrichedTickets,
           promoCodeId,
-          userId: session.user.id,
-          buyerName: session.user.user_metadata?.full_name || 'Guest',
-          buyerEmail: session.user.email,
+          userId: session?.user?.id || null,
+          buyerName,
+          buyerEmail,
+          buyerPhone: buyerPhone || null
         }
       };
 
@@ -54,9 +117,10 @@ export default function CheckoutScreen({ route, navigation }: any) {
       setReference(data.reference);
       setAuthorizationUrl(data.authorization_url);
     } catch (error: any) {
-      Alert.alert('Checkout Error', error.message, [
-        { text: 'Go Back', onPress: () => navigation.goBack() }
-      ]);
+       setFailureReason(error.message);
+       setPaymentFailed(true);
+    } finally {
+       setIsProcessing(false);
     }
   };
 
@@ -76,7 +140,7 @@ export default function CheckoutScreen({ route, navigation }: any) {
     setLoadingText('Confirming payment...');
     
     let attempts = 0;
-    const maxAttempts = 15; // 15 attempts * 3 seconds = 45 seconds total
+    const maxAttempts = 15;
     const delayMs = 3000;
 
     while (attempts < maxAttempts) {
@@ -87,11 +151,7 @@ export default function CheckoutScreen({ route, navigation }: any) {
         });
 
         if (error) throw error;
-        
-        // Edge function returns { error: ... } if verification logic failed
-        if (data?.error) {
-           throw new Error(data.error);
-        }
+        if (data?.error) throw new Error(data.error);
 
         // Success!
         if (data?.success && data?.order_id) {
@@ -99,10 +159,7 @@ export default function CheckoutScreen({ route, navigation }: any) {
           setIsVerifying(false);
           return;
         }
-
       } catch (error: any) {
-        // If it throws "Payment verification failed" (meaning Paystack hasn't marked it success yet),
-        // we swallow it and try again unless we've hit max attempts.
         const msg = error.message?.toLowerCase() || "";
         
         if (attempts >= maxAttempts) {
@@ -111,8 +168,6 @@ export default function CheckoutScreen({ route, navigation }: any) {
            setIsVerifying(false);
            return;
         }
-
-        // If it's a fatal error (like event cancelled), we don't need to retry
         if (msg.includes('cancelled') || msg.includes('ended')) {
            setFailureReason(error.message);
            setPaymentFailed(true);
@@ -120,21 +175,18 @@ export default function CheckoutScreen({ route, navigation }: any) {
            return;
         }
       }
-      
-      // Wait before next attempt
       await new Promise(res => setTimeout(res, delayMs));
     }
   };
 
   const cancelCheckout = () => {
-    // If the user clicks close on the WebView manually
     navigation.goBack();
   };
 
   if (orderId) {
     return (
       <View style={styles.containerCenter}>
-        <Text style={styles.successTitle}>Payment Successful!</Text>
+        <Text style={styles.successTitle}>Success!</Text>
         <Text style={styles.successText}>Your tickets have been secured.</Text>
         <TouchableOpacity style={styles.primaryBtn} onPress={() => navigation.navigate('MyTickets')}>
           <Text style={styles.primaryBtnText}>View My Tickets</Text>
@@ -148,7 +200,11 @@ export default function CheckoutScreen({ route, navigation }: any) {
       <View style={styles.containerCenter}>
         <Text style={[styles.successTitle, { color: '#e55a5a' }]}>Payment Failed</Text>
         <Text style={styles.successText}>{failureReason || 'We could not confirm your payment.'}</Text>
-        <TouchableOpacity style={styles.primaryBtn} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.primaryBtn} onPress={() => {
+           setPaymentFailed(false);
+           setFailureReason(null);
+           setFormVisible(true);
+        }}>
           <Text style={styles.primaryBtnText}>Try Again</Text>
         </TouchableOpacity>
       </View>
@@ -177,6 +233,65 @@ export default function CheckoutScreen({ route, navigation }: any) {
     );
   }
 
+  if (formVisible) {
+    return (
+      <KeyboardAvoidingView 
+        style={styles.container} 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <Text style={styles.title}>Checkout Details</Text>
+          <Text style={styles.subtitle}>Who are these tickets for?</Text>
+          
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Full Name</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. Nneka Okafor"
+              placeholderTextColor="#767069"
+              value={buyerName}
+              onChangeText={setBuyerName}
+            />
+          </View>
+          
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Email Address</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. nneka@company.com"
+              placeholderTextColor="#767069"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={buyerEmail}
+              onChangeText={setBuyerEmail}
+            />
+          </View>
+          
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Phone Number (Optional)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. 08012345678"
+              placeholderTextColor="#767069"
+              keyboardType="phone-pad"
+              value={buyerPhone}
+              onChangeText={setBuyerPhone}
+            />
+          </View>
+          
+          <TouchableOpacity 
+            style={[styles.primaryBtn, { marginTop: 24 }]} 
+            onPress={handleProceed}
+          >
+            <Text style={styles.primaryBtnText}>
+              {totalAmount === 0 ? 'Claim Free Tickets' : `Proceed to Payment (₦${(totalAmount / 100).toLocaleString()})`}
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
+
   return (
     <View style={styles.containerCenter}>
       <ActivityIndicator size="large" color="#f2611e" />
@@ -189,12 +304,50 @@ export default function CheckoutScreen({ route, navigation }: any) {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#22201e',
+    paddingTop: 100,
+  },
+  scrollContent: {
+    padding: 24,
+    paddingBottom: 40,
+  },
   containerCenter: {
     flex: 1,
     backgroundColor: '#22201e',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#f4f2f0',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#c2bdb8',
+    marginBottom: 24,
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  label: {
+    color: '#c2bdb8',
+    marginBottom: 8,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  input: {
+    backgroundColor: '#2e2a28',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 8,
+    padding: 14,
+    color: '#f4f2f0',
+    fontSize: 16,
   },
   loadingText: {
     color: '#c2bdb8',

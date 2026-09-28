@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { Home, Ticket, Settings as SettingsIcon, Calendar, QrCode, ShieldAlert } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
+import { BlurView } from 'expo-blur';
 
 import HomeScreen from '../screens/HomeScreen';
 import MyTicketsScreen from '../screens/MyTicketsScreen';
@@ -86,14 +87,20 @@ export default function DrawerNavigator({ role }: { role: { is_organizer: boolea
     <Drawer.Navigator
       drawerContent={(props) => <CustomDrawerContent {...props} role={role} />}
       screenOptions={{
-        headerStyle: { backgroundColor: '#22201e' },
-        headerTintColor: '#f4f2f0',
+        headerTransparent: true,
+        headerBackground: () => (
+          <BlurView intensity={85} tint="dark" style={StyleSheet.absoluteFill} />
+        ),
+        headerTintColor: '#ffffff',
+        headerTitleStyle: {
+          fontWeight: '600',
+        },
         drawerStyle: {
-          backgroundColor: '#22201e',
+          backgroundColor: '#000000',
         },
       }}
     >
-      <Drawer.Screen name="HomeDrawer" component={HomeScreen} options={{ title: 'Events' }} />
+      <Drawer.Screen name="HomeDrawer" component={HomeScreen} options={{ title: 'Events', headerShown: false }} />
       <Drawer.Screen name="MyTickets" component={MyTicketsScreen} options={{ title: 'My Tickets' }} />
       <Drawer.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
       {role?.is_organizer && (

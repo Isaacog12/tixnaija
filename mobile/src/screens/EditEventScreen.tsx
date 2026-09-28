@@ -125,7 +125,7 @@ export default function EditEventScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#22201e' },
+  container: { flex: 1, backgroundColor: '#22201e', paddingTop: 100 },
   content: { padding: 16, paddingBottom: 40 },
   center: { flex: 1, backgroundColor: '#22201e', justifyContent: 'center', alignItems: 'center' },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },

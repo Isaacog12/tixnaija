@@ -8,6 +8,7 @@ import './global.css';
 
 import { supabase } from './supabase/client';
 import { useVersionCheck } from './src/hooks/useVersionCheck';
+import { BlurView } from 'expo-blur';
 
 // Auth Screens
 import LoginScreen from './src/screens/LoginScreen';
@@ -105,8 +106,14 @@ export default function App() {
       <NavigationContainer>
         <Stack.Navigator 
           screenOptions={{
-            headerStyle: { backgroundColor: '#22201e' },
-            headerTintColor: '#f4f2f0',
+            headerTransparent: true,
+            headerBackground: () => (
+              <BlurView intensity={85} tint="dark" style={StyleSheet.absoluteFill} />
+            ),
+            headerTintColor: '#ffffff',
+            headerTitleStyle: {
+              fontWeight: '600',
+            },
           }}
         >
           {!session ? (

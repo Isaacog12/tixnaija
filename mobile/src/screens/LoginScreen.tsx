@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { supabase } from '../../supabase/client';
@@ -75,52 +75,54 @@ export default function LoginScreen({ navigation }: any) {
   return (
     <KeyboardAvoidingView 
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={styles.glassCard}>
-        <Animated.View entering={FadeInDown.duration(400).springify()}>
-          <Text style={styles.title}>Welcome back</Text>
-          <Text style={styles.subtitle}>Sign in to your TixNaija account</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.glassCard}>
+          <Animated.View entering={FadeInDown.duration(400).springify()}>
+            <Text style={styles.title}>Welcome back</Text>
+            <Text style={styles.subtitle}>Sign in to your TixNaija account</Text>
 
-          <AuthInput 
-            label="Email Address" 
-            placeholder="name@domain.com"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
-          />
-          
-          <AuthInput 
-            label="Password" 
-            placeholder="••••••••"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
+            <AuthInput 
+              label="Email Address" 
+              placeholder="name@domain.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
+            />
+            
+            <AuthInput 
+              label="Password" 
+              placeholder="••••••••"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
 
-          <TouchableOpacity style={styles.primaryBtn} onPress={handleEmailSignIn} disabled={loading}>
-            {loading ? <ActivityIndicator color="#22201e" /> : <Text style={styles.primaryBtnText}>Sign In</Text>}
-          </TouchableOpacity>
-
-          <View style={styles.dividerContainer}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or continue with</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <TouchableOpacity style={styles.googleBtn} onPress={handleGoogleSignIn} disabled={googleLoading}>
-            {googleLoading ? <ActivityIndicator color="#f4f2f0" /> : <Text style={styles.googleBtnText}>Google</Text>}
-          </TouchableOpacity>
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
-              <Text style={styles.footerLink}>Create Free Account</Text>
+            <TouchableOpacity style={styles.primaryBtn} onPress={handleEmailSignIn} disabled={loading}>
+              {loading ? <ActivityIndicator color="#22201e" /> : <Text style={styles.primaryBtnText}>Sign In</Text>}
             </TouchableOpacity>
-          </View>
-        </Animated.View>
-      </View>
+
+            <View style={styles.dividerContainer}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or continue with</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <TouchableOpacity style={styles.googleBtn} onPress={handleGoogleSignIn} disabled={googleLoading}>
+              {googleLoading ? <ActivityIndicator color="#f4f2f0" /> : <Text style={styles.googleBtnText}>Continue with Google</Text>}
+            </TouchableOpacity>
+
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Don't have an account? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
+                <Text style={styles.footerLink}>Create Free Account</Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -129,6 +131,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#22201e', // dark mode bg
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
     padding: 16,
   },

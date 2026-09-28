@@ -47,13 +47,19 @@ export default function EventDetailScreen({ route, navigation }: any) {
   const handleCheckout = () => {
     if (totalTickets === 0) return;
 
+    let totalAmount = 0;
     const ticketsPayload = Object.entries(selectedTickets)
       .filter(([_, count]) => count > 0)
-      .map(([ticketTypeId, count]) => ({ ticketTypeId, count }));
+      .map(([ticketTypeId, count]) => {
+         const tt = ticketTypes.find(t => t.id === ticketTypeId);
+         if (tt) totalAmount += (tt.price_kobo * count);
+         return { ticketTypeId, count };
+      });
 
     navigation.navigate('Checkout', {
       eventId,
-      tickets: ticketsPayload
+      tickets: ticketsPayload,
+      totalAmount
     });
   };
 
@@ -115,7 +121,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#22201e' },
+  container: { flex: 1, backgroundColor: '#22201e', paddingTop: 100 },
   centerContainer: { flex: 1, backgroundColor: '#22201e', justifyContent: 'center', alignItems: 'center' },
   scrollContent: { padding: 16, paddingBottom: 100 },
   title: { fontSize: 28, fontWeight: 'bold', color: '#f4f2f0', marginBottom: 12 },
