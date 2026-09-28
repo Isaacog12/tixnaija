@@ -1,8 +1,8 @@
-import { createAPIFileRoute } from "@tanstack/react-start/api";
+import { createAPIFileRoute } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 
 export const APIRoute = createAPIFileRoute("/api/sitemap.xml")({
-  GET: async ({ request }) => {
+  GET: async ({ request }: { request: any }) => {
     const baseUrl = "https://www.tixnaija.name.ng";
     
     // Fetch all public events (slugs)
