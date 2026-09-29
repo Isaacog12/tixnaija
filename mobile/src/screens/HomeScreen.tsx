@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, SafeAreaView, Pressable, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, Pressable, Dimensions } from 'react-native';
 import { supabase } from '../../supabase/client';
-import { MapPin, Calendar, ChevronRight } from 'lucide-react-native';
+import { MapPin, ChevronRight, Calendar } from 'lucide-react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
-const FEATURED_CARD_WIDTH = width * 0.85;
-const UPCOMING_CARD_WIDTH = width * 0.6;
+const FEATURED_CARD_WIDTH = width * 0.88;
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -18,10 +17,13 @@ function FeaturedCard({ item, onPress }: { item: any; onPress: () => void }) {
     transform: [{ scale: scale.value }]
   }));
 
+  const handlePressIn = () => { scale.value = withSpring(0.96, { damping: 24, stiffness: 300 }); };
+  const handlePressOut = () => { scale.value = withSpring(1, { damping: 24, stiffness: 300 }); };
+
   return (
     <AnimatedPressable
-      onPressIn={() => { scale.value = withSpring(0.96, { damping: 20, stiffness: 400 }); }}
-      onPressOut={() => { scale.value = withSpring(1, { damping: 20, stiffness: 400 }); }}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       onPress={onPress}
       style={[styles.featuredCard, animatedStyle]}
     >
@@ -31,50 +33,60 @@ function FeaturedCard({ item, onPress }: { item: any; onPress: () => void }) {
         ) : (
           <View style={[styles.featuredImage, { backgroundColor: '#2C2C2E' }]} />
         )}
-        <View style={styles.featuredOverlay}>
-          <View style={styles.featuredBadge}>
-            <Text style={styles.featuredBadgeText}>Featured</Text>
-          </View>
-        </View>
       </View>
-      <View style={styles.featuredDetails}>
+      
+      <BlurView intensity={70} tint="dark" style={styles.featuredBadge}>
+        <Text style={styles.featuredBadgeText}>FEATURED</Text>
+      </BlurView>
+
+      <BlurView intensity={80} tint="dark" style={styles.featuredBlurPlate}>
         <Text style={styles.featuredTitle} numberOfLines={2}>{item.title}</Text>
         <Text style={styles.featuredDate}>
           {new Date(item.start_datetime).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
         </Text>
-      </View>
+      </BlurView>
     </AnimatedPressable>
   );
 }
 
-function UpcomingCard({ item, onPress }: { item: any; onPress: () => void }) {
+function UpcomingRow({ item, onPress, isLast }: { item: any; onPress: () => void; isLast: boolean }) {
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }]
   }));
 
+  const handlePressIn = () => { scale.value = withSpring(0.97, { damping: 24, stiffness: 300 }); };
+  const handlePressOut = () => { scale.value = withSpring(1, { damping: 24, stiffness: 300 }); };
+
   return (
     <AnimatedPressable
-      onPressIn={() => { scale.value = withSpring(0.96, { damping: 20, stiffness: 400 }); }}
-      onPressOut={() => { scale.value = withSpring(1, { damping: 20, stiffness: 400 }); }}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       onPress={onPress}
-      style={[styles.upcomingCard, animatedStyle]}
+      style={[styles.upcomingRow, animatedStyle]}
     >
       <View style={styles.upcomingImageContainer}>
         {item.cover_image_url ? (
-          <Image source={{ uri: item.cover_image_url }} style={styles.upcomingImage} />
+          <Image source={{ uri: item.cover_image_url }} style={styles.upcomingRowImage} />
         ) : (
-          <View style={[styles.upcomingImage, { backgroundColor: '#2C2C2E' }]} />
+          <View style={[styles.upcomingRowImage, { backgroundColor: '#2C2C2E' }]} />
         )}
       </View>
-      <View style={styles.upcomingDetails}>
-        <Text style={styles.upcomingTitle} numberOfLines={1}>{item.title}</Text>
-        <View style={styles.metaRow}>
-          <MapPin size={12} color="#8E8E93" />
-          <Text style={styles.upcomingLocation} numberOfLines={1}>
-            {item.venue_name || 'Online'}
+      
+      <View style={[styles.upcomingContent, !isLast && styles.upcomingDivider]}>
+        <View style={styles.upcomingTextCol}>
+          <Text style={styles.upcomingDateTop}>
+            {new Date(item.start_datetime).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase()}
           </Text>
+          <Text style={styles.upcomingRowTitle} numberOfLines={2}>{item.title}</Text>
+          <View style={styles.metaRow}>
+            <MapPin size={12} color="#8E8E93" />
+            <Text style={styles.upcomingLocation} numberOfLines={1}>
+              {item.venue_name || 'Online'}
+            </Text>
+          </View>
         </View>
+        <ChevronRight size={20} color="#3A3A3C" />
       </View>
     </AnimatedPressable>
   );
@@ -102,7 +114,6 @@ export default function HomeScreen({ navigation }: any) {
       if (error) throw error;
       
       const events = data || [];
-      // Just visually splitting them for the UI
       setFeaturedEvents(events.slice(0, 3));
       setUpcomingEvents(events.slice(3, 10));
     } catch (error) {
@@ -122,8 +133,7 @@ export default function HomeScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      {/* Liquid Glass Header */}
-      <BlurView intensity={85} tint="dark" style={[styles.headerBlur, { paddingTop: insets.top }]}>
+      <BlurView intensity={90} tint="dark" style={[styles.headerBlur, { paddingTop: insets.top }]}>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Discover</Text>
         </View>
@@ -133,9 +143,9 @@ export default function HomeScreen({ navigation }: any) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Featured Section */}
+        {/* Featured Section (Horizontal) */}
         {featuredEvents.length > 0 && (
-          <View style={styles.section}>
+          <View style={styles.featuredSection}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -154,31 +164,26 @@ export default function HomeScreen({ navigation }: any) {
           </View>
         )}
 
-        {/* Upcoming Section */}
+        {/* Upcoming Section (Vertical List) */}
         {upcomingEvents.length > 0 && (
-          <View style={styles.section}>
+          <View style={styles.upcomingSection}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Upcoming Near You</Text>
+              <Text style={styles.sectionTitle}>Up Next</Text>
               <Pressable style={styles.seeAllBtn} onPress={() => navigation.navigate('Explore')}>
                 <Text style={styles.seeAllText}>See All</Text>
-                <ChevronRight size={16} color="#8E8E93" />
               </Pressable>
             </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              snapToInterval={UPCOMING_CARD_WIDTH + 16}
-              decelerationRate="fast"
-              contentContainerStyle={styles.horizontalScrollPadding}
-            >
-              {upcomingEvents.map((item) => (
-                <UpcomingCard 
+            
+            <View style={styles.listContainer}>
+              {upcomingEvents.map((item, index) => (
+                <UpcomingRow 
                   key={item.id} 
                   item={item} 
-                  onPress={() => navigation.navigate('EventDetail', { eventId: item.id })} 
+                  onPress={() => navigation.navigate('EventDetail', { eventId: item.id })}
+                  isLast={index === upcomingEvents.length - 1}
                 />
               ))}
-            </ScrollView>
+            </View>
           </View>
         )}
 
@@ -204,31 +209,101 @@ const styles = StyleSheet.create({
     top: 0, left: 0, right: 0,
     zIndex: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(255, 255, 255, 0.15)',
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   headerContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    paddingTop: 8,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    paddingTop: 12,
   },
   headerTitle: {
     fontSize: 34,
     fontWeight: '800',
     color: '#ffffff',
-    letterSpacing: -0.8, 
+    letterSpacing: -1, 
   },
   scrollContent: {
-    paddingTop: 110, // Space for header
+    paddingTop: 120, // Space for header
   },
-  section: {
-    marginBottom: 32,
+  
+  // Featured Section
+  featuredSection: {
+    marginBottom: 40,
+  },
+  horizontalScrollPadding: {
+    paddingHorizontal: 20,
+    paddingRight: 40, // Extra padding at the end of the scroll
+  },
+  featuredCard: {
+    width: FEATURED_CARD_WIDTH,
+    height: FEATURED_CARD_WIDTH * 1.25, // Taller, immersive card
+    marginRight: 16,
+    borderRadius: 28,
+    overflow: 'hidden',
+    backgroundColor: '#1C1C1E',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  featuredImageContainer: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  featuredImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  featuredBadge: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  featuredBadgeText: {
+    color: '#ffffff',
+    fontWeight: '700',
+    fontSize: 11,
+    letterSpacing: 1,
+  },
+  featuredBlurPlate: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    padding: 20,
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  featuredTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 6,
+    letterSpacing: -0.5,
+    lineHeight: 28,
+  },
+  featuredDate: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#f2611e',
+  },
+
+  // Upcoming Section
+  upcomingSection: {
+    paddingHorizontal: 20,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    marginBottom: 16,
+    alignItems: 'flex-end',
+    marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 22,
@@ -237,107 +312,77 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   seeAllBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    paddingBottom: 2,
   },
   seeAllText: {
-    fontSize: 15,
-    color: '#8E8E93',
-    marginRight: 2,
-  },
-  horizontalScrollPadding: {
-    paddingHorizontal: 16,
-  },
-  
-  // Featured Card
-  featuredCard: {
-    width: FEATURED_CARD_WIDTH,
-    marginRight: 16,
-    backgroundColor: '#1C1C1E',
-    borderRadius: 24,
-    overflow: 'hidden',
-  },
-  featuredImageContainer: {
-    width: '100%',
-    height: FEATURED_CARD_WIDTH * 1.1,
-    position: 'relative',
-  },
-  featuredImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  featuredOverlay: {
-    position: 'absolute',
-    top: 16,
-    left: 16,
-  },
-  featuredBadge: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  featuredBadgeText: {
-    color: '#ffffff',
-    fontWeight: 'bold',
-    fontSize: 12,
-    textTransform: 'uppercase',
-  },
-  featuredDetails: {
-    padding: 20,
-  },
-  featuredTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#ffffff',
-    marginBottom: 8,
-    letterSpacing: -0.5,
-  },
-  featuredDate: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '500',
     color: '#f2611e',
   },
-
-  // Upcoming Card
-  upcomingCard: {
-    width: UPCOMING_CARD_WIDTH,
-    marginRight: 16,
+  listContainer: {
     backgroundColor: '#1C1C1E',
     borderRadius: 20,
     overflow: 'hidden',
   },
-  upcomingImageContainer: {
-    width: '100%',
-    height: UPCOMING_CARD_WIDTH,
+  upcomingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: 16,
+    backgroundColor: '#1C1C1E',
   },
-  upcomingImage: {
+  upcomingImageContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginVertical: 12,
+  },
+  upcomingRowImage: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
   },
-  upcomingDetails: {
-    padding: 12,
+  upcomingContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingRight: 16,
+    marginLeft: 16,
   },
-  upcomingTitle: {
-    fontSize: 16,
+  upcomingDivider: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  upcomingTextCol: {
+    flex: 1,
+    marginRight: 12,
+  },
+  upcomingDateTop: {
+    fontSize: 12,
     fontWeight: '700',
+    color: '#f2611e',
+    marginBottom: 4,
+  },
+  upcomingRowTitle: {
+    fontSize: 17,
+    fontWeight: '600',
     color: '#ffffff',
     marginBottom: 4,
     letterSpacing: -0.3,
+    lineHeight: 22,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   upcomingLocation: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#8E8E93',
     marginLeft: 4,
-    flex: 1,
   },
+  
   bottomPadding: {
-    height: 100, // padding for bottom tab bar
+    height: 120, // padding for bottom tab bar
   }
 });
