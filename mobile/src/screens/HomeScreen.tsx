@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, Pressable, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, Pressable, Dimensions, TextInput } from 'react-native';
 import { supabase } from '../../supabase/client';
-import { MapPin, ChevronRight, Calendar } from 'lucide-react-native';
+import { MapPin, ChevronRight, Search } from 'lucide-react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -94,9 +94,11 @@ function UpcomingRow({ item, onPress, isLast }: { item: any; onPress: () => void
 
 export default function HomeScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
+  const [allEvents, setAllEvents] = useState<any[]>([]);
   const [featuredEvents, setFeaturedEvents] = useState<any[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchEvents();
@@ -109,11 +111,12 @@ export default function HomeScreen({ navigation }: any) {
         .select('id, title, start_datetime, venue_name, cover_image_url')
         .eq('status', 'published')
         .order('start_datetime', { ascending: true })
-        .limit(10);
+        .limit(30);
       
       if (error) throw error;
       
       const events = data || [];
+      setAllEvents(events);
       setFeaturedEvents(events.slice(0, 3));
       setUpcomingEvents(events.slice(3, 10));
     } catch (error) {
@@ -122,6 +125,11 @@ export default function HomeScreen({ navigation }: any) {
       setLoading(false);
     }
   };
+
+  const isSearching = searchQuery.trim().length > 0;
+  const filteredEvents = isSearching 
+    ? allEvents.filter(e => e.title.toLowerCase().includes(searchQuery.toLowerCase()))
+    : [];
 
   if (loading) {
     return (
@@ -136,6 +144,17 @@ export default function HomeScreen({ navigation }: any) {
       <BlurView intensity={90} tint="dark" style={[styles.headerBlur, { paddingTop: insets.top }]}>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Discover</Text>
+          <View style={styles.searchContainer}>
+            <Search color="#8E8E93" size={18} style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search events"
+              placeholderTextColor="#8E8E93"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              clearButtonMode="while-editing"
+            />
+          </View>
         </View>
       </BlurView>
 
@@ -143,48 +162,71 @@ export default function HomeScreen({ navigation }: any) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Featured Section (Horizontal) */}
-        {featuredEvents.length > 0 && (
-          <View style={styles.featuredSection}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              snapToInterval={FEATURED_CARD_WIDTH + 16}
-              decelerationRate="fast"
-              contentContainerStyle={styles.horizontalScrollPadding}
-            >
-              {featuredEvents.map((item) => (
-                <FeaturedCard 
-                  key={item.id} 
-                  item={item} 
-                  onPress={() => navigation.navigate('EventDetail', { eventId: item.id })} 
-                />
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        {/* Upcoming Section (Vertical List) */}
-        {upcomingEvents.length > 0 && (
+        {isSearching ? (
           <View style={styles.upcomingSection}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Up Next</Text>
-              <Pressable style={styles.seeAllBtn} onPress={() => navigation.navigate('Explore')}>
-                <Text style={styles.seeAllText}>See All</Text>
-              </Pressable>
+              <Text style={styles.sectionTitle}>Search Results</Text>
             </View>
-            
             <View style={styles.listContainer}>
-              {upcomingEvents.map((item, index) => (
-                <UpcomingRow 
-                  key={item.id} 
-                  item={item} 
-                  onPress={() => navigation.navigate('EventDetail', { eventId: item.id })}
-                  isLast={index === upcomingEvents.length - 1}
-                />
-              ))}
+              {filteredEvents.length > 0 ? (
+                filteredEvents.map((item, index) => (
+                  <UpcomingRow 
+                    key={item.id} 
+                    item={item} 
+                    onPress={() => navigation.navigate('EventDetail', { eventId: item.id })}
+                    isLast={index === filteredEvents.length - 1}
+                  />
+                ))
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>No events match your search.</Text>
+                </View>
+              )}
             </View>
           </View>
+        ) : (
+          <>
+            {/* Featured Section (Horizontal) */}
+            {featuredEvents.length > 0 && (
+              <View style={styles.featuredSection}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  snapToInterval={FEATURED_CARD_WIDTH + 16}
+                  decelerationRate="fast"
+                  contentContainerStyle={styles.horizontalScrollPadding}
+                >
+                  {featuredEvents.map((item) => (
+                    <FeaturedCard 
+                      key={item.id} 
+                      item={item} 
+                      onPress={() => navigation.navigate('EventDetail', { eventId: item.id })} 
+                    />
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {/* Upcoming Section (Vertical List) */}
+            {upcomingEvents.length > 0 && (
+              <View style={styles.upcomingSection}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Up Next</Text>
+                </View>
+                
+                <View style={styles.listContainer}>
+                  {upcomingEvents.map((item, index) => (
+                    <UpcomingRow 
+                      key={item.id} 
+                      item={item} 
+                      onPress={() => navigation.navigate('EventDetail', { eventId: item.id })}
+                      isLast={index === upcomingEvents.length - 1}
+                    />
+                  ))}
+                </View>
+              </View>
+            )}
+          </>
         )}
 
         <View style={styles.bottomPadding} />
@@ -220,10 +262,29 @@ const styles = StyleSheet.create({
     fontSize: 34,
     fontWeight: '800',
     color: '#ffffff',
-    letterSpacing: -1, 
+    letterSpacing: -1,
+    marginBottom: 12,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(118, 118, 128, 0.24)',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    height: 36,
+  },
+  searchIcon: {
+    marginHorizontal: 4,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 17, 
+    color: '#ffffff',
+    paddingVertical: 0,
+    height: '100%',
   },
   scrollContent: {
-    paddingTop: 120, // Space for header
+    paddingTop: 160, // Space for header + search bar
   },
   
   // Featured Section
@@ -380,6 +441,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#8E8E93',
     marginLeft: 4,
+  },
+  emptyContainer: {
+    padding: 32,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#8E8E93',
+    textAlign: 'center',
   },
   
   bottomPadding: {

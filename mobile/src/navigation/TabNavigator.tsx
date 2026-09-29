@@ -5,7 +5,6 @@ import { Home, Calendar, QrCode, ShieldAlert, MoreHorizontal, Ticket, Search } f
 import { BlurView } from 'expo-blur';
 
 import HomeScreen from '../screens/HomeScreen';
-import ExploreScreen from '../screens/ExploreScreen';
 import MyEventsScreen from '../screens/MyEventsScreen';
 import MyTicketsScreen from '../screens/MyTicketsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
@@ -54,16 +53,6 @@ export default function TabNavigator({ role }: { role: { is_organizer: boolean; 
           title: 'Home',
           headerShown: false,
           tabBarIcon: ({ color, size }) => <Home color={color} size={size} /> 
-        }} 
-      />
-
-      <Tab.Screen 
-        name="Explore" 
-        component={ExploreScreen} 
-        options={{ 
-          title: 'Explore',
-          headerShown: false,
-          tabBarIcon: ({ color, size }) => <Search color={color} size={size} /> 
         }} 
       />
       
