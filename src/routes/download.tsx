@@ -17,7 +17,7 @@ export const Route = createFileRoute("/download")({
 
 // ── Replace this URL after running PWABuilder and uploading the APK ──────────
 const APK_DOWNLOAD_URL: string | null = "https://www.dropbox.com/scl/fi/tlxkpsfas05aw4vflcbl2/Tixnaija.apk?rlkey=b5hizocthygkeww0azf4hd7id&st=f70kilq6&dl=1";
-const APK_VERSION = "1.0.3"; // bump when you re-upload
+const APK_VERSION = "1.0.0"; // User requested strict 1.0.0 versioning for OTA
 
 function DownloadPage() {
   const hasApk = Boolean(APK_DOWNLOAD_URL);
@@ -145,15 +145,13 @@ function DownloadPage() {
         </div>
 
         {/* ── Updates note ────────────────────────────────────────────────── */}
-        <div className="mt-5 rounded-xl border border-border bg-muted/40 p-5">
+        <div className="mt-5 rounded-xl border border-border bg-primary/10 p-5">
           <div className="flex items-start gap-3">
-            <Download className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+            <Download className="h-5 w-5 text-primary shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-foreground">Staying up to date</p>
+              <p className="text-sm font-medium text-foreground">Automatic Over-The-Air Updates ⚡</p>
               <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
-                There's no auto-update outside the Play Store. When a new version is
-                released, return to this page and download the latest APK — Android
-                will upgrade the existing install automatically.
+                Good news! TixNaija features built-in Over-The-Air (OTA) updates. Once you install the APK, you will automatically receive bug fixes and new features instantly when you open the app — no need to ever manually re-download the APK again!
               </p>
             </div>
           </div>
