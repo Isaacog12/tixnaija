@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 120, // increased to clear bottom tab bar
   },
   pageTitle: {
     fontSize: 32,

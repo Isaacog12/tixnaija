@@ -316,6 +316,8 @@ const styles = StyleSheet.create({
   horizontalScrollPadding: {
     paddingHorizontal: 20,
     paddingRight: 40, // Extra padding at the end of the scroll
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   featuredCard: {
     width: FEATURED_CARD_WIDTH,
