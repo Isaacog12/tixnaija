@@ -90,14 +90,14 @@ export default function SettingsScreen({ navigation }: any) {
           <User color="#f4f2f0" size={20} />, 
           "Personal Information", 
           "Update your name and phone",
-          () => Alert.alert("Coming Soon", "This feature will be available in the next update!")
+          () => handleLink('https://tixnaija.name.ng/account')
         )}
         <View style={styles.divider} />
         {renderSettingItem(
           <Lock color="#f4f2f0" size={20} />, 
           "Security", 
           "Change password and auth methods",
-          () => Alert.alert("Coming Soon", "This feature will be available in the next update!")
+          () => handleLink('https://tixnaija.name.ng/account')
         )}
       </View>
 
@@ -125,21 +125,21 @@ export default function SettingsScreen({ navigation }: any) {
           <HelpCircle color="#f4f2f0" size={20} />, 
           "Help Center", 
           "FAQ and contact support",
-          () => handleLink('https://tixnaija.com/faq')
+          () => handleLink('https://tixnaija.name.ng/contact')
         )}
         <View style={styles.divider} />
         {renderSettingItem(
           <FileText color="#f4f2f0" size={20} />, 
           "Terms of Service", 
           undefined,
-          () => handleLink('https://tixnaija.com/terms')
+          () => handleLink('https://tixnaija.name.ng/terms')
         )}
         <View style={styles.divider} />
         {renderSettingItem(
           <Shield color="#f4f2f0" size={20} />, 
           "Privacy Policy", 
           undefined,
-          () => handleLink('https://tixnaija.com/privacy')
+          () => handleLink('https://tixnaija.name.ng/privacy')
         )}
       </View>
 
