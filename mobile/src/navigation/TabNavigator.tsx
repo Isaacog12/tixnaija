@@ -14,10 +14,11 @@ import AdminScreen from '../screens/AdminScreen';
 
 const Tab = createBottomTabNavigator();
 
-
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabNavigator({ role }: { role: { is_organizer: boolean; is_admin: boolean | null } | null }) {
   const isOrganizer = role?.is_organizer || false;
+  const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
@@ -36,8 +37,8 @@ export default function TabNavigator({ role }: { role: { is_organizer: boolean; 
           borderTopWidth: StyleSheet.hairlineWidth,
           borderTopColor: 'rgba(255, 255, 255, 0.15)',
           elevation: 0,
-          height: 85, // iOS standard with safe area
-          paddingBottom: 25, // safe area padding
+          height: 60 + insets.bottom,
+          paddingBottom: insets.bottom,
         },
         tabBarBackground: () => (
           <BlurView intensity={85} tint="dark" style={StyleSheet.absoluteFill} />

@@ -4,6 +4,7 @@ import { supabase } from '../../supabase/client';
 import { MapPin, Calendar, ChevronRight } from 'lucide-react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 const FEATURED_CARD_WIDTH = width * 0.85;
@@ -80,6 +81,7 @@ function UpcomingCard({ item, onPress }: { item: any; onPress: () => void }) {
 }
 
 export default function HomeScreen({ navigation }: any) {
+  const insets = useSafeAreaInsets();
   const [featuredEvents, setFeaturedEvents] = useState<any[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,12 +123,10 @@ export default function HomeScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       {/* Liquid Glass Header */}
-      <BlurView intensity={85} tint="dark" style={styles.headerBlur}>
-        <SafeAreaView>
-          <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>Discover</Text>
-          </View>
-        </SafeAreaView>
+      <BlurView intensity={85} tint="dark" style={[styles.headerBlur, { paddingTop: insets.top }]}>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Discover</Text>
+        </View>
       </BlurView>
 
       <ScrollView 

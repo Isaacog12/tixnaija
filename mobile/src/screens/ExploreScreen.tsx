@@ -4,6 +4,7 @@ import { supabase } from '../../supabase/client';
 import { MapPin, Calendar, Search } from 'lucide-react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -54,6 +55,7 @@ function EventCard({ item, onPress }: { item: any; onPress: () => void }) {
 }
 
 export default function ExploreScreen({ navigation }: any) {
+  const insets = useSafeAreaInsets();
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -115,24 +117,22 @@ export default function ExploreScreen({ navigation }: any) {
       />
 
       {/* Liquid Glass Header */}
-      <BlurView intensity={85} tint="dark" style={styles.headerBlur}>
-        <SafeAreaView>
-          <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>Explore</Text>
-            
-            <View style={styles.searchContainer}>
-              <Search color="#8E8E93" size={20} style={styles.searchIcon} />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search events"
-                placeholderTextColor="#8E8E93"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                clearButtonMode="while-editing"
-              />
-            </View>
+      <BlurView intensity={85} tint="dark" style={[styles.headerBlur, { paddingTop: insets.top }]}>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Explore</Text>
+          
+          <View style={styles.searchContainer}>
+            <Search color="#8E8E93" size={20} style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search events"
+              placeholderTextColor="#8E8E93"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              clearButtonMode="while-editing"
+            />
           </View>
-        </SafeAreaView>
+        </View>
       </BlurView>
     </View>
   );
