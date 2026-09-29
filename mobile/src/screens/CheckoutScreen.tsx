@@ -213,12 +213,7 @@ export default function CheckoutScreen({ route, navigation }: any) {
 
   if (authorizationUrl && !isVerifying) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#22201e' }}>
-        <View style={styles.webviewHeader}>
-          <TouchableOpacity onPress={cancelCheckout} style={styles.cancelBtn}>
-            <Text style={styles.cancelBtnText}>Cancel Checkout</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={{ flex: 1, backgroundColor: '#22201e', paddingTop: 100 }}>
         <WebView 
           source={{ uri: authorizationUrl }} 
           onNavigationStateChange={handleWebViewNavigation}
@@ -229,7 +224,7 @@ export default function CheckoutScreen({ route, navigation }: any) {
             </View>
           )}
         />
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -359,23 +354,6 @@ const styles = StyleSheet.create({
     color: '#767069',
     marginTop: 8,
     fontSize: 14,
-  },
-  webviewHeader: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    padding: 12,
-    backgroundColor: '#22201e',
-    borderBottomWidth: 1,
-    borderBottomColor: '#403b38',
-  },
-  cancelBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-  },
-  cancelBtnText: {
-    color: '#e55a5a',
-    fontWeight: 'bold',
-    fontSize: 16,
   },
   absoluteLoading: {
     position: 'absolute',

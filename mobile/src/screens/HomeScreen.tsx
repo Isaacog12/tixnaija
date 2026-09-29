@@ -268,10 +268,9 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   featuredOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    padding: 16,
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
+    position: 'absolute',
+    top: 16,
+    left: 16,
   },
   featuredBadge: {
     backgroundColor: 'rgba(255,255,255,0.2)',

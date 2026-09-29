@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../supabase/client';
 
 export default function EventDetailScreen({ route, navigation }: any) {
   const { eventId } = route.params;
+  const insets = useSafeAreaInsets();
   const [event, setEvent] = useState<any>(null);
   const [ticketTypes, setTicketTypes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,7 +112,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
       </ScrollView>
 
       {totalTickets > 0 && (
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <TouchableOpacity style={styles.checkoutBtn} onPress={handleCheckout}>
             <Text style={styles.checkoutBtnText}>Checkout ({totalTickets} ticket{totalTickets > 1 ? 's' : ''})</Text>
           </TouchableOpacity>
@@ -168,7 +170,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: '#22201e',
-    padding: 16,
+    paddingTop: 16,
+    paddingHorizontal: 16,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.07)',
   },
