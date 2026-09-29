@@ -167,7 +167,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     return {
       meta: [
         { charSet: "utf-8" },
-        { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" },
+        { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" },
         { name: "strix-verification", content: "strix-verify-e1935f2afecbccf853fb503d5612f3ce" },
         { title: "TixNaija — Nigerian event tickets, sold fast" },
         {
