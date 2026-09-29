@@ -15,8 +15,10 @@ const Tab = createBottomTabNavigator();
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-export default function TabNavigator({ role }: { role: { is_organizer: boolean; is_admin: boolean | null } | null }) {
+export default function TabNavigator({ role }: { role: { is_organizer: boolean; is_admin: boolean | null; is_staff?: boolean } | null }) {
   const isOrganizer = role?.is_organizer || false;
+  const isStaff = role?.is_staff || false;
+  const canScan = isOrganizer || isStaff;
   const insets = useSafeAreaInsets();
 
   return (
@@ -74,7 +76,7 @@ export default function TabNavigator({ role }: { role: { is_organizer: boolean; 
         />
       )}
 
-      {isOrganizer && (
+      {canScan && (
         <Tab.Screen 
           name="Scan" 
           component={ScanTicketsScreen} 

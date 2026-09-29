@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View, StyleSheet, Alert, Linking } from 'react-native';
+import { ActivityIndicator, View, StyleSheet, Alert } from 'react-native';
+import * as Linking from 'expo-linking';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Session } from '@supabase/supabase-js';
@@ -27,24 +28,10 @@ const Stack = createNativeStackNavigator();
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
-  const [role, setRole] = useState<{ is_organizer: boolean; is_admin: boolean | null } | null>(null);
-  const { hasUpdate, updateUrl } = useVersionCheck();
+  const [role, setRole] = useState<{ is_organizer: boolean; is_admin: boolean | null; is_staff?: boolean } | null>(null);
+  const { hasUpdate } = useVersionCheck();
 
   const MainTabs = React.useCallback((props: any) => <TabNavigator {...props} role={role} />, [role]);
-
-  useEffect(() => {
-    // Check for updates
-    if (hasUpdate && updateUrl) {
-      Alert.alert(
-        "Update Available", 
-        "A new version of the app is available.",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Download", onPress: () => Linking.openURL(updateUrl) }
-        ]
-      );
-    }
-  }, [hasUpdate, updateUrl]);
 
   useEffect(() => {
     const restoreSession = async () => {
@@ -65,9 +52,19 @@ export default function App() {
           .select('is_organizer, is_admin')
           .eq('id', userId)
           .single();
+          
+        const { data: staffData } = await (supabase
+          .from('event_staff' as any)
+          .select('id') as any)
+          .eq('user_id', userId)
+          .limit(1);
         
         if (!error && data) {
-          setRole(data);
+          setRole({ 
+            is_organizer: data.is_organizer, 
+            is_admin: data.is_admin, 
+            is_staff: (staffData && staffData.length > 0) 
+          });
         }
       } catch (err) {
         console.log('Error fetching role:', err);
@@ -101,9 +98,26 @@ export default function App() {
     );
   }
 
+  const linking = {
+    prefixes: [Linking.createURL('/'), 'https://tixnaija.name.ng'],
+    config: {
+      screens: {
+        MainTabs: {
+          screens: {
+            Home: 'home',
+            Scan: 'scan',
+            MyEvents: 'myevents',
+            Settings: 'settings',
+          },
+        },
+        EventDetail: 'e/:slug',
+      },
+    },
+  } as any;
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <NavigationContainer>
+      <NavigationContainer linking={linking}>
         <Stack.Navigator 
           screenOptions={{
             headerTransparent: true,

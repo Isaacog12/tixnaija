@@ -5,28 +5,38 @@ import { supabase } from '../../supabase/client';
 import { Share2 } from 'lucide-react-native';
 
 export default function EventDetailScreen({ route, navigation }: any) {
-  const { eventId } = route.params;
+  const { eventId, slug } = route.params || {};
   const insets = useSafeAreaInsets();
   const [event, setEvent] = useState<any>(null);
   const [ticketTypes, setTicketTypes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTickets, setSelectedTickets] = useState<{[key: string]: number}>({});
+  const [isJoiningWaitlist, setIsJoiningWaitlist] = useState<string | null>(null);
 
   useEffect(() => {
     fetchEventDetails();
-  }, [eventId]);
+  }, [eventId, slug]);
 
   const fetchEventDetails = async () => {
     try {
-      const [eventRes, ticketsRes] = await Promise.all([
-        supabase.from('events').select('*').eq('id', eventId).single(),
-        supabase.from('ticket_types').select('*').eq('event_id', eventId).order('price_kobo', { ascending: true })
-      ]);
+      let eventData;
+      
+      if (eventId) {
+        const { data, error } = await supabase.from('events').select('*').eq('id', eventId).single();
+        if (error) throw error;
+        eventData = data;
+      } else if (slug) {
+        const { data, error } = await supabase.from('events').select('*').eq('slug', slug).single();
+        if (error) throw error;
+        eventData = data;
+      } else {
+        throw new Error('No event identifier provided');
+      }
 
-      if (eventRes.error) throw eventRes.error;
+      const ticketsRes = await supabase.from('ticket_types').select('*').eq('event_id', eventData.id).order('price_kobo', { ascending: true });
       if (ticketsRes.error) throw ticketsRes.error;
 
-      setEvent(eventRes.data);
+      setEvent(eventData);
       setTicketTypes(ticketsRes.data || []);
     } catch (error) {
       console.error('Error fetching event details:', error);
@@ -46,6 +56,39 @@ export default function EventDetailScreen({ route, navigation }: any) {
   };
 
   const totalTickets = Object.values(selectedTickets).reduce((a, b) => a + b, 0);
+
+  const handleJoinWaitlist = async (ticketTypeId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      Alert.alert("Sign In Required", "You must create an account or sign in to join the waitlist.", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Sign In", onPress: () => navigation.navigate("Login") }
+      ]);
+      return;
+    }
+
+    setIsJoiningWaitlist(ticketTypeId);
+    try {
+      const { error } = await (supabase
+        .from('waitlist_entries' as any)
+        .insert([{
+          event_id: event.id,
+          ticket_type_id: ticketTypeId,
+          user_id: session.user.id
+        }]) as any);
+        
+      if (error) {
+        if (error.code === '23505') throw new Error('You are already on the waitlist for this ticket.');
+        throw error;
+      }
+      
+      Alert.alert('Success', "You've been added to the waitlist! We will notify you if a spot opens up.");
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Could not join waitlist.');
+    } finally {
+      setIsJoiningWaitlist(null);
+    }
+  };
 
   const handleCheckout = async () => {
     if (totalTickets === 0) return;
@@ -69,7 +112,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
       });
 
     navigation.navigate('Checkout', {
-      eventId,
+      eventId: event.id,
       tickets: ticketsPayload,
       totalAmount
     });
@@ -125,13 +168,29 @@ export default function EventDetailScreen({ route, navigation }: any) {
               </Text>
             </View>
             <View style={styles.ticketActions}>
-              <TouchableOpacity style={styles.actionBtn} onPress={() => updateTicketCount(ticket.id, -1)}>
-                <Text style={styles.actionBtnText}>-</Text>
-              </TouchableOpacity>
-              <Text style={styles.ticketCount}>{selectedTickets[ticket.id] || 0}</Text>
-              <TouchableOpacity style={styles.actionBtn} onPress={() => updateTicketCount(ticket.id, 1)}>
-                <Text style={styles.actionBtnText}>+</Text>
-              </TouchableOpacity>
+              {ticket.quantity_available === 0 ? (
+                <TouchableOpacity 
+                  style={styles.waitlistBtn} 
+                  onPress={() => handleJoinWaitlist(ticket.id)}
+                  disabled={isJoiningWaitlist === ticket.id}
+                >
+                  {isJoiningWaitlist === ticket.id ? (
+                    <ActivityIndicator size="small" color="#22201e" />
+                  ) : (
+                    <Text style={styles.waitlistBtnText}>Join Waitlist</Text>
+                  )}
+                </TouchableOpacity>
+              ) : (
+                <>
+                  <TouchableOpacity style={styles.actionBtn} onPress={() => updateTicketCount(ticket.id, -1)}>
+                    <Text style={styles.actionBtnText}>-</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.ticketCount}>{selectedTickets[ticket.id] || 0}</Text>
+                  <TouchableOpacity style={styles.actionBtn} onPress={() => updateTicketCount(ticket.id, 1)}>
+                    <Text style={styles.actionBtnText}>+</Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </View>
           </View>
         ))}
@@ -208,6 +267,19 @@ const styles = StyleSheet.create({
   },
   actionBtnText: { color: '#f4f2f0', fontSize: 18, fontWeight: 'bold' },
   ticketCount: { color: '#f4f2f0', fontSize: 16, fontWeight: '600', minWidth: 20, textAlign: 'center' },
+  waitlistBtn: {
+    backgroundColor: '#ffd60a',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  waitlistBtnText: {
+    color: '#22201e',
+    fontSize: 14,
+    fontWeight: '700',
+  },
   footer: {
     position: 'absolute',
     bottom: 0,

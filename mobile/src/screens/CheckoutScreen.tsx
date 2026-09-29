@@ -23,6 +23,13 @@ export default function CheckoutScreen({ route, navigation }: any) {
   
   const [orderId, setOrderId] = useState<string | null>(null);
 
+  // Promo code states
+  const [promoCodeInput, setPromoCodeInput] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<any>(null);
+  const [isApplyingPromo, setIsApplyingPromo] = useState(false);
+  
+  const calculatedTotal = appliedPromo ? Math.max(0, totalAmount * (1 - (appliedPromo.discount_value / 100))) : totalAmount;
+
   // Prevent multiple verification loops
   const verifyStarted = useRef(false);
 
@@ -34,6 +41,36 @@ export default function CheckoutScreen({ route, navigation }: any) {
       }
     });
   }, []);
+
+  const handleApplyPromo = async () => {
+    if (!promoCodeInput.trim()) return;
+    setIsApplyingPromo(true);
+    
+    try {
+      const { data, error } = await (supabase
+        .from('promo_codes' as any)
+        .select('id, discount_value, expires_at') as any)
+        .eq('event_id', eventId)
+        .ilike('code', promoCodeInput.trim())
+        .single();
+        
+      if (error || !data) {
+        throw new Error('Invalid promo code');
+      }
+      
+      if (data.expires_at && new Date(data.expires_at) < new Date()) {
+        throw new Error('Promo code expired');
+      }
+      
+      setAppliedPromo(data);
+      Alert.alert('Success', `Promo code applied! ${data.discount_value}% off.`);
+    } catch (err: any) {
+      Alert.alert('Invalid Code', err.message);
+      setAppliedPromo(null);
+    } finally {
+      setIsApplyingPromo(false);
+    }
+  };
 
   const handleProceed = async () => {
     if (!buyerName || !buyerEmail) {
@@ -95,7 +132,7 @@ export default function CheckoutScreen({ route, navigation }: any) {
         metadata: {
           eventId,
           tickets: enrichedTickets,
-          promoCodeId,
+          promoCodeId: appliedPromo ? appliedPromo.id : promoCodeId,
           userId: session?.user?.id || null,
           buyerName,
           buyerEmail,
@@ -273,13 +310,36 @@ export default function CheckoutScreen({ route, navigation }: any) {
               onChangeText={setBuyerPhone}
             />
           </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Promo Code</Text>
+            <View style={styles.promoRow}>
+              <TextInput
+                style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                placeholder="Enter code"
+                placeholderTextColor="#767069"
+                autoCapitalize="characters"
+                value={promoCodeInput}
+                onChangeText={setPromoCodeInput}
+                editable={!appliedPromo}
+              />
+              {!appliedPromo ? (
+                <TouchableOpacity style={styles.applyBtn} onPress={handleApplyPromo} disabled={isApplyingPromo}>
+                  {isApplyingPromo ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.applyBtnText}>Apply</Text>}
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity style={styles.clearBtn} onPress={() => { setAppliedPromo(null); setPromoCodeInput(''); }}>
+                  <Text style={styles.applyBtnText}>Clear</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
           
           <TouchableOpacity 
             style={[styles.primaryBtn, { marginTop: 24 }]} 
             onPress={handleProceed}
           >
             <Text style={styles.primaryBtnText}>
-              {totalAmount === 0 ? 'Claim Free Tickets' : `Proceed to Payment (₦${(totalAmount / 100).toLocaleString()})`}
+              {calculatedTotal === 0 ? 'Claim Free Tickets' : `Proceed to Payment (₦${(calculatedTotal / 100).toLocaleString()})`}
             </Text>
           </TouchableOpacity>
         </ScrollView>
@@ -343,6 +403,32 @@ const styles = StyleSheet.create({
     padding: 14,
     color: '#f4f2f0',
     fontSize: 16,
+  },
+  promoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  applyBtn: {
+    backgroundColor: '#f2611e',
+    paddingHorizontal: 20,
+    height: 52,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  clearBtn: {
+    backgroundColor: '#e55a5a',
+    paddingHorizontal: 20,
+    height: 52,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  applyBtnText: {
+    color: '#22201e',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
   loadingText: {
     color: '#c2bdb8',

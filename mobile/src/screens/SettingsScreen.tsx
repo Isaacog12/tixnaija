@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking, ScrollView, Switch, Modal, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useVersionCheck } from '../hooks/useVersionCheck';
 import { supabase } from '../../supabase/client';
-import { ChevronRight, User, Bell, Shield, HelpCircle, FileText, LogOut, Download, Lock } from 'lucide-react-native';
+import { ChevronRight, User, Bell, Shield, HelpCircle, FileText, LogOut, Download, Lock, Trash2 } from 'lucide-react-native';
 import * as Notifications from 'expo-notifications';
 
 export default function SettingsScreen({ navigation }: any) {
@@ -111,6 +111,29 @@ export default function SettingsScreen({ navigation }: any) {
           onPress: async () => {
             const { error } = await supabase.auth.signOut();
             if (error) Alert.alert('Error logging out', error.message);
+          }
+        }
+      ]
+    );
+  };
+
+  const handleDeleteAccount = async () => {
+    Alert.alert(
+      "Delete Account",
+      "Are you absolutely sure? This action is permanent and cannot be undone. All your tickets and events will be deleted.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete My Account", 
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const { error } = await supabase.rpc('delete_user_account' as any);
+              if (error) throw error;
+              await supabase.auth.signOut();
+            } catch (err: any) {
+              Alert.alert('Error', err.message || 'Could not delete account.');
+            }
           }
         }
       ]
@@ -235,6 +258,23 @@ export default function SettingsScreen({ navigation }: any) {
           "Make sure you have the latest features",
           () => checkVersion(true)
         )}
+      </View>
+      
+      {/* Danger Zone */}
+      {renderSectionHeader('Danger Zone')}
+      <View style={styles.sectionCard}>
+        <TouchableOpacity 
+          style={styles.settingItem} 
+          onPress={handleDeleteAccount}
+        >
+          <View style={[styles.settingIconContainer, { backgroundColor: 'rgba(229, 90, 90, 0.1)' }]}>
+            <Trash2 color="#e55a5a" size={20} />
+          </View>
+          <View style={styles.settingTextContainer}>
+            <Text style={[styles.settingTitle, { color: '#e55a5a' }]}>Delete Account</Text>
+            <Text style={styles.settingSubtitle}>Permanently delete your data</Text>
+          </View>
+        </TouchableOpacity>
       </View>
 
       {/* Logout */}

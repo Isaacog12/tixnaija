@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, Pressable, Dimensions, TextInput } from 'react-native';
 import { supabase } from '../../supabase/client';
-import { MapPin, ChevronRight, Search } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { MapPin, ChevronRight, Search, WifiOff } from 'lucide-react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -98,6 +99,7 @@ export default function HomeScreen({ navigation }: any) {
   const [featuredEvents, setFeaturedEvents] = useState<any[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isOffline, setIsOffline] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -106,6 +108,17 @@ export default function HomeScreen({ navigation }: any) {
 
   const fetchEvents = async () => {
     try {
+      // 1. Try to load cached data first
+      const cached = await AsyncStorage.getItem('cached_home_events');
+      if (cached) {
+        const events = JSON.parse(cached);
+        setAllEvents(events);
+        setFeaturedEvents(events.slice(0, 3));
+        setUpcomingEvents(events.slice(3, 10));
+        setLoading(false); // Stop loading early if we have cache
+      }
+      
+      // 2. Fetch fresh data
       const { data, error } = await supabase
         .from('events')
         .select('id, title, start_datetime, venue_name, cover_image_url')
@@ -116,11 +129,17 @@ export default function HomeScreen({ navigation }: any) {
       if (error) throw error;
       
       const events = data || [];
+      
+      // 3. Update state and cache
       setAllEvents(events);
       setFeaturedEvents(events.slice(0, 3));
       setUpcomingEvents(events.slice(3, 10));
+      setIsOffline(false);
+      
+      await AsyncStorage.setItem('cached_home_events', JSON.stringify(events));
     } catch (error) {
       console.error('Error fetching events:', error);
+      setIsOffline(true);
     } finally {
       setLoading(false);
     }
@@ -143,7 +162,10 @@ export default function HomeScreen({ navigation }: any) {
     <View style={styles.container}>
       <BlurView intensity={90} tint="dark" style={[styles.headerBlur, { paddingTop: insets.top }]}>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Discover</Text>
+          <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
+            <Text style={styles.headerTitle}>Discover</Text>
+            {isOffline && <WifiOff color="#e55a5a" size={20} />}
+          </View>
           <View style={styles.searchContainer}>
             <Search color="#8E8E93" size={18} style={styles.searchIcon} />
             <TextInput
