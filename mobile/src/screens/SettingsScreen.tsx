@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking, ScrollView, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking, ScrollView, Switch, Modal, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useVersionCheck } from '../hooks/useVersionCheck';
 import { supabase } from '../../supabase/client';
 import { ChevronRight, User, Bell, Shield, HelpCircle, FileText, LogOut, Download, Lock } from 'lucide-react-native';
@@ -9,13 +9,61 @@ export default function SettingsScreen({ navigation }: any) {
   const [user, setUser] = useState<any>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
+  // Modal states
+  const [personalInfoVisible, setPersonalInfoVisible] = useState(false);
+  const [securityVisible, setSecurityVisible] = useState(false);
+
+  // Form states
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [isSavingInfo, setIsSavingInfo] = useState(false);
+
+  const [newPassword, setNewPassword] = useState('');
+  const [isSavingSecurity, setIsSavingSecurity] = useState(false);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user);
+        setName(session.user.user_metadata?.full_name || '');
+        setPhone(session.user.user_metadata?.phone || '');
       }
     });
   }, []);
+
+  const handleSavePersonalInfo = async () => {
+    setIsSavingInfo(true);
+    const { data, error } = await supabase.auth.updateUser({
+      data: { full_name: name, phone: phone }
+    });
+    setIsSavingInfo(false);
+    if (error) {
+      Alert.alert("Error", error.message);
+    } else {
+      if (data?.user) setUser(data.user);
+      setPersonalInfoVisible(false);
+      Alert.alert("Success", "Personal information updated.");
+    }
+  };
+
+  const handleSaveSecurity = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      Alert.alert("Error", "Password must be at least 6 characters.");
+      return;
+    }
+    setIsSavingSecurity(true);
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+    setIsSavingSecurity(false);
+    if (error) {
+      Alert.alert("Error", error.message);
+    } else {
+      setNewPassword('');
+      setSecurityVisible(false);
+      Alert.alert("Success", "Password updated successfully.");
+    }
+  };
 
   const handleLogout = async () => {
     Alert.alert(
@@ -63,6 +111,7 @@ export default function SettingsScreen({ navigation }: any) {
   );
 
   return (
+    <>
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
       <Text style={styles.pageTitle}>Settings</Text>
       
@@ -90,14 +139,14 @@ export default function SettingsScreen({ navigation }: any) {
           <User color="#f4f2f0" size={20} />, 
           "Personal Information", 
           "Update your name and phone",
-          () => handleLink('https://tixnaija.name.ng/account')
+          () => setPersonalInfoVisible(true)
         )}
         <View style={styles.divider} />
         {renderSettingItem(
           <Lock color="#f4f2f0" size={20} />, 
           "Security", 
           "Change password and auth methods",
-          () => handleLink('https://tixnaija.name.ng/account')
+          () => setSecurityVisible(true)
         )}
       </View>
 
@@ -165,6 +214,72 @@ export default function SettingsScreen({ navigation }: any) {
       
       <Text style={styles.versionText}>TixNaija v1.0.0</Text>
     </ScrollView>
+
+    {/* Personal Info Modal */}
+    <Modal visible={personalInfoVisible} animationType="slide" transparent={true}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Personal Information</Text>
+          
+          <Text style={styles.inputLabel}>Full Name</Text>
+          <TextInput
+            style={styles.input}
+            value={name}
+            onChangeText={setName}
+            placeholder="Enter your name"
+            placeholderTextColor="#767069"
+          />
+
+          <Text style={styles.inputLabel}>Phone Number</Text>
+          <TextInput
+            style={styles.input}
+            value={phone}
+            onChangeText={setPhone}
+            placeholder="Enter your phone number"
+            placeholderTextColor="#767069"
+            keyboardType="phone-pad"
+          />
+
+          <View style={styles.modalActions}>
+            <TouchableOpacity style={styles.modalCancelButton} onPress={() => setPersonalInfoVisible(false)}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalSaveButton} onPress={handleSavePersonalInfo} disabled={isSavingInfo}>
+              {isSavingInfo ? <ActivityIndicator color="#22201e" size="small" /> : <Text style={styles.modalSaveText}>Save</Text>}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+
+    {/* Security Modal */}
+    <Modal visible={securityVisible} animationType="slide" transparent={true}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Security</Text>
+          
+          <Text style={styles.inputLabel}>New Password</Text>
+          <TextInput
+            style={styles.input}
+            value={newPassword}
+            onChangeText={setNewPassword}
+            placeholder="Enter a new password"
+            placeholderTextColor="#767069"
+            secureTextEntry
+          />
+
+          <View style={styles.modalActions}>
+            <TouchableOpacity style={styles.modalCancelButton} onPress={() => setSecurityVisible(false)}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalSaveButton} onPress={handleSaveSecurity} disabled={isSavingSecurity}>
+              {isSavingSecurity ? <ActivityIndicator color="#22201e" size="small" /> : <Text style={styles.modalSaveText}>Update</Text>}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+    </>
   );
 }
 
@@ -295,5 +410,69 @@ const styles = StyleSheet.create({
     color: '#767069',
     fontSize: 12,
     marginTop: 24,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#2c2a28',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#f4f2f0',
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    color: '#a39e99',
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: '#1a1917',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    color: '#f4f2f0',
+    padding: 16,
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  modalCancelButton: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginRight: 8,
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    color: '#f4f2f0',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalSaveButton: {
+    flex: 1,
+    backgroundColor: '#f2611e',
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginLeft: 8,
+    alignItems: 'center',
+  },
+  modalSaveText: {
+    color: '#22201e',
+    fontSize: 16,
+    fontWeight: 'bold',
   }
 });
