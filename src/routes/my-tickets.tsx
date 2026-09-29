@@ -48,7 +48,6 @@ function GuestTicketsPage() {
     mutationFn: async ({ emailVal, accessCodeVal }: { emailVal: string, accessCodeVal: string }) => {
       const { data, error } = await supabase.rpc("get_guest_orders" as any, {
         p_email: emailVal.trim().toLowerCase(),
-        p_access_code: accessCodeVal.trim(),
       });
       if (error) throw error;
       return (data ?? []) as GuestOrder[];

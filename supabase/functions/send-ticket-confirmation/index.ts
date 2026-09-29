@@ -200,8 +200,8 @@ serve(async (req: Request) => {
     for (const t of allTickets) {
       if (ticketId && t.id !== ticketId) continue; // Only process the specific ticket if provided
 
-      // If ticketId is provided, force send to that ticket's email. Otherwise, only send if different from buyer.
-      if (ticketId || (t.attendee_email && t.attendee_email !== recipientEmail)) {
+      // If ticketId is provided, force send to that ticket's email. Otherwise, send to attendee.
+      if (ticketId || t.attendee_email) {
         const targetEmail = t.attendee_email || recipientEmail;
         if (!attendeeGroups.has(targetEmail)) attendeeGroups.set(targetEmail, []);
         attendeeGroups.get(targetEmail)!.push(t);

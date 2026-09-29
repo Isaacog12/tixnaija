@@ -209,7 +209,7 @@ BEGIN
       ) VALUES (
         v_order_item_id, 
         coalesce(v_item->'attendee_names'->>(i-1), v_actual_recipient_name),
-        v_actual_recipient_email,
+        coalesce(v_item->'attendee_emails'->>(i-1), v_actual_recipient_email),
         'valid',
         v_item->'answers'
       ) RETURNING id INTO v_new_ticket_id;
