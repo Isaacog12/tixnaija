@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView, Alert, Share } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../supabase/client';
+import { Share2 } from 'lucide-react-native';
 
 export default function EventDetailScreen({ route, navigation }: any) {
   const { eventId } = route.params;
@@ -82,10 +83,26 @@ export default function EventDetailScreen({ route, navigation }: any) {
     );
   }
 
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `Check out ${event.title} on TixNaija!\n\nGet your tickets here: https://tixnaija.name.ng/e/${event.slug}`,
+        title: event.title,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title}>{event.title}</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>{event.title}</Text>
+          <TouchableOpacity onPress={handleShare} style={styles.shareBtn}>
+            <Share2 color="#f4f2f0" size={24} />
+          </TouchableOpacity>
+        </View>
         <Text style={styles.description}>{event.description}</Text>
         
         <View style={styles.metaBox}>
@@ -135,7 +152,25 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#22201e', paddingTop: 100 },
   centerContainer: { flex: 1, backgroundColor: '#22201e', justifyContent: 'center', alignItems: 'center' },
   scrollContent: { padding: 16, paddingBottom: 100 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#f4f2f0', marginBottom: 12 },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#f4f2f0',
+    letterSpacing: -0.5,
+    flex: 1,
+    marginRight: 16,
+  },
+  shareBtn: {
+    padding: 8,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 20,
+  },
   description: { fontSize: 16, color: '#c2bdb8', marginBottom: 24, lineHeight: 24 },
   metaBox: {
     backgroundColor: 'rgba(46, 42, 40, 0.75)',
