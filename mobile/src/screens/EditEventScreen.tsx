@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Image, Platform } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { supabase } from '../../supabase/client';
+import * as ImagePicker from 'expo-image-picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Camera, Calendar, Image as ImageIcon } from 'lucide-react-native';
 
 export default function EditEventScreen() {
   const route = useRoute<any>();
@@ -15,9 +18,17 @@ export default function EditEventScreen() {
   const [description, setDescription] = useState('');
   const [venueName, setVenueName] = useState('');
   const [city, setCity] = useState('');
-  const [startDatetime, setStartDatetime] = useState('');
-  const [endDatetime, setEndDatetime] = useState('');
   const [status, setStatus] = useState<'draft' | 'published' | 'cancelled' | 'completed'>('draft');
+
+  // Image handling
+  const [imageUri, setImageUri] = useState<string | null>(null);
+  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
+
+  // Date times
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date(Date.now() + 24 * 60 * 60 * 1000));
+  const [showStart, setShowStart] = useState(false);
+  const [showEnd, setShowEnd] = useState(false);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -34,9 +45,17 @@ export default function EditEventScreen() {
           setDescription(data.description || '');
           setVenueName(data.venue_name || '');
           setCity(data.city || '');
-          setStartDatetime(data.start_datetime || '');
-          setEndDatetime(data.end_datetime || '');
           setStatus(data.status || 'draft');
+          
+          if (data.cover_image_url) {
+            setExistingImageUrl(data.cover_image_url);
+          }
+          if (data.start_datetime) {
+            setStartDate(new Date(data.start_datetime));
+          }
+          if (data.end_datetime) {
+            setEndDate(new Date(data.end_datetime));
+          }
         }
       } catch (err: any) {
         Alert.alert('Error', err.message);
@@ -48,9 +67,53 @@ export default function EditEventScreen() {
     fetchEvent();
   }, [eventId]);
 
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+    }
+  };
+
+  const uploadImage = async (uri: string) => {
+    const fileName = `mobile-upload-${Date.now()}.jpg`;
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    
+    const { data, error } = await supabase.storage
+      .from('event-covers')
+      .upload(fileName, blob, {
+        contentType: 'image/jpeg',
+      });
+
+    if (error) throw error;
+    
+    const { data: { publicUrl } } = supabase.storage
+      .from('event-covers')
+      .getPublicUrl(fileName);
+      
+    return publicUrl;
+  };
+
   const handleUpdate = async () => {
+    if (!title || !venueName || !city) {
+      Alert.alert('Error', 'Please fill all required fields');
+      return;
+    }
+
     setSaving(true);
     try {
+      let finalImageUrl = existingImageUrl;
+      
+      if (imageUri) {
+        finalImageUrl = await uploadImage(imageUri);
+      }
+
       const { error } = await supabase
         .from('events')
         .update({
@@ -58,14 +121,15 @@ export default function EditEventScreen() {
           description,
           venue_name: venueName,
           city,
-          start_datetime: startDatetime,
-          end_datetime: endDatetime,
+          start_datetime: startDate.toISOString(),
+          end_datetime: endDate.toISOString(),
+          cover_image_url: finalImageUrl,
           status,
         })
         .eq('id', eventId);
 
       if (error) throw error;
-      Alert.alert('Success', 'Event updated!');
+      Alert.alert('Success', 'Event updated successfully!');
       navigation.goBack();
     } catch (err: any) {
       Alert.alert('Error', err.message);
@@ -97,7 +161,19 @@ export default function EditEventScreen() {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.label}>Current Status: {status}</Text>
+      <Text style={[styles.label, { marginBottom: 20 }]}>Current Status: <Text style={{ color: status === 'published' ? '#2ED573' : '#f2611e' }}>{status.toUpperCase()}</Text></Text>
+
+      {/* Cover Image */}
+      <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+        {imageUri || existingImageUrl ? (
+          <Image source={{ uri: imageUri || existingImageUrl! }} style={styles.coverImage} />
+        ) : (
+          <View style={styles.imagePlaceholder}>
+            <ImageIcon color="#8e8b85" size={32} />
+            <Text style={styles.imagePlaceholderText}>Upload Cover Image</Text>
+          </View>
+        )}
+      </TouchableOpacity>
 
       <Text style={styles.label}>Title</Text>
       <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholderTextColor="#8e8b85" />
@@ -111,11 +187,52 @@ export default function EditEventScreen() {
       <Text style={styles.label}>City</Text>
       <TextInput style={styles.input} value={city} onChangeText={setCity} placeholderTextColor="#8e8b85" />
 
-      <Text style={styles.label}>Start Date & Time</Text>
-      <TextInput style={styles.input} value={startDatetime} onChangeText={setStartDatetime} placeholderTextColor="#8e8b85" />
+      {/* Date Timers */}
+      <View style={styles.dateRow}>
+        <View style={styles.dateInputWrapper}>
+          <Text style={styles.label}>Starts</Text>
+          <TouchableOpacity style={styles.datePickerBtn} onPress={() => setShowStart(true)}>
+            <Calendar color="#f2611e" size={16} />
+            <Text style={styles.datePickerText}>
+              {startDate.toLocaleDateString()} {startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-      <Text style={styles.label}>End Date & Time</Text>
-      <TextInput style={styles.input} value={endDatetime} onChangeText={setEndDatetime} placeholderTextColor="#8e8b85" />
+        <View style={styles.dateInputWrapper}>
+          <Text style={styles.label}>Ends</Text>
+          <TouchableOpacity style={styles.datePickerBtn} onPress={() => setShowEnd(true)}>
+            <Calendar color="#f2611e" size={16} />
+            <Text style={styles.datePickerText}>
+              {endDate.toLocaleDateString()} {endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {showStart && (
+        <DateTimePicker
+          value={startDate}
+          mode="datetime"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={(event, selectedDate) => {
+            setShowStart(Platform.OS === 'ios');
+            if (selectedDate) setStartDate(selectedDate);
+          }}
+        />
+      )}
+      
+      {showEnd && (
+        <DateTimePicker
+          value={endDate}
+          mode="datetime"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={(event, selectedDate) => {
+            setShowEnd(Platform.OS === 'ios');
+            if (selectedDate) setEndDate(selectedDate);
+          }}
+        />
+      )}
 
       <TouchableOpacity style={styles.button} onPress={handleUpdate} disabled={saving}>
         {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Save Changes</Text>}
@@ -125,19 +242,124 @@ export default function EditEventScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#22201e', paddingTop: 100 },
-  content: { padding: 16, paddingBottom: 40 },
-  center: { flex: 1, backgroundColor: '#22201e', justifyContent: 'center', alignItems: 'center' },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  header: { fontSize: 24, fontWeight: 'bold', color: '#f4f2f0' },
-  statusToggle: { padding: 8, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 8 },
-  statusToggleText: { color: '#f2611e', fontWeight: 'bold' },
-  label: { color: '#c2bdb8', marginBottom: 8, fontSize: 14 },
-  input: {
-    backgroundColor: '#2c2a28', color: '#f4f2f0', borderRadius: 8,
-    padding: 12, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
+  container: {
+    flex: 1,
+    backgroundColor: '#22201e',
   },
-  textArea: { height: 100, textAlignVertical: 'top' },
-  button: { backgroundColor: '#f2611e', padding: 16, borderRadius: 8, alignItems: 'center', marginTop: 20 },
-  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
+  content: {
+    padding: 20,
+    paddingTop: 100,
+    paddingBottom: 60,
+  },
+  center: {
+    flex: 1,
+    backgroundColor: '#22201e',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  header: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#f4f2f0',
+    letterSpacing: -0.5,
+  },
+  statusToggle: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 16,
+  },
+  statusToggleText: {
+    color: '#f2611e',
+    fontWeight: '700',
+  },
+  imagePicker: {
+    width: '100%',
+    height: 180,
+    backgroundColor: '#2c2a28',
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderStyle: 'dashed',
+  },
+  coverImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  imagePlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imagePlaceholderText: {
+    color: '#8e8b85',
+    marginTop: 8,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  label: {
+    color: '#a39e99',
+    marginBottom: 8,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  input: {
+    backgroundColor: '#1a1917',
+    color: '#f4f2f0',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  textArea: {
+    height: 120,
+    textAlignVertical: 'top',
+  },
+  dateRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  dateInputWrapper: {
+    flex: 1,
+    marginRight: 8,
+  },
+  datePickerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1a1917',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  datePickerText: {
+    color: '#f4f2f0',
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  button: {
+    backgroundColor: '#f2611e',
+    padding: 18,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  buttonText: {
+    color: '#22201e',
+    fontWeight: 'bold',
+    fontSize: 16,
+  }
 });

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, 
 import QRCode from 'react-native-qrcode-svg';
 import { supabase } from '../../supabase/client';
 import { Search } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function MyTicketsScreen({ navigation }: any) {
   const [allTickets, setAllTickets] = useState<any[]>([]);
@@ -17,9 +18,19 @@ export default function MyTicketsScreen({ navigation }: any) {
 
   const fetchMyTickets = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return;
+      // 1. Try to load from cache first (Offline support)
+      const cachedTickets = await AsyncStorage.getItem('@my_tickets_cache');
+      if (cachedTickets) {
+        setAllTickets(JSON.parse(cachedTickets));
+      }
 
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        setLoading(false);
+        return;
+      }
+
+      // 2. Fetch fresh from network
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -63,9 +74,13 @@ export default function MyTicketsScreen({ navigation }: any) {
       // Sort by event date descending
       extractedTickets.sort((a, b) => new Date(b.event.start_datetime).getTime() - new Date(a.event.start_datetime).getTime());
       
+      // Update state and cache
       setAllTickets(extractedTickets);
+      await AsyncStorage.setItem('@my_tickets_cache', JSON.stringify(extractedTickets));
+
     } catch (error: any) {
       console.error('Error fetching tickets:', error.message);
+      // We don't clear the cache on network error, so users can still see offline tickets
     } finally {
       setLoading(false);
     }

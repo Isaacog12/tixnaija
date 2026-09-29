@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking, ScrollView, S
 import { useVersionCheck } from '../hooks/useVersionCheck';
 import { supabase } from '../../supabase/client';
 import { ChevronRight, User, Bell, Shield, HelpCircle, FileText, LogOut, Download, Lock } from 'lucide-react-native';
+import * as Notifications from 'expo-notifications';
 
 export default function SettingsScreen({ navigation }: any) {
   const { checkVersion } = useVersionCheck();
@@ -29,7 +30,40 @@ export default function SettingsScreen({ navigation }: any) {
         setPhone(session.user.user_metadata?.phone || '');
       }
     });
+    
+    // Check current notification status
+    Notifications.getPermissionsAsync().then(settings => {
+      setNotificationsEnabled(settings.granted || settings.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL);
+    });
   }, []);
+
+  const handleToggleNotifications = async (value: boolean) => {
+    if (value) {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      
+      if (finalStatus !== 'granted') {
+        Alert.alert('Permission required', 'Failed to get push token for push notification!');
+        setNotificationsEnabled(false);
+        return;
+      }
+      
+      // Optionally get token here if we had a backend table to save it to
+      // const token = (await Notifications.getExpoPushTokenAsync()).data;
+      // await supabase.from('profiles').update({ push_token: token }).eq('id', user.id);
+      
+      setNotificationsEnabled(true);
+    } else {
+      // In a real app we might delete the token from the backend
+      setNotificationsEnabled(false);
+      Alert.alert('Notifications Disabled', 'You can turn them off completely from your Phone Settings.');
+    }
+  };
 
   const handleSavePersonalInfo = async () => {
     setIsSavingInfo(true);
@@ -160,7 +194,7 @@ export default function SettingsScreen({ navigation }: any) {
           undefined,
           <Switch 
             value={notificationsEnabled}
-            onValueChange={setNotificationsEnabled}
+            onValueChange={handleToggleNotifications}
             trackColor={{ false: "#403b38", true: "#f2611e" }}
             thumbColor="#f4f2f0"
           />
