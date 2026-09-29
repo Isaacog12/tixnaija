@@ -53,13 +53,24 @@ export default function SettingsScreen({ navigation }: any) {
         return;
       }
       
-      // Optionally get token here if we had a backend table to save it to
-      // const token = (await Notifications.getExpoPushTokenAsync()).data;
-      // await supabase.from('profiles').update({ push_token: token }).eq('id', user.id);
+      // Get token and save to backend
+      try {
+        const tokenData = await Notifications.getExpoPushTokenAsync({
+          projectId: '87928ff1-f32b-4a1b-8d41-ea77c28f71d0' // From app.json
+        });
+        await supabase.from('profiles').update({ expo_push_token: tokenData.data } as any).eq('id', user.id);
+      } catch (err) {
+        console.error("Failed to get push token", err);
+      }
       
       setNotificationsEnabled(true);
     } else {
-      // In a real app we might delete the token from the backend
+      // Delete token from backend
+      try {
+        await supabase.from('profiles').update({ expo_push_token: null } as any).eq('id', user.id);
+      } catch (err) {
+        console.error("Failed to remove push token", err);
+      }
       setNotificationsEnabled(false);
       Alert.alert('Notifications Disabled', 'You can turn them off completely from your Phone Settings.');
     }

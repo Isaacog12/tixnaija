@@ -73,8 +73,10 @@ export default function EventDetailScreen({ route, navigation }: any) {
         .from('waitlist_entries' as any)
         .insert([{
           event_id: event.id,
-          ticket_type_id: ticketTypeId,
-          user_id: session.user.id
+          ticket_tier_id: ticketTypeId,
+          user_id: session.user.id,
+          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+          email: session.user.email
         }]) as any);
         
       if (error) {
