@@ -138,7 +138,7 @@ export function SiteNav() {
           </Link>
 
           {/* Desktop navigation with Motion-powered sliding pill */}
-          <nav className="hidden xl:flex items-center gap-0.5">
+          <nav className="hidden xl:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2">
             {links.map((link) => (
               <Link
                 key={link.to}
