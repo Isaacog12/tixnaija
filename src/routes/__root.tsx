@@ -253,6 +253,8 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+import { ChatWidget } from "@/components/chat-widget";
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
@@ -296,6 +298,7 @@ function RootComponent() {
           <Outlet />
         </main>
       </AppErrorBoundary>
+      <ChatWidget />
       <Toaster position="bottom-center" />
       <CookieBanner />
     </QueryClientProvider>
