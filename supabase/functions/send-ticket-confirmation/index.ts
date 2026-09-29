@@ -209,6 +209,12 @@ serve(async (req: Request) => {
     }
 
     for (const [email, tickets] of attendeeGroups.entries()) {
+      // Skip sending individual ticket emails to the buyer/recipient since they already received the Master Receipt,
+      // UNLESS we are specifically resending a single ticket (ticketId is present).
+      if (!ticketId && email === recipientEmail) {
+        continue;
+      }
+
       const attendeeName = tickets[0].attendee_name || 'Attendee';
       const attSubject = `Your ticket for ${eventTitle} 🎟️ (Code: ${tickets[0].ticket_code.split('-')[0].toUpperCase()})`;
 

@@ -46,8 +46,17 @@ export default function EventDetailScreen({ route, navigation }: any) {
 
   const totalTickets = Object.values(selectedTickets).reduce((a, b) => a + b, 0);
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (totalTickets === 0) return;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      Alert.alert("Sign In Required", "You must create an account or sign in to buy tickets.", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Sign In", onPress: () => navigation.navigate("Login") }
+      ]);
+      return;
+    }
 
     let totalAmount = 0;
     const ticketsPayload = Object.entries(selectedTickets)
