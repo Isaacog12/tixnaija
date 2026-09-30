@@ -3,14 +3,19 @@ import { View, Text, StyleSheet, Button, ActivityIndicator, Alert } from 'react-
 import { Camera, CameraView } from 'expo-camera';
 import { supabase } from '../../supabase/client';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { RefreshCw, WifiOff } from 'lucide-react-native';
 
 export default function ScanTicketsScreen() {
   const insets = useSafeAreaInsets();
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [offlinePendingCount, setOfflinePendingCount] = useState(0);
 
   useEffect(() => {
+    checkPendingCount();
     const getBarCodeScannerPermissions = async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === 'granted');
@@ -18,6 +23,60 @@ export default function ScanTicketsScreen() {
 
     getBarCodeScannerPermissions();
   }, []);
+
+  const checkPendingCount = async () => {
+    try {
+      const pendingStr = await AsyncStorage.getItem('@pending_offline_scans');
+      if (pendingStr) {
+        const pending = JSON.parse(pendingStr);
+        setOfflinePendingCount(pending.length);
+      }
+    } catch (e) {}
+  };
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("Not logged in");
+
+      // 1. Flush pending scans
+      const pendingStr = await AsyncStorage.getItem('@pending_offline_scans');
+      let pendingScans: string[] = pendingStr ? JSON.parse(pendingStr) : [];
+      
+      let flushSuccess = 0;
+      for (const code of pendingScans) {
+        try {
+          await supabase.rpc('check_in_ticket', { p_ticket_code: code });
+          flushSuccess++;
+        } catch (e) {
+          console.error("Failed to sync ticket", code, e);
+        }
+      }
+      
+      // Clear queue if fully synced
+      if (flushSuccess === pendingScans.length) {
+        await AsyncStorage.setItem('@pending_offline_scans', JSON.stringify([]));
+        setOfflinePendingCount(0);
+      }
+
+      // 2. Download fresh tickets
+      const { data: ticketsData, error } = await supabase
+        .from('tickets')
+        .select('id, qr_code_data, status, attendee_name, ticket_types(name), events!inner(organizer_id)')
+        .eq('events.organizer_id', userData.user.id);
+        
+      if (error) throw error;
+      
+      await AsyncStorage.setItem('@offline_tickets', JSON.stringify(ticketsData || []));
+      Alert.alert('Sync Complete', `Downloaded ${ticketsData?.length || 0} tickets for offline scanning.\nSynced ${flushSuccess} pending scans.`);
+    } catch (err: any) {
+      Alert.alert('Sync Error', err.message);
+    } finally {
+      setSyncing(false);
+      checkPendingCount();
+    }
+  };
 
   const handleBarCodeScanned = async ({ type, data }: { type: string; data: string }) => {
     setScanned(true);
@@ -50,9 +109,50 @@ export default function ScanTicketsScreen() {
         );
       }
     } catch (err: any) {
-      Alert.alert('Scan Error', err.message, [
-        { text: 'Try Again', onPress: () => setScanned(false) }
-      ]);
+      if (err.message?.toLowerCase().includes('network') || err.message?.toLowerCase().includes('fetch')) {
+        // Handle Offline Scan
+        try {
+          const ticketsStr = await AsyncStorage.getItem('@offline_tickets');
+          if (!ticketsStr) throw new Error("No offline data. Please connect to internet and sync first.");
+          
+          let offlineTickets = JSON.parse(ticketsStr);
+          const ticketIndex = offlineTickets.findIndex((t: any) => t.id === data || t.qr_code_data === data);
+          
+          if (ticketIndex === -1) {
+            Alert.alert('Scan Failed (Offline)', 'Ticket not found in offline database.', [{ text: 'Try Again', onPress: () => setScanned(false) }]);
+            return;
+          }
+
+          const ticket = offlineTickets[ticketIndex];
+          if (ticket.status === 'scanned') {
+            Alert.alert('Already Checked In (Offline)', `${ticket.attendee_name || 'Attendee'} was already checked in.`, [{ text: 'OK', onPress: () => setScanned(false) }]);
+            return;
+          }
+
+          // Mark as scanned locally
+          offlineTickets[ticketIndex].status = 'scanned';
+          await AsyncStorage.setItem('@offline_tickets', JSON.stringify(offlineTickets));
+
+          // Add to pending sync queue
+          const pendingStr = await AsyncStorage.getItem('@pending_offline_scans');
+          let pendingScans: string[] = pendingStr ? JSON.parse(pendingStr) : [];
+          pendingScans.push(data);
+          await AsyncStorage.setItem('@pending_offline_scans', JSON.stringify(pendingScans));
+          setOfflinePendingCount(pendingScans.length);
+
+          Alert.alert(
+            'Success! (Offline)', 
+            `${ticket.attendee_name || 'Attendee'} has been checked in offline. Will sync when internet is restored.`, 
+            [{ text: 'OK', onPress: () => setScanned(false) }]
+          );
+        } catch (offlineErr: any) {
+          Alert.alert('Scan Error', offlineErr.message, [{ text: 'Try Again', onPress: () => setScanned(false) }]);
+        }
+      } else {
+        Alert.alert('Scan Error', err.message, [
+          { text: 'Try Again', onPress: () => setScanned(false) }
+        ]);
+      }
     } finally {
       setLoading(false);
     }
@@ -67,6 +167,19 @@ export default function ScanTicketsScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={[styles.header, { top: insets.top + 16 }]}>
+        <TouchableOpacity style={styles.syncBtn} onPress={handleSync} disabled={syncing}>
+          <RefreshCw color="#f4f2f0" size={18} />
+          <Text style={styles.syncBtnText}>{syncing ? 'Syncing...' : 'Sync Offline Data'}</Text>
+        </TouchableOpacity>
+        {offlinePendingCount > 0 && (
+          <View style={styles.pendingBadge}>
+            <WifiOff color="#fff" size={12} />
+            <Text style={styles.pendingText}>{offlinePendingCount} pending</Text>
+          </View>
+        )}
+      </View>
+
       {loading ? (
         <View style={styles.overlay}>
           <ActivityIndicator size="large" color="#f2611e" />
@@ -124,5 +237,41 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  header: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  syncBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(242, 97, 30, 0.9)',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+  },
+  syncBtnText: {
+    color: '#f4f2f0',
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  pendingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e55a5a',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+  },
+  pendingText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginLeft: 4,
   }
 });

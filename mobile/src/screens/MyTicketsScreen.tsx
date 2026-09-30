@@ -2,9 +2,75 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { supabase } from '../../supabase/client';
-import { Search } from 'lucide-react-native';
+import { Search, Share2 } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ViewShot from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
+
+const TicketItem = ({ item }: { item: any }) => {
+  const { event, ticketType } = item;
+  const viewShotRef = React.useRef<any>(null);
+
+  if (!event) return null;
+  const qrData = item.qr_code_data || item.id;
+
+  const handleShare = async () => {
+    try {
+      const uri = await viewShotRef.current.capture();
+      await Sharing.shareAsync(uri, {
+        dialogTitle: 'Share your ticket!',
+        mimeType: 'image/png'
+      });
+    } catch (err) {
+      console.error('Error sharing ticket:', err);
+    }
+  };
+
+  return (
+    <View style={styles.ticketWrapper}>
+      <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 0.9 }}>
+        <View style={styles.ticketCard}>
+          <View style={styles.ticketHeader}>
+            <Text style={styles.eventName}>{event.title}</Text>
+            <Text style={styles.eventDate}>
+              {new Date(event.start_datetime).toLocaleDateString()}
+            </Text>
+          </View>
+          <View style={styles.ticketBody}>
+            <View style={styles.qrContainer}>
+              <QRCode
+                value={qrData}
+                size={150}
+                color="#22201e"
+                backgroundColor="#f4f2f0"
+              />
+            </View>
+            <View style={styles.ticketDetails}>
+              <Text style={styles.detailLabel}>Attendee</Text>
+              <Text style={styles.detailValue}>{item.attendee_name || 'Guest'}</Text>
+
+              <Text style={[styles.detailLabel, { marginTop: 12 }]}>Type</Text>
+              <Text style={styles.detailValue}>{ticketType?.name || 'General Admission'}</Text>
+
+              <Text style={[styles.detailLabel, { marginTop: 12 }]}>Status</Text>
+              <Text style={[
+                styles.detailValue,
+                { color: item.status === 'valid' ? '#10b981' : '#f2611e' }
+              ]}>
+                {item.status.toUpperCase()}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </ViewShot>
+      <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
+        <Share2 color="#f4f2f0" size={16} />
+        <Text style={styles.shareText}>Share to Story</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 export default function MyTicketsScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -89,46 +155,7 @@ export default function MyTicketsScreen({ navigation }: any) {
   };
 
   const renderTicket = ({ item }: { item: any }) => {
-    const { event, ticketType } = item;
-    if (!event) return null;
-
-    const qrData = item.qr_code_data || item.id;
-
-    return (
-      <View style={styles.ticketCard}>
-        <View style={styles.ticketHeader}>
-          <Text style={styles.eventName}>{event.title}</Text>
-          <Text style={styles.eventDate}>
-            {new Date(event.start_datetime).toLocaleDateString()}
-          </Text>
-        </View>
-        <View style={styles.ticketBody}>
-          <View style={styles.qrContainer}>
-            <QRCode
-              value={qrData}
-              size={150}
-              color="#22201e"
-              backgroundColor="#f4f2f0"
-            />
-          </View>
-          <View style={styles.ticketDetails}>
-            <Text style={styles.detailLabel}>Attendee</Text>
-            <Text style={styles.detailValue}>{item.attendee_name || 'Guest'}</Text>
-
-            <Text style={[styles.detailLabel, { marginTop: 12 }]}>Type</Text>
-            <Text style={styles.detailValue}>{ticketType?.name || 'General Admission'}</Text>
-
-            <Text style={[styles.detailLabel, { marginTop: 12 }]}>Status</Text>
-            <Text style={[
-              styles.detailValue,
-              { color: item.status === 'valid' ? '#10b981' : '#f2611e' }
-            ]}>
-              {item.status.toUpperCase()}
-            </Text>
-          </View>
-        </View>
-      </View>
-    );
+    return <TicketItem item={item} />;
   };
 
   const filteredTickets = allTickets.filter(ticket => {
@@ -251,12 +278,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   listContent: { padding: 16, paddingBottom: 40 },
+  ticketWrapper: {
+    marginBottom: 24,
+  },
   ticketCard: {
     backgroundColor: 'rgba(46, 42, 40, 0.75)',
     borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.07)',
-    marginBottom: 24,
     overflow: 'hidden',
   },
   ticketHeader: {
@@ -284,4 +313,19 @@ const styles = StyleSheet.create({
   detailLabel: { fontSize: 12, color: '#767069', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 },
   detailValue: { fontSize: 16, color: '#f4f2f0', fontWeight: 'bold', textAlign: 'center' },
   emptyText: { color: '#c2bdb8', textAlign: 'center', marginTop: 32 },
+  shareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f2611e',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+    marginHorizontal: 16,
+  },
+  shareText: {
+    color: '#f4f2f0',
+    fontWeight: 'bold',
+    marginLeft: 8,
+  }
 });
