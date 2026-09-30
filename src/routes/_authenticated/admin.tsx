@@ -89,7 +89,7 @@ async function fetchAdminStats() {
 async function fetchAdminUsers() {
   const { data: profiles, error: profilesError } = await supabase
     .from("profiles")
-    .select("id, full_name, created_at, suspended, is_verified_organizer")
+    .select("id, full_name, created_at, suspended, is_verified_organizer, organizer_slug")
     .order("created_at", { ascending: false })
     .limit(100);
   if (profilesError) throw profilesError;
@@ -111,6 +111,7 @@ async function fetchAdminUsers() {
     created_at: p.created_at as string,
     suspended: (p.suspended ?? false) as boolean,
     is_verified_organizer: (p.is_verified_organizer ?? false) as boolean,
+    organizer_slug: (p.organizer_slug ?? null) as string | null,
     roles: roleMap.get(p.id) ?? ["attendee"],
   }));
 }
@@ -288,12 +289,21 @@ function AdminDashboard() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-xl border-border/50 p-2">
-                  <DropdownMenuItem asChild className="rounded-xl px-3 py-2 cursor-pointer focus:bg-secondary">
-                    <Link to="/dashboard" className="flex items-center gap-2">
-                      <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">View full profile</span>
-                    </Link>
-                  </DropdownMenuItem>
+                  {u.roles.includes("organizer") && u.organizer_slug ? (
+                    <DropdownMenuItem asChild className="rounded-xl px-3 py-2 cursor-pointer focus:bg-secondary">
+                      <Link to="/box-office/$organizerSlug" params={{ organizerSlug: u.organizer_slug }} className="flex items-center gap-2">
+                        <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">View box-office</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem asChild className="rounded-xl px-3 py-2 cursor-pointer focus:bg-secondary opacity-50 cursor-not-allowed">
+                      <div className="flex items-center gap-2 pointer-events-none">
+                        <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">No public profile</span>
+                      </div>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator className="mx-2" />
                   {u.roles.includes("organizer") && (
                     <DropdownMenuItem
