@@ -185,6 +185,7 @@ export default function HomeScreen({ navigation }: any) {
       <ScrollView 
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {isSearching ? (
           <View style={styles.upcomingSection}>

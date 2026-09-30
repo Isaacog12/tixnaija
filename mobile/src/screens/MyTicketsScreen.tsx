@@ -190,6 +190,7 @@ export default function MyTicketsScreen({ navigation }: any) {
         keyExtractor={(item) => item.id}
         renderItem={renderTicket}
         contentContainerStyle={[styles.listContent, { paddingBottom: 120 + insets.bottom }]}
+        keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
           <Text style={styles.emptyText}>
              {searchQuery ? "No tickets found matching your search." : "You haven't purchased any tickets yet."}

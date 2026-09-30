@@ -271,7 +271,7 @@ export default function CheckoutScreen({ route, navigation }: any) {
         style={styles.container} 
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>Checkout Details</Text>
           <Text style={styles.subtitle}>Who are these tickets for?</Text>
           

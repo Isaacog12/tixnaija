@@ -92,7 +92,7 @@ export default function SignupScreen({ navigation }: any) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.glassCard}>
           <Animated.View entering={FadeInDown.duration(400).springify()}>
             <Text style={styles.title}>Create Account</Text>
