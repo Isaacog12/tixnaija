@@ -24,6 +24,13 @@ export default function MyEventsScreen() {
           id, title, start_datetime, status,
           ticket_types (
             id, name, price_kobo, quantity_available
+          ),
+          orders (
+            status,
+            order_items (
+              quantity,
+              unit_price_kobo
+            )
           )
         `)
         .eq('organizer_id', user.id)
@@ -48,6 +55,20 @@ export default function MyEventsScreen() {
   const renderEvent = ({ item }: { item: any }) => {
     const totalTickets = item.ticket_types?.reduce((acc: number, t: any) => acc + parseInt(t.quantity_available || '0'), 0) || 0;
 
+    let soldTickets = 0;
+    let revenueKobo = 0;
+    
+    if (item.orders) {
+      item.orders.forEach((order: any) => {
+        if (order.status === 'paid') {
+          order.order_items?.forEach((oi: any) => {
+            soldTickets += parseInt(oi.quantity || '0');
+            revenueKobo += parseInt(oi.quantity || '0') * parseInt(oi.unit_price_kobo || '0');
+          });
+        }
+      });
+    }
+
     return (
       <View style={styles.eventCard}>
         <View style={styles.eventHeader}>
@@ -61,8 +82,8 @@ export default function MyEventsScreen() {
         
         <View style={styles.statsContainer}>
           <Text style={styles.statText}>Capacity Remaining: {totalTickets}</Text>
-          {/* Note: In a real app we would query order_items for sold tickets and revenue.
-              For now we just show what we have from the tickets table to keep it lightweight as requested. */}
+          <Text style={styles.statText}>Sold Tickets: {soldTickets}</Text>
+          <Text style={styles.statText}>Revenue: ₦{(revenueKobo / 100).toLocaleString()}</Text>
         </View>
 
         <View style={styles.actionRow}>

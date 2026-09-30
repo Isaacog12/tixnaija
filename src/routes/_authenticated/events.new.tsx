@@ -146,17 +146,17 @@ function NewEventPage() {
           .limit(1),
         supabase
           .from("profiles")
-          .select("paystack_subaccount_code, organizer_slug")
+          .select("*")
           .eq("id", userData.user.id)
           .maybeSingle(),
       ]);
       if (!rolesResult.error && rolesResult.data && rolesResult.data.length > 0) {
         setHasOrganizerRole(true);
       }
-      if (profileResult.data?.paystack_subaccount_code) {
+      if ((profileResult.data as any)?.paystack_subaccount_code) {
         setHasPayoutAccount(true);
       }
-      if (profileResult.data?.organizer_slug) {
+      if ((profileResult.data as any)?.organizer_slug) {
         setHasBoxOffice(true);
       }
       setIsCheckingRole(false);
@@ -247,7 +247,7 @@ function NewEventPage() {
       let seriesId = null;
       if (form.is_recurring && form.recurrence_count > 1) {
         const rrule = `FREQ=${form.recurrence_interval};INTERVAL=1;COUNT=${form.recurrence_count}`;
-        const { data: sId, error: sErr } = await supabase.rpc("create_event_series", {
+        const { data: sId, error: sErr } = await supabase.rpc("create_event_series" as any, {
           p_title: form.title,
           p_recurrence_rule: rrule,
         });

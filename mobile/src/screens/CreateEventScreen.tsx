@@ -24,6 +24,12 @@ export default function CreateEventScreen() {
   const [city, setCity] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
 
+  // Customization
+  const [customSlug, setCustomSlug] = useState('');
+  const [themeColor, setThemeColor] = useState('');
+  const [customOrderConfirmation, setCustomOrderConfirmation] = useState('');
+  const [tags, setTags] = useState('');
+
   // Date Times
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date(Date.now() + 24 * 60 * 60 * 1000));
@@ -107,7 +113,7 @@ export default function CreateEventScreen() {
         uploadedImageUrl = await uploadImage(imageUri);
       }
 
-      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.floor(Math.random() * 1000);
+      const slug = customSlug.trim() || (title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.floor(Math.random() * 1000));
 
       // 1. Insert Event
       const { data: event, error: eventError } = await supabase
@@ -124,7 +130,10 @@ export default function CreateEventScreen() {
           end_datetime: endDate.toISOString(),
           organizer_id: user.id,
           status: 'draft', // Create as draft first
-        })
+          theme_color: themeColor || null,
+          custom_order_confirmation: customOrderConfirmation || null,
+          tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+        } as any)
         .select()
         .single();
 
@@ -284,6 +293,22 @@ export default function CreateEventScreen() {
         </View>
       ))}
 
+      <View style={styles.customizationSection}>
+        <Text style={styles.sectionTitle}>Event Customization</Text>
+        
+        <Text style={styles.label}>Event URL (Slug)</Text>
+        <TextInput style={styles.input} value={customSlug} onChangeText={setCustomSlug} placeholder="Leave blank to auto-generate" placeholderTextColor="#8e8b85" autoCapitalize="none" />
+
+        <Text style={styles.label}>Theme Color (Hex)</Text>
+        <TextInput style={styles.input} value={themeColor} onChangeText={setThemeColor} placeholder="#ff6b00" placeholderTextColor="#8e8b85" autoCapitalize="none" />
+
+        <Text style={styles.label}>Custom Order Confirmation Message</Text>
+        <TextInput style={[styles.input, styles.textArea]} value={customOrderConfirmation} onChangeText={setCustomOrderConfirmation} multiline placeholderTextColor="#8e8b85" />
+
+        <Text style={styles.label}>Tags (Comma separated)</Text>
+        <TextInput style={styles.input} value={tags} onChangeText={setTags} placeholder="e.g. Afrobeats, Tech" placeholderTextColor="#8e8b85" />
+      </View>
+
       <TouchableOpacity style={styles.button} onPress={handleCreate} disabled={loading}>
         {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Save as Draft</Text>}
       </TouchableOpacity>
@@ -301,6 +326,18 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 100,
     paddingBottom: 60,
+  },
+  customizationSection: {
+    marginTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+    paddingTop: 20,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#f4f2f0',
+    marginBottom: 20,
   },
   header: {
     fontSize: 28,

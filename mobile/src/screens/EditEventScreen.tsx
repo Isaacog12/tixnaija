@@ -20,6 +20,12 @@ export default function EditEventScreen() {
   const [city, setCity] = useState('');
   const [status, setStatus] = useState<'draft' | 'published' | 'cancelled' | 'completed'>('draft');
 
+  // Customization
+  const [slug, setSlug] = useState('');
+  const [themeColor, setThemeColor] = useState('');
+  const [customOrderConfirmation, setCustomOrderConfirmation] = useState('');
+  const [tags, setTags] = useState('');
+
   // Image handling
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
@@ -46,6 +52,11 @@ export default function EditEventScreen() {
           setVenueName(data.venue_name || '');
           setCity(data.city || '');
           setStatus(data.status || 'draft');
+          
+          setSlug((data as any).slug || '');
+          setThemeColor((data as any).theme_color || '');
+          setCustomOrderConfirmation((data as any).custom_order_confirmation || '');
+          setTags((data as any).tags?.join(', ') || '');
           
           if (data.cover_image_url) {
             setExistingImageUrl(data.cover_image_url);
@@ -125,7 +136,11 @@ export default function EditEventScreen() {
           end_datetime: endDate.toISOString(),
           cover_image_url: finalImageUrl,
           status,
-        })
+          slug,
+          theme_color: themeColor || null,
+          custom_order_confirmation: customOrderConfirmation || null,
+          tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+        } as any)
         .eq('id', eventId);
 
       if (error) throw error;
@@ -211,6 +226,22 @@ export default function EditEventScreen() {
         </View>
       </View>
 
+      <View style={styles.customizationSection}>
+        <Text style={styles.sectionTitle}>Event Customization</Text>
+        
+        <Text style={styles.label}>Event URL (Slug)</Text>
+        <TextInput style={styles.input} value={slug} onChangeText={setSlug} placeholderTextColor="#8e8b85" autoCapitalize="none" />
+
+        <Text style={styles.label}>Theme Color (Hex)</Text>
+        <TextInput style={styles.input} value={themeColor} onChangeText={setThemeColor} placeholder="#ff6b00" placeholderTextColor="#8e8b85" autoCapitalize="none" />
+
+        <Text style={styles.label}>Custom Order Confirmation Message</Text>
+        <TextInput style={[styles.input, styles.textArea]} value={customOrderConfirmation} onChangeText={setCustomOrderConfirmation} multiline placeholderTextColor="#8e8b85" />
+
+        <Text style={styles.label}>Tags (Comma separated)</Text>
+        <TextInput style={styles.input} value={tags} onChangeText={setTags} placeholder="e.g. Afrobeats, Tech" placeholderTextColor="#8e8b85" />
+      </View>
+
       {showStart && (
         <DateTimePicker
           value={startDate}
@@ -252,6 +283,18 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 100,
     paddingBottom: 60,
+  },
+  customizationSection: {
+    marginTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+    paddingTop: 20,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#f4f2f0',
+    marginBottom: 20,
   },
   center: {
     flex: 1,

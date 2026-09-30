@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Button, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, Button, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
 import { Camera, CameraView } from 'expo-camera';
 import { supabase } from '../../supabase/client';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -47,7 +47,7 @@ export default function ScanTicketsScreen() {
       let flushSuccess = 0;
       for (const code of pendingScans) {
         try {
-          await supabase.rpc('check_in_ticket', { p_ticket_code: code });
+          await supabase.rpc('check_in_ticket' as any, { p_ticket_code: code });
           flushSuccess++;
         } catch (e) {
           console.error("Failed to sync ticket", code, e);
