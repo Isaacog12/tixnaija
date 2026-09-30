@@ -4,9 +4,11 @@ import { useVersionCheck } from '../hooks/useVersionCheck';
 import { supabase } from '../../supabase/client';
 import { ChevronRight, User, Bell, Shield, HelpCircle, FileText, LogOut, Download, Lock, Trash2 } from 'lucide-react-native';
 import * as Notifications from 'expo-notifications';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function SettingsScreen({ navigation }: any) {
   const { checkVersion } = useVersionCheck();
+  const insets = useSafeAreaInsets();
   const [user, setUser] = useState<any>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
@@ -180,7 +182,7 @@ export default function SettingsScreen({ navigation }: any) {
 
   return (
     <>
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.scrollContent, { paddingBottom: 120 + insets.bottom }]}>
       <Text style={styles.pageTitle}>Settings</Text>
       
       {/* Profile Section */}

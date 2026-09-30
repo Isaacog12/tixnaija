@@ -1,8 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { ShieldAlert, Users, LayoutTemplate, Briefcase, ExternalLink, ChevronRight } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AdminScreen() {
+  const insets = useSafeAreaInsets();
   const handleLink = (url: string) => {
     Linking.openURL(url).catch(err => console.error("Couldn't load page", err));
   };
@@ -23,7 +25,7 @@ export default function AdminScreen() {
   );
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.scrollContent, { paddingBottom: 120 + insets.bottom }]}>
       <Text style={styles.pageTitle}>Admin Console</Text>
       <Text style={styles.pageSubtitle}>Manage the TixNaija platform</Text>
 

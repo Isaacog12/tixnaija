@@ -245,7 +245,7 @@ export default function HomeScreen({ navigation }: any) {
           </>
         )}
 
-        <View style={styles.bottomPadding} />
+        <View style={[styles.bottomPadding, { height: 120 + insets.bottom }]} />
       </ScrollView>
     </View>
   );

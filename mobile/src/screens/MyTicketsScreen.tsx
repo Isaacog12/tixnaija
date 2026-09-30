@@ -4,8 +4,10 @@ import QRCode from 'react-native-qrcode-svg';
 import { supabase } from '../../supabase/client';
 import { Search } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function MyTicketsScreen({ navigation }: any) {
+  const insets = useSafeAreaInsets();
   const [allTickets, setAllTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -187,7 +189,7 @@ export default function MyTicketsScreen({ navigation }: any) {
         data={filteredTickets}
         keyExtractor={(item) => item.id}
         renderItem={renderTicket}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: 120 + insets.bottom }]}
         ListEmptyComponent={
           <Text style={styles.emptyText}>
              {searchQuery ? "No tickets found matching your search." : "You haven't purchased any tickets yet."}

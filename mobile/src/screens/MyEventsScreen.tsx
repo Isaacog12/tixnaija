@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Plus, BarChart2, Edit } from 'lucide-react-native';
 import { supabase } from '../../supabase/client';
 
 export default function MyEventsScreen() {
   const navigation = useNavigation<any>();
   const isFocused = useIsFocused();
+  const insets = useSafeAreaInsets();
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -85,7 +87,7 @@ export default function MyEventsScreen() {
           data={events}
           renderItem={renderEvent}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={[styles.listContainer, { paddingBottom: 120 + insets.bottom }]}
           ListEmptyComponent={
             <Text style={styles.emptyText}>You haven't created any events yet.</Text>
           }
@@ -93,7 +95,7 @@ export default function MyEventsScreen() {
       )}
 
       <TouchableOpacity 
-        style={styles.fab}
+        style={[styles.fab, { bottom: 100 + insets.bottom }]}
         onPress={() => navigation.navigate('CreateEvent')}
       >
         <Plus color="#fff" size={24} />

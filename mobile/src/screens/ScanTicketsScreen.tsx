@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Button, ActivityIndicator, Alert } from 'react-native';
 import { Camera, CameraView } from 'expo-camera';
 import { supabase } from '../../supabase/client';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ScanTicketsScreen() {
+  const insets = useSafeAreaInsets();
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -81,7 +83,7 @@ export default function ScanTicketsScreen() {
         onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
       />
 
-      <View style={styles.instructions}>
+      <View style={[styles.instructions, { bottom: 100 + insets.bottom }]}>
         <Text style={styles.instructionsText}>Point your camera at a ticket QR code to scan</Text>
       </View>
     </View>
