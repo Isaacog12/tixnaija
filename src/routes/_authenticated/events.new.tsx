@@ -99,6 +99,7 @@ function NewEventPage() {
   const [isCheckingRole, setIsCheckingRole] = useState(true);
   const [hasOrganizerRole, setHasOrganizerRole] = useState(false);
   const [hasPayoutAccount, setHasPayoutAccount] = useState(false);
+  const [hasBoxOffice, setHasBoxOffice] = useState(false);
 
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
@@ -145,7 +146,7 @@ function NewEventPage() {
           .limit(1),
         supabase
           .from("profiles")
-          .select("paystack_subaccount_code")
+          .select("paystack_subaccount_code, organizer_slug")
           .eq("id", userData.user.id)
           .maybeSingle(),
       ]);
@@ -154,6 +155,9 @@ function NewEventPage() {
       }
       if (profileResult.data?.paystack_subaccount_code) {
         setHasPayoutAccount(true);
+      }
+      if (profileResult.data?.organizer_slug) {
+        setHasBoxOffice(true);
       }
       setIsCheckingRole(false);
     }
@@ -357,6 +361,26 @@ function NewEventPage() {
           className="mt-8 gradient-sunset text-primary-foreground shadow-glow hover:opacity-90"
         >
           <Link to="/account">Go to Account Settings</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  if (!hasBoxOffice) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-24 text-center">
+        <div className="flex items-center gap-4 mb-4 justify-center">
+          <BackButton />
+          <h1 className="font-display text-4xl text-gradient-sunset">Box-Office Setup Required</h1>
+        </div>
+        <p className="mt-4 text-muted-foreground">
+          Before you can create your first event, you must set up your public box-office profile (your organizer slug, bio, and banner).
+        </p>
+        <Button
+          asChild
+          className="mt-8 gradient-sunset text-primary-foreground shadow-glow hover:opacity-90"
+        >
+          <Link to="/account">Set up Box-Office</Link>
         </Button>
       </div>
     );
