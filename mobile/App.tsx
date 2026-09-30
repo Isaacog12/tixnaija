@@ -20,6 +20,7 @@ import EventDetailScreen from './src/screens/EventDetailScreen';
 import CheckoutScreen from './src/screens/CheckoutScreen';
 import CreateEventScreen from './src/screens/CreateEventScreen';
 import EditEventScreen from './src/screens/EditEventScreen';
+import BoxOfficeScreen from './src/screens/BoxOfficeScreen';
 
 import TabNavigator from './src/navigation/TabNavigator';
 
@@ -144,6 +145,7 @@ export default function App() {
               <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ title: 'Checkout' }} />
               <Stack.Screen name="CreateEvent" component={CreateEventScreen} options={{ title: 'Create Event' }} />
               <Stack.Screen name="EditEvent" component={EditEventScreen} options={{ title: 'Edit Event' }} />
+              <Stack.Screen name="BoxOffice" component={BoxOfficeScreen} options={{ title: 'Box Office' }} />
             </>
           )}
         </Stack.Navigator>

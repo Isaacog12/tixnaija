@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, MapPin } from "lucide-react";
+import { Calendar, MapPin, BadgeCheck } from "lucide-react";
 import { formatNaira } from "@/lib/currency";
 
 export const Route = createFileRoute("/box-office/$organizerSlug")({
@@ -67,58 +67,117 @@ function BoxOfficePage() {
           </Avatar>
           
           <div className="mt-4 max-w-2xl">
-            <h1 className="text-3xl sm:text-4xl font-display font-bold">{profile.full_name}</h1>
+            <h1 className="text-3xl sm:text-4xl font-display font-bold flex items-center gap-2">
+              {profile.full_name}
+              {profile.is_verified_organizer && (
+                <BadgeCheck className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 shrink-0" aria-label="Verified Organizer" />
+              )}
+            </h1>
             {profile.bio && <p className="text-muted-foreground mt-2 text-lg">{profile.bio}</p>}
           </div>
         </div>
 
-        {/* Events Grid */}
+        {/* Events Layout */}
         <div className="mx-auto max-w-5xl px-4 mt-12">
-          <h2 className="text-2xl font-bold mb-6">Upcoming Events</h2>
           {events && events.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {events.map((ev: any) => {
-                const minPrice = ev.ticket_types?.length ? Math.min(...ev.ticket_types.map((t: any) => t.price_kobo)) : 0;
-                return (
-                  <Link
-                    key={ev.id}
-                    to="/e/$slug"
-                    params={{ slug: ev.slug }}
-                    className="group flex flex-col overflow-hidden rounded-xl border border-border/50 bg-card hover:border-primary/40 hover:shadow-lg transition-all"
-                  >
-                    <div className="aspect-[4/3] bg-muted overflow-hidden relative">
-                      {ev.cover_image_url ? (
-                        <img src={ev.cover_image_url} alt={ev.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                      ) : (
-                        <div className="w-full h-full bg-primary/10" />
-                      )}
-                      <div className="absolute top-3 right-3 bg-background/90 backdrop-blur text-xs font-semibold px-2 py-1 rounded-md shadow-sm">
-                        {minPrice > 0 ? formatNaira(minPrice) : "Free"}
-                      </div>
-                    </div>
-                    <div className="p-4 flex flex-col flex-1">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">{ev.category || "Event"}</p>
-                      <h3 className="font-bold text-lg leading-tight mb-2 line-clamp-2">{ev.title}</h3>
-                      <div className="mt-auto space-y-1.5 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 shrink-0" />
-                          <span className="truncate">
-                            {new Date(ev.start_datetime).toLocaleDateString("en-NG", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4 shrink-0" />
-                          <span className="truncate">{ev.city || ev.venue_name || "TBA"}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
+            <div className="space-y-16">
+              {/* Upcoming Events */}
+              {events.filter((ev: any) => new Date(ev.start_datetime) >= new Date()).length > 0 && (
+                <div>
+                  <h2 className="text-2xl font-bold mb-6">Upcoming Events</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {events.filter((ev: any) => new Date(ev.start_datetime) >= new Date()).map((ev: any) => {
+                      const minPrice = ev.ticket_types?.length ? Math.min(...ev.ticket_types.map((t: any) => t.price_kobo)) : 0;
+                      return (
+                        <Link
+                          key={ev.id}
+                          to="/e/$slug"
+                          params={{ slug: ev.slug }}
+                          className="group flex flex-col overflow-hidden rounded-xl border border-border/50 bg-card hover:border-primary/40 hover:shadow-lg transition-all"
+                        >
+                          <div className="aspect-[4/3] bg-muted overflow-hidden relative">
+                            {ev.cover_image_url ? (
+                              <img src={ev.cover_image_url} alt={ev.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                            ) : (
+                              <div className="w-full h-full bg-primary/10" />
+                            )}
+                            <div className="absolute top-3 right-3 bg-background/90 backdrop-blur text-xs font-semibold px-2 py-1 rounded-md shadow-sm">
+                              {minPrice > 0 ? formatNaira(minPrice) : "Free"}
+                            </div>
+                          </div>
+                          <div className="p-4 flex flex-col flex-1">
+                            <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">{ev.category || "Event"}</p>
+                            <h3 className="font-bold text-lg leading-tight mb-2 line-clamp-2">{ev.title}</h3>
+                            <div className="mt-auto space-y-1.5 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4 shrink-0" />
+                                <span className="truncate">
+                                  {new Date(ev.start_datetime).toLocaleDateString("en-NG", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <MapPin className="w-4 h-4 shrink-0" />
+                                <span className="truncate">{ev.city || ev.venue_name || "TBA"}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Past Events */}
+              {events.filter((ev: any) => new Date(ev.start_datetime) < new Date()).length > 0 && (
+                <div>
+                  <h2 className="text-2xl font-bold mb-6 text-muted-foreground">Past Events</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 opacity-70 grayscale-[30%] hover:grayscale-0 transition-all duration-500">
+                    {events.filter((ev: any) => new Date(ev.start_datetime) < new Date()).map((ev: any) => {
+                      const minPrice = ev.ticket_types?.length ? Math.min(...ev.ticket_types.map((t: any) => t.price_kobo)) : 0;
+                      return (
+                        <Link
+                          key={ev.id}
+                          to="/e/$slug"
+                          params={{ slug: ev.slug }}
+                          className="group flex flex-col overflow-hidden rounded-xl border border-border/50 bg-card hover:border-primary/40 hover:shadow-lg transition-all"
+                        >
+                          <div className="aspect-[4/3] bg-muted overflow-hidden relative">
+                            {ev.cover_image_url ? (
+                              <img src={ev.cover_image_url} alt={ev.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                            ) : (
+                              <div className="w-full h-full bg-primary/10" />
+                            )}
+                            <div className="absolute top-3 right-3 bg-background/90 backdrop-blur text-xs font-semibold px-2 py-1 rounded-md shadow-sm">
+                              {minPrice > 0 ? formatNaira(minPrice) : "Free"}
+                            </div>
+                          </div>
+                          <div className="p-4 flex flex-col flex-1">
+                            <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">{ev.category || "Event"}</p>
+                            <h3 className="font-bold text-lg leading-tight mb-2 line-clamp-2">{ev.title}</h3>
+                            <div className="mt-auto space-y-1.5 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4 shrink-0" />
+                                <span className="truncate">
+                                  {new Date(ev.start_datetime).toLocaleDateString("en-NG", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <MapPin className="w-4 h-4 shrink-0" />
+                                <span className="truncate">{ev.city || ev.venue_name || "TBA"}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-20 bg-muted/30 rounded-xl border border-border/50">
-              <p className="text-muted-foreground text-lg">No upcoming events right now.</p>
+              <p className="text-muted-foreground text-lg">No events to show right now.</p>
             </div>
           )}
         </div>

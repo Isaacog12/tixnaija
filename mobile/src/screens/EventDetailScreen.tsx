@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView, Alert, Share } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../supabase/client';
-import { Share2 } from 'lucide-react-native';
+import { Share2, BadgeCheck, ChevronRight } from 'lucide-react-native';
 
 export default function EventDetailScreen({ route, navigation }: any) {
   const { eventId, slug } = route.params || {};
@@ -22,11 +22,11 @@ export default function EventDetailScreen({ route, navigation }: any) {
       let eventData;
       
       if (eventId) {
-        const { data, error } = await supabase.from('events').select('*').eq('id', eventId).single();
+        const { data, error } = await supabase.from('events').select('*, profiles(*)').eq('id', eventId).single();
         if (error) throw error;
         eventData = data;
       } else if (slug) {
-        const { data, error } = await supabase.from('events').select('*').eq('slug', slug).single();
+        const { data, error } = await supabase.from('events').select('*, profiles(*)').eq('slug', slug).single();
         if (error) throw error;
         eventData = data;
       } else {
@@ -160,6 +160,29 @@ export default function EventDetailScreen({ route, navigation }: any) {
           </Text>
         </View>
 
+        {event.profiles && (
+          <TouchableOpacity 
+            style={styles.organizerBox}
+            onPress={() => navigation.navigate('BoxOffice', { organizerId: event.profiles.id })}
+          >
+            <View style={styles.organizerRow}>
+              <View style={styles.organizerAvatar}>
+                <Text style={styles.organizerInitials}>{event.profiles.full_name?.charAt(0).toUpperCase() || 'O'}</Text>
+              </View>
+              <View style={styles.organizerInfo}>
+                <Text style={styles.metaLabel}>Organized By</Text>
+                <View style={styles.nameRow}>
+                  <Text style={styles.organizerName}>{event.profiles.full_name}</Text>
+                  {event.profiles.is_verified_organizer && (
+                    <BadgeCheck size={16} color="#3b82f6" style={{ marginLeft: 4 }} />
+                  )}
+                </View>
+              </View>
+              <ChevronRight color="#767069" size={20} />
+            </View>
+          </TouchableOpacity>
+        )}
+
         <Text style={styles.sectionTitle}>Tickets</Text>
         {ticketTypes.map(ticket => (
           <View key={ticket.id} style={styles.ticketCard}>
@@ -243,6 +266,20 @@ const styles = StyleSheet.create({
   },
   metaLabel: { fontSize: 12, color: '#767069', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 },
   metaText: { fontSize: 16, color: '#f4f2f0', fontWeight: '500' },
+  organizerBox: {
+    backgroundColor: 'rgba(46, 42, 40, 0.75)',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.07)',
+    marginBottom: 32,
+  },
+  organizerRow: { flexDirection: 'row', alignItems: 'center' },
+  organizerAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#403b38', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  organizerInitials: { fontSize: 18, fontWeight: 'bold', color: '#f4f2f0' },
+  organizerInfo: { flex: 1 },
+  nameRow: { flexDirection: 'row', alignItems: 'center' },
+  organizerName: { fontSize: 16, fontWeight: '600', color: '#f4f2f0' },
   sectionTitle: { fontSize: 20, fontWeight: 'bold', color: '#f4f2f0', marginBottom: 16 },
   ticketCard: {
     flexDirection: 'row',

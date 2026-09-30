@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -470,9 +470,10 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
-          is_admin: boolean | null
-          is_organizer: boolean
-          paystack_subaccount_code: string | null
+          is_admin?: boolean | null
+          is_organizer?: boolean
+          is_verified_organizer?: boolean | null
+          paystack_subaccount_code?: string | null
           phone: string | null
           subaccount_created_at: string | null
           suspended: boolean
