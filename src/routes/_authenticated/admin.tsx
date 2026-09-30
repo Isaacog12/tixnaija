@@ -89,7 +89,7 @@ async function fetchAdminStats() {
 async function fetchAdminUsers() {
   const { data: profiles, error: profilesError } = await supabase
     .from("profiles")
-    .select("id, full_name, created_at, suspended")
+    .select("id, full_name, created_at, suspended, is_verified_organizer")
     .order("created_at", { ascending: false })
     .limit(100);
   if (profilesError) throw profilesError;
@@ -110,6 +110,7 @@ async function fetchAdminUsers() {
     full_name: (p.full_name ?? "") as string,
     created_at: p.created_at as string,
     suspended: (p.suspended ?? false) as boolean,
+    is_verified_organizer: (p.is_verified_organizer ?? false) as boolean,
     roles: roleMap.get(p.id) ?? ["attendee"],
   }));
 }
@@ -187,6 +188,21 @@ function AdminDashboard() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const verifyMutation = useMutation({
+    mutationFn: async ({ userId, verify }: { userId: string; verify: boolean }) => {
+      const { error } = await (supabase.rpc as any)("admin_verify_organizer", {
+        p_user_id: userId,
+        p_verified: verify,
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      toast.success(vars.verify ? "Organizer verified." : "Organizer verification removed.");
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const revokeMutation = useMutation({
     mutationFn: async ({ userId, reason }: { userId: string; reason: string }) => {
       const { error } = await (supabase.rpc as any)("admin_revoke_organizer", {
@@ -251,6 +267,7 @@ function AdminDashboard() {
             <div className="flex gap-2 flex-wrap">
               {roles.includes("admin") && <Badge className="uppercase tracking-wider text-[10px] font-bold">Admin</Badge>}
               {roles.includes("organizer") && <Badge variant="secondary" className="uppercase tracking-wider text-[10px] font-bold border-border/50">Organizer</Badge>}
+              {roles.includes("organizer") && u.is_verified_organizer && <Badge className="bg-blue-500 hover:bg-blue-600 text-white uppercase tracking-wider text-[10px] font-bold">Verified</Badge>}
               {!roles.includes("admin") && !roles.includes("organizer") && <span className="text-xs text-muted-foreground font-medium">User</span>}
               {u.suspended && <Badge variant="destructive" className="uppercase tracking-wider text-[10px] font-bold">Suspended</Badge>}
             </div>
@@ -285,6 +302,15 @@ function AdminDashboard() {
                     >
                       <ShieldOff className="mr-2 h-4 w-4" />
                       <span className="font-medium">Revoke Organizer</span>
+                    </DropdownMenuItem>
+                  )}
+                  {u.roles.includes("organizer") && (
+                    <DropdownMenuItem
+                      className="text-blue-500 focus:text-blue-500 focus:bg-blue-500/10 rounded-xl px-3 py-2 cursor-pointer"
+                      onClick={() => verifyMutation.mutate({ userId: u.id, verify: !u.is_verified_organizer })}
+                    >
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      <span className="font-medium">{u.is_verified_organizer ? "Unverify Organizer" : "Verify Organizer"}</span>
                     </DropdownMenuItem>
                   )}
                   {u.suspended ? (
