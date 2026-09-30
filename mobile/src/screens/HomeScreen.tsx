@@ -26,26 +26,28 @@ function FeaturedCard({ item, onPress }: { item: any; onPress: () => void }) {
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       onPress={onPress}
-      style={[styles.featuredCard, animatedStyle]}
+      style={[styles.featuredCardWrapper, animatedStyle]}
     >
-      <View style={styles.featuredImageContainer}>
-        {item.cover_image_url ? (
-          <Image source={{ uri: item.cover_image_url }} style={styles.featuredImage} />
-        ) : (
-          <View style={[styles.featuredImage, { backgroundColor: '#2C2C2E' }]} />
-        )}
-      </View>
-      
-      <BlurView intensity={70} tint="dark" style={styles.featuredBadge}>
-        <Text style={styles.featuredBadgeText}>FEATURED</Text>
-      </BlurView>
+      <View style={styles.featuredCardInner}>
+        <View style={styles.featuredImageContainer}>
+          {item.cover_image_url ? (
+            <Image source={{ uri: item.cover_image_url }} style={styles.featuredImage} />
+          ) : (
+            <View style={[styles.featuredImage, { backgroundColor: '#2C2C2E' }]} />
+          )}
+        </View>
+        
+        <BlurView intensity={70} tint="dark" style={styles.featuredBadge}>
+          <Text style={styles.featuredBadgeText}>FEATURED</Text>
+        </BlurView>
 
-      <BlurView intensity={80} tint="dark" style={styles.featuredBlurPlate}>
-        <Text style={styles.featuredTitle} numberOfLines={2}>{item.title}</Text>
-        <Text style={styles.featuredDate}>
-          {new Date(item.start_datetime).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-        </Text>
-      </BlurView>
+        <BlurView intensity={80} tint="dark" style={styles.featuredBlurPlate}>
+          <Text style={styles.featuredTitle} numberOfLines={2}>{item.title}</Text>
+          <Text style={styles.featuredDate}>
+            {new Date(item.start_datetime).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+          </Text>
+        </BlurView>
+      </View>
     </AnimatedPressable>
   );
 }
@@ -208,24 +210,16 @@ export default function HomeScreen({ navigation }: any) {
           </View>
         ) : (
           <>
-            {/* Featured Section (Horizontal) */}
+            {/* Featured Section (Vertical) */}
             {featuredEvents.length > 0 && (
               <View style={styles.featuredSection}>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  snapToInterval={FEATURED_CARD_WIDTH + 16}
-                  decelerationRate="fast"
-                  contentContainerStyle={styles.horizontalScrollPadding}
-                >
-                  {featuredEvents.map((item) => (
-                    <FeaturedCard 
-                      key={item.id} 
-                      item={item} 
-                      onPress={() => navigation.navigate('EventDetail', { eventId: item.id })} 
-                    />
-                  ))}
-                </ScrollView>
+                {featuredEvents.map((item) => (
+                  <FeaturedCard 
+                    key={item.id} 
+                    item={item} 
+                    onPress={() => navigation.navigate('EventDetail', { eventId: item.id })} 
+                  />
+                ))}
               </View>
             )}
 
@@ -311,26 +305,26 @@ const styles = StyleSheet.create({
   
   // Featured Section
   featuredSection: {
+    paddingHorizontal: 20,
     marginBottom: 40,
   },
-  horizontalScrollPadding: {
-    paddingHorizontal: 20,
-    paddingRight: 40, // Extra padding at the end of the scroll
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  featuredCard: {
-    width: FEATURED_CARD_WIDTH,
-    height: FEATURED_CARD_WIDTH * 1.25, // Taller, immersive card
-    marginRight: 16,
+  featuredCardWrapper: {
+    width: '100%',
+    height: width * 1.1, // Taller, immersive card
+    marginBottom: 24,
     borderRadius: 28,
-    overflow: 'hidden',
     backgroundColor: '#1C1C1E',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.5,
     shadowRadius: 20,
     elevation: 10,
+  },
+  featuredCardInner: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 28,
+    overflow: 'hidden',
   },
   featuredImageContainer: {
     position: 'absolute',
