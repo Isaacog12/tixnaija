@@ -5,6 +5,7 @@ import {
   Users, Calendar, BarChart3, Search, MoreVertical,
   Ban, CheckCircle, ClipboardList, ExternalLink, ShieldOff, ShieldCheck, Trash2, Image as ImageIcon, RefreshCcw, Briefcase,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/currency";
 import { Input } from "@/components/ui/input";
@@ -522,15 +523,25 @@ function AdminDashboard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="mb-10">
-        <div className="flex items-center gap-4 mb-2">
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="mb-12 mt-12 md:mt-0"
+      >
+        <div className="flex items-center gap-4 mb-3">
           <BackButton />
-          <h1 className="type-heading-lg tracking-tight">Admin Portal</h1>
+          <h1 className="text-3xl md:text-4xl font-display font-semibold tracking-tight text-foreground">Admin Portal</h1>
         </div>
-        <p className="text-muted-foreground text-lg">Platform overview and moderation.</p>
-      </div>
+        <p className="text-muted-foreground text-base max-w-2xl">Platform overview and moderation control center.</p>
+      </motion.div>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6 mb-12">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+        className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6 mb-12"
+      >
         <StatCard icon={Users} label="Total Users" value={stats?.users.toLocaleString() ?? "—"} />
         <StatCard icon={Calendar} label="Total Events" value={stats?.events.toLocaleString() ?? "—"} />
         <StatCard icon={BarChart3} label="Total Volume" value={formatNaira(stats?.revenueKobo ?? 0)} className="text-gradient-sunset" />
@@ -559,7 +570,7 @@ function AdminDashboard() {
           subtext="Manage slots &rarr;"
           colorClass="primary"
         />
-      </div>
+      </motion.div>
 
       <div className="mb-12 rounded-3xl border border-destructive/20 bg-destructive/5 p-6">
         <h3 className="font-display text-xl text-destructive mb-2 flex items-center gap-2"><ShieldOff className="h-5 w-5" /> Revoke Organizer by Email</h3>
