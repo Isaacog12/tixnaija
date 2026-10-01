@@ -23,7 +23,7 @@ export const Route = createFileRoute("/download")({
 });
 
 // ── Replace this URL after running PWABuilder and uploading the APK ──────────
-const APK_DOWNLOAD_URL: string | null = "https://expo.dev/artifacts/eas/PEsTfarhjdJntpYnU4BxwwtMYlDW_eeYaTcFTODdXo4.apk";
+const APK_DOWNLOAD_URL: string | null = "https://www.dropbox.com/scl/fi/qcte5s6u4nasixbn3if4z/TixNaija.apk?rlkey=07t4yuxtx04grpq5c9swc1zgj&st=odnx3ncl&dl=1";
 const APK_VERSION = "1.0.1"; // User requested strict 1.0.0 versioning for OTA
 
 const STAGGER_CHILD: Variants = {
