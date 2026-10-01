@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Calendar, MapPin, ChevronRight, ArrowRight, QrCode, CreditCard, Ticket, Zap, Flame, Compass } from "lucide-react";
+import { Search, Calendar, MapPin, ChevronRight, ArrowRight, QrCode, CreditCard, Ticket, Zap, Flame, Compass, Smartphone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
@@ -182,6 +182,15 @@ function LandingPage() {
             </Button>
           </form>
 
+          <div className="mt-8 flex justify-center">
+            <Link 
+              to="/download" 
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-background border border-border/60 hover:bg-muted/50 transition-colors shadow-sm"
+            >
+              <Smartphone className="w-5 h-5 text-primary" />
+              <span className="font-semibold text-foreground/90">Get the Mobile App</span>
+            </Link>
+          </div>
 
         </div>
       </section>

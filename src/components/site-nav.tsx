@@ -12,6 +12,7 @@ import {
   HelpCircle,
   Sun,
   Moon,
+  Smartphone,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -99,6 +100,7 @@ export function SiteNav() {
     ...(user ? [{ name: "Dashboard", to: "/dashboard", icon: LayoutDashboard }] : []),
     { name: "About Us", to: "/about", icon: Compass },
     { name: "How it works", to: "/how-it-works", icon: HelpCircle },
+    { name: "Download App", to: "/download", icon: Smartphone },
   ];
 
   return (
