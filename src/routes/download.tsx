@@ -1,5 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Download, Smartphone, ShieldAlert, ChevronRight, Package } from "lucide-react";
+import { ShieldAlert, ChevronRight, Package, ArrowDown, Sparkles, RefreshCcw } from "lucide-react";
+import { motion } from "framer-motion";
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 export const Route = createFileRoute("/download")({
   head: () => ({
@@ -16,157 +23,200 @@ export const Route = createFileRoute("/download")({
 });
 
 // ── Replace this URL after running PWABuilder and uploading the APK ──────────
-const APK_DOWNLOAD_URL: string | null = "https://www.dropbox.com/scl/fi/tsbd29931jp7gkmukn2s8/Tixnaija.apk?rlkey=unk4nj7i4n9nu41y1tc5mdshc&st=t3v7npfr&dl=1";
-const APK_VERSION = "1.0.0"; // User requested strict 1.0.0 versioning for OTA
+const APK_DOWNLOAD_URL: string | null = "https://expo.dev/artifacts/eas/PEsTfarhjdJntpYnU4BxwwtMYlDW_eeYaTcFTODdXo4.apk";
+const APK_VERSION = "1.0.1"; // User requested strict 1.0.0 versioning for OTA
+
+const STAGGER_CHILD = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", bounce: 0, duration: 0.8 } }
+};
+
+const STAGGER_CONTAINER = {
+  hidden: { opacity: 1 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+      delayChildren: 0.1
+    }
+  }
+};
 
 function DownloadPage() {
   const hasApk = Boolean(APK_DOWNLOAD_URL);
 
   return (
-    <div className="min-h-dvh bg-background text-foreground">
-      {/* ── Hero ───────────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-[oklch(0.14_0.02_40)] via-[oklch(0.18_0.04_40)] to-[oklch(0.14_0.02_40)] border-b border-border">
-        <div className="absolute inset-0 pointer-events-none" aria-hidden>
-          <div className="absolute -top-20 -right-20 w-96 h-96 rounded-full bg-primary/10 blur-3xl" />
-          <div className="absolute -bottom-10 -left-10 w-64 h-64 rounded-full bg-primary/5 blur-2xl" />
-        </div>
-        <div className="relative max-w-3xl mx-auto px-4 py-16 sm:py-24 text-center">
-          <div className="mx-auto mb-6 w-20 h-20 rounded-2xl overflow-hidden shadow-lg ring-2 ring-primary/30">
-            <img src="/icon-192.png" alt="TixNaija app icon" className="w-full h-full object-cover" />
-          </div>
-          <h1 className="font-display text-3xl sm:text-5xl font-bold tracking-tight text-foreground mb-4">
-            TixNaija for Android
-          </h1>
-          <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
-            The full TixNaija experience — browse events, buy tickets, and show
-            your QR code at the door — packaged as a native Android app.
-          </p>
-
-          {/* ── Download CTA ─────────────────────────────────────────────── */}
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-            {hasApk ? (
-              <a
-                id="android-apk-download"
-                href={APK_DOWNLOAD_URL!}
-                download="tixnaija.apk"
-                className="inline-flex items-center justify-center w-full sm:w-auto gap-3 h-14 px-8 rounded-xl bg-primary text-primary-foreground font-semibold text-base shadow-lg hover:bg-primary/90 active:scale-95 transition-all duration-200"
-              >
-                <Download className="h-5 w-5 shrink-0" />
-                Download APK
-              </a>
-            ) : (
-              <div className="inline-flex items-center gap-3 h-14 px-8 rounded-xl bg-muted text-muted-foreground font-semibold text-base cursor-not-allowed select-none border border-border">
-                <Package className="h-5 w-5 shrink-0" />
-                APK coming soon
-              </div>
-            )}
-          </div>
-          <p className="mt-3 text-xs text-muted-foreground/60">Android only · Free download · v{APK_VERSION}</p>
-        </div>
+    <div className="min-h-dvh bg-[#09090b] text-neutral-50 selection:bg-primary/30 font-sans overflow-hidden">
+      {/* ── Background Ambience ── */}
+      <div className="fixed inset-0 pointer-events-none z-0 flex items-start justify-center overflow-hidden">
+        <div className="absolute -top-[20%] w-[1000px] h-[800px] bg-primary/10 rounded-[100%] blur-[120px] opacity-70 mix-blend-screen" />
       </div>
 
-      {/* ── Install guide ──────────────────────────────────────────────────── */}
-      <div className="max-w-2xl mx-auto px-4 py-14">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <ShieldAlert className="h-5 w-5" />
-          </div>
-          <h2 className="text-xl font-semibold text-foreground">
-            First-time install: allow unknown sources
-          </h2>
-        </div>
+      <div className="relative z-10 max-w-5xl mx-auto px-6 py-24 sm:py-32">
+        <motion.div
+          variants={STAGGER_CONTAINER}
+          initial="hidden"
+          animate="show"
+          className="flex flex-col items-center text-center mb-32"
+        >
+          {/* App Icon */}
+          <motion.div 
+            variants={STAGGER_CHILD}
+            className="relative mb-10"
+          >
+            <div className="absolute inset-0 bg-primary/40 blur-3xl rounded-full scale-110" />
+            <motion.div 
+              whileHover={{ scale: 1.04, rotate: 2 }}
+              transition={{ type: "spring", bounce: 0.4, duration: 0.6 }}
+              className="relative w-28 h-28 sm:w-36 sm:h-36 rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/10 bg-black"
+            >
+              <img src="/icon-192.png" alt="TixNaija" className="w-full h-full object-cover" />
+            </motion.div>
+          </motion.div>
 
-        <p className="text-sm text-muted-foreground mb-8 leading-relaxed">
-          Android blocks apps from outside the Play Store by default. You'll see
-          a &ldquo;For your security&rdquo; warning the first time — this is
-          normal. Follow these steps once, and installs will work instantly from
-          then on.
-        </p>
+          <motion.h1 
+            variants={STAGGER_CHILD}
+            className="font-display text-5xl sm:text-7xl lg:text-[5.5rem] font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/60 mb-8 leading-[1.1]"
+          >
+            The magic of TixNaija. <br className="hidden sm:block" /> Now native on Android.
+          </motion.h1>
 
-        <ol className="space-y-5">
-          {[
-            {
-              step: 1,
-              title: "Download the APK",
-              body: "Tap the Download button above. Your browser will save TixNaija to your Downloads folder.",
-            },
-            {
-              step: 2,
-              title: "Open the file",
-              body: 'Tap the downloaded file in your notification bar, or open your Files app → Downloads → TixNaija.',
-            },
-            {
-              step: 3,
-              title: 'Allow "Install unknown apps" for your browser',
-              body: 'Android will show a prompt: "For your security, your phone is not allowed to install unknown apps from this source." Tap Settings on that prompt.',
-            },
-            {
-              step: 4,
-              title: "Toggle the permission on",
-              body: 'On the settings screen that opens, toggle "Allow from this source" to ON, then tap the back button.',
-            },
-            {
-              step: 5,
-              title: "Tap Install",
-              body: "Android will return to the install screen. Tap Install, wait a few seconds, then tap Open.",
-            },
-            {
-              step: 6,
-              title: "Done — find TixNaija on your home screen",
-              body: "The app runs as a full-screen web experience. You can disable the 'unknown sources' permission again afterwards if you prefer.",
-            },
-          ].map(({ step, title, body }) => (
-            <li key={step} className="flex gap-4">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm mt-0.5">
-                {step}
+          <motion.p 
+            variants={STAGGER_CHILD}
+            className="text-lg sm:text-xl text-white/50 max-w-2xl mx-auto leading-relaxed mb-12 tracking-tight"
+          >
+            Browse events, secure tickets, and skip the line with offline QR codes. 
+            Packaged as a lightning-fast native app.
+          </motion.p>
+
+          <motion.div variants={STAGGER_CHILD} className="flex flex-col items-center gap-5">
+            {hasApk ? (
+              <motion.a
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                href={APK_DOWNLOAD_URL!}
+                download="tixnaija.apk"
+                className="group relative inline-flex items-center justify-center gap-3 h-14 sm:h-16 px-10 rounded-full bg-white text-black font-semibold text-lg overflow-hidden transition-all shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_60px_rgba(255,255,255,0.2)]"
+              >
+                <span className="relative z-10 flex items-center gap-3">
+                  Download APK
+                  <ArrowDown className="h-5 w-5 text-black/50 group-hover:translate-y-0.5 transition-transform" />
+                </span>
+              </motion.a>
+            ) : (
+              <div className="inline-flex items-center gap-3 h-14 sm:h-16 px-10 rounded-full bg-white/5 border border-white/10 text-white/50 font-semibold text-lg backdrop-blur-md">
+                <Package className="h-5 w-5" />
+                APK assembling...
               </div>
-              <div>
-                <p className="font-medium text-foreground text-sm">{title}</p>
-                <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">{body}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-
-        {/* ── Play Protect note ───────────────────────────────────────────── */}
-        <div className="mt-10 rounded-xl border border-border bg-muted/40 p-5">
-          <div className="flex items-start gap-3">
-            <Smartphone className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-foreground">About the "not commonly downloaded" warning</p>
-              <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
-                Google Play Protect may flag the APK as "not commonly
-                downloaded" on first install — this is automatic for any new
-                APK and fades as install volume grows. It's not a malware
-                warning. Tap <strong>Install anyway</strong> to proceed.
-              </p>
+            )}
+            <div className="flex items-center gap-3 text-sm font-medium text-white/30 tracking-wide uppercase">
+              <span>Android 8.0+</span>
+              <span className="w-1 h-1 rounded-full bg-white/20" />
+              <span>v{APK_VERSION}</span>
+              <span className="w-1 h-1 rounded-full bg-white/20" />
+              <span>Free</span>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
-        {/* ── Updates note ────────────────────────────────────────────────── */}
-        <div className="mt-5 rounded-xl border border-border bg-primary/10 p-5">
-          <div className="flex items-start gap-3">
-            <Download className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-foreground">Automatic Over-The-Air Updates ⚡</p>
-              <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
-                Good news! TixNaija features built-in Over-The-Air (OTA) updates. Once you install the APK, you will automatically receive bug fixes and new features instantly when you open the app — no need to ever manually re-download the APK again!
-              </p>
-            </div>
+        {/* Bento Box Installation Guide */}
+        <motion.div 
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ type: "spring", bounce: 0, duration: 1 }}
+          className="space-y-6"
+        >
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-display font-semibold tracking-tighter">Installation is instant</h2>
+            <p className="text-white/40 mt-3 text-lg tracking-tight">Sideloading takes just 60 seconds.</p>
           </div>
-        </div>
 
-        {/* ── Back to site ────────────────────────────────────────────────── */}
-        <div className="mt-12 text-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <BentoCard 
+              step="01" 
+              title="Download & Open" 
+              desc="Save the APK to your Downloads folder and tap the notification to open it immediately."
+              className="md:col-span-2 lg:col-span-1"
+            />
+            <BentoCard 
+              step="02" 
+              title="Allow Unknown Sources" 
+              desc="When prompted by Android, tap Settings and toggle 'Allow from this source' to ON. This is standard for all apps outside the Play Store."
+              highlight
+            />
+            <BentoCard 
+              step="03" 
+              title="Install & Enjoy" 
+              desc="Tap Install, wait just a few seconds, and you're ready to start exploring events." 
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mt-6">
+            <InfoCard 
+              icon={ShieldAlert}
+              title="Play Protect Warning"
+              desc="Google Play Protect may flag new APKs as 'not commonly downloaded.' This is not a malware warning — it happens for all new apps. Tap Install Anyway to proceed safely."
+            />
+            <InfoCard 
+              icon={RefreshCcw}
+              title="Over-The-Air Updates"
+              desc="TixNaija features built-in OTA updates. You'll automatically receive new features and bug fixes silently in the background — no need to redownload the APK ever again."
+            />
+          </div>
+        </motion.div>
+
+        <motion.div 
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          className="mt-32 text-center pb-12"
+        >
           <Link
             to="/"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 text-white/70 hover:text-white transition-all text-sm font-medium backdrop-blur-md group"
           >
-            <ChevronRight className="h-4 w-4 rotate-180" />
+            <ChevronRight className="h-4 w-4 rotate-180 text-white/40 group-hover:-translate-x-0.5 transition-transform" />
             Back to TixNaija
           </Link>
-        </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+function BentoCard({ step, title, desc, className, highlight }: { step: string, title: string, desc: string, className?: string, highlight?: boolean }) {
+  return (
+    <div className={cn(
+      "relative overflow-hidden rounded-[2rem] p-8 sm:p-10 flex flex-col justify-between min-h-[260px]",
+      "border border-white/[0.08] bg-white/[0.02] backdrop-blur-2xl",
+      "transition-colors duration-500 hover:bg-white/[0.04]",
+      highlight && "border-primary/20 bg-primary/[0.03]",
+      className
+    )}>
+      {highlight && (
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-50 pointer-events-none" />
+      )}
+      <div className="text-6xl font-display font-bold tracking-tighter text-white/5 mb-10">
+        {step}
+      </div>
+      <div className="relative z-10">
+        <h3 className={cn("text-xl sm:text-2xl font-semibold mb-3 tracking-tight", highlight ? "text-primary" : "text-white")}>{title}</h3>
+        <p className="text-white/50 leading-relaxed text-sm sm:text-base">{desc}</p>
+      </div>
+    </div>
+  );
+}
+
+function InfoCard({ icon: Icon, title, desc }: { icon: any, title: string, desc: string }) {
+  return (
+    <div className="rounded-[2rem] p-8 sm:p-10 border border-white/[0.05] bg-white/[0.01] backdrop-blur-xl flex flex-col sm:flex-row gap-6 items-start">
+      <div className="p-4 rounded-2xl bg-white/5 text-white/70 shadow-inner">
+        <Icon className="h-6 w-6" />
+      </div>
+      <div>
+        <h3 className="text-lg sm:text-xl font-semibold mb-3 tracking-tight text-white/90">{title}</h3>
+        <p className="text-white/40 leading-relaxed text-sm sm:text-base">{desc}</p>
       </div>
     </div>
   );
