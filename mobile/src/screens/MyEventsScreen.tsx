@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Plus, BarChart2, Edit } from 'lucide-react-native';
+import { Plus, BarChart2, Edit, Send } from 'lucide-react-native';
 import { supabase } from '../../supabase/client';
 
 export default function MyEventsScreen() {
@@ -87,6 +87,15 @@ export default function MyEventsScreen() {
         </View>
 
         <View style={styles.actionRow}>
+          {item.status === 'published' && (
+            <TouchableOpacity 
+              style={[styles.actionButton, { marginRight: 8, backgroundColor: 'rgba(242, 97, 30, 0.15)' }]}
+              onPress={() => navigation.navigate('BroadcastMessage', { eventId: item.id, eventTitle: item.title })}
+            >
+              <Send size={16} color="#f2611e" />
+              <Text style={[styles.actionButtonText, { color: '#f2611e' }]}>Broadcast</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity 
             style={styles.actionButton}
             onPress={() => navigation.navigate('EditEvent', { eventId: item.id })}
