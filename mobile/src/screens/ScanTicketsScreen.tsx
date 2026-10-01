@@ -63,7 +63,7 @@ export default function ScanTicketsScreen() {
       // 2. Download fresh tickets
       const { data: ticketsData, error } = await supabase
         .from('tickets')
-        .select('id, qr_code_data, status, attendee_name, ticket_types(name), events!inner(organizer_id)')
+        .select('id, ticket_code, status, attendee_name, ticket_types(name), events!inner(organizer_id)')
         .eq('events.organizer_id', userData.user.id);
         
       if (error) throw error;
@@ -116,7 +116,7 @@ export default function ScanTicketsScreen() {
           if (!ticketsStr) throw new Error("No offline data. Please connect to internet and sync first.");
           
           let offlineTickets = JSON.parse(ticketsStr);
-          const ticketIndex = offlineTickets.findIndex((t: any) => t.id === data || t.qr_code_data === data);
+          const ticketIndex = offlineTickets.findIndex((t: any) => t.id === data || t.ticket_code === data);
           
           if (ticketIndex === -1) {
             Alert.alert('Scan Failed (Offline)', 'Ticket not found in offline database.', [{ text: 'Try Again', onPress: () => setScanned(false) }]);

@@ -13,7 +13,7 @@ const TicketItem = ({ item }: { item: any }) => {
   const viewShotRef = React.useRef<any>(null);
 
   if (!event) return null;
-  const qrData = item.qr_code_data || item.id;
+  const qrData = item.ticket_code || item.id;
 
   const handleShare = async () => {
     try {
@@ -114,8 +114,7 @@ export default function MyTicketsScreen({ navigation }: any) {
             tickets (
               id,
               status,
-              attendee_name,
-              qr_code_data
+              ticket_code
             )
           )
         `)

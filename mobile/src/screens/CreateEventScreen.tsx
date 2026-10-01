@@ -218,7 +218,7 @@ export default function CreateEventScreen() {
       {showStart && (
         <DateTimePicker
           value={startDate}
-          mode="datetime"
+          mode={Platform.OS === 'ios' ? 'datetime' : 'date'}
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
           onChange={(event, selectedDate) => {
             setShowStart(Platform.OS === 'ios');
@@ -230,7 +230,7 @@ export default function CreateEventScreen() {
       {showEnd && (
         <DateTimePicker
           value={endDate}
-          mode="datetime"
+          mode={Platform.OS === 'ios' ? 'datetime' : 'date'}
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
           onChange={(event, selectedDate) => {
             setShowEnd(Platform.OS === 'ios');
