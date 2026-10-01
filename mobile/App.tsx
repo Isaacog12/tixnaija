@@ -21,6 +21,9 @@ import CheckoutScreen from './src/screens/CheckoutScreen';
 import CreateEventScreen from './src/screens/CreateEventScreen';
 import EditEventScreen from './src/screens/EditEventScreen';
 import BoxOfficeScreen from './src/screens/BoxOfficeScreen';
+import AdminOrganizerAppsScreen from './src/screens/AdminOrganizerAppsScreen';
+import AdminJobAppsScreen from './src/screens/AdminJobAppsScreen';
+import AdminBannersScreen from './src/screens/AdminBannersScreen';
 
 import TabNavigator from './src/navigation/TabNavigator';
 
@@ -146,6 +149,9 @@ export default function App() {
               <Stack.Screen name="CreateEvent" component={CreateEventScreen} options={{ title: 'Create Event' }} />
               <Stack.Screen name="EditEvent" component={EditEventScreen} options={{ title: 'Edit Event' }} />
               <Stack.Screen name="BoxOffice" component={BoxOfficeScreen} options={{ title: 'Box Office' }} />
+              <Stack.Screen name="AdminOrganizerApps" component={AdminOrganizerAppsScreen} options={{ title: 'Organizer Applications' }} />
+              <Stack.Screen name="AdminJobApps" component={AdminJobAppsScreen} options={{ title: 'Job Applications' }} />
+              <Stack.Screen name="AdminBanners" component={AdminBannersScreen} options={{ title: 'Home Banners' }} />
             </>
           )}
         </Stack.Navigator>

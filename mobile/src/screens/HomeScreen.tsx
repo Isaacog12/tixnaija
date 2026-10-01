@@ -103,10 +103,44 @@ export default function HomeScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [isOffline, setIsOffline] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearchingDb, setIsSearchingDb] = useState(false);
 
   useEffect(() => {
     fetchEvents();
   }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery.trim().length > 0) {
+        performSearch(searchQuery.trim());
+      } else {
+        setSearchResults([]);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const performSearch = async (query: string) => {
+    setIsSearchingDb(true);
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('id, title, start_datetime, venue_name, cover_image_url')
+        .eq('status', 'published')
+        .ilike('title', `%${query}%`)
+        .order('start_datetime', { ascending: true })
+        .limit(20);
+
+      if (!error && data) {
+        setSearchResults(data);
+      }
+    } catch (err) {
+      console.error('Search error', err);
+    } finally {
+      setIsSearchingDb(false);
+    }
+  };
 
   const fetchEvents = async () => {
     try {
@@ -148,9 +182,7 @@ export default function HomeScreen({ navigation }: any) {
   };
 
   const isSearching = searchQuery.trim().length > 0;
-  const filteredEvents = isSearching 
-    ? allEvents.filter(e => e.title.toLowerCase().includes(searchQuery.toLowerCase()))
-    : [];
+  const filteredEvents = isSearching ? searchResults : [];
 
   if (loading) {
     return (
@@ -193,7 +225,11 @@ export default function HomeScreen({ navigation }: any) {
               <Text style={styles.sectionTitle}>Search Results</Text>
             </View>
             <View style={styles.listContainer}>
-              {filteredEvents.length > 0 ? (
+              {isSearchingDb ? (
+                <View style={styles.emptyContainer}>
+                  <ActivityIndicator size="small" color="#f2611e" />
+                </View>
+              ) : filteredEvents.length > 0 ? (
                 filteredEvents.map((item, index) => (
                   <UpcomingRow 
                     key={item.id} 

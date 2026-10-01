@@ -2,15 +2,22 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { ShieldAlert, Users, LayoutTemplate, Briefcase, ExternalLink, ChevronRight } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 
 export default function AdminScreen() {
   const insets = useSafeAreaInsets();
-  const handleLink = (url: string) => {
-    Linking.openURL(url).catch(err => console.error("Couldn't load page", err));
+  const navigation = useNavigation<any>();
+
+  const handlePress = (route: string, url: string) => {
+    if (route) {
+      navigation.navigate(route);
+    } else {
+      Linking.openURL(url).catch(err => console.error("Couldn't load page", err));
+    }
   };
 
-  const renderAdminItem = (icon: any, title: string, subtitle: string, url: string) => (
-    <TouchableOpacity style={styles.adminItem} onPress={() => handleLink(url)}>
+  const renderAdminItem = (icon: any, title: string, subtitle: string, route: string, url: string) => (
+    <TouchableOpacity style={styles.adminItem} onPress={() => handlePress(route, url)}>
       <View style={styles.adminIconContainer}>
         {icon}
       </View>
@@ -34,6 +41,7 @@ export default function AdminScreen() {
           <ShieldAlert color="#f4f2f0" size={20} />, 
           "Platform Overview", 
           "View metrics and global settings",
+          "",
           "https://tixnaija.name.ng/admin"
         )}
         <View style={styles.divider} />
@@ -41,21 +49,24 @@ export default function AdminScreen() {
           <Users color="#f4f2f0" size={20} />, 
           "Organizer Applications", 
           "Review and approve organizers",
-          "https://tixnaija.name.ng/admin/organizer-applications"
+          "AdminOrganizerApps",
+          ""
         )}
         <View style={styles.divider} />
         {renderAdminItem(
           <Briefcase color="#f4f2f0" size={20} />, 
           "Job Applications", 
           "Manage hiring and careers",
-          "https://tixnaija.name.ng/admin/job-applications"
+          "AdminJobApps",
+          ""
         )}
         <View style={styles.divider} />
         {renderAdminItem(
           <LayoutTemplate color="#f4f2f0" size={20} />, 
           "Home Banners", 
           "Update featured event banners",
-          "https://tixnaija.name.ng/admin/banners"
+          "AdminBanners",
+          ""
         )}
       </View>
     </ScrollView>
