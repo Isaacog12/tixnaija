@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ShieldAlert, ChevronRight, Package, ArrowDown, Sparkles, RefreshCcw } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -26,12 +26,12 @@ export const Route = createFileRoute("/download")({
 const APK_DOWNLOAD_URL: string | null = "https://expo.dev/artifacts/eas/PEsTfarhjdJntpYnU4BxwwtMYlDW_eeYaTcFTODdXo4.apk";
 const APK_VERSION = "1.0.1"; // User requested strict 1.0.0 versioning for OTA
 
-const STAGGER_CHILD = {
+const STAGGER_CHILD: Variants = {
   hidden: { opacity: 0, y: 20 },
   show: { opacity: 1, y: 0, transition: { type: "spring", bounce: 0, duration: 0.8 } }
 };
 
-const STAGGER_CONTAINER = {
+const STAGGER_CONTAINER: Variants = {
   hidden: { opacity: 1 },
   show: {
     opacity: 1,
@@ -78,7 +78,7 @@ function DownloadPage() {
             variants={STAGGER_CHILD}
             className="font-display text-5xl sm:text-7xl lg:text-[5.5rem] font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/60 mb-8 leading-[1.1]"
           >
-            The magic of TixNaija. <br className="hidden sm:block" /> Now native on Android.
+            TixNaija for Android.
           </motion.h1>
 
           <motion.p 
