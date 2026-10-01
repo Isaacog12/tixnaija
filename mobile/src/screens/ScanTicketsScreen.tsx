@@ -63,8 +63,8 @@ export default function ScanTicketsScreen() {
       // 2. Download fresh tickets
       const { data: ticketsData, error } = await supabase
         .from('tickets')
-        .select('id, ticket_code, status, attendee_name, ticket_types(name), events!inner(organizer_id)')
-        .eq('events.organizer_id', userData.user.id);
+        .select('id, ticket_code, status, attendee_name, order_items!inner(ticket_types!inner(name, events!inner(organizer_id)))')
+        .eq('order_items.ticket_types.events.organizer_id', userData.user.id);
         
       if (error) throw error;
       
