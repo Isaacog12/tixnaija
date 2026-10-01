@@ -15,7 +15,7 @@ export default function AdminBannersScreen() {
   const fetchBanners = async () => {
     try {
       const { data, error } = await supabase
-        .from('banners')
+        .from('banners' as any)
         .select('*')
         .order('display_order', { ascending: true });
       

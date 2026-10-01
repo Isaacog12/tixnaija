@@ -21,7 +21,7 @@ export default function BoxOfficeScreen({ route, navigation }: any) {
       if (organizerId) {
         query = query.eq('id', organizerId);
       } else if (organizerSlug) {
-        query = query.eq('organizer_slug', organizerSlug);
+        query = query.eq('organizer_slug' as any, organizerSlug);
       }
       
       const { data: prof, error: profErr } = await query.single();
