@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ShieldAlert, ChevronRight, Package, ArrowDown, Sparkles, RefreshCcw } from "lucide-react";
 import { motion, Variants } from "framer-motion";
@@ -44,6 +45,7 @@ const STAGGER_CONTAINER: Variants = {
 
 function DownloadPage() {
   const hasApk = Boolean(APK_DOWNLOAD_URL);
+  const [hasRead, setHasRead] = useState(false);
 
   return (
     <div className="min-h-dvh bg-[#09090b] text-neutral-50 selection:bg-primary/30 font-sans overflow-hidden">
@@ -90,17 +92,39 @@ function DownloadPage() {
           </motion.p>
 
           <motion.div variants={STAGGER_CHILD} className="flex flex-col items-center gap-5">
+            <div 
+              className="flex items-center gap-3 bg-white/5 border border-white/10 px-5 py-3 rounded-2xl backdrop-blur-md cursor-pointer hover:bg-white/10 transition-colors" 
+              onClick={() => setHasRead(!hasRead)}
+            >
+              <div className={cn("w-6 h-6 rounded-md border flex items-center justify-center transition-colors", hasRead ? "bg-white border-white text-black" : "border-white/20")}>
+                {hasRead && <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+              </div>
+              <span className="text-white/70 text-sm font-medium">
+                I have read the <a href="#installation" className="text-white underline underline-offset-4 hover:text-white/80 transition-colors" onClick={(e) => { e.stopPropagation(); document.getElementById('installation')?.scrollIntoView({ behavior: 'smooth' }) }}>installation guide (readme)</a>
+              </span>
+            </div>
+
             {hasApk ? (
               <motion.a
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                href={APK_DOWNLOAD_URL!}
-                download="tixnaija.apk"
-                className="group relative inline-flex items-center justify-center gap-3 h-14 sm:h-16 px-10 rounded-full bg-white text-black font-semibold text-lg overflow-hidden transition-all shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_60px_rgba(255,255,255,0.2)]"
+                whileHover={hasRead ? { scale: 1.02 } : {}}
+                whileTap={hasRead ? { scale: 0.98 } : {}}
+                href={hasRead ? APK_DOWNLOAD_URL! : undefined}
+                download={hasRead ? "tixnaija.apk" : undefined}
+                onClick={(e) => {
+                  if (!hasRead) {
+                    e.preventDefault();
+                  }
+                }}
+                className={cn(
+                  "group relative inline-flex items-center justify-center gap-3 h-14 sm:h-16 px-10 rounded-full font-semibold text-lg overflow-hidden transition-all",
+                  hasRead 
+                    ? "bg-white text-black shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_60px_rgba(255,255,255,0.2)]" 
+                    : "bg-white/10 text-white/30 cursor-not-allowed border border-white/5"
+                )}
               >
                 <span className="relative z-10 flex items-center gap-3">
                   Download APK
-                  <ArrowDown className="h-5 w-5 text-black/50 group-hover:translate-y-0.5 transition-transform" />
+                  <ArrowDown className={cn("h-5 w-5 transition-transform", hasRead ? "text-black/50 group-hover:translate-y-0.5" : "text-white/20")} />
                 </span>
               </motion.a>
             ) : (
@@ -121,6 +145,7 @@ function DownloadPage() {
 
         {/* Bento Box Installation Guide */}
         <motion.div 
+          id="installation"
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
