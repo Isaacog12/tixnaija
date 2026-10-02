@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // @ts-ignore
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+// @ts-ignore
 import QRCode from "https://esm.sh/qrcode@1.5.3";
 import { sendEmail } from "../_shared/zeptomail.ts";
 
@@ -19,7 +20,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS, PUT, DELETE",
 };
 
-function getCorsHeaders(req) {
+function getCorsHeaders(req: Request) {
   const origin = req?.headers?.get("origin") || "";
   const isAllowed = allowedOrigins.includes(origin) || origin.endsWith(".vercel.app");
   return {
