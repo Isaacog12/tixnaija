@@ -22,6 +22,19 @@ export default function ScanTicketsScreen() {
     };
 
     getBarCodeScannerPermissions();
+
+    // Aggressive background sync every 30 seconds
+    const interval = setInterval(() => {
+      // Only trigger if not already syncing to prevent overlapping requests
+      setSyncing((prev) => {
+        if (!prev) {
+          handleSync(true);
+        }
+        return prev;
+      });
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const checkPendingCount = async () => {
@@ -34,7 +47,7 @@ export default function ScanTicketsScreen() {
     } catch (e) {}
   };
 
-  const handleSync = async () => {
+  const handleSync = async (silent = false) => {
     setSyncing(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -73,9 +86,13 @@ export default function ScanTicketsScreen() {
       if (error) throw error;
       
       await AsyncStorage.setItem('@offline_tickets', JSON.stringify(ticketsData || []));
-      Alert.alert('Sync Complete', `Downloaded ${ticketsData?.length || 0} tickets for offline scanning.\nSynced ${flushSuccess} pending scans.`);
+      if (!silent) {
+        Alert.alert('Sync Complete', `Downloaded ${ticketsData?.length || 0} tickets for offline scanning.\nSynced ${flushSuccess} pending scans.`);
+      }
     } catch (err: any) {
-      Alert.alert('Sync Error', err.message);
+      if (!silent) {
+        Alert.alert('Sync Error', err.message);
+      }
     } finally {
       setSyncing(false);
       checkPendingCount();
@@ -86,50 +103,18 @@ export default function ScanTicketsScreen() {
     setScanned(true);
     setLoading(true);
     try {
-      const { data: ticketResult, error } = await supabase.rpc('check_in_ticket' as any, {
-        p_ticket_code: data
-      });
-
-      if (error) throw error;
-
-      if (!ticketResult.success) {
-        Alert.alert('Scan Failed', ticketResult.error || 'Unknown error', [
-          { text: 'Try Again', onPress: () => setScanned(false) }
-        ]);
-        return;
-      }
-
-      if (ticketResult.already_checked_in) {
-        Alert.alert(
-          'Already Checked In', 
-          `${ticketResult.attendee_name || 'Attendee'} (${ticketResult.ticket_name})\nChecked in at: ${new Date(ticketResult.checked_in_at).toLocaleString()}`, 
-          [{ text: 'OK', onPress: () => setScanned(false) }]
-        );
-      } else {
-        Alert.alert(
-          'Success!', 
-          `${ticketResult.attendee_name || 'Attendee'} (${ticketResult.ticket_name}) has been checked in successfully!`, 
-          [{ text: 'OK', onPress: () => setScanned(false) }]
-        );
-      }
-    } catch (err: any) {
-      if (err.message?.toLowerCase().includes('network') || err.message?.toLowerCase().includes('fetch')) {
-        // Handle Offline Scan
-        try {
-          const ticketsStr = await AsyncStorage.getItem('@offline_tickets');
-          if (!ticketsStr) throw new Error("No offline data. Please connect to internet and sync first.");
-          
-          let offlineTickets = JSON.parse(ticketsStr);
-          const ticketIndex = offlineTickets.findIndex((t: any) => t.id === data || t.ticket_code === data);
-          
-          if (ticketIndex === -1) {
-            Alert.alert('Scan Failed (Offline)', 'Ticket not found in offline database.', [{ text: 'Try Again', onPress: () => setScanned(false) }]);
-            return;
-          }
-
+      // STRATEGY 1: OFFLINE-FIRST
+      // Always check the local database first because it is 0ms latency.
+      const ticketsStr = await AsyncStorage.getItem('@offline_tickets');
+      if (ticketsStr) {
+        let offlineTickets = JSON.parse(ticketsStr);
+        const ticketIndex = offlineTickets.findIndex((t: any) => t.id === data || t.ticket_code === data);
+        
+        if (ticketIndex !== -1) {
           const ticket = offlineTickets[ticketIndex];
-          if (ticket.status === 'scanned') {
+          if (ticket.status === 'scanned' || ticket.status === 'checked_in') {
             Alert.alert('Already Checked In (Offline)', `${ticket.attendee_name || 'Attendee'} was already checked in.`, [{ text: 'OK', onPress: () => setScanned(false) }]);
+            setLoading(false);
             return;
           }
 
@@ -148,13 +133,47 @@ export default function ScanTicketsScreen() {
           setOfflinePendingCount(pendingScans.length);
 
           Alert.alert(
-            'Success! (Offline)', 
-            `${ticket.attendee_name || 'Attendee'} has been checked in offline. Will sync when internet is restored.`, 
+            'Success! (Offline Mode)', 
+            `${ticket.attendee_name || 'Attendee'} checked in perfectly.`, 
             [{ text: 'OK', onPress: () => setScanned(false) }]
           );
-        } catch (offlineErr: any) {
-          Alert.alert('Scan Error', offlineErr.message, [{ text: 'Try Again', onPress: () => setScanned(false) }]);
+          setLoading(false);
+          return;
         }
+      }
+
+      // STRATEGY 2: THE "SLIVER OF NETWORK" FALLBACK
+      // If the ticket wasn't found locally, it might be a brand new purchase.
+      // We attempt a single micro-request to the server to verify it.
+      const { data: ticketResult, error } = await supabase.rpc('check_in_ticket' as any, {
+        p_ticket_code: data
+      });
+
+      if (error) throw error;
+
+      if (!ticketResult.success) {
+        Alert.alert('Scan Failed', ticketResult.error || 'Invalid ticket code.', [
+          { text: 'Try Again', onPress: () => setScanned(false) }
+        ]);
+        return;
+      }
+
+      if (ticketResult.already_checked_in) {
+        Alert.alert(
+          'Already Checked In', 
+          `${ticketResult.attendee_name || 'Attendee'} (${ticketResult.ticket_name})\nChecked in at: ${new Date(ticketResult.checked_in_at).toLocaleString()}`, 
+          [{ text: 'OK', onPress: () => setScanned(false) }]
+        );
+      } else {
+        Alert.alert(
+          'Success! (Online Fallback)', 
+          `${ticketResult.attendee_name || 'Attendee'} (${ticketResult.ticket_name}) has been checked in successfully!`, 
+          [{ text: 'OK', onPress: () => setScanned(false) }]
+        );
+      }
+    } catch (err: any) {
+      if (err.message?.toLowerCase().includes('network') || err.message?.toLowerCase().includes('fetch')) {
+         Alert.alert('Scan Failed', 'Ticket not found in local database, and you have no internet connection to verify it.', [{ text: 'Try Again', onPress: () => setScanned(false) }]);
       } else {
         Alert.alert('Scan Error', err.message, [
           { text: 'Try Again', onPress: () => setScanned(false) }
