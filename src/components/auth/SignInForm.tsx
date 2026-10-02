@@ -23,7 +23,7 @@ const signinSchema = z.object({
 });
 type SigninValues = z.infer<typeof signinSchema>;
 
-export function SignInForm() {
+export function SignInForm({ redirectUrl }: { redirectUrl?: string }) {
   const navigate = useNavigate();
   const { showPassword, togglePasswordVisibility } = usePasswordVisibility();
   const {
@@ -47,7 +47,7 @@ export function SignInForm() {
       });
       if (error) throw error;
       toast.success("Welcome back!");
-      navigate({ to: "/dashboard", replace: true });
+      navigate({ to: redirectUrl || "/dashboard", replace: true });
     } catch (err: unknown) {
       toast.error(getAuthErrorMessage(err));
     }

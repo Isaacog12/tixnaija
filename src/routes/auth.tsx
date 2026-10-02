@@ -10,6 +10,7 @@ import { SignUpForm } from "@/components/auth/SignUpForm";
 
 const searchSchema = z.object({
   mode: z.enum(["signin", "signup"]).optional(),
+  redirect: z.string().optional(),
 });
 
 export const Route = createFileRoute("/auth")({
@@ -18,10 +19,10 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const { mode } = Route.useSearch();
+  const { mode, redirect } = Route.useSearch();
   const isSignUp = mode === "signup";
 
-  useRedirectIfAuthenticated();
+  useRedirectIfAuthenticated(redirect);
   useHashErrorHandler();
 
   // Liquid Transition Settings
@@ -62,7 +63,7 @@ function AuthPage() {
                   Join us today to access your secure workspace
                 </p>
               </div>
-              <SignUpForm />
+              <SignUpForm redirectUrl={redirect} />
             </motion.div>
           ) : (
             <motion.div
@@ -81,7 +82,7 @@ function AuthPage() {
                   Enter your credentials to access your secure account
                 </p>
               </div>
-              <SignInForm />
+              <SignInForm redirectUrl={redirect} />
             </motion.div>
           )}
         </AnimatePresence>

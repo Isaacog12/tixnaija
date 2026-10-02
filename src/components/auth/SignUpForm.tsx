@@ -37,7 +37,7 @@ const signupSchema = z
   });
 type SignupValues = z.infer<typeof signupSchema>;
 
-export function SignUpForm() {
+export function SignUpForm({ redirectUrl }: { redirectUrl?: string }) {
   const navigate = useNavigate();
   const { showPassword, togglePasswordVisibility: togglePassword } = usePasswordVisibility();
   const { showPassword: showConfirmPassword, togglePasswordVisibility: toggleConfirmPassword } =
@@ -75,7 +75,7 @@ export function SignUpForm() {
       });
       if (error) throw error;
       toast.success("Account created! You're signed in.");
-      navigate({ to: "/dashboard", replace: true });
+      navigate({ to: redirectUrl || "/dashboard", replace: true });
     } catch (err: unknown) {
       toast.error(getAuthErrorMessage(err));
     }
