@@ -194,7 +194,7 @@ export default function ScanTicketsScreen() {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { top: insets.top + 16 }]}>
-        <TouchableOpacity style={styles.syncBtn} onPress={handleSync} disabled={syncing}>
+        <TouchableOpacity style={styles.syncBtn} onPress={() => handleSync(false)} disabled={syncing}>
           <RefreshCw color="#f4f2f0" size={18} />
           <Text style={styles.syncBtnText}>{syncing ? 'Syncing...' : 'Sync Offline Data'}</Text>
         </TouchableOpacity>
