@@ -245,8 +245,8 @@ serve(async (req: Request) => {
       `;
 
       for (const t of tickets) {
-        const singleUrl = \`https://tixnaija.name.ng/t/\${t.ticket_code}\`;
-        const singlePdfUrl = \`\${singleUrl}?download=true\`;
+        const singleUrl = `https://tixnaija.name.ng/t/${t.ticket_code}`;
+        const singlePdfUrl = `${singleUrl}?download=true`;
         const qrUrl = await QRCode.toDataURL(t.ticket_code, { width: 200, margin: 1, color: { dark: '#000000', light: '#FFFFFF' } });
         
         attHtmlBody += `
