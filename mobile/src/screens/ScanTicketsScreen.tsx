@@ -42,22 +42,26 @@ export default function ScanTicketsScreen() {
 
       // 1. Flush pending scans
       const pendingStr = await AsyncStorage.getItem('@pending_offline_scans');
-      let pendingScans: string[] = pendingStr ? JSON.parse(pendingStr) : [];
+      let pendingScans: { ticket_code: string; scanned_at: string }[] = pendingStr ? JSON.parse(pendingStr) : [];
       
       let flushSuccess = 0;
-      for (const code of pendingScans) {
-        try {
-          await supabase.rpc('check_in_ticket' as any, { p_ticket_code: code });
-          flushSuccess++;
-        } catch (e) {
-          console.error("Failed to sync ticket", code, e);
+      if (pendingScans.length > 0) {
+        // Bulk sync in a single optimized request
+        const { data: syncRes, error: syncErr } = await supabase.rpc('bulk_sync_offline_checkins' as any, { 
+          p_scans: pendingScans 
+        });
+        
+        if (syncErr) throw syncErr;
+        
+        if (syncRes.success) {
+          flushSuccess = syncRes.synced_count;
+          console.log(`Synced ${flushSuccess}, Failed ${syncRes.failed_count}`);
+          // Clear queue since we processed them
+          await AsyncStorage.setItem('@pending_offline_scans', JSON.stringify([]));
+          setOfflinePendingCount(0);
+        } else {
+          throw new Error(syncRes.error || 'Failed to sync bulk scans');
         }
-      }
-      
-      // Clear queue if fully synced
-      if (flushSuccess === pendingScans.length) {
-        await AsyncStorage.setItem('@pending_offline_scans', JSON.stringify([]));
-        setOfflinePendingCount(0);
       }
 
       // 2. Download fresh tickets
@@ -133,10 +137,13 @@ export default function ScanTicketsScreen() {
           offlineTickets[ticketIndex].status = 'scanned';
           await AsyncStorage.setItem('@offline_tickets', JSON.stringify(offlineTickets));
 
-          // Add to pending sync queue
+          // Add to pending sync queue with exact timestamp
           const pendingStr = await AsyncStorage.getItem('@pending_offline_scans');
-          let pendingScans: string[] = pendingStr ? JSON.parse(pendingStr) : [];
-          pendingScans.push(data);
+          let pendingScans: { ticket_code: string; scanned_at: string }[] = pendingStr ? JSON.parse(pendingStr) : [];
+          pendingScans.push({
+            ticket_code: data,
+            scanned_at: new Date().toISOString()
+          });
           await AsyncStorage.setItem('@pending_offline_scans', JSON.stringify(pendingScans));
           setOfflinePendingCount(pendingScans.length);
 
