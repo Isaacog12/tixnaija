@@ -312,12 +312,12 @@ function EventDetailPage() {
   useEffect(() => {
     async function validatePromoter() {
       if (!ref || !data?.event) return;
-      const { data: res, error } = await supabase.rpc("validate_promoter_code", {
+      const { data: res, error } = await supabase.rpc("validate_promoter_code" as any, {
         p_event_id: data.event.id,
         p_code: ref.trim(),
       });
-      if (!error && res && res.length > 0) {
-        setAppliedPromoterLink(res[0]);
+      if (!error && res && (res as any).length > 0) {
+        setAppliedPromoterLink((res as any)[0]);
       }
     }
     validatePromoter();
@@ -448,7 +448,7 @@ function EventDetailPage() {
     if (!waitlistTier || !data?.event) return;
     setWaitlistBusy(true);
     try {
-      const { error } = await supabase.from("waitlist_entries").insert({
+      const { error } = await (supabase.from("waitlist_entries" as any) as any).insert({
         event_id: data.event.id,
         ticket_tier_id: waitlistTier.id,
         user_id: userId,
