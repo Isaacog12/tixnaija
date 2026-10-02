@@ -53,7 +53,7 @@ serve(async (req: Request) => {
           start_datetime,
           venue_name,
           address,
-          image_url,
+          cover_image_url,
           custom_order_confirmation
         ),
         order_items (
@@ -91,8 +91,8 @@ serve(async (req: Request) => {
     const venue = [order.events?.venue_name, order.events?.address].filter(Boolean).join(', ') || 'Online';
 
     // 1. Send Master Receipt to Buyer
-    const eventImageHtml = order.events?.image_url 
-      ? `<img src="${order.events.image_url}" alt="${eventTitle}" style="width: 100%; border-radius: 12px; margin-bottom: 32px; object-fit: cover;" />` 
+    const eventImageHtml = order.events?.cover_image_url 
+      ? `<img src="${order.events.cover_image_url}" alt="${eventTitle}" style="width: 100%; border-radius: 12px; margin-bottom: 32px; object-fit: cover;" />` 
       : '';
 
     let masterHtmlBody = `
