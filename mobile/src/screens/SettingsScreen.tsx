@@ -32,9 +32,9 @@ export default function SettingsScreen({ navigation }: any) {
         setName(session.user.user_metadata?.full_name || '');
         setPhone(session.user.user_metadata?.phone || '');
         
-        const { data: profile } = await supabase.from('profiles').select('is_public').eq('id', session.user.id).single();
+        const { data: profile } = await (supabase.from('profiles').select('is_public') as any).eq('id', session.user.id).single();
         if (profile) {
-          setIsPublic(!!profile.is_public);
+          setIsPublic(!!(profile as any).is_public);
         }
       }
     });
