@@ -259,17 +259,37 @@ function NewEventPage() {
       let currentDate = new Date(form.start_datetime);
       let currentEndDate = new Date(form.end_datetime);
 
+      let slugBase = slugify(form.title);
+      if (!slugBase) slugBase = "event";
+      
+      const { data: existingEvents } = await supabase
+        .from("events")
+        .select("slug")
+        .like("slug", `${slugBase}%`);
+      
+      const existingSlugs = new Set(existingEvents?.map(e => e.slug) || []);
+      
+      let currentSlugIndex = 2;
+      function getUniqueSlug(base: string) {
+        if (!existingSlugs.has(base)) {
+          existingSlugs.add(base);
+          return base;
+        }
+        while (existingSlugs.has(`${base}-${currentSlugIndex}`)) {
+          currentSlugIndex++;
+        }
+        const newSlug = `${base}-${currentSlugIndex}`;
+        existingSlugs.add(newSlug);
+        return newSlug;
+      }
+
       const occurrences = [];
       for (let i = 0; i < numOccurrences; i++) {
-        let slugSuffix = "";
+        let targetSlug = slugBase;
         if (numOccurrences > 1) {
-          slugSuffix = `-${i + 1}`;
+          targetSlug = `${slugBase}-${i + 1}`;
         }
-
-        let slugBase = slugify(form.title);
-        // Add random string to avoid conflict
-        const randomString = Math.random().toString(36).substring(2, 6);
-        const slug = `${slugBase}${slugSuffix}-${randomString}`;
+        const slug = getUniqueSlug(targetSlug);
 
         occurrences.push({
           organizer_id: currentUserId,

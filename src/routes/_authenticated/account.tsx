@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 
 export const Route = createFileRoute("/_authenticated/account")({
   component: AccountPage,
@@ -73,6 +74,7 @@ async function fetchMyApplication() {
 const profileSchema = z.object({
   full_name: z.string().trim().max(80).optional().nullable(),
   username: z.string().trim().max(30).optional().nullable(),
+  is_public: z.boolean().optional(),
   organizer_slug: z.string().trim().regex(/^[a-z0-9-]+$/, "Only lowercase letters, numbers, and hyphens").max(40).optional().nullable().or(z.literal("")),
   bio: z.string().trim().max(300).optional().nullable(),
   banner_url: z.string().trim().url().optional().nullable().or(z.literal("")),
@@ -117,6 +119,7 @@ function AccountPage() {
   const [form, setForm] = useState({
     full_name: "",
     username: "",
+    is_public: true,
     organizer_slug: "",
     bio: "",
     banner_url: "",
@@ -134,6 +137,7 @@ function AccountPage() {
       setForm({
         full_name: data.profile.full_name ?? "",
         username: data.profile.username ?? "",
+        is_public: data.profile.is_public ?? true,
         organizer_slug: data.profile.organizer_slug ?? "",
         bio: data.profile.bio ?? "",
         banner_url: data.profile.banner_url ?? "",
@@ -402,6 +406,17 @@ function AccountPage() {
                           placeholder="Lagos"
                         />
                       </Field>
+                    </div>
+
+                    <div className="mt-8 p-6 rounded-2xl border border-border/50 bg-background/30 flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-medium tracking-tight text-foreground">Privacy: Show me on Guest Lists</h3>
+                        <p className="text-sm text-muted-foreground mt-1">If enabled, other attendees can see you on the event's guest list.</p>
+                      </div>
+                      <Switch
+                        checked={form.is_public}
+                        onCheckedChange={(c) => setForm({ ...form, is_public: c })}
+                      />
                     </div>
 
                     {data?.profile?.is_organizer && (
