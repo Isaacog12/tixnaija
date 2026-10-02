@@ -195,6 +195,9 @@ async function fetchEventBySlug(slug: string) {
   delete ev.ticket_types; // keep structure identical for rest of code
   delete ev.checkout_questions;
 
+  // Fetch Social Proof
+  const { data: socialProof } = await supabase.rpc("get_event_attendees" as any, { p_event_id: ev.id });
+
   // Sort tickets by price locally since we fetched via join
   types.sort((a: any, b: any) => a.price_kobo - b.price_kobo);
 
@@ -202,6 +205,7 @@ async function fetchEventBySlug(slug: string) {
     event: ev,
     types: types as TicketType[],
     questions: questions.sort((a: any, b: any) => a.position - b.position),
+    socialProof: socialProof || null,
   };
 }
 
@@ -596,6 +600,7 @@ function EventDetailPage() {
               setWaitlistTier(t);
               setWaitlistOpen(true);
             }}
+            socialProof={(data as any).socialProof}
           />
           {similarEvents && similarEvents.length > 0 && <SimilarEvents events={similarEvents} />}
         </>
@@ -1033,6 +1038,7 @@ function EventBody({
   totalCount,
   totalKobo,
   onJoinWaitlist,
+  socialProof,
 }: {
   event: NonNullable<Awaited<ReturnType<typeof fetchEventBySlug>>>["event"];
   types: TicketType[];
@@ -1042,6 +1048,7 @@ function EventBody({
   totalCount: number;
   totalKobo: number;
   onJoinWaitlist: (tier: TicketType) => void;
+  socialProof: any;
 }) {
   const start = new Date(event.start_datetime);
   const end = event.end_datetime
@@ -1236,7 +1243,46 @@ function EventBody({
           )}
         </div>
 
-        <aside className="md:sticky md:top-24 md:self-start">
+        <aside className="md:sticky md:top-24 md:self-start flex flex-col gap-6">
+          {socialProof && socialProof.total_count > 0 && (
+            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 backdrop-blur flex flex-col items-center text-center shadow-sm">
+              {socialProof.can_view_avatars && socialProof.attendees?.length > 0 ? (
+                <>
+                  <div className="flex -space-x-3 mb-3">
+                    {socialProof.attendees.map((a: any, idx: number) => (
+                      <div key={a.user_id} className="relative z-10 w-10 h-10 rounded-full border-2 border-background overflow-hidden bg-primary text-primary-foreground flex items-center justify-center font-bold" style={{ zIndex: 10 - idx }}>
+                        {a.avatar_url ? (
+                          <img src={a.avatar_url} alt={a.first_name} className="w-full h-full object-cover" />
+                        ) : (
+                          a.first_name.charAt(0).toUpperCase()
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-sm text-foreground/90 font-medium">
+                    Joined by {socialProof.attendees.map((a: any) => a.first_name).join(', ')}
+                    {socialProof.total_count > socialProof.attendees.length ? ` and ${socialProof.total_count - socialProof.attendees.length} others` : ''}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="flex -space-x-3 mb-3">
+                    <div className="relative z-[10] w-10 h-10 rounded-full border-2 border-background bg-muted flex items-center justify-center font-bold text-muted-foreground">?</div>
+                    <div className="relative z-[9] w-10 h-10 rounded-full border-2 border-background bg-muted flex items-center justify-center font-bold text-muted-foreground">?</div>
+                  </div>
+                  <p className="text-sm text-foreground/90 font-medium">
+                    {socialProof.total_count} {socialProof.total_count === 1 ? 'person is' : 'people are'} attending.
+                  </p>
+                  {!socialProof.can_view_avatars && (
+                    <p className="text-xs text-primary mt-1 font-medium">
+                      Enable "Guest Lists" in Settings to see who!
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
           <div className="rounded-2xl border border-border bg-card/70 p-5 backdrop-blur">
             <h2 className="font-display text-xl md:text-2xl">Tickets</h2>
             <p className="text-xs text-muted-foreground">Select how many of each tier.</p>
