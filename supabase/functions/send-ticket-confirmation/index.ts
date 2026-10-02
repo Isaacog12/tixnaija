@@ -6,16 +6,15 @@ import QRCode from "https://esm.sh/qrcode@1.5.3";
 import { sendEmail } from "../_shared/zeptomail.ts";
 
 const allowedOrigins = [
-  "https://tixnaija.vercel.app",
+  "https://www.tixnaija.name.ng",
   "http://localhost:3000",
   "http://localhost:5173",
   "http://localhost:8080",
-  "https://www.tixnaija.name.ng",
   "https://tixnaija.name.ng"
 ];
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "https://tixnaija.vercel.app",
+  "Access-Control-Allow-Origin": "https://www.tixnaija.name.ng",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS, PUT, DELETE",
 };
@@ -25,7 +24,7 @@ function getCorsHeaders(req) {
   const isAllowed = allowedOrigins.includes(origin) || origin.endsWith(".vercel.app");
   return {
     ...corsHeaders,
-    "Access-Control-Allow-Origin": isAllowed ? origin : "https://tixnaija.vercel.app",
+    "Access-Control-Allow-Origin": isAllowed ? origin : "https://www.tixnaija.name.ng",
   };
 }
 
@@ -53,6 +52,7 @@ serve(async (req: Request) => {
           start_datetime,
           venue_name,
           address,
+          image_url,
           custom_order_confirmation
         ),
         order_items (
@@ -90,89 +90,77 @@ serve(async (req: Request) => {
     const venue = [order.events?.venue_name, order.events?.address].filter(Boolean).join(', ') || 'Online';
 
     // 1. Send Master Receipt to Buyer
+    const eventImageHtml = order.events?.image_url 
+      ? `<img src="${order.events.image_url}" alt="${eventTitle}" style="width: 100%; border-radius: 12px; margin-bottom: 32px; object-fit: cover;" />` 
+      : '';
+
     let masterHtmlBody = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #000000; color: #ffffff; padding: 40px 20px; text-align: center;">
-      <div style="max-width: 600px; margin: 0 auto; background: linear-gradient(180deg, #1A1D24 0%, #13151A 100%); border-radius: 16px; padding: 32px 24px; text-align: left; border: 1px solid #272A32; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif; background-color: #000000; color: #F5F5F7; padding: 60px 20px; text-align: center; -webkit-font-smoothing: antialiased;">
+      <div style="max-width: 480px; margin: 0 auto; text-align: left;">
         
-        <div style="text-align: center; margin-bottom: 32px;">
-          <img src="https://tixnaija.name.ng/logo.png" alt="TixNaija" style="height: 28px; display: inline-block; margin-bottom: 16px;" />
-          <div style="height: 3px; width: 100%; background: linear-gradient(90deg, #FF5A1F 0%, #0ea5e9 100%); border-radius: 4px;"></div>
+        <div style="text-align: center; margin-bottom: 48px;">
+          <img src="https://tixnaija.name.ng/logo.png" alt="TixNaija" style="height: 24px; display: inline-block;" />
         </div>
         
-        <h1 style="font-size: 26px; font-weight: 700; margin: 0 0 8px; color: #ffffff;">
-          Ticket confirmed <span style="display:inline-block; font-size: 20px;">✅</span>
+        ${eventImageHtml}
+
+        <h1 style="font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 8px; color: #FFFFFF;">
+          Tickets Confirmed.
         </h1>
-        <p style="margin: 0 0 32px; color: #e4e4e7; font-size: 18px;">Hi ${recipientName}</p>
+        <p style="margin: 0 0 40px; color: #A1A1A6; font-size: 17px; line-height: 1.4;">Hello ${recipientName}, your order is complete.</p>
     `;
 
     if (isGift) {
       masterHtmlBody += `
-        <div style="background: #2a1510; border-left: 4px solid #FF5A1F; padding: 16px; margin-bottom: 32px; border-radius: 4px;">
-          <p style="margin: 0; font-size: 15px; color: #fff;">This is a gift from <strong>${order.buyer_name}</strong>!</p>
-          ${order.gift_message ? `<p style="margin: 12px 0 0; font-style: italic; color: #fb923c;">"${order.gift_message}"</p>` : ''}
+        <div style="border-left: 2px solid #FF5A1F; padding-left: 16px; margin-bottom: 40px;">
+          <p style="margin: 0; font-size: 15px; color: #FFFFFF;">Gifted by <strong>${order.buyer_name}</strong></p>
+          ${order.gift_message ? `<p style="margin: 8px 0 0; color: #A1A1A6; font-style: italic;">"${order.gift_message}"</p>` : ''}
         </div>
       `;
     }
 
     if (order.events?.custom_order_confirmation) {
       masterHtmlBody += `
-        <div style="background: #1e293b; border-left: 4px solid #0ea5e9; padding: 16px; margin-bottom: 32px; border-radius: 4px;">
-          <h3 style="margin: 0 0 8px; font-size: 15px; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;">Message from the Organizer</h3>
-          <p style="margin: 0; font-size: 15px; color: #e2e8f0; white-space: pre-wrap;">${order.events.custom_order_confirmation}</p>
+        <div style="background-color: #1C1C1E; border-radius: 12px; padding: 24px; margin-bottom: 40px;">
+          <h3 style="margin: 0 0 12px; font-size: 13px; font-weight: 500; color: #86868B; text-transform: uppercase; letter-spacing: 0.05em;">Message from Organizer</h3>
+          <p style="margin: 0; font-size: 15px; color: #E5E5EA; line-height: 1.5; white-space: pre-wrap;">${order.events.custom_order_confirmation}</p>
         </div>
       `;
     }
 
     masterHtmlBody += `
-        <table style="width: 100%; border-collapse: collapse; background: #1f222b; border-radius: 12px; margin-bottom: 32px; font-size: 15px;">
-          <tr>
-            <td style="padding: 16px 20px; border-bottom: 1px solid #2a2e37;">
-              <span style="color: #a1a1aa; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Event</span>
-              <strong style="color: #ffffff; font-weight: 600;">${eventTitle}</strong>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 16px 20px; border-bottom: 1px solid #2a2e37;">
-              <span style="color: #a1a1aa; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Date & Time</span>
-              <strong style="color: #ffffff; font-weight: 600;">${date}</strong>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 16px 20px; border-bottom: 1px solid #2a2e37;">
-              <span style="color: #a1a1aa; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Venue</span>
-              <strong style="color: #ffffff; font-weight: 600;">${venue}</strong>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 16px 20px; border-bottom: 1px solid #2a2e37;">
-              <span style="color: #a1a1aa; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Ticket Type</span>
-              <strong style="color: #ffffff; font-weight: 600;">${ticketTypes}</strong>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 16px 20px; border-bottom: 1px solid #2a2e37;">
-              <span style="color: #a1a1aa; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Quantity</span>
-              <strong style="color: #ffffff; font-weight: 600;">${totalQuantity}</strong>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 16px 20px; border-bottom: 1px solid #2a2e37;">
-              <span style="color: #a1a1aa; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Amount Paid</span>
-              <strong style="color: #ffffff; font-weight: 600;">${amountPaid}</strong>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 16px 20px;">
-              <span style="color: #a1a1aa; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Order Ref</span>
-              <strong style="color: #ffffff; font-weight: 600;">${orderRef}</strong>
-            </td>
-          </tr>
-        </table>
+        <div style="margin-bottom: 48px;">
+          <div style="border-bottom: 1px solid #333336; padding: 16px 0;">
+            <span style="display: block; font-size: 13px; color: #86868B; margin-bottom: 4px;">Event</span>
+            <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${eventTitle}</span>
+          </div>
+          <div style="border-bottom: 1px solid #333336; padding: 16px 0;">
+            <span style="display: block; font-size: 13px; color: #86868B; margin-bottom: 4px;">Date & Time</span>
+            <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${date}</span>
+          </div>
+          <div style="border-bottom: 1px solid #333336; padding: 16px 0;">
+            <span style="display: block; font-size: 13px; color: #86868B; margin-bottom: 4px;">Venue</span>
+            <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${venue}</span>
+          </div>
+          <div style="border-bottom: 1px solid #333336; padding: 16px 0; display: flex; justify-content: space-between;">
+            <div>
+              <span style="display: block; font-size: 13px; color: #86868B; margin-bottom: 4px;">Ticket</span>
+              <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${ticketTypes} (x${totalQuantity})</span>
+            </div>
+            <div style="text-align: right;">
+              <span style="display: block; font-size: 13px; color: #86868B; margin-bottom: 4px;">Total</span>
+              <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${amountPaid}</span>
+            </div>
+          </div>
+        </div>
         
-        <a href="${downloadUrl}" style="display: block; width: 100%; text-align: center; background: #c2410c; color: #ffffff; text-decoration: none; padding: 18px 0; border-radius: 8px; font-weight: 600; font-size: 16px; margin-bottom: 16px; border: 1px solid #ea580c;">Download all tickets 📥</a>
-        <a href="${ticketUrl}" style="display: block; width: 100%; text-align: center; background: #1e293b; color: #94a3b8; text-decoration: none; padding: 18px 0; border-radius: 8px; font-weight: 600; font-size: 16px; border: 1px solid #334155;">🌐 View tickets online</a>
+        <a href="${ticketUrl}" style="display: block; width: 100%; text-align: center; background-color: #FFFFFF; color: #000000; text-decoration: none; padding: 16px 0; border-radius: 12px; font-weight: 500; font-size: 17px; margin-bottom: 12px;">View Tickets</a>
+        <a href="${downloadUrl}" style="display: block; width: 100%; text-align: center; background-color: transparent; border: 1px solid #333336; color: #FFFFFF; text-decoration: none; padding: 16px 0; border-radius: 12px; font-weight: 500; font-size: 17px;">Download PDF Receipt</a>
 
-        <p style="margin-top: 48px; font-size: 13px; color: #71717a; text-align: center;">TixNaija — questions? Reply to this email. (Sent at ${sentTime})</p>
+        <div style="margin-top: 60px; padding-top: 24px; border-top: 1px solid #1C1C1E; text-align: center;">
+          <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">Order Ref: ${orderRef}</p>
+          <p style="margin: 0; font-size: 12px; color: #86868B;">TixNaija. Sent at ${sentTime}</p>
+        </div>
       </div>
     </div>
     `;
@@ -219,69 +207,68 @@ serve(async (req: Request) => {
       const attSubject = `Your ticket for ${eventTitle} 🎟️ (Code: ${tickets[0].ticket_code.split('-')[0].toUpperCase()})`;
 
       let attHtmlBody = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #000000; color: #ffffff; padding: 40px 20px; text-align: center;">
-        <div style="max-width: 600px; margin: 0 auto; background: linear-gradient(180deg, #1A1D24 0%, #13151A 100%); border-radius: 16px; padding: 32px 24px; text-align: left; border: 1px solid #272A32; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif; background-color: #000000; color: #F5F5F7; padding: 60px 20px; text-align: center; -webkit-font-smoothing: antialiased;">
+        <div style="max-width: 480px; margin: 0 auto; text-align: left;">
           
-          <div style="text-align: center; margin-bottom: 32px;">
-            <img src="https://tixnaija.name.ng/logo.png" alt="TixNaija" style="height: 28px; display: inline-block; margin-bottom: 16px;" />
-            <div style="height: 3px; width: 100%; background: linear-gradient(90deg, #FF5A1F 0%, #0ea5e9 100%); border-radius: 4px;"></div>
+          <div style="text-align: center; margin-bottom: 48px;">
+            <img src="https://tixnaija.name.ng/logo.png" alt="TixNaija" style="height: 24px; display: inline-block;" />
           </div>
+
+          ${eventImageHtml}
           
-          <h1 style="font-size: 26px; font-weight: 700; margin: 0 0 8px; color: #ffffff;">
-            You've got a ticket! 🎟️
+          <h1 style="font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 8px; color: #FFFFFF;">
+            Your Ticket.
           </h1>
-          <p style="margin: 0 0 32px; color: #e4e4e7; font-size: 16px;">Hi ${attendeeName}, <strong>${order.buyer_name}</strong> sent you a ticket for <strong>${eventTitle}</strong>.</p>
+          <p style="margin: 0 0 40px; color: #A1A1A6; font-size: 17px; line-height: 1.4;">Hi ${attendeeName}, <strong>${order.buyer_name}</strong> sent you a ticket for <strong>${eventTitle}</strong>.</p>
       `;
 
       if (order.events?.custom_order_confirmation) {
         attHtmlBody += `
-          <div style="background: #1e293b; border-left: 4px solid #0ea5e9; padding: 16px; margin-bottom: 32px; border-radius: 4px;">
-            <h3 style="margin: 0 0 8px; font-size: 15px; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;">Message from the Organizer</h3>
-            <p style="margin: 0; font-size: 15px; color: #e2e8f0; white-space: pre-wrap;">${order.events.custom_order_confirmation}</p>
+          <div style="background-color: #1C1C1E; border-radius: 12px; padding: 24px; margin-bottom: 40px;">
+            <h3 style="margin: 0 0 12px; font-size: 13px; font-weight: 500; color: #86868B; text-transform: uppercase; letter-spacing: 0.05em;">Message from Organizer</h3>
+            <p style="margin: 0; font-size: 15px; color: #E5E5EA; line-height: 1.5; white-space: pre-wrap;">${order.events.custom_order_confirmation}</p>
           </div>
         `;
       }
 
       attHtmlBody += `
-          <table style="width: 100%; border-collapse: collapse; background: #1f222b; border-radius: 12px; margin-bottom: 32px; font-size: 15px;">
-            <tr>
-              <td style="padding: 16px 20px; border-bottom: 1px solid #2a2e37;">
-                <span style="color: #a1a1aa; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Date & Time</span>
-                <strong style="color: #ffffff; font-weight: 600;">${date}</strong>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding: 16px 20px;">
-                <span style="color: #a1a1aa; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Venue</span>
-                <strong style="color: #ffffff; font-weight: 600;">${venue}</strong>
-              </td>
-            </tr>
-          </table>
-          
-          <p style="margin: 0 0 16px; font-weight: 600; font-size: 14px; color: #a1a1aa; text-align: center; text-transform: uppercase; letter-spacing: 1px;">Your Tickets</p>
+          <div style="margin-bottom: 40px;">
+            <div style="border-bottom: 1px solid #333336; padding: 16px 0;">
+              <span style="display: block; font-size: 13px; color: #86868B; margin-bottom: 4px;">Date & Time</span>
+              <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${date}</span>
+            </div>
+            <div style="border-bottom: 1px solid #333336; padding: 16px 0;">
+              <span style="display: block; font-size: 13px; color: #86868B; margin-bottom: 4px;">Venue</span>
+              <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${venue}</span>
+            </div>
+          </div>
       `;
 
       for (const t of tickets) {
-        const singleUrl = `https://tixnaija.name.ng/t/${t.ticket_code}`;
-        const qrUrl = await QRCode.toDataURL(t.ticket_code, { width: 150, margin: 1 });
+        const singleUrl = \`https://tixnaija.name.ng/t/\${t.ticket_code}\`;
+        const singlePdfUrl = \`\${singleUrl}?download=true\`;
+        const qrUrl = await QRCode.toDataURL(t.ticket_code, { width: 200, margin: 1, color: { dark: '#000000', light: '#FFFFFF' } });
         
         attHtmlBody += `
-          <div style="background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 24px; margin-bottom: 16px; text-align: center;">
-            <p style="margin: 0 0 8px; font-weight: 700; font-size: 18px; color: #fff;">${t.ticketTypeName}</p>
-            <p style="margin: 0 0 16px; font-size: 13px; color: #94a3b8; font-family: monospace; letter-spacing: 1px;">CODE: ${t.ticket_code.split('-')[0].toUpperCase()}</p>
+          <div style="background-color: #1C1C1E; border-radius: 16px; padding: 32px; margin-bottom: 24px; text-align: center; border: 1px solid #333336;">
+            <p style="margin: 0 0 4px; font-weight: 600; font-size: 20px; color: #FFFFFF;">${t.ticketTypeName}</p>
+            <p style="margin: 0 0 24px; font-size: 14px; color: #86868B; letter-spacing: 0.05em;">CODE: ${t.ticket_code.split('-')[0].toUpperCase()}</p>
             
-            <div style="background: #ffffff; padding: 12px; border-radius: 12px; display: inline-block; margin-bottom: 24px;">
-              <img src="${qrUrl}" alt="Ticket QR Code" width="150" height="150" style="display: block; width: 150px; height: 150px; margin: 0 auto;" />
+            <div style="background: #FFFFFF; padding: 16px; border-radius: 16px; display: inline-block; margin-bottom: 32px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);">
+              <img src="${qrUrl}" alt="Ticket QR Code" style="display: block; width: 160px; height: 160px; margin: 0 auto;" />
             </div>
             
-            <br />
-            <a href="${singleUrl}" style="display: inline-block; background: #c2410c; border: 1px solid #ea580c; color: #fff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">View / Download Ticket 📥</a>
+            <a href="${singlePdfUrl}" style="display: block; width: 100%; text-align: center; background-color: #FFFFFF; color: #000000; text-decoration: none; padding: 16px 0; border-radius: 12px; font-weight: 500; font-size: 17px; margin-bottom: 12px;">Download PDF Ticket</a>
+            <a href="${singleUrl}" style="display: block; width: 100%; text-align: center; background-color: transparent; border: 1px solid #48484A; color: #FFFFFF; text-decoration: none; padding: 16px 0; border-radius: 12px; font-weight: 500; font-size: 17px;">View in Browser</a>
           </div>
         `;
       }
 
       attHtmlBody += `
-          <p style="margin-top: 48px; font-size: 13px; color: #71717a; text-align: center;">TixNaija — questions? Contact us at support or reply to this email. (Sent at ${sentTime})</p>
+          <div style="margin-top: 60px; padding-top: 24px; border-top: 1px solid #1C1C1E; text-align: center;">
+            <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">TixNaija Support</p>
+            <p style="margin: 0; font-size: 12px; color: #86868B;">Sent at ${sentTime}</p>
+          </div>
         </div>
       </div>
       `;
