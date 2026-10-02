@@ -24,7 +24,7 @@ export const Route = createFileRoute("/download")({
 });
 
 // ── Replace this URL after running PWABuilder and uploading the APK ──────────
-const APK_DOWNLOAD_URL: string | null = "https://www.dropbox.com/scl/fi/qcte5s6u4nasixbn3if4z/TixNaija.apk?rlkey=07t4yuxtx04grpq5c9swc1zgj&st=odnx3ncl&dl=1";
+const APK_DOWNLOAD_URL: string | null = "https://www.dropbox.com/scl/fi/22trrqd8vclf0s3ouvt4j/application-ce0f4b69-e1af-482e-940d-2c0fde2fd9a7.apk?rlkey=mimyzpqx39oxu9wigon5ij7gx&st=pum7uev7&dl=1";
 const APK_VERSION = "1.0.1"; // User requested strict 1.0.0 versioning for OTA
 
 const STAGGER_CHILD: Variants = {
