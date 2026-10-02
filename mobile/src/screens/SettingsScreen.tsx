@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking, ScrollView, Switch, Modal, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useVersionCheck } from '../hooks/useVersionCheck';
 import { supabase } from '../../supabase/client';
-import { ChevronRight, User, Bell, Shield, HelpCircle, FileText, LogOut, Download, Lock, Trash2 } from 'lucide-react-native';
+import { ChevronRight, User, Bell, Shield, HelpCircle, FileText, LogOut, Download, Lock, Trash2, Users } from 'lucide-react-native';
 import * as Notifications from 'expo-notifications';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -11,6 +11,7 @@ export default function SettingsScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const [user, setUser] = useState<any>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [isPublic, setIsPublic] = useState(false);
 
   // Modal states
   const [personalInfoVisible, setPersonalInfoVisible] = useState(false);
@@ -25,11 +26,16 @@ export default function SettingsScreen({ navigation }: any) {
   const [isSavingSecurity, setIsSavingSecurity] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user);
         setName(session.user.user_metadata?.full_name || '');
         setPhone(session.user.user_metadata?.phone || '');
+        
+        const { data: profile } = await supabase.from('profiles').select('is_public').eq('id', session.user.id).single();
+        if (profile) {
+          setIsPublic(!!profile.is_public);
+        }
       }
     });
     
@@ -75,6 +81,20 @@ export default function SettingsScreen({ navigation }: any) {
       }
       setNotificationsEnabled(false);
       Alert.alert('Notifications Disabled', 'You can turn them off completely from your Phone Settings.');
+    }
+  };
+
+  const handleTogglePublic = async (value: boolean) => {
+    setIsPublic(value);
+    try {
+      await supabase.from('profiles').update({ is_public: value } as any).eq('id', user.id);
+      if (value) {
+        Alert.alert('Social Proof Enabled', "You will now appear on event guest lists, and you can see other attendees!");
+      } else {
+        Alert.alert('Privacy Mode', "You are hidden from all guest lists, but you can no longer see other attendees.");
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -231,6 +251,19 @@ export default function SettingsScreen({ navigation }: any) {
           <Switch 
             value={notificationsEnabled}
             onValueChange={handleToggleNotifications}
+            trackColor={{ false: "#403b38", true: "#f2611e" }}
+            thumbColor="#f4f2f0"
+          />
+        )}
+        <View style={styles.divider} />
+        {renderSettingItem(
+          <Users color="#f4f2f0" size={20} />, 
+          "Show me on Guest Lists", 
+          "See who's going, and let friends see you",
+          undefined,
+          <Switch 
+            value={isPublic}
+            onValueChange={handleTogglePublic}
             trackColor={{ false: "#403b38", true: "#f2611e" }}
             thumbColor="#f4f2f0"
           />

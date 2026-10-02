@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView, Alert, Share } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView, Alert, Share, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../supabase/client';
 import { Share2, BadgeCheck, ChevronRight } from 'lucide-react-native';
@@ -12,6 +12,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [selectedTickets, setSelectedTickets] = useState<{[key: string]: number}>({});
   const [isJoiningWaitlist, setIsJoiningWaitlist] = useState<string | null>(null);
+  const [socialProof, setSocialProof] = useState<any>(null);
 
   useEffect(() => {
     fetchEventDetails();
@@ -35,6 +36,12 @@ export default function EventDetailScreen({ route, navigation }: any) {
 
       const ticketsRes = await supabase.from('ticket_types').select('*').eq('event_id', eventData.id).order('price_kobo', { ascending: true });
       if (ticketsRes.error) throw ticketsRes.error;
+
+      // Fetch Social Proof
+      const attendeesRes = await supabase.rpc('get_event_attendees' as any, { p_event_id: eventData.id });
+      if (!attendeesRes.error && attendeesRes.data) {
+        setSocialProof(attendeesRes.data);
+      }
 
       setEvent(eventData);
       setTicketTypes(ticketsRes.data || []);
@@ -183,6 +190,48 @@ export default function EventDetailScreen({ route, navigation }: any) {
           </TouchableOpacity>
         )}
 
+        {/* Social Proof Box */}
+        {socialProof && socialProof.total_count > 0 && (
+          <View style={styles.socialProofBox}>
+            <View style={styles.avatarsRow}>
+              {socialProof.can_view_avatars && socialProof.attendees?.length > 0 ? (
+                <>
+                  <View style={styles.avatarStack}>
+                    {socialProof.attendees.map((a: any, idx: number) => (
+                      <View key={a.user_id} style={[styles.miniAvatar, { marginLeft: idx === 0 ? 0 : -12, zIndex: 10 - idx }]}>
+                        {a.avatar_url ? (
+                          <Image source={{ uri: a.avatar_url }} style={styles.miniAvatarImage} />
+                        ) : (
+                          <Text style={styles.miniAvatarText}>{a.first_name.charAt(0).toUpperCase()}</Text>
+                        )}
+                      </View>
+                    ))}
+                  </View>
+                  <Text style={styles.socialText}>
+                    Joined by {socialProof.attendees.map((a:any)=>a.first_name).join(', ')} 
+                    {socialProof.total_count > socialProof.attendees.length ? ` and ${socialProof.total_count - socialProof.attendees.length} others` : ''}
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <View style={styles.avatarStack}>
+                    <View style={[styles.miniAvatar, { backgroundColor: '#403b38' }]}><Text style={styles.miniAvatarText}>?</Text></View>
+                    <View style={[styles.miniAvatar, { backgroundColor: '#403b38', marginLeft: -12 }]}><Text style={styles.miniAvatarText}>?</Text></View>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.socialText, { marginBottom: 2 }]}>
+                      {socialProof.total_count} {socialProof.total_count === 1 ? 'person is' : 'people are'} attending.
+                    </Text>
+                    {!socialProof.can_view_avatars && (
+                      <Text style={styles.socialHintText}>Enable "Guest Lists" in Settings to see who!</Text>
+                    )}
+                  </View>
+                </>
+              )}
+            </View>
+          </View>
+        )}
+
         <Text style={styles.sectionTitle}>Tickets</Text>
         {ticketTypes.map(ticket => (
           <View key={ticket.id} style={styles.ticketCard}>
@@ -280,6 +329,55 @@ const styles = StyleSheet.create({
   organizerInfo: { flex: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center' },
   organizerName: { fontSize: 16, fontWeight: '600', color: '#f4f2f0' },
+  
+  socialProofBox: {
+    backgroundColor: 'rgba(242, 97, 30, 0.05)',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(242, 97, 30, 0.2)',
+    marginBottom: 32,
+  },
+  avatarsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatarStack: {
+    flexDirection: 'row',
+    marginRight: 12,
+  },
+  miniAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f2611e',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#22201e',
+    overflow: 'hidden',
+  },
+  miniAvatarImage: {
+    width: '100%',
+    height: '100%',
+  },
+  miniAvatarText: {
+    color: '#22201e',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  socialText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#f4f2f0',
+    lineHeight: 20,
+  },
+  socialHintText: {
+    fontSize: 12,
+    color: '#f2611e',
+    fontWeight: '500',
+  },
+
   sectionTitle: { fontSize: 20, fontWeight: 'bold', color: '#f4f2f0', marginBottom: 16 },
   ticketCard: {
     flexDirection: 'row',
