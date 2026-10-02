@@ -13,6 +13,7 @@ export function SocialLogins({
 }: {
   mode: "signin" | "signup";
   termsAccepted?: boolean;
+  redirectUrl?: string;
 }) {
   const [isGoogleBusy, setIsGoogleBusy] = useState(false);
 
@@ -27,7 +28,11 @@ export function SocialLogins({
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
-        options: { redirectTo: `${window.location.origin}/auth` },
+        options: {
+          redirectTo: redirectUrl
+            ? `${window.location.origin}/auth?redirect=${encodeURIComponent(redirectUrl)}`
+            : `${window.location.origin}/auth`,
+        },
       });
       if (error) throw error;
     } catch (error: unknown) {
@@ -42,6 +47,7 @@ export function SocialLogins({
       {mode === "signin" && (
         <Link
           to="/otp"
+          search={redirectUrl ? { redirect: redirectUrl } : undefined}
           className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm dark:shadow-none font-semibold text-zinc-900 dark:text-white transition-all duration-200 hover:bg-zinc-50 dark:hover:bg-white/10 active:scale-[0.98]"
         >
           <Mail className="h-5 w-5 text-zinc-600 dark:text-white/70" />

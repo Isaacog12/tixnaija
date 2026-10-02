@@ -10,6 +10,7 @@ import { SignUpForm } from "@/components/auth/SignUpForm";
 
 const searchSchema = z.object({
   mode: z.enum(["signin", "signup"]).optional(),
+  redirect: z.string().optional(),
 });
 
 export const Route = createFileRoute("/auth-v2")({
@@ -30,10 +31,10 @@ const fadeUp = {
 };
 
 function AuthV2Page() {
-  const { mode } = Route.useSearch();
+  const { mode, redirect } = Route.useSearch();
   const isSignUp = mode === "signup";
 
-  useRedirectIfAuthenticated();
+  useRedirectIfAuthenticated(redirect);
   useHashErrorHandler();
 
   const variants = {
@@ -111,7 +112,7 @@ function AuthV2Page() {
                   </div>
                   {/* We wrap the existing form. Note: You may need to tweak the internal form's CSS to fit the dark theme perfectly. */}
                   <div className="[&_label]:text-white/70 [&_input]:bg-white/5 [&_input]:border-white/10 [&_input]:text-white [&_input]:h-12 [&_input:focus]:border-orange-500/50 [&_button[type='submit']]:bg-orange-600 [&_button[type='submit']]:hover:bg-orange-500 [&_button[type='submit']]:text-white [&_button[type='submit']]:h-12 [&_button[type='submit']]:rounded-xl [&_p.text-muted-foreground]:text-white/40">
-                    <SignUpForm />
+                    <SignUpForm redirectUrl={redirect} />
                   </div>
                 </motion.div>
               ) : (
@@ -128,7 +129,7 @@ function AuthV2Page() {
                     <p className="text-white/50 text-sm">Enter your credentials to access your account.</p>
                   </div>
                   <div className="[&_label]:text-white/70 [&_input]:bg-white/5 [&_input]:border-white/10 [&_input]:text-white [&_input]:h-12 [&_input:focus]:border-orange-500/50 [&_button[type='submit']]:bg-orange-600 [&_button[type='submit']]:hover:bg-orange-500 [&_button[type='submit']]:text-white [&_button[type='submit']]:h-12 [&_button[type='submit']]:rounded-xl [&_p.text-muted-foreground]:text-white/40 [&_a]:text-orange-500 [&_a:hover]:text-orange-400">
-                    <SignInForm />
+                    <SignInForm redirectUrl={redirect} />
                   </div>
                 </motion.div>
               )}
@@ -139,14 +140,14 @@ function AuthV2Page() {
             {isSignUp ? (
               <p className="text-sm text-white/40">
                 Already have an account?{" "}
-                <Link to="/auth-v2" search={{ mode: "signin" }} className="text-orange-500 hover:text-orange-400 font-medium transition-colors">
+                <Link to="/auth-v2" search={{ mode: "signin", redirect }} className="text-orange-500 hover:text-orange-400 font-medium transition-colors">
                   Sign in
                 </Link>
               </p>
             ) : (
               <p className="text-sm text-white/40">
                 Don't have an account?{" "}
-                <Link to="/auth-v2" search={{ mode: "signup" }} className="text-orange-500 hover:text-orange-400 font-medium transition-colors">
+                <Link to="/auth-v2" search={{ mode: "signup", redirect }} className="text-orange-500 hover:text-orange-400 font-medium transition-colors">
                   Sign up
                 </Link>
               </p>

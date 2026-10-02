@@ -100,7 +100,7 @@ export function SignInForm({ redirectUrl }: { redirectUrl?: string }) {
 
       <Divider />
 
-      <SocialLogins mode="signin" />
+      <SocialLogins mode="signin" redirectUrl={redirectUrl} />
 
       <p className="text-center text-sm text-zinc-500 dark:text-white/50 mt-8">
         Don't have an account?{" "}

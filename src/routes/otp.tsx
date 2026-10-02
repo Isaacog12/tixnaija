@@ -11,6 +11,7 @@ import { SuccessCheckmark } from "@/components/demo/success-checkmark";
 export const Route = createFileRoute("/otp")({
   validateSearch: z.object({
     email: z.string().email().optional(),
+    redirect: z.string().optional(),
   }),
   component: OtpPage,
   head: () => ({
@@ -26,7 +27,7 @@ const OTP_LENGTH = 8;
 const RESEND_SECONDS = 60;
 
 function OtpPage() {
-  const { email: initialEmail } = Route.useSearch();
+  const { email: initialEmail, redirect } = Route.useSearch();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState(initialEmail || "");
@@ -139,7 +140,7 @@ function OtpPage() {
     } else {
       setState("success");
       setTimeout(() => {
-        navigate({ to: "/dashboard" });
+        navigate({ to: redirect || "/dashboard" });
       }, 2500);
     }
   };

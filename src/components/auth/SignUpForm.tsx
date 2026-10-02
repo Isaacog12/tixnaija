@@ -163,7 +163,7 @@ export function SignUpForm({ redirectUrl }: { redirectUrl?: string }) {
 
       <Divider />
 
-      <SocialLogins mode="signup" termsAccepted={termsAccepted} />
+      <SocialLogins mode="signup" termsAccepted={termsAccepted} redirectUrl={redirectUrl} />
 
       <p className="text-center text-sm text-zinc-500 dark:text-white/50 mt-8">
         Already have an account?{" "}
