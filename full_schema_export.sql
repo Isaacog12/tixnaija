@@ -424,7 +424,7 @@ CREATE TRIGGER on_auth_user_created
 grant select, insert, update on public.profiles to authenticated;
 grant all on public.profiles to service_role;
 revoke update on public.profiles from authenticated;
-grant update (full_name, phone, avatar_url, city, bank_name, bank_account_number, bank_account_name) on public.profiles to authenticated;
+grant update (full_name, phone, avatar_url, city, bank_name, bank_account_number, bank_account_name, is_public, username, organizer_slug, bio, banner_url) on public.profiles to authenticated;
 
 grant select on public.user_roles to authenticated;
 grant all on public.user_roles to service_role;

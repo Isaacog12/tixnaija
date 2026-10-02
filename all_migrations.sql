@@ -935,7 +935,7 @@ grant execute on function public.set_organizer_status to authenticated;
 
 -- Revoke general update on profiles and only grant update on safe columns
 revoke update on public.profiles from authenticated;
-grant update (full_name, phone, avatar_url, city, bank_name, bank_account_number, bank_account_name) 
+grant update (full_name, phone, avatar_url, city, bank_name, bank_account_number, bank_account_name, is_public, username, organizer_slug, bio, banner_url)
 on public.profiles to authenticated;
 
 -- 4. Fix: Public Bucket Allows Listing
