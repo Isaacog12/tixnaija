@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 export function SocialLogins({
   mode,
   termsAccepted = true,
+  redirectUrl,
 }: {
   mode: "signin" | "signup";
   termsAccepted?: boolean;
