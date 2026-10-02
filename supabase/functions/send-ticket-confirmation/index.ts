@@ -248,7 +248,7 @@ serve(async (req: Request) => {
       for (const t of tickets) {
         const singleUrl = `https://tixnaija.name.ng/t/${t.ticket_code}`;
         const singlePdfUrl = `${singleUrl}?download=true`;
-        const qrUrl = await QRCode.toDataURL(t.ticket_code, { width: 200, margin: 1, color: { dark: '#000000', light: '#FFFFFF' } });
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(t.ticket_code)}&margin=1`;
         
         attHtmlBody += `
           <div style="background-color: #1C1C1E; border-radius: 16px; padding: 32px; margin-bottom: 24px; text-align: center; border: 1px solid #333336;">
