@@ -283,9 +283,23 @@ function RootComponent() {
       router.invalidate();
     });
 
+    // Global realtime sync: when any core table changes, invalidate React Query cache
+    const channel = supabase
+      .channel('global-sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public' },
+        (payload) => {
+          console.log('Realtime DB change detected:', payload);
+          queryClient.invalidateQueries();
+        }
+      )
+      .subscribe();
+
     return () => {
       subscription.unsubscribe();
       window.removeEventListener("unhandledrejection", handleUnhandledRejection);
+      supabase.removeChannel(channel);
     };
   }, [router]);
 
