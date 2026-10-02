@@ -165,16 +165,6 @@ export function SignUpForm({ redirectUrl }: { redirectUrl?: string }) {
 
       <SocialLogins mode="signup" termsAccepted={termsAccepted} redirectUrl={redirectUrl} />
 
-      <p className="text-center text-sm text-zinc-500 dark:text-white/50 mt-8">
-        Already have an account?{" "}
-        <Link
-          to="/auth"
-          search={{ mode: "signin" }}
-          className="text-zinc-900 dark:text-white hover:text-primary transition-colors font-medium"
-        >
-          Sign In
-        </Link>
-      </p>
     </form>
   );
 }

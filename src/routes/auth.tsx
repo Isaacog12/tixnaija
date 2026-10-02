@@ -86,6 +86,32 @@ function AuthPage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        <div className="mt-8 text-center">
+          {isSignUp ? (
+            <p className="text-sm text-zinc-500 dark:text-white/50">
+              Already have an account?{" "}
+              <Link
+                to="/auth"
+                search={{ mode: "signin", redirect }}
+                className="text-zinc-900 dark:text-white hover:text-primary transition-colors font-medium"
+              >
+                Sign In
+              </Link>
+            </p>
+          ) : (
+            <p className="text-sm text-zinc-500 dark:text-white/50">
+              Don't have an account?{" "}
+              <Link
+                to="/auth"
+                search={{ mode: "signup", redirect }}
+                className="text-zinc-900 dark:text-white hover:text-primary transition-colors font-medium"
+              >
+                Sign Up
+              </Link>
+            </p>
+          )}
+        </div>
       </motion.div>
     </div>
   );
