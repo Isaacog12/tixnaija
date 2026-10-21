@@ -1,15 +1,30 @@
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ShieldAlert, ChevronRight, Package, ArrowDown, Sparkles, RefreshCcw } from "lucide-react";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { ShieldAlert, ChevronRight, Package, ArrowDown, RefreshCcw } from "lucide-react";
 import { motion, Variants } from "framer-motion";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { supabase } from "@/integrations/supabase/client";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 export const Route = createFileRoute("/download")({
+  // Admin-only: redirect non-admins to the homepage.
+  beforeLoad: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw redirect({ to: "/" });
+
+    const { data: adminRole } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", session.user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (!adminRole) throw redirect({ to: "/" });
+  },
   head: () => ({
     meta: [
       { title: "Download TixNaija for Android" },

@@ -56,6 +56,22 @@ export function SiteNav() {
     enabled: !!user,
   });
 
+  // ── Admin role check ─────────────────────────────────────────────────────────
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin", user?.id],
+    queryFn: async () => {
+      if (!user) return false;
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      return !!data;
+    },
+    enabled: !!user,
+  });
+
   // ── Nav pill hover tracking ─────────────────────────────────────────────────
   const [hoveredPath, setHoveredPath] = useState<string | null>(null);
 
@@ -100,7 +116,7 @@ export function SiteNav() {
     ...(user ? [{ name: "Dashboard", to: "/dashboard", icon: LayoutDashboard }] : []),
     { name: "About Us", to: "/about", icon: Compass },
     { name: "How it works", to: "/how-it-works", icon: HelpCircle },
-    { name: "Download App", to: "/download", icon: Smartphone },
+    ...(isAdmin ? [{ name: "Download App", to: "/download", icon: Smartphone }] : []),
   ];
 
   return (
