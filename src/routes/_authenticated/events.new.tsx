@@ -150,14 +150,32 @@ function NewEventPage() {
           .eq("id", userData.user.id)
           .maybeSingle(),
       ]);
-      if (!rolesResult.error && rolesResult.data && rolesResult.data.length > 0) {
+      const profile = profileResult.data as any;
+      const isOrganizer = (!rolesResult.error && rolesResult.data && rolesResult.data.length > 0) || profile?.is_organizer;
+      if (isOrganizer) {
         setHasOrganizerRole(true);
-      }
-      if ((profileResult.data as any)?.paystack_subaccount_code) {
-        setHasPayoutAccount(true);
-      }
-      if ((profileResult.data as any)?.organizer_slug) {
+        // Every organizer automatically has a box office using their name and avatar
         setHasBoxOffice(true);
+
+        // If organizer_slug is not yet stored, auto-persist it in the background
+        if (!profile?.organizer_slug && userData.user?.id) {
+          const autoSlug = (profile?.username || profile?.full_name || "organizer")
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, "");
+          const slugToSave = autoSlug || `org-${userData.user.id.slice(0, 8)}`;
+          supabase
+            .from("profiles")
+            .update({
+              organizer_slug: slugToSave,
+              banner_url: profile?.banner_url || profile?.avatar_url || null,
+            } as any)
+            .eq("id", userData.user.id)
+            .then(() => {});
+        }
+      }
+      if (profile?.paystack_subaccount_code) {
+        setHasPayoutAccount(true);
       }
       setIsCheckingRole(false);
     }

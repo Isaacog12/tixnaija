@@ -9,12 +9,20 @@ import { formatNaira } from "@/lib/currency";
 export const Route = createFileRoute("/box-office/$organizerSlug")({
   component: BoxOfficePage,
   loader: async ({ params }) => {
-    // Fetch profile
-    const { data: profile, error: profileErr } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("organizer_slug", params.organizerSlug)
-      .single();
+    const rawParam = params.organizerSlug.trim();
+    const lowerParam = rawParam.toLowerCase();
+
+    // Check if it's a UUID
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawParam);
+
+    let query = supabase.from("profiles").select("*");
+    if (isUuid) {
+      query = query.or(`organizer_slug.eq.${lowerParam},id.eq.${rawParam}`);
+    } else {
+      query = query.or(`organizer_slug.eq.${lowerParam},username.eq.${lowerParam}`);
+    }
+
+    const { data: profile, error: profileErr } = await query.maybeSingle();
 
     if (profileErr || !profile) {
       throw new Error("Organizer not found");
@@ -34,10 +42,11 @@ export const Route = createFileRoute("/box-office/$organizerSlug")({
   },
   head: ({ loaderData }) => {
     if (!loaderData) return { meta: [{ title: "Box Office - TixNaija" }] };
+    const name = loaderData.profile.full_name || loaderData.profile.username || "Organizer";
     return {
       meta: [
-        { title: `${loaderData.profile.full_name} Tickets & Events — TixNaija` },
-        { name: "description", content: loaderData.profile.bio || `Buy tickets for events organized by ${loaderData.profile.full_name}.` },
+        { title: `${name} Tickets & Events — TixNaija` },
+        { name: "description", content: loaderData.profile.bio || `Buy tickets for events organized by ${name}.` },
       ]
     };
   }
@@ -45,17 +54,29 @@ export const Route = createFileRoute("/box-office/$organizerSlug")({
 
 function BoxOfficePage() {
   const { profile, events } = Route.useLoaderData();
+  const organizerName = profile.full_name || profile.username || "Organizer";
+  const hasCustomBanner = !!profile.banner_url;
+  const bannerImage = profile.banner_url || profile.avatar_url;
 
   return (
     <div className="min-h-dvh bg-background flex flex-col">
       <SiteNav />
       <div className="flex-1 pb-20">
         {/* Banner */}
-        <div className="w-full h-48 md:h-64 bg-muted relative">
-          {profile.banner_url ? (
-            <img src={profile.banner_url} alt="Banner" className="w-full h-full object-cover" />
+        <div className="w-full h-52 md:h-72 bg-muted relative overflow-hidden">
+          {hasCustomBanner ? (
+            <img src={profile.banner_url} alt={`${organizerName} Banner`} className="w-full h-full object-cover" />
+          ) : bannerImage ? (
+            <div className="w-full h-full relative">
+              <img
+                src={bannerImage}
+                alt={`${organizerName} Backdrop`}
+                className="w-full h-full object-cover blur-2xl scale-125 opacity-70"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-black/20" />
+            </div>
           ) : (
-             <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/5" />
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-primary/10 to-background" />
           )}
         </div>
         
@@ -63,12 +84,12 @@ function BoxOfficePage() {
         <div className="mx-auto max-w-5xl px-4 relative -mt-16 sm:-mt-20">
           <Avatar className="w-32 h-32 sm:w-40 sm:h-40 border-4 border-background shadow-lg bg-card">
             <AvatarImage src={profile.avatar_url || undefined} />
-            <AvatarFallback className="text-4xl">{profile.full_name?.charAt(0).toUpperCase() || "O"}</AvatarFallback>
+            <AvatarFallback className="text-4xl">{organizerName.charAt(0).toUpperCase() || "O"}</AvatarFallback>
           </Avatar>
           
           <div className="mt-4 max-w-2xl">
             <h1 className="text-3xl sm:text-4xl font-display font-bold flex items-center gap-2">
-              {profile.full_name}
+              {organizerName}
               {profile.is_verified_organizer && (
                 <BadgeCheck className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 shrink-0" aria-label="Verified Organizer" />
               )}

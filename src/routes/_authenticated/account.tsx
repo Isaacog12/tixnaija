@@ -189,13 +189,19 @@ function AccountPage() {
 
   useEffect(() => {
     if (data?.profile) {
+      const autoSlug = data.profile.organizer_slug ||
+        (data.profile.username || data.profile.full_name || "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "");
+
       setForm({
         full_name: data.profile.full_name ?? "",
         username: data.profile.username ?? "",
         is_public: data.profile.is_public ?? true,
-        organizer_slug: data.profile.organizer_slug ?? "",
+        organizer_slug: autoSlug,
         bio: data.profile.bio ?? "",
-        banner_url: data.profile.banner_url ?? "",
+        banner_url: data.profile.banner_url || data.profile.avatar_url || "",
         phone: data.profile.phone ?? "",
         city: data.profile.city ?? "",
         bank_name: data.profile.bank_name ?? "",
@@ -591,9 +597,27 @@ function AccountPage() {
 
                     {data?.profile?.is_organizer && (
                       <div className="mt-10 pt-8 border-t border-border/50">
-                        <h3 className="mb-6 text-xl font-medium tracking-tight text-foreground">Box Office Profile</h3>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                          <div>
+                            <h3 className="text-xl font-medium tracking-tight text-foreground">Box Office Profile</h3>
+                            <p className="text-sm text-muted-foreground mt-0.5">
+                              Your public organizer page. Automatically carries your name and profile picture as the banner.
+                            </p>
+                          </div>
+                          {form.organizer_slug && (
+                            <a
+                              href={`/box-office/${form.organizer_slug}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline shrink-0"
+                            >
+                              Preview Box Office ↗
+                            </a>
+                          )}
+                        </div>
+
                         <div className="grid gap-6 sm:grid-cols-2">
-                          <Field label="Box Office Link Slug">
+                          <Field label="Box Office URL Slug">
                             <Input
                               className="h-12 bg-background/50 border-border/50 focus-visible:ring-primary/20 rounded-xl"
                               value={form.organizer_slug}
@@ -603,23 +627,29 @@ function AccountPage() {
                               }}
                               placeholder="e.g. your-brand-name"
                             />
+                            <p className="text-xs text-muted-foreground mt-1.5">
+                              Public URL: <span className="font-mono text-foreground/80">tixnaija.name.ng/box-office/{form.organizer_slug || "..."}</span>
+                            </p>
                             {slugError && <p className="text-sm font-medium text-destructive mt-2">{slugError}</p>}
                           </Field>
-                          <Field label="Banner Image URL">
+                          <Field label="Custom Banner Image URL (Optional)">
                             <Input
                               className="h-12 bg-background/50 border-border/50 focus-visible:ring-primary/20 rounded-xl"
                               value={form.banner_url}
                               onChange={(e) => setForm({ ...form, banner_url: e.target.value })}
-                              placeholder="https://example.com/banner.jpg"
+                              placeholder="Leave blank to use profile photo"
                             />
+                            <p className="text-xs text-muted-foreground mt-1.5">
+                              Defaults automatically to your profile photo as an ambient backdrop.
+                            </p>
                           </Field>
                           <div className="sm:col-span-2">
-                            <Field label="Bio">
+                            <Field label="Bio / About Organizer">
                               <textarea
                                 className="flex min-h-[120px] w-full rounded-xl border border-border/50 bg-background/50 px-4 py-3 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
                                 value={form.bio}
                                 onChange={(e) => setForm({ ...form, bio: e.target.value })}
-                                placeholder="Tell attendees about yourself or your organization..."
+                                placeholder="Tell attendees about yourself, your brand, or upcoming events..."
                               />
                             </Field>
                           </div>
