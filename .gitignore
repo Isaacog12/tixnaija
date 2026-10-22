@@ -34,3 +34,10 @@ dist-ssr
 
 # Mobile App builds
 *.apk
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
