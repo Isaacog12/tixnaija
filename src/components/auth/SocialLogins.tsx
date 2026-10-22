@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 
 export function SocialLogins({
   mode,
-  termsAccepted = true,
+  termsAccepted = false,
   redirectUrl,
 }: {
   mode: "signin" | "signup";
@@ -20,7 +20,7 @@ export function SocialLogins({
 
   const handleOAuth = async (provider: "google") => {
     if (mode === "signup" && !termsAccepted) {
-      toast.error("You must agree to the Terms & Privacy Policy.");
+      toast.error("Please confirm you are 18+ and agree to the Terms, Privacy Policy, and Refund Policy.");
       return;
     }
 
@@ -87,6 +87,24 @@ export function SocialLogins({
         )}
         Google
       </Button>
+
+      {mode === "signin" && (
+        <p className="text-center text-[11px] text-muted-foreground leading-relaxed px-2">
+          By continuing, you agree to TixNaija's{" "}
+          <Link to="/terms" target="_blank" className="underline hover:text-foreground">
+            Terms of Service
+          </Link>
+          ,{" "}
+          <Link to="/privacy" target="_blank" className="underline hover:text-foreground">
+            Privacy Policy
+          </Link>
+          , and{" "}
+          <Link to="/refunds" target="_blank" className="underline hover:text-foreground">
+            Refund Policy
+          </Link>
+          .
+        </p>
+      )}
     </div>
   );
 }

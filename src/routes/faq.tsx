@@ -79,7 +79,7 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "How do I request a refund?",
-        a: "To request a refund, please send us an email with your order details and the reason for the request. The TixNaija team and the organizer will review it and get back to you.",
+        a: "To request a refund, please send us an email with your order details and reason. Full terms, cancellation timeframes, and organizer requirements are detailed in our official Refund Policy at /refunds.",
       },
     ],
   },
@@ -119,7 +119,7 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "How do I delete my account?",
-        a: "Contact us via the Contact page with a deletion request. We'll process it within 7 days. Note: if you have upcoming paid tickets, we recommend waiting until after those events.",
+        a: "You can delete your account at any time directly in your Account Settings under the Danger Zone. This removes your personal profile, credentials, and uploads in accordance with the NDPA 2023. Financial transaction records are retained strictly as required by law.",
       },
     ],
   },

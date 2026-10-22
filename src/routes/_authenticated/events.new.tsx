@@ -430,6 +430,7 @@ function NewEventPage() {
         {coverPreview ? (
           <img
             src={coverPreview}
+            alt={form.title ? `${form.title} event cover preview` : "Event cover preview"}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (

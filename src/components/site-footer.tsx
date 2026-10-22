@@ -32,10 +32,10 @@ export function SiteFooter() {
         <div className="border-t border-border/40 pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs leading-relaxed text-center md:text-left">
           <div className="space-y-1">
             <p className="font-semibold text-foreground">
-              {{BUSINESS_LEGAL_NAME}} · RC/CAC: {{RC_NUMBER}}
+              {"{{BUSINESS_LEGAL_NAME}}"} · RC/CAC: {"{{RC_NUMBER}}"}
             </p>
             <p>
-              Registered Address: {{REGISTERED_ADDRESS}}
+              Registered Address: {"{{REGISTERED_ADDRESS}}"}
             </p>
             <p>
               Email: <a href="mailto:tixnaijaapp@gmail.com" className="hover:text-foreground underline">tixnaijaapp@gmail.com</a> · Phone: +234 901 127 5275

@@ -70,7 +70,8 @@ function BoxOfficePage() {
             <div className="w-full h-full relative">
               <img
                 src={bannerImage}
-                alt={`${organizerName} Backdrop`}
+                alt=""
+                aria-hidden="true"
                 className="w-full h-full object-cover blur-2xl scale-125 opacity-70"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-black/20" />

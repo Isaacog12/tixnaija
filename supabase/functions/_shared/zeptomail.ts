@@ -17,10 +17,11 @@ interface SendEmailParams {
   subject: string;
   htmlBody: string;
   textBody?: string;
+  headers?: Array<{ name: string; value: string }>;
 }
 
 export async function sendEmail(
-  { to, subject, htmlBody, textBody }: SendEmailParams,
+  { to, subject, htmlBody, textBody, headers }: SendEmailParams,
 ) {
   const token = Deno.env.get("ZEPTOMAIL_TOKEN");
   const fromAddress = Deno.env.get("MAIL_FROM_ADDRESS") ??
@@ -31,6 +32,15 @@ export async function sendEmail(
     throw new Error("ZEPTOMAIL_TOKEN env var is not set");
   }
 
+  const payload: any = {
+    from: { address: fromAddress, name: fromName },
+    to: [{ email_address: { address: to.address, name: to.name ?? "" } }],
+    subject,
+    htmlbody: htmlBody,
+    ...(textBody ? { textbody: textBody } : {}),
+    ...(headers && headers.length > 0 ? { mail_format_headers: headers } : {}),
+  };
+
   const res = await fetch(ZEPTOMAIL_URL, {
     method: "POST",
     headers: {
@@ -39,13 +49,7 @@ export async function sendEmail(
         : `Zoho-enczapikey ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      from: { address: fromAddress, name: fromName },
-      to: [{ email_address: { address: to.address, name: to.name ?? "" } }],
-      subject,
-      htmlbody: htmlBody,
-      ...(textBody ? { textbody: textBody } : {}),
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (!res.ok) {

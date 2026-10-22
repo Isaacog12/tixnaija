@@ -80,7 +80,7 @@ async function fetchApplications(): Promise<{
 async function getSignedUrl(path: string): Promise<string> {
   const { data } = await supabase.storage
     .from("id-photos")
-    .createSignedUrl(path, 60 * 60); // 1 hour
+    .createSignedUrl(path, 15 * 60); // 15-minute short-lived signed URL for sensitive identity document
   return data?.signedUrl ?? "";
 }
 

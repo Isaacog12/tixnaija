@@ -198,6 +198,7 @@ const checkoutSchema = z
     recipientName: z.string().optional(),
     recipientEmail: z.string().optional(),
     giftMessage: z.string().optional(),
+    promoCode: z.string().optional(),
     isOfAge: z
       .boolean()
       .refine(
@@ -320,6 +321,7 @@ function EventDetailPage() {
       recipientEmail: "",
       giftMessage: "",
       promoCode: "",
+      isOfAge: false,
       termsAccepted: false,
       attendees: {},
     },
@@ -421,11 +423,6 @@ function EventDetailPage() {
 
   function onCheckout() {
     if (!totalCount) return;
-    if (!sessionUser) {
-      toast.error("You must create an account or sign in to buy tickets.", { duration: 5000 });
-      navigate({ to: "/auth", search: { mode: "signup", redirect: `/e-v2/${slug}` } });
-      return;
-    }
     setCheckoutOpen(true);
   }
 
@@ -835,7 +832,25 @@ function EventDetailPage() {
                 </div>
               )}
 
-              <div className="border-t border-border pt-4">
+              <div className="border-t border-border pt-4 space-y-3">
+                <FormField
+                  control={form.control}
+                  name="isOfAge"
+                  render={({ field }: { field: any }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-2">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-xs text-muted-foreground font-normal leading-relaxed">
+                          I confirm that I am 18 years of age or older, or that I have the consent and involvement of a parent or legal guardian.
+                        </FormLabel>
+                        <FormMessage />
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="termsAccepted"
@@ -853,14 +868,22 @@ function EventDetailPage() {
                             className="text-primary hover:underline"
                           >
                             Terms of Service
-                          </Link>{" "}
-                          and{" "}
+                          </Link>
+                          ,{" "}
                           <Link
                             to="/privacy"
                             target="_blank"
                             className="text-primary hover:underline"
                           >
                             Privacy Policy
+                          </Link>
+                          , and{" "}
+                          <Link
+                            to="/refunds"
+                            target="_blank"
+                            className="text-primary hover:underline"
+                          >
+                            Refund Policy
                           </Link>
                           .
                         </FormLabel>
@@ -874,7 +897,7 @@ function EventDetailPage() {
               <Button
                 type="submit"
                 disabled={checkoutBusy}
-                className="w-full gradient-sunset text-primary-foreground shadow-glow mt-4"
+                className="w-full gradient-sunset text-primary-foreground mt-4"
               >
                 {checkoutBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 {totalKobo === 0 ? "Get free tickets" : `Pay ${formatNaira(totalKobo)}`}
@@ -924,7 +947,14 @@ function EventDetailPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={waitlistBusy} className="w-full mt-4">
+              <p className="text-xs text-muted-foreground">
+                We collect your name and email solely to alert you if tickets become available. For details, see our{" "}
+                <Link to="/privacy" target="_blank" className="underline hover:text-foreground">
+                  Privacy Policy
+                </Link>
+                .
+              </p>
+              <Button type="submit" disabled={waitlistBusy} className="w-full mt-2">
                 {waitlistBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Join Waitlist
               </Button>
@@ -1141,7 +1171,7 @@ function EventBody({
                         <p className="mt-3 font-display text-2xl text-orange-400">
                           {t.price_kobo === 0 ? "Free" : formatNaira(t.price_kobo)}
                         </p>
-                        <p className="mt-1 text-[10px] uppercase tracking-widest font-bold text-white/30">
+                        <p className="mt-1 text-[10px] uppercase tracking-widest font-bold text-white/60">
                           {statusText}
                         </p>
                       </div>
@@ -1239,7 +1269,7 @@ function EventMissing() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-32 text-center">
       <div className="mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-white/5 mx-auto">
-        <Frown className="h-10 w-10 text-white/30" />
+        <Frown className="h-10 w-10 text-white/60" />
       </div>
       <h1 className="font-display text-4xl text-white mb-4">Event unavailable</h1>
       <p className="text-lg text-white/50 mb-8">
@@ -1297,8 +1327,8 @@ function SimilarEvents({ events }: { events: any[] }) {
                   {ev.title}
                 </h3>
                 {ev.venue_name && (
-                  <p className="mt-auto text-xs text-white/40 font-medium flex items-center gap-1.5 line-clamp-1">
-                    <MapPin className="h-3 w-3 text-white/30" />
+                  <p className="mt-auto text-xs text-white/60 font-medium flex items-center gap-1.5 line-clamp-1">
+                    <MapPin className="h-3 w-3 text-white/60" />
                     {ev.venue_name}
                   </p>
                 )}

@@ -25,11 +25,11 @@ export const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
           <Input
             id={id}
             ref={ref}
-            className={`pl-11 h-12 bg-white dark:bg-white/5 border-black/10 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-white/30 focus-visible:ring-1 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 focus-visible:border-black/30 dark:focus-visible:border-white/30 shadow-sm dark:shadow-none transition-all ${className || ""}`}
+            className={`pl-11 h-12 bg-white dark:bg-white/5 border-black/10 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-white/60 focus-visible:ring-1 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 focus-visible:border-black/30 dark:focus-visible:border-white/30 shadow-sm dark:shadow-none transition-all ${className || ""}`}
             {...props}
           />
         </div>
-        {error && <p className="text-xs text-red-400 ml-1">{error}</p>}
+        {error && <p className="text-xs text-destructive font-medium ml-1">{error}</p>}
       </div>
     );
   },

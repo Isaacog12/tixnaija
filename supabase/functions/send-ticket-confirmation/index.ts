@@ -160,10 +160,18 @@ serve(async (req: Request) => {
         <a href="${downloadUrl}" style="display: block; width: 100%; text-align: center; background-color: transparent; border: 1px solid #333336; color: #FFFFFF; text-decoration: none; padding: 16px 0; border-radius: 12px; font-weight: 500; font-size: 17px;">Download PDF Receipt</a>
 
         <div style="margin-top: 60px; padding-top: 24px; border-top: 1px solid #1C1C1E; text-align: center;">
-          <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">Order Ref: ${orderRef}</p>
-          <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">TixNaija. Sent at ${sentTime}</p>
-          <p style="margin: 0; font-size: 12px; color: #86868B;">
-            To manage notifications, visit your <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Account Settings</a>.
+          <p style="margin: 0 0 6px; font-size: 12px; color: #86868B;">
+            You received this transactional receipt because an order was placed on TixNaija with this email address.
+          </p>
+          <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">
+            Order Ref: ${orderRef} · <a href="https://tixnaija.name.ng/refunds" style="color: #ea580c; text-decoration: underline;">Refund Policy</a>
+          </p>
+          <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">
+            Manage notifications: <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a>
+          </p>
+          <p style="margin: 12px 0 0; font-size: 11px; color: #636366; line-height: 1.4;">
+            {{BUSINESS_LEGAL_NAME}} · RC/CAC: {{RC_NUMBER}}<br />
+            Registered Address: {{REGISTERED_ADDRESS}}
           </p>
         </div>
       </div>
@@ -281,10 +289,18 @@ serve(async (req: Request) => {
 
       attHtmlBody += `
           <div style="margin-top: 60px; padding-top: 24px; border-top: 1px solid #1C1C1E; text-align: center;">
-            <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">TixNaija Support</p>
-            <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">Sent at ${sentTime}</p>
-            <p style="margin: 0; font-size: 12px; color: #86868B;">
+            <p style="margin: 0 0 6px; font-size: 12px; color: #86868B;">
+              You received this ticket because a spot was booked for you for this event on TixNaija.
+            </p>
+            <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">
+              Questions? View our <a href="https://tixnaija.name.ng/refunds" style="color: #ea580c; text-decoration: underline;">Refund Policy</a> or contact the organizer.
+            </p>
+            <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">
               Manage notifications: <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a>
+            </p>
+            <p style="margin: 12px 0 0; font-size: 11px; color: #636366; line-height: 1.4;">
+              {{BUSINESS_LEGAL_NAME}} · RC/CAC: {{RC_NUMBER}}<br />
+              Registered Address: {{REGISTERED_ADDRESS}}
             </p>
           </div>
         </div>

@@ -27,8 +27,11 @@ const signupSchema = z
     email: z.string().trim().email("Enter a valid email"),
     password: z.string().min(6, "At least 6 characters"),
     confirmPassword: z.string(),
+    isOfAge: z.boolean().refine((val) => val === true, {
+      message: "You must confirm you are 18 or older, or have guardian consent",
+    }),
     termsAccepted: z.boolean().refine((val) => val === true, {
-      message: "You must agree to the Terms & Privacy Policy",
+      message: "You must agree to the Terms, Privacy Policy, and Refund Policy",
     }),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -57,11 +60,13 @@ export function SignUpForm({ redirectUrl }: { redirectUrl?: string }) {
       email: "",
       password: "",
       confirmPassword: "",
+      isOfAge: false,
       termsAccepted: false,
     },
   });
 
   const termsAccepted = watch("termsAccepted");
+  const isOfAge = watch("isOfAge");
 
   const onSubmit = async (data: SignupValues) => {
     try {
@@ -132,38 +137,74 @@ export function SignUpForm({ redirectUrl }: { redirectUrl?: string }) {
         />
       </div>
 
-      <div className="flex items-start space-x-2 pt-2 pb-2">
-        <Checkbox
-          id="terms"
-          checked={termsAccepted}
-          onCheckedChange={(checked) =>
-            setValue("termsAccepted", checked === true, { shouldValidate: true })
-          }
-          className="mt-0.5 border-black/20 dark:border-white/20 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-        />
-        <div className="grid leading-tight">
-          <label
-            htmlFor="terms"
-            className="text-sm text-zinc-600 dark:text-white/70 cursor-pointer select-none"
-          >
-            I agree to the Terms & Privacy Policy
-          </label>
-          {errors.termsAccepted && (
-            <p className="text-xs text-red-400 mt-1">{errors.termsAccepted.message}</p>
-          )}
+      <div className="space-y-3 pt-2 pb-2">
+        <div className="flex items-start space-x-2">
+          <Checkbox
+            id="isOfAge"
+            checked={isOfAge}
+            onCheckedChange={(checked) =>
+              setValue("isOfAge", checked === true, { shouldValidate: true })
+            }
+            className="mt-0.5 border-black/20 dark:border-white/20 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+          />
+          <div className="grid leading-tight">
+            <label
+              htmlFor="isOfAge"
+              className="text-xs text-zinc-600 dark:text-white/70 cursor-pointer select-none leading-relaxed"
+            >
+              I confirm that I am 18 years of age or older, or that I have the consent of a parent or legal guardian.
+            </label>
+            {errors.isOfAge && (
+              <p className="text-xs text-destructive font-medium mt-1">{errors.isOfAge.message}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-start space-x-2">
+          <Checkbox
+            id="terms"
+            checked={termsAccepted}
+            onCheckedChange={(checked) =>
+              setValue("termsAccepted", checked === true, { shouldValidate: true })
+            }
+            className="mt-0.5 border-black/20 dark:border-white/20 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+          />
+          <div className="grid leading-tight">
+            <label
+              htmlFor="terms"
+              className="text-xs text-zinc-600 dark:text-white/70 cursor-pointer select-none leading-relaxed"
+            >
+              I agree to the{" "}
+              <Link to="/terms" target="_blank" className="text-primary hover:underline">
+                Terms of Service
+              </Link>
+              ,{" "}
+              <Link to="/privacy" target="_blank" className="text-primary hover:underline">
+                Privacy Policy
+              </Link>
+              , and{" "}
+              <Link to="/refunds" target="_blank" className="text-primary hover:underline">
+                Refund Policy
+              </Link>
+              .
+            </label>
+            {errors.termsAccepted && (
+              <p className="text-xs text-destructive font-medium mt-1">{errors.termsAccepted.message}</p>
+            )}
+          </div>
         </div>
       </div>
 
       <SubmitButton
         isSubmitting={isSubmitting}
-        disabled={!termsAccepted}
+        disabled={!termsAccepted || !isOfAge}
         text="Create Account"
         className="!mt-2"
       />
 
       <Divider />
 
-      <SocialLogins mode="signup" termsAccepted={termsAccepted} redirectUrl={redirectUrl} />
+      <SocialLogins mode="signup" termsAccepted={termsAccepted && isOfAge} redirectUrl={redirectUrl} />
 
     </form>
   );

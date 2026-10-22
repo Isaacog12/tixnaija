@@ -92,9 +92,9 @@ function VerifyCheckoutPage() {
             ) : (
               <>
                 <p className="mt-2 text-muted-foreground">
-                  Your tickets were emailed to you. You can also view and download them right here using your email and the <strong>Access PIN</strong> you just created.
+                  Your tickets have been sent to your email. You can also view and download them using your email address.
                 </p>
-                <Button asChild className="mt-6 w-full gradient-sunset shadow-glow press-sm transition-all duration-[120ms]" size="lg">
+                <Button asChild className="mt-6 w-full gradient-sunset press-sm transition-all duration-[120ms]" size="lg">
                   <Link to="/my-tickets">View My Tickets</Link>
                 </Button>
                 <p className="mt-4 text-xs text-muted-foreground">

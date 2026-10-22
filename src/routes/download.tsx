@@ -134,21 +134,21 @@ function DownloadPage() {
                   "group relative inline-flex items-center justify-center gap-3 h-14 sm:h-16 px-10 rounded-full font-semibold text-lg overflow-hidden transition-all",
                   hasRead 
                     ? "bg-white text-black shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_60px_rgba(255,255,255,0.2)]" 
-                    : "bg-white/10 text-white/30 cursor-not-allowed border border-white/5"
+                    : "bg-white/10 text-white/60 cursor-not-allowed border border-white/5"
                 )}
               >
                 <span className="relative z-10 flex items-center gap-3">
                   Download APK
-                  <ArrowDown className={cn("h-5 w-5 transition-transform", hasRead ? "text-black/50 group-hover:translate-y-0.5" : "text-white/20")} />
+                  <ArrowDown className={cn("h-5 w-5 transition-transform", hasRead ? "text-black/50 group-hover:translate-y-0.5" : "text-white/40")} />
                 </span>
               </motion.a>
             ) : (
-              <div className="inline-flex items-center gap-3 h-14 sm:h-16 px-10 rounded-full bg-white/5 border border-white/10 text-white/50 font-semibold text-lg backdrop-blur-md">
+              <div className="inline-flex items-center gap-3 h-14 sm:h-16 px-10 rounded-full bg-white/5 border border-white/10 text-white/60 font-semibold text-lg backdrop-blur-md">
                 <Package className="h-5 w-5" />
                 APK assembling...
               </div>
             )}
-            <div className="flex items-center gap-3 text-sm font-medium text-white/30 tracking-wide uppercase">
+            <div className="flex items-center gap-3 text-sm font-medium text-white/60 tracking-wide uppercase">
               <span>Android 8.0+</span>
               <span className="w-1 h-1 rounded-full bg-white/20" />
               <span>v{APK_VERSION}</span>

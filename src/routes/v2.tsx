@@ -1,4 +1,4 @@
-﻿import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -82,7 +82,7 @@ function LandingV2() {
             <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-6">
               <motion.div variants={fadeUp}>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 backdrop-blur-xl px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/70">
-                  Naija's premier ticket hub
+                  Discover and book Nigerian event tickets
                 </span>
               </motion.div>
               <motion.h1 variants={fadeUp} className="font-display text-[clamp(3rem,10vw,7rem)] leading-[0.95] tracking-[-0.03em] text-white">
@@ -96,11 +96,11 @@ function LandingV2() {
                 Concerts, comedy, conferences and parties across Nigeria. Secure your spot in seconds and walk in with a QR code.
               </motion.p>
               <motion.form variants={fadeUp} onSubmit={handleSearch}
-                className="flex items-center gap-2 max-w-2xl rounded-[1.5rem] border border-white/12 bg-white/8 backdrop-blur-2xl p-2 shadow-2xl shadow-black/40 focus-within:border-orange-500/40 transition-colors duration-300">
-                <div className="pl-3 text-white/40 shrink-0"><Search className="h-5 w-5" /></div>
+                className="flex items-center gap-2 max-w-2xl rounded-[1.5rem] border border-white/12 bg-white/8 backdrop-blur-2xl p-2 shadow-2xl shadow-black/40 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/40 transition-colors duration-300">
+                <div className="pl-3 text-white/60 shrink-0"><Search className="h-5 w-5" /></div>
                 <Input ref={inputRef} value={query} onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search events, artists, venues..."
-                  className="border-0 bg-transparent shadow-none focus-visible:ring-0 text-white placeholder:text-white/35 text-base h-12 font-medium w-full" />
+                  className="border-0 bg-transparent shadow-none text-white placeholder:text-white/60 text-base h-12 font-medium w-full focus-visible:outline-none" />
                 <Button type="submit" className="rounded-[1.1rem] h-12 px-6 md:px-8 font-bold text-sm shrink-0 text-white"
                   style={{ background: "linear-gradient(135deg,#EA580C 0%,#F97316 100%)" }}>
                   Search
@@ -175,7 +175,7 @@ function LandingV2() {
             </motion.div>
           )}
           {upcoming.data && upcoming.data.length === 0 && (
-            <div className="py-20 text-center text-white/30 text-sm">Fresh events landing soon — stay tuned.</div>
+            <div className="py-20 text-center text-white/60 text-sm">Fresh events landing soon — stay tuned.</div>
           )}
         </div>
       </section>
@@ -186,7 +186,7 @@ function LandingV2() {
           <motion.div variants={stagger} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-80px" }}>
             <motion.p variants={fadeUp} className="text-[11px] font-bold uppercase tracking-[0.18em] text-orange-500 mb-4 text-center">The platform</motion.p>
             <motion.h2 variants={fadeUp} className="font-display text-[clamp(2rem,6vw,4rem)] leading-[1.05] tracking-[-0.025em] text-white text-center mb-16">
-              Built for Nigeria.<br /><span className="text-white/30">Built for you.</span>
+              Built for Nigeria.<br /><span className="text-white/60">Built for you.</span>
             </motion.h2>
             <div className="grid md:grid-cols-3 gap-px bg-white/6 rounded-[2.5rem] overflow-hidden border border-white/6">
               {[

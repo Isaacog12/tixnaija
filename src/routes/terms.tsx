@@ -98,7 +98,7 @@ function TermsPage() {
           <section id="overview" className="scroll-mt-8 space-y-3">
             <SectionHeading number="01" title="Overview" />
             <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-              These Terms of Service ("Terms") constitute a legally binding agreement between you and <strong className="text-foreground">{{BUSINESS_LEGAL_NAME}}</strong> (RC/CAC: {{RC_NUMBER}}), trading as <strong className="text-foreground">TixNaija</strong>.
+              These Terms of Service ("Terms") constitute a legally binding agreement between you and <strong className="text-foreground">{"{{BUSINESS_LEGAL_NAME}}"}</strong> (RC/CAC: {"{{RC_NUMBER}}"}), trading as <strong className="text-foreground">TixNaija</strong>.
             </p>
             <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
               By accessing, browsing, creating an account, publishing an event, or purchasing tickets on TixNaija, you acknowledge that you have read, understood, and agree to be bound by these Terms and our{" "}
@@ -232,9 +232,9 @@ function TermsPage() {
           <section id="contact" className="scroll-mt-8 space-y-3 border-t border-border/40 pt-8">
             <SectionHeading number="13" title="Corporate & Contact Information" />
             <div className="rounded-xl border border-border bg-card p-4 text-xs md:text-sm space-y-1 text-muted-foreground">
-              <p><strong className="text-foreground">Entity:</strong> {{BUSINESS_LEGAL_NAME}}</p>
-              <p><strong className="text-foreground">Registration:</strong> RC/CAC Number: {{RC_NUMBER}}</p>
-              <p><strong className="text-foreground">Registered Office:</strong> {{REGISTERED_ADDRESS}}</p>
+              <p><strong className="text-foreground">Entity:</strong> {"{{BUSINESS_LEGAL_NAME}}"}</p>
+              <p><strong className="text-foreground">Registration:</strong> RC/CAC Number: {"{{RC_NUMBER}}"}</p>
+              <p><strong className="text-foreground">Registered Office:</strong> {"{{REGISTERED_ADDRESS}}"}</p>
               <p><strong className="text-foreground">Email:</strong> tixnaijaapp@gmail.com</p>
               <p><strong className="text-foreground">Phone:</strong> +234 901 127 5275</p>
             </div>

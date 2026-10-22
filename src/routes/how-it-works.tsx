@@ -16,7 +16,7 @@ export const Route = createFileRoute("/how-it-works")({
       {
         name: "description",
         content:
-          "Learn how to buy tickets, sell tickets, and manage events on TixNaija — Nigeria's fastest ticket platform. Step-by-step guide for buyers and organizers.",
+          "Learn how to buy tickets, sell tickets, and manage events on TixNaija — Nigeria's straightforward event ticketing platform. Step-by-step guide for buyers and organizers.",
       },
     ],
   }),
@@ -91,7 +91,7 @@ const ORGANIZER_STEPS = [
 const FAQ = [
   {
     q: "How much does TixNaija charge?",
-    a: "TixNaija charges a 10% platform fee on each ticket sold. For example, if you sell a ticket for ₦5,000, you receive ₦4,500 and TixNaija retains ₦500. Paystack's processing fee (typically 1.5% + ₦100, capped at ₦2,000) is charged separately at checkout.",
+    a: "TixNaija charges a platform fee on paid tickets. Ticket buyers pay exactly the listed ticket price — we never add surprise payment processing fees at checkout. Paystack payment processing costs are absorbed directly from the organizer's subaccount payout.",
   },
   {
     q: "Are free events supported?",
@@ -103,7 +103,7 @@ const FAQ = [
   },
   {
     q: "What happens if I need to cancel or postpone an event?",
-    a: "You can cancel or postpone from the event management page at any time. All ticket buyers are automatically notified via their TixNaija inbox. Refunds are your responsibility as the organizer.",
+    a: "You can cancel or postpone from the event management page at any time. All ticket buyers are automatically notified via email and inbox. Organizer obligations and attendee refund rights are governed by our official Refund Policy.",
   },
   {
     q: "Is my payment information safe?",

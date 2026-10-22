@@ -181,13 +181,13 @@ function BrowseV2Page() {
             <motion.h1 variants={fadeUp} className="font-display text-4xl md:text-5xl font-bold tracking-tight text-white mb-4">
               Discover <span style={{ background: "linear-gradient(110deg,#EA580C 0%,#F97316 40%,#FBBF24 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Naija.</span>
             </motion.h1>
-            <motion.form variants={fadeUp} onSubmit={(e) => { e.preventDefault(); updateSearch({ q: searchInput.trim() }); }} className="flex items-center gap-2 max-w-xl rounded-full border border-white/10 bg-white/5 backdrop-blur-md p-1.5 focus-within:border-orange-500/40 transition-colors">
-              <div className="pl-4 text-white/40"><Search className="h-5 w-5" /></div>
+            <motion.form variants={fadeUp} onSubmit={(e) => { e.preventDefault(); updateSearch({ q: searchInput.trim() }); }} className="flex items-center gap-2 max-w-xl rounded-full border border-white/10 bg-white/5 backdrop-blur-md p-1.5 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/40 transition-colors">
+              <div className="pl-4 text-white/60"><Search className="h-5 w-5" /></div>
               <Input
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Search events, artists, venues..."
-                className="border-0 bg-transparent shadow-none focus-visible:ring-0 text-white placeholder:text-white/30 text-base h-12 w-full"
+                className="border-0 bg-transparent shadow-none text-white placeholder:text-white/60 text-base h-12 w-full focus-visible:outline-none"
               />
               <Button type="submit" className="rounded-full h-11 px-6 font-bold text-sm bg-white text-black hover:bg-white/90">
                 Search
@@ -294,7 +294,7 @@ function BrowseV2Page() {
         {query.data && filteredEvents.length === 0 && (
           <div className="flex flex-col items-center justify-center rounded-[3rem] border border-dashed border-white/10 bg-white/5 py-24 px-4 text-center max-w-4xl mx-auto">
             <div className="mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-white/5">
-              <Search className="h-10 w-10 text-white/30" />
+              <Search className="h-10 w-10 text-white/60" />
             </div>
             <h3 className="font-display text-3xl md:text-4xl text-white mb-4">Nothing to see here.</h3>
             <p className="max-w-md text-white/50 text-lg mb-8 leading-relaxed">
@@ -368,8 +368,8 @@ function BrowseV2Page() {
                       <div className="mt-auto flex items-end justify-between gap-4">
                         <div className="flex flex-col gap-1.5">
                           {ev.venue_name && (
-                            <p className="text-xs text-white/40 font-medium flex items-center gap-1.5 line-clamp-1">
-                              <MapPin className="h-3 w-3 text-white/30" />
+                            <p className="text-xs text-white/60 font-medium flex items-center gap-1.5 line-clamp-1">
+                              <MapPin className="h-3 w-3 text-white/60" />
                               {ev.venue_name}
                             </p>
                           )}

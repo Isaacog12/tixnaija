@@ -30,6 +30,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RefundsRouteImport } from './routes/refunds'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as V2RouteImport } from './routes/v2'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -155,6 +156,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const V2Route = V2RouteImport.update({
@@ -298,6 +304,7 @@ export interface FileRoutesByFullPath {
   '/refunds': typeof RefundsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/v2': typeof V2Route
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -342,6 +349,7 @@ export interface FileRoutesByTo {
   '/refunds': typeof RefundsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/v2': typeof V2Route
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -388,6 +396,7 @@ export interface FileRoutesById {
   '/refunds': typeof RefundsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/v2': typeof V2Route
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
@@ -434,6 +443,7 @@ export interface FileRouteTypes {
     | '/refunds'
     | '/reset-password'
     | '/terms'
+    | '/unsubscribe'
     | '/v2'
     | '/account'
     | '/admin'
@@ -478,6 +488,7 @@ export interface FileRouteTypes {
     | '/refunds'
     | '/reset-password'
     | '/terms'
+    | '/unsubscribe'
     | '/v2'
     | '/account'
     | '/admin'
@@ -523,6 +534,7 @@ export interface FileRouteTypes {
     | '/refunds'
     | '/reset-password'
     | '/terms'
+    | '/unsubscribe'
     | '/v2'
     | '/_authenticated/account'
     | '/_authenticated/admin'
@@ -569,6 +581,7 @@ export interface RootRouteChildren {
   RefundsRoute: typeof RefundsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
   V2Route: typeof V2Route
   BoxOfficeOrganizerSlugRoute: typeof BoxOfficeOrganizerSlugRoute
   CareersApplyRoute: typeof CareersApplyRoute
@@ -726,6 +739,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/v2': {
@@ -948,6 +968,7 @@ const rootRouteChildren: RootRouteChildren = {
   RefundsRoute: RefundsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
   V2Route: V2Route,
   BoxOfficeOrganizerSlugRoute: BoxOfficeOrganizerSlugRoute,
   CareersApplyRoute: CareersApplyRoute,

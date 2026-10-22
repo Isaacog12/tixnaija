@@ -11,7 +11,7 @@ export const Route = createFileRoute("/careers")({
       {
         name: "description",
         content:
-          "Explore career and earning opportunities on TixNaija, Nigeria's fastest event ticketing platform.",
+          "Explore career and earning opportunities on TixNaija, Nigeria's event ticketing platform.",
       },
     ],
   }),

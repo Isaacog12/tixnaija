@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { sendEmail } from "../_shared/zeptomail.ts";
+import { isNotificationOptedIn } from "../_shared/notification-preferences.ts";
+import { generateUnsubscribeToken } from "../_shared/unsubscribe.ts";
 
 serve(async (req) => {
   try {
@@ -14,7 +16,7 @@ serve(async (req) => {
 
     const { data: abandonedOrders, error } = await supabase
       .from("orders")
-      .select("id, buyer_email, buyer_name, events ( title )")
+      .select("id, user_id, buyer_email, buyer_name, events ( title )")
       .eq("status", "pending")
       .lt("created_at", oneHourAgo.toISOString())
       .gt("created_at", twoHoursAgo.toISOString());
@@ -27,8 +29,25 @@ serve(async (req) => {
     let count = 0;
     for (const order of abandonedOrders) {
       if (!order.buyer_email) continue;
+
+      // Do NOT send marketing reminders to guests who have no account/prior consent basis
+      if (!order.user_id) {
+        continue;
+      }
+
+      // Check notification preferences for marketing emails
+      const optedIn = await isNotificationOptedIn(
+        supabase,
+        { userId: order.user_id, email: order.buyer_email },
+        "marketing_emails"
+      );
+      if (!optedIn) {
+        continue;
+      }
+
+      const unsubToken = await generateUnsubscribeToken(order.buyer_email, "marketing_emails");
+      const unsubUrl = `https://tixnaija.name.ng/unsubscribe?email=${encodeURIComponent(order.buyer_email)}&category=marketing_emails&token=${unsubToken}`;
       
-      // Ignore if it's already fully processed
       const eventTitle = order.events?.title || "your event";
       const subject = `Complete your purchase for ${eventTitle}`;
       const htmlBody = `
@@ -50,20 +69,37 @@ serve(async (req) => {
             </div>
             
             <p style="margin: 0 0 32px; color: #4b5563; font-size: 16px; line-height: 1.6;">
-              They won't be held forever! Complete your checkout before they sell out.
+              They won't be held forever! Complete your checkout before tickets sell out.
             </p>
             
             <a href="https://tixnaija.name.ng/" style="display: inline-block; background-color: #ea580c; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-weight: 600; font-size: 16px;">Return to Checkout</a>
             
             <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 40px 0 24px;" />
             
-            <p style="margin: 0; font-size: 13px; color: #9ca3af;">TixNaija — Buy tickets. Turn up. Repeat.</p>
+            <div style="text-align: center; color: #6b7280; font-size: 12px; line-height: 1.5;">
+              <p style="margin: 0 0 6px;">You received this reminder because you initiated a checkout on TixNaija while signed into your account.</p>
+              <p style="margin: 0 0 12px;">
+                <a href="${unsubUrl}" style="color: #ea580c; text-decoration: underline;">Click here to unsubscribe instantly</a> or manage your <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a>.
+              </p>
+              <p style="margin: 0; font-size: 11px; color: #9ca3af;">
+                {{BUSINESS_LEGAL_NAME}} · RC/CAC: {{RC_NUMBER}}<br />
+                Registered Address: {{REGISTERED_ADDRESS}}
+              </p>
+            </div>
           </div>
         </div>
       `;
 
       try {
-        await sendEmail({ to: { address: order.buyer_email, name: order.buyer_name }, subject, htmlBody });
+        await sendEmail({
+          to: { address: order.buyer_email, name: order.buyer_name },
+          subject,
+          htmlBody,
+          headers: [
+            { name: "List-Unsubscribe", value: `<${unsubUrl}>` },
+            { name: "List-Unsubscribe-Post", value: "List-Unsubscribe=One-Click" },
+          ],
+        });
         count++;
       } catch (err) {
         console.error("Failed to send abandoned cart email to", order.buyer_email, err);

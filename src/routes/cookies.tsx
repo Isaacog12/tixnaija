@@ -96,7 +96,7 @@ function CookiePolicyPage() {
         <section className="space-y-4">
           <h2 className="text-xl font-semibold tracking-tight">1. Overview</h2>
           <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-            This Cookie Policy explains how <strong className="text-foreground">TixNaija</strong> (operated by {{BUSINESS_LEGAL_NAME}}) uses cookies, local storage, and similar web technologies when you use our platform. This policy should be read alongside our{" "}
+            This Cookie Policy explains how <strong className="text-foreground">TixNaija</strong> (operated by {"{{BUSINESS_LEGAL_NAME}}"}) uses cookies, local storage, and similar web technologies when you use our platform. This policy should be read alongside our{" "}
             <Link to="/privacy" className="text-foreground underline underline-offset-4 hover:text-primary">
               Privacy Policy
             </Link>{" "}
@@ -194,10 +194,10 @@ function CookiePolicyPage() {
             For questions about this policy or our data handling practices, please contact our Data Protection Officer at:
           </p>
           <div className="rounded-xl border border-border bg-card p-4 text-xs md:text-sm space-y-1 text-muted-foreground">
-            <p><strong className="text-foreground">Entity:</strong> {{BUSINESS_LEGAL_NAME}}</p>
-            <p><strong className="text-foreground">Registration:</strong> RC/CAC Number: {{RC_NUMBER}}</p>
-            <p><strong className="text-foreground">Address:</strong> {{REGISTERED_ADDRESS}}</p>
-            <p><strong className="text-foreground">Email:</strong> {{DPO_EMAIL}} / tixnaijaapp@gmail.com</p>
+            <p><strong className="text-foreground">Entity:</strong> {"{{BUSINESS_LEGAL_NAME}}"}</p>
+            <p><strong className="text-foreground">Registration:</strong> RC/CAC Number: {"{{RC_NUMBER}}"}</p>
+            <p><strong className="text-foreground">Address:</strong> {"{{REGISTERED_ADDRESS}}"}</p>
+            <p><strong className="text-foreground">Email:</strong> {"{{DPO_EMAIL}}"} / tixnaijaapp@gmail.com</p>
             <p><strong className="text-foreground">Phone:</strong> +234 901 127 5275</p>
           </div>
         </section>

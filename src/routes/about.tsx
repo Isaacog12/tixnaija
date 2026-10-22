@@ -76,8 +76,8 @@ function AboutPage() {
       toast.error("Please enter a valid email address.");
       return;
     }
-    if (!form.phone.trim() || form.phone.replace(/\D/g, "").length < 10) {
-      toast.error("Please enter a valid phone number.");
+    if (form.phone.trim() && form.phone.replace(/\D/g, "").length < 10) {
+      toast.error("Please enter a valid phone number (at least 10 digits).");
       return;
     }
     if (!form.message.trim() || form.message.trim().length < 10) {
@@ -90,7 +90,7 @@ function AboutPage() {
     const { error } = await supabase.from("contact_messages" as any).insert({
       name: form.name.trim(),
       email: form.email.trim(),
-      phone: form.phone.trim(),
+      phone: form.phone.trim() || null,
       topic: form.topic || "Other",
       message: form.message.trim(),
     } as any);
@@ -342,7 +342,7 @@ function AboutPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="contact-phone" className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
-                    Phone number <span className="text-primary">*</span>
+                    Phone number (Optional)
                   </Label>
                   <Input
                     id="contact-phone"
@@ -351,7 +351,6 @@ function AboutPage() {
                     onChange={(e) => update("phone", e.target.value)}
                     placeholder="+234 800 000 0000"
                     autoComplete="tel"
-                    required
                     className="h-12 rounded-xl border-border/60 bg-background/50 focus-visible:ring-primary/20 text-base"
                   />
                 </div>
@@ -386,6 +385,14 @@ function AboutPage() {
                     className="w-full rounded-xl border border-border/60 bg-background/50 p-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none transition-all"
                   />
                 </div>
+
+                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                  We use your information solely to reply to your inquiry in line with our{" "}
+                  <Link to="/privacy" className="underline hover:text-foreground">
+                    Privacy Policy
+                  </Link>
+                  .
+                </p>
 
                 <Button
                   type="submit"

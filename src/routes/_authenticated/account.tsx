@@ -864,19 +864,14 @@ function SecurityTab({ email }: { email: string }) {
     if (deleteConfirmText !== "DELETE") return;
     setDeletingAccount(true);
     try {
-      // Request account deletion via edge function or direct deletion
-      // For safety, we sign the user out after marking for deletion
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData.user?.id) {
-        // Mark profile for deletion (soft-delete)
-        await supabase
-          .from("profiles")
-          // @ts-ignore
-          .update({ deleted_at: new Date().toISOString() } as any)
-          .eq("id", userData.user.id);
+      const { data, error } = await supabase.functions.invoke("delete-account");
+      if (error || data?.error) {
+        throw new Error(error?.message || data?.error || "Failed to delete account");
       }
+
       await supabase.auth.signOut();
-      toast.success("Your account has been scheduled for deletion. You will be signed out.");
+      localStorage.removeItem("sb-bjijftxksykbjknbleul-auth-token");
+      toast.success("Your account and personal data have been deleted. You have been signed out.");
       navigate({ to: "/", replace: true });
     } catch (err: any) {
       toast.error(err.message ?? "Could not delete account");
@@ -1595,11 +1590,17 @@ function ApplicationForm({
             </label>
           </div>
         </div>
-        <div className="mt-3 rounded-md border border-border bg-muted px-4 py-3 text-xs text-muted-foreground leading-relaxed">
-          <strong>Why we ask for this:</strong> A selfie holding your government
-          ID helps us verify that every organizer on TixNaija is a real person.
-          This protects ticket buyers from fraud. Your photo is only seen by our
-          review team and is never shared publicly.
+        <div className="mt-3 rounded-md border border-border bg-muted/50 p-4 text-xs text-muted-foreground leading-relaxed space-y-2">
+          <p>
+            <strong className="text-foreground">Privacy Notice (Identity Verification):</strong> We collect your identity photo solely to verify organizer identity, prevent ticket fraud, and ensure platform safety in compliance with the Nigeria Data Protection Act 2023 (NDPA).
+          </p>
+          <p>
+            Your document is stored in a private, access-restricted storage bucket accessible only to authorized administrators reviewing your application. It is never made public or used for marketing. Uploaded identity files are retained for {"{{RETENTION_PERIODS.KYC_DOCUMENTS}}"} after review, after which they are permanently deleted. For details on how we protect your information, see our{" "}
+            <a href="/privacy" target="_blank" rel="noreferrer" className="underline hover:text-foreground">
+              Privacy Policy
+            </a>
+            .
+          </p>
         </div>
       </div>
 

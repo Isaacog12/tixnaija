@@ -50,8 +50,9 @@ function AuthV2Page() {
       <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 overflow-hidden border-r border-white/5">
         <div className="absolute inset-0 z-0">
           <img
-            src="https://images.unsplash.com/photo-1459749411175-04bf5292ceea?q=80&w=2070&auto=format&fit=crop"
-            alt="Concert crowd"
+            src="/hero-concert.jpg"
+            alt=""
+            aria-hidden="true"
             className="w-full h-full object-cover opacity-40 mix-blend-luminosity"
           />
           <div className="absolute inset-0 bg-gradient-to-br from-[#0a0a0a]/80 via-transparent to-[#0a0a0a]" />

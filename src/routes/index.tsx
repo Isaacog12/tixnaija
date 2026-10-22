@@ -147,7 +147,7 @@ function LandingPage() {
         <div className="mx-auto max-w-5xl px-4 text-center relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
           <div className="inline-flex items-center gap-3 mb-10 bg-background/60 border border-primary/20 backdrop-blur-xl rounded-full px-5 py-2 shadow-lg shadow-primary/5">
             <span className="type-label text-foreground/80">
-              Naija's Premier Ticket Hub
+              Discover and Book Nigerian Event Tickets
             </span>
           </div>
           
@@ -162,7 +162,7 @@ function LandingPage() {
           </p>
 
           <form
-            className="mx-auto flex w-full max-w-3xl items-center gap-3 rounded-[2rem] border border-border/40 bg-background/70 dark:bg-black/40 p-3 shadow-xl backdrop-blur-2xl transition-all duration-[350ms] ease-out hover:border-primary/30 hover:shadow-primary/10 focus-within:border-primary/40 focus-within:shadow-primary/10 group"
+            className="mx-auto flex w-full max-w-3xl items-center gap-3 rounded-[2rem] border border-border/40 bg-background/70 dark:bg-black/40 p-3 shadow-xl backdrop-blur-2xl transition-all duration-[350ms] ease-out hover:border-primary/30 hover:shadow-primary/10 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background group"
             onSubmit={(e) => {
               e.preventDefault();
               navigate({ to: "/browse", search: { q: query.trim() || undefined } });
@@ -175,7 +175,7 @@ function LandingPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search for events, artists, venues..."
-              className="border-0 bg-transparent shadow-none focus-visible:ring-0 text-base md:text-lg h-14 placeholder:text-muted-foreground/50 w-full font-medium"
+              className="border-0 bg-transparent shadow-none text-base md:text-lg h-14 placeholder:text-muted-foreground w-full font-medium focus-visible:outline-none"
             />
             <Button type="submit" className="rounded-full h-14 px-8 md:px-10 gradient-sunset text-primary-foreground glow-primary font-bold text-base press-sm transition-all duration-[220ms] ease-out hover:-translate-y-0.5 shrink-0">
               Find Events

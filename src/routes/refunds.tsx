@@ -43,7 +43,7 @@ function RefundsPage() {
         <section className="space-y-4">
           <h2 className="text-xl font-semibold tracking-tight">1. Platform Role & Foundation</h2>
           <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-            <strong className="text-foreground">TixNaija</strong> (operated by {{BUSINESS_LEGAL_NAME}}) provides ticketing software and booking infrastructure connecting event organizers with ticket buyers across Nigeria. TixNaija is not the producer, venue owner, or promoter of events listed on the marketplace.
+            <strong className="text-foreground">TixNaija</strong> (operated by {"{{BUSINESS_LEGAL_NAME}}"}) provides ticketing software and booking infrastructure connecting event organizers with ticket buyers across Nigeria. TixNaija is not the producer, venue owner, or promoter of events listed on the marketplace.
           </p>
           <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
             This Policy outlines the rules governing refunds, ticket cancellations, and postponements in accordance with the Federal Competition and Consumer Protection Act (FCCPA) 2018 and the consumer protection guidelines of the Federal Competition and Consumer Protection Commission (FCCPC).
@@ -148,9 +148,9 @@ function RefundsPage() {
         <section className="space-y-4 border-t border-border/40 pt-8">
           <h2 className="text-xl font-semibold tracking-tight">7. Corporate Information</h2>
           <div className="rounded-xl border border-border bg-card p-4 text-xs md:text-sm space-y-1 text-muted-foreground">
-            <p><strong className="text-foreground">Legal Name:</strong> {{BUSINESS_LEGAL_NAME}}</p>
-            <p><strong className="text-foreground">Registration:</strong> RC/CAC Number: {{RC_NUMBER}}</p>
-            <p><strong className="text-foreground">Registered Address:</strong> {{REGISTERED_ADDRESS}}</p>
+            <p><strong className="text-foreground">Legal Name:</strong> {"{{BUSINESS_LEGAL_NAME}}"}</p>
+            <p><strong className="text-foreground">Registration:</strong> RC/CAC Number: {"{{RC_NUMBER}}"}</p>
+            <p><strong className="text-foreground">Registered Address:</strong> {"{{REGISTERED_ADDRESS}}"}</p>
             <p><strong className="text-foreground">Email:</strong> tixnaijaapp@gmail.com</p>
             <p><strong className="text-foreground">Phone:</strong> +234 901 127 5275</p>
           </div>

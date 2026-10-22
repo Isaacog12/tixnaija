@@ -169,8 +169,9 @@ function OtpV2Page() {
       <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 overflow-hidden border-r border-white/5">
         <div className="absolute inset-0 z-0">
           <img
-            src="https://images.unsplash.com/photo-1540039155732-d6888c3f4e91?q=80&w=2070&auto=format&fit=crop"
-            alt="Crowd cheering"
+            src="/hero-concert.jpg"
+            alt=""
+            aria-hidden="true"
             className="w-full h-full object-cover opacity-40 mix-blend-luminosity"
           />
           <div className="absolute inset-0 bg-gradient-to-br from-[#0a0a0a]/80 via-transparent to-[#0a0a0a]" />
@@ -252,14 +253,14 @@ function OtpV2Page() {
                   </div>
                   <form onSubmit={handleRequestOtp} className="space-y-4">
                     <div className="relative group">
-                      <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30 transition-colors group-focus-within:text-orange-500" />
+                      <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60 transition-colors group-focus-within:text-orange-500" />
                       <input
                         type="email"
                         placeholder="name@domain.com"
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="h-12 w-full rounded-xl border border-white/10 bg-white/5 pl-11 pr-4 text-white placeholder:text-white/30 outline-none transition-all duration-200 focus:border-orange-500/50"
+                        className="h-12 w-full rounded-xl border border-white/10 bg-white/5 pl-11 pr-4 text-white placeholder:text-white/60 outline-none transition-all duration-200 focus:border-orange-500/50"
                       />
                     </div>
                     <button

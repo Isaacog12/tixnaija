@@ -175,7 +175,7 @@ function BrowsePage() {
              </h1>
              </div>
              <form
-               className="flex w-full md:max-w-md items-center gap-2 rounded-full border border-border/60 bg-card/80 px-2 py-1 shadow-inner focus-within:ring-2 focus-within:ring-primary/25 transition-all duration-[120ms] hover:border-primary/40"
+               className="flex w-full md:max-w-md items-center gap-2 rounded-full border border-border/60 bg-card/80 px-2 py-1 shadow-inner focus-within:ring-2 focus-within:ring-primary focus-within:border-primary transition-all duration-[120ms] hover:border-primary/40"
                 onSubmit={(e) => { e.preventDefault(); updateSearch({ q: searchInput.trim() }); }}
               >
                 <div className="pl-3 text-muted-foreground"><Search className="h-4 w-4" /></div>
@@ -183,7 +183,7 @@ function BrowsePage() {
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   placeholder="Search events, artists..."
-                  className="h-10 border-0 bg-transparent px-2 text-sm shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/60"
+                  className="h-10 border-0 bg-transparent px-2 text-sm shadow-none focus-visible:outline-none placeholder:text-muted-foreground"
                 />
                 <Button type="submit" size="sm" className="rounded-full gradient-sunset text-primary-foreground px-5 h-8 text-xs font-bold shadow-md shadow-primary/20 press-sm transition-transform duration-[120ms]">
                   Search

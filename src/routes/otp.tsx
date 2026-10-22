@@ -263,14 +263,14 @@ function OtpPage() {
 
               <form onSubmit={handleRequestOtp} className="mt-8 w-full space-y-4">
                 <div className="relative group text-left">
-                  <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30 transition-colors group-focus-within:text-primary" />
+                  <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60 transition-colors group-focus-within:text-primary" />
                   <input
                     type="email"
                     placeholder="name@domain.com"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="h-12 w-full rounded-xl border border-white/10 bg-white/5 pl-11 pr-4 text-sm text-white placeholder:text-white/30 outline-none transition-all duration-200 focus:border-primary/40 focus:ring-1 focus:ring-primary/20"
+                    className="h-12 w-full rounded-xl border border-white/10 bg-white/5 pl-11 pr-4 text-sm text-white placeholder:text-white/60 outline-none transition-all duration-200 focus:border-primary/40 focus:ring-1 focus:ring-primary/20"
                   />
                 </div>
 

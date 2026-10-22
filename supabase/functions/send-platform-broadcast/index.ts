@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { sendEmail } from "../_shared/zeptomail.ts";
 import { filterOptedInEmails } from "../_shared/notification-preferences.ts";
+import { generateUnsubscribeToken } from "../_shared/unsubscribe.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -55,7 +56,10 @@ serve(async (req: Request) => {
         continue;
       }
 
-      // Append standard opt-out footer
+      const unsubToken = await generateUnsubscribeToken(email, "marketing_emails");
+      const unsubUrl = `https://tixnaija.name.ng/unsubscribe?email=${encodeURIComponent(email)}&category=marketing_emails&token=${unsubToken}`;
+
+      // Append standard opt-out footer with signed one-click token and business identity
       const fullHtmlBody = `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1a1a1a;">
           ${htmlBody}
@@ -64,8 +68,12 @@ serve(async (req: Request) => {
             <p style="font-size: 12px; color: #71717a; margin-bottom: 8px;">
               You received this message because you opted in to marketing updates from TixNaija.
             </p>
-            <p style="font-size: 12px; color: #71717a; margin: 0;">
-              To change your email preferences or unsubscribe, manage your <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a>.
+            <p style="font-size: 12px; color: #71717a; margin-bottom: 12px;">
+              <a href="${unsubUrl}" style="color: #ea580c; text-decoration: underline;">Click here to unsubscribe instantly</a> or manage your <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a>.
+            </p>
+            <p style="font-size: 11px; color: #a1a1aa; margin: 0; line-height: 1.4;">
+              {{BUSINESS_LEGAL_NAME}} · RC/CAC: {{RC_NUMBER}}<br />
+              Registered Address: {{REGISTERED_ADDRESS}}
             </p>
           </div>
         </div>
@@ -76,6 +84,10 @@ serve(async (req: Request) => {
           to: { address: email, name },
           subject,
           htmlBody: fullHtmlBody,
+          headers: [
+            { name: "List-Unsubscribe", value: `<${unsubUrl}>, <mailto:tixnaijaapp@gmail.com?subject=Unsubscribe>` },
+            { name: "List-Unsubscribe-Post", value: "List-Unsubscribe=One-Click" },
+          ],
         });
         successCount++;
       } catch (err) {
