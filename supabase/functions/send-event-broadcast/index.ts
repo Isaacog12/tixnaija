@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { sendEmail } from "../_shared/zeptomail.ts";
+import { filterOptedInEmails } from "../_shared/notification-preferences.ts";
 
 const allowedOrigins = [
   "https://tixnaija.vercel.app",
@@ -61,28 +62,49 @@ serve(async (req: Request) => {
     // De-duplicate emails
     const uniqueAttendees = new Map<string, string>();
     orders.forEach(o => {
-      uniqueAttendees.set(o.buyer_email, o.buyer_name || "Attendee");
+      if (o.buyer_email) {
+        uniqueAttendees.set(o.buyer_email.trim().toLowerCase(), o.buyer_name || "Attendee");
+      }
     });
 
-    const eventLink = `https://tixnaija.name.ng/e/${broadcast.events.slug}`;
+    const candidateEmails = Array.from(uniqueAttendees.keys());
+    if (candidateEmails.length === 0) {
+      return new Response(JSON.stringify({ success: true, count: 0, message: "No attendees found" }), {
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // Filter attendees who opted in for organizer_updates (default: true)
+    const optedInEmails = await filterOptedInEmails(supabase, candidateEmails, "organizer_updates");
+
+    const eventLink = `https://tixnaija.name.ng/e/${broadcast.events?.slug || ""}`;
     let successCount = 0;
+    let optedOutCount = 0;
     
-    // In a production environment, we should batch these via ZeptoMail's batch API.
-    // For now, loop through and send individual emails since attendee numbers might be small for testing.
-    const emails = Array.from(uniqueAttendees.entries());
-    
-    for (const [email, name] of emails) {
+    for (const [email, name] of uniqueAttendees.entries()) {
+      if (!optedInEmails.has(email)) {
+        console.log(`[OPT-OUT] Skipping organizer broadcast for ${email} (user opted out of organizer_updates)`);
+        optedOutCount++;
+        continue;
+      }
+
       const htmlBody = `
-        <div style="font-family: sans-serif; max-w: 600px; margin: 0 auto; color: #1a1a1a;">
-          <h2 style="color: #ff6b00;">Update: ${broadcast.events.title}</h2>
-          <p>Hi ${name},</p>
-          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0; white-space: pre-wrap;">${broadcast.message}</div>
-          <p>Best regards,<br>The ${broadcast.events.title} Team</p>
-          <hr style="border: 0; border-top: 1px solid #eaeaea; margin: 40px 0 20px;" />
-          <p style="font-size: 12px; color: #666;">
-            You are receiving this email because you bought a ticket to this event on TixNaija.<br>
-            <a href="${eventLink}" style="color: #ff6b00; text-decoration: none;">View Event Page</a>
-          </p>
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1a1a1a; padding: 20px;">
+          <h2 style="color: #ea580c; font-size: 20px; font-weight: 700; margin-bottom: 12px;">Update: ${broadcast.events?.title || "Event Announcement"}</h2>
+          <p style="font-size: 15px; color: #333333; line-height: 1.5;">Hi ${name},</p>
+          <div style="background-color: #f4f4f5; padding: 20px; border-radius: 12px; margin: 20px 0; white-space: pre-wrap; font-size: 15px; line-height: 1.6; border: 1px solid #e4e4e7;">${broadcast.message}</div>
+          <p style="font-size: 15px; color: #333333; line-height: 1.5;">Best regards,<br><strong>The ${broadcast.events?.title || "Event"} Team</strong></p>
+          <hr style="border: 0; border-top: 1px solid #e4e4e7; margin: 32px 0 20px;" />
+          <div style="text-align: center;">
+            <p style="font-size: 12px; color: #71717a; margin-bottom: 8px;">
+              You received this update because you bought a ticket to this event on TixNaija.<br>
+              <a href="${eventLink}" style="color: #ea580c; text-decoration: underline;">View Event Page</a>
+            </p>
+            <p style="font-size: 12px; color: #71717a; margin: 0;">
+              To change your notification preferences, visit your <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Account Settings</a>.
+            </p>
+          </div>
         </div>
       `;
 
@@ -106,8 +128,9 @@ serve(async (req: Request) => {
       })
       .eq("id", broadcastId);
 
-    return new Response(JSON.stringify({ success: true, count: successCount }), {
+    return new Response(JSON.stringify({ success: true, count: successCount, opted_out: optedOutCount }), {
       headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+      status: 200,
     });
   } catch (error: any) {
     console.error("Broadcast error:", error);

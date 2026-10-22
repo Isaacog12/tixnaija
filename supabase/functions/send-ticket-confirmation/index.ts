@@ -5,6 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 // @ts-ignore
 import QRCode from "https://esm.sh/qrcode@1.5.3";
 import { sendEmail } from "../_shared/zeptomail.ts";
+import { isNotificationOptedIn } from "../_shared/notification-preferences.ts";
 
 const allowedOrigins = [
   "https://www.tixnaija.name.ng",
@@ -160,19 +161,32 @@ serve(async (req: Request) => {
 
         <div style="margin-top: 60px; padding-top: 24px; border-top: 1px solid #1C1C1E; text-align: center;">
           <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">Order Ref: ${orderRef}</p>
-          <p style="margin: 0; font-size: 12px; color: #86868B;">TixNaija. Sent at ${sentTime}</p>
+          <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">TixNaija. Sent at ${sentTime}</p>
+          <p style="margin: 0; font-size: 12px; color: #86868B;">
+            To manage notifications, visit your <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Account Settings</a>.
+          </p>
         </div>
       </div>
     </div>
     `;
 
-    // 1. Send Master Receipt to Buyer (Only if not a single ticket resend)
+    // 1. Send Master Receipt to Buyer (Only if not a single ticket resend and not opted out)
     if (!ticketId) {
-      await sendEmail({
-        to: { address: recipientEmail, name: recipientName },
-        subject,
-        htmlBody: masterHtmlBody,
-      });
+      const buyerOptedIn = await isNotificationOptedIn(
+        supabase,
+        { email: recipientEmail, userId: order.user_id },
+        "ticket_confirmations"
+      );
+
+      if (buyerOptedIn) {
+        await sendEmail({
+          to: { address: recipientEmail, name: recipientName },
+          subject,
+          htmlBody: masterHtmlBody,
+        });
+      } else {
+        console.log(`[OPT-OUT] Skipping master ticket confirmation for ${recipientEmail} (user opted out of ticket_confirmations)`);
+      }
     }
 
     // 2. Send Individual Tickets to Attendees
@@ -268,11 +282,25 @@ serve(async (req: Request) => {
       attHtmlBody += `
           <div style="margin-top: 60px; padding-top: 24px; border-top: 1px solid #1C1C1E; text-align: center;">
             <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">TixNaija Support</p>
-            <p style="margin: 0; font-size: 12px; color: #86868B;">Sent at ${sentTime}</p>
+            <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">Sent at ${sentTime}</p>
+            <p style="margin: 0; font-size: 12px; color: #86868B;">
+              Manage notifications: <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a>
+            </p>
           </div>
         </div>
       </div>
       `;
+
+      const attendeeOptedIn = await isNotificationOptedIn(
+        supabase,
+        { email },
+        "ticket_confirmations"
+      );
+
+      if (!attendeeOptedIn) {
+        console.log(`[OPT-OUT] Skipping ticket email for attendee ${email} (user opted out of ticket_confirmations)`);
+        continue;
+      }
 
       await sendEmail({
         to: { address: email, name: attendeeName },

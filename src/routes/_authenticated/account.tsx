@@ -148,7 +148,24 @@ function AccountPage() {
     queryFn: fetchMyApplication,
   });
 
-  const [activeTab, setActiveTab] = useState<Tab>("general");
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    if (typeof window !== "undefined") {
+      const param = new URLSearchParams(window.location.search).get("tab");
+      if (param && ["general", "security", "notifications", "organizer", "payouts"].includes(param)) {
+        return param as Tab;
+      }
+    }
+    return "general";
+  });
+
+  const handleTabChange = (tab: Tab) => {
+    setActiveTab(tab);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", tab);
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
 
   const [form, setForm] = useState({
     full_name: "",
@@ -426,7 +443,7 @@ function AccountPage() {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabChange(tab.id)}
                   className={`relative flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors rounded-xl whitespace-nowrap lg:whitespace-normal ${
                     isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                   }`}

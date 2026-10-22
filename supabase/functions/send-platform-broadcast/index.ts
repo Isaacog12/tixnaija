@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { sendEmail } from "../_shared/zeptomail.ts";
+import { filterOptedInEmails } from "../_shared/notification-preferences.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,27 +22,60 @@ serve(async (req: Request) => {
     const { subject, htmlBody } = await req.json();
     if (!subject || !htmlBody) throw new Error("Missing subject or htmlBody");
 
-    // Fetch all users using the Service Role Key to bypass RLS and Auth schema restrictions
+    // Fetch all users using the Service Role Key
     const { data: { users }, error: uErr } = await supabase.auth.admin.listUsers();
     if (uErr) throw new Error("Failed to fetch users");
 
-    // De-duplicate emails just in case
-    const uniqueAttendees = new Map<string, string>();
+    // De-duplicate emails
+    const uniqueUsers = new Map<string, string>();
     users.forEach(u => {
       if (u.email) {
-        uniqueAttendees.set(u.email, u.user_metadata?.full_name || "TixNaija User");
+        uniqueUsers.set(u.email.trim().toLowerCase(), u.user_metadata?.full_name || "TixNaija Member");
       }
     });
 
+    const candidateEmails = Array.from(uniqueUsers.keys());
+    if (candidateEmails.length === 0) {
+      return new Response(JSON.stringify({ message: "No users found", total_sent: 0 }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // Only send to users who explicitly opted in to "marketing_emails" (default is false)
+    const optedInEmails = await filterOptedInEmails(supabase, candidateEmails, "marketing_emails");
+
     let successCount = 0;
-    const emails = Array.from(uniqueAttendees.entries());
-    
-    for (const [email, name] of emails) {
+    let skippedCount = 0;
+
+    for (const [email, name] of uniqueUsers.entries()) {
+      if (!optedInEmails.has(email)) {
+        // User has not opted into promotional emails
+        skippedCount++;
+        continue;
+      }
+
+      // Append standard opt-out footer
+      const fullHtmlBody = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1a1a1a;">
+          ${htmlBody}
+          <hr style="border: 0; border-top: 1px solid #eaeaea; margin: 40px 0 20px;" />
+          <div style="text-align: center;">
+            <p style="font-size: 12px; color: #71717a; margin-bottom: 8px;">
+              You received this message because you opted in to marketing updates from TixNaija.
+            </p>
+            <p style="font-size: 12px; color: #71717a; margin: 0;">
+              To change your email preferences or unsubscribe, manage your <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a>.
+            </p>
+          </div>
+        </div>
+      `;
+
       try {
         await sendEmail({
           to: { address: email, name },
           subject,
-          htmlBody,
+          htmlBody: fullHtmlBody,
         });
         successCount++;
       } catch (err) {
@@ -49,10 +83,17 @@ serve(async (req: Request) => {
       }
     }
 
-    return new Response(JSON.stringify({ message: "Broadcast sent successfully", total_sent: successCount }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+    return new Response(
+      JSON.stringify({
+        message: "Broadcast completed",
+        total_sent: successCount,
+        skipped_opted_out: skippedCount,
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      }
+    );
   } catch (error: any) {
     console.error("Broadcast error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
