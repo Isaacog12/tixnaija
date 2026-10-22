@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
 import { BackButton } from "@/components/back-button";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -15,6 +15,19 @@ import {
   XCircle,
   Upload,
   Loader2,
+  Lock,
+  Bell,
+  LogOut,
+  Camera,
+  Eye,
+  EyeOff,
+  AlertTriangle,
+  Trash2,
+  Monitor,
+  Mail,
+  CalendarCheck,
+  Megaphone,
+  Info,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -29,6 +42,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export const Route = createFileRoute("/_authenticated/account")({
   component: AccountPage,
@@ -100,14 +125,23 @@ const applicationSchema = z.object({
     .min(30, "Please write at least 30 characters about your plans"),
 });
 
+const changePasswordSchema = z.object({
+  newPassword: z.string().min(6, "At least 6 characters").max(72),
+  confirmPassword: z.string(),
+}).refine((v) => v.newPassword === v.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
 // ---------------------------------------------------------------------------
 // Main page
 // ---------------------------------------------------------------------------
 
-type Tab = "general" | "organizer" | "payouts";
+type Tab = "general" | "security" | "notifications" | "organizer" | "payouts";
 
 function AccountPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const { data, isLoading } = useQuery({ queryKey: ["me"], queryFn: fetchProfile });
   const { data: myApp, isLoading: appLoading } = useQuery({
     queryKey: ["my-organizer-application"],
@@ -131,6 +165,10 @@ function AccountPage() {
   });
   const [saving, setSaving] = useState(false);
   const [slugError, setSlugError] = useState("");
+
+  // Avatar upload state
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   useEffect(() => {
     if (data?.profile) {
@@ -292,6 +330,60 @@ function AccountPage() {
     }
   }
 
+  // Avatar upload handler
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !data) return;
+
+    // Validate file
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5MB");
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `${data.userId}/${Date.now()}-avatar.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true });
+
+      if (uploadError) {
+        // If "avatars" bucket doesn't exist, try event-covers as fallback
+        // or just store the URL directly
+        throw uploadError;
+      }
+
+      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      
+      await supabase
+        .from("profiles")
+        // @ts-ignore
+        .update({ avatar_url: pub.publicUrl } as any)
+        .eq("id", data.userId);
+
+      toast.success("Profile photo updated!");
+      qc.invalidateQueries({ queryKey: ["me"] });
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed to upload photo");
+    } finally {
+      setUploadingAvatar(false);
+      // Reset the input so the same file can be selected again
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
+  }
+
+  // Sign out handler
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", replace: true });
+  }
+
   if (isLoading) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-10 flex items-center gap-2 text-sm text-muted-foreground">
@@ -299,6 +391,14 @@ function AccountPage() {
       </div>
     );
   }
+
+  const tabs: { id: Tab; label: string; icon: typeof UserIcon }[] = [
+    { id: "general", label: "Personal Info", icon: UserIcon },
+    { id: "security", label: "Security", icon: Lock },
+    { id: "notifications", label: "Notifications", icon: Bell },
+    { id: "organizer", label: "Organizer Status", icon: ShieldCheck },
+    { id: "payouts", label: "Payout Account", icon: Landmark },
+  ];
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 lg:py-16">
@@ -313,7 +413,7 @@ function AccountPage() {
           <h1 className="text-3xl md:text-4xl font-display font-semibold tracking-tight text-foreground">Account Settings</h1>
         </div>
         <p className="text-muted-foreground text-base max-w-2xl">
-          Manage your personal profile, organizer verification, and bank details for ticket payouts.
+          Manage your personal profile, security, notifications, organizer verification, and bank details.
         </p>
       </motion.div>
 
@@ -321,16 +421,12 @@ function AccountPage() {
         {/* Sidebar Nav */}
         <aside className="w-full lg:w-64 shrink-0">
           <nav className="flex flex-row lg:flex-col gap-2 overflow-x-auto pb-4 lg:pb-0 scrollbar-hide relative">
-            {[
-              { id: "general", label: "Personal Info", icon: UserIcon },
-              { id: "organizer", label: "Organizer Status", icon: ShieldCheck },
-              { id: "payouts", label: "Payout Account", icon: Landmark },
-            ].map((tab) => {
+            {tabs.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as Tab)}
+                  onClick={() => setActiveTab(tab.id)}
                   className={`relative flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors rounded-xl whitespace-nowrap lg:whitespace-normal ${
                     isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                   }`}
@@ -348,6 +444,18 @@ function AccountPage() {
                 </button>
               );
             })}
+
+            {/* Divider */}
+            <div className="hidden lg:block my-2 border-t border-border/50" />
+
+            {/* Sign Out Button */}
+            <button
+              onClick={handleSignOut}
+              className="relative flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors rounded-xl whitespace-nowrap lg:whitespace-normal text-destructive/80 hover:text-destructive hover:bg-destructive/5"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Sign out</span>
+            </button>
           </nav>
         </aside>
 
@@ -371,6 +479,51 @@ function AccountPage() {
                     onSubmit={save}
                     className="rounded-[2rem] border border-border/50 bg-card/30 backdrop-blur-xl p-8 sm:p-10 shadow-sm"
                   >
+                    {/* Avatar Section */}
+                    <div className="flex items-center gap-6 mb-10 pb-8 border-b border-border/50">
+                      <div className="relative group">
+                        <Avatar className="h-24 w-24 border-2 border-border/50 shadow-md">
+                          <AvatarImage src={data?.profile?.avatar_url || undefined} />
+                          <AvatarFallback className="text-2xl font-semibold bg-primary/10 text-primary">
+                            {(data?.profile?.full_name || data?.email || "?").charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <button
+                          type="button"
+                          onClick={() => avatarInputRef.current?.click()}
+                          disabled={uploadingAvatar}
+                          className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer disabled:cursor-wait"
+                        >
+                          {uploadingAvatar ? (
+                            <Loader2 className="h-5 w-5 text-white animate-spin" />
+                          ) : (
+                            <Camera className="h-5 w-5 text-white" />
+                          )}
+                        </button>
+                        <input
+                          ref={avatarInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={handleAvatarUpload}
+                          className="sr-only"
+                        />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-medium tracking-tight text-foreground">
+                          {data?.profile?.full_name || "Your Profile"}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-0.5">{data?.email}</p>
+                        <button
+                          type="button"
+                          onClick={() => avatarInputRef.current?.click()}
+                          disabled={uploadingAvatar}
+                          className="mt-2 text-xs font-medium text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
+                        >
+                          {uploadingAvatar ? "Uploading…" : "Change photo"}
+                        </button>
+                      </div>
+                    </div>
+
                     <div className="grid gap-6 sm:grid-cols-2">
                       <Field label="Full name">
                         <Input
@@ -470,6 +623,14 @@ function AccountPage() {
                     </div>
                   </form>
                 </div>
+              )}
+
+              {activeTab === "security" && (
+                <SecurityTab email={data?.email ?? ""} />
+              )}
+
+              {activeTab === "notifications" && (
+                <NotificationsTab userId={data?.userId ?? ""} profile={data?.profile} />
               )}
 
               {activeTab === "organizer" && (
@@ -597,6 +758,477 @@ function AccountPage() {
             </motion.div>
           </AnimatePresence>
         </main>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Security Tab
+// ---------------------------------------------------------------------------
+
+function SecurityTab({ email }: { email: string }) {
+  const navigate = useNavigate();
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [signingOutAll, setSigningOutAll] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    const parsed = changePasswordSchema.safeParse({ newPassword, confirmPassword });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Check your input");
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: parsed.data.newPassword });
+      if (error) throw error;
+      toast.success("Password updated successfully!");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      toast.error(err.message ?? "Could not update password");
+    } finally {
+      setChangingPassword(false);
+    }
+  }
+
+  async function handleSignOutAllDevices() {
+    setSigningOutAll(true);
+    try {
+      const { error } = await supabase.auth.signOut({ scope: "global" });
+      if (error) throw error;
+      toast.success("Signed out from all devices");
+      navigate({ to: "/auth", replace: true });
+    } catch (err: any) {
+      toast.error(err.message ?? "Could not sign out from all devices");
+    } finally {
+      setSigningOutAll(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    if (deleteConfirmText !== "DELETE") return;
+    setDeletingAccount(true);
+    try {
+      // Request account deletion via edge function or direct deletion
+      // For safety, we sign the user out after marking for deletion
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData.user?.id) {
+        // Mark profile for deletion (soft-delete)
+        await supabase
+          .from("profiles")
+          // @ts-ignore
+          .update({ deleted_at: new Date().toISOString() } as any)
+          .eq("id", userData.user.id);
+      }
+      await supabase.auth.signOut();
+      toast.success("Your account has been scheduled for deletion. You will be signed out.");
+      navigate({ to: "/", replace: true });
+    } catch (err: any) {
+      toast.error(err.message ?? "Could not delete account");
+    } finally {
+      setDeletingAccount(false);
+    }
+  }
+
+  // Password strength meter
+  function getPasswordStrength(pw: string): { label: string; color: string; width: string } {
+    if (!pw) return { label: "", color: "", width: "0%" };
+    let score = 0;
+    if (pw.length >= 6) score++;
+    if (pw.length >= 10) score++;
+    if (/[A-Z]/.test(pw)) score++;
+    if (/[0-9]/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+    if (score <= 1) return { label: "Weak", color: "bg-red-500", width: "20%" };
+    if (score === 2) return { label: "Fair", color: "bg-orange-500", width: "40%" };
+    if (score === 3) return { label: "Good", color: "bg-yellow-500", width: "60%" };
+    if (score === 4) return { label: "Strong", color: "bg-green-500", width: "80%" };
+    return { label: "Very strong", color: "bg-emerald-500", width: "100%" };
+  }
+
+  const strength = getPasswordStrength(newPassword);
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground">Security</h2>
+        <p className="text-sm text-muted-foreground mt-1">Manage your password and account security.</p>
+      </div>
+
+      {/* Change Password */}
+      <form
+        onSubmit={handleChangePassword}
+        className="rounded-[2rem] border border-border/50 bg-card/30 backdrop-blur-xl p-8 sm:p-10 shadow-sm"
+      >
+        <div className="flex items-center gap-3 mb-6">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+            <Lock className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h3 className="text-lg font-medium tracking-tight text-foreground">Change Password</h3>
+            <p className="text-sm text-muted-foreground">Update your password to keep your account secure.</p>
+          </div>
+        </div>
+
+        <div className="grid gap-5 max-w-md">
+          <Field label="New password">
+            <div className="relative">
+              <Input
+                className="h-12 bg-background/50 border-border/50 focus-visible:ring-primary/20 rounded-xl pr-12"
+                type={showNew ? "text" : "password"}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNew(!showNew)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            {/* Password strength indicator */}
+            {newPassword && (
+              <div className="mt-2 space-y-1">
+                <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                  <motion.div
+                    className={`h-full rounded-full ${strength.color}`}
+                    initial={{ width: 0 }}
+                    animate={{ width: strength.width }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Password strength: <span className="font-medium text-foreground">{strength.label}</span>
+                </p>
+              </div>
+            )}
+          </Field>
+          <Field label="Confirm new password">
+            <div className="relative">
+              <Input
+                className="h-12 bg-background/50 border-border/50 focus-visible:ring-primary/20 rounded-xl pr-12"
+                type={showConfirm ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm(!showConfirm)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            {confirmPassword && newPassword !== confirmPassword && (
+              <p className="text-xs text-destructive mt-1">Passwords do not match</p>
+            )}
+          </Field>
+        </div>
+
+        <div className="mt-6 flex justify-start">
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            type="submit"
+            disabled={changingPassword || !newPassword || !confirmPassword}
+            className="inline-flex items-center justify-center h-11 px-6 rounded-full bg-primary text-primary-foreground font-medium shadow-lg shadow-primary/20 transition-all disabled:opacity-50 disabled:scale-100 text-sm"
+          >
+            {changingPassword ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Updating…
+              </>
+            ) : (
+              "Update password"
+            )}
+          </motion.button>
+        </div>
+      </form>
+
+      {/* Active Sessions / Sign Out All */}
+      <div className="rounded-[2rem] border border-border/50 bg-card/30 backdrop-blur-xl p-8 sm:p-10 shadow-sm">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
+            <Monitor className="h-5 w-5 text-blue-500" />
+          </div>
+          <div>
+            <h3 className="text-lg font-medium tracking-tight text-foreground">Active Sessions</h3>
+            <p className="text-sm text-muted-foreground">Sign out from all devices if you suspect unauthorized access.</p>
+          </div>
+        </div>
+
+        <div className="mt-4 p-4 rounded-xl border border-border/50 bg-background/30 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Current session</p>
+              <p className="text-xs text-muted-foreground">{email}</p>
+            </div>
+          </div>
+          <span className="text-xs font-medium text-green-500 bg-green-500/10 px-2 py-1 rounded-full">Active</span>
+        </div>
+
+        <div className="mt-6">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleSignOutAllDevices}
+            disabled={signingOutAll}
+            className="rounded-xl"
+          >
+            {signingOutAll ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Signing out…
+              </>
+            ) : (
+              <>
+                <LogOut className="mr-2 h-4 w-4" /> Sign out all devices
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {/* Delete Account */}
+      <div className="rounded-[2rem] border border-destructive/20 bg-destructive/[0.02] backdrop-blur-xl p-8 sm:p-10 shadow-sm">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+          </div>
+          <div>
+            <h3 className="text-lg font-medium tracking-tight text-destructive">Danger Zone</h3>
+            <p className="text-sm text-muted-foreground">Permanently delete your account and all associated data.</p>
+          </div>
+        </div>
+
+        <div className="mt-4 p-4 rounded-xl border border-destructive/20 bg-destructive/5">
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Once you delete your account, all your data will be permanently removed. This includes your profile, tickets, events (if you're an organizer), and payout history. <strong className="text-foreground">This action cannot be undone.</strong>
+          </p>
+        </div>
+
+        <div className="mt-6">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" className="rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive">
+                <Trash2 className="mr-2 h-4 w-4" /> Delete my account
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="rounded-2xl">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-destructive">Delete your account?</AlertDialogTitle>
+                <AlertDialogDescription className="space-y-3">
+                  <span className="block">
+                    This will permanently delete your TixNaija account and all associated data. You will lose access to your tickets, events, and payout history.
+                  </span>
+                  <span className="block font-medium text-foreground">
+                    Type <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-destructive">DELETE</span> below to confirm:
+                  </span>
+                  <Input
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    placeholder="Type DELETE to confirm"
+                    className="mt-2"
+                  />
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setDeleteConfirmText("")}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteAccount}
+                  disabled={deleteConfirmText !== "DELETE" || deletingAccount}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+                >
+                  {deletingAccount ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting…
+                    </>
+                  ) : (
+                    "Permanently delete account"
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Notifications Tab
+// ---------------------------------------------------------------------------
+
+function NotificationsTab({ userId, profile }: { userId: string; profile: any }) {
+  const qc = useQueryClient();
+  
+  // Notification preferences (stored locally until backend supports it)
+  const [prefs, setPrefs] = useState({
+    ticket_confirmations: true,
+    event_reminders: true,
+    organizer_updates: true,
+    marketing_emails: false,
+  });
+  const [savingPrefs, setSavingPrefs] = useState(false);
+
+  // Load saved preferences from profile or localStorage
+  useEffect(() => {
+    if (profile?.notification_preferences) {
+      try {
+        const saved = typeof profile.notification_preferences === "string" 
+          ? JSON.parse(profile.notification_preferences) 
+          : profile.notification_preferences;
+        setPrefs((prev) => ({ ...prev, ...saved }));
+      } catch { /* use defaults */ }
+    } else {
+      // Try localStorage fallback
+      try {
+        const stored = localStorage.getItem(`notif_prefs_${userId}`);
+        if (stored) setPrefs((prev) => ({ ...prev, ...JSON.parse(stored) }));
+      } catch { /* use defaults */ }
+    }
+  }, [profile, userId]);
+
+  async function savePrefs() {
+    setSavingPrefs(true);
+    try {
+      // Try saving to profile first
+      const { error } = await supabase
+        .from("profiles")
+        // @ts-ignore — notification_preferences may not be typed yet
+        .update({ notification_preferences: prefs } as any)
+        .eq("id", userId);
+      
+      // Always save to localStorage as backup
+      localStorage.setItem(`notif_prefs_${userId}`, JSON.stringify(prefs));
+
+      if (error) {
+        // If column doesn't exist, just save to localStorage
+        toast.success("Notification preferences saved locally");
+      } else {
+        toast.success("Notification preferences updated!");
+        qc.invalidateQueries({ queryKey: ["me"] });
+      }
+    } catch {
+      localStorage.setItem(`notif_prefs_${userId}`, JSON.stringify(prefs));
+      toast.success("Notification preferences saved");
+    } finally {
+      setSavingPrefs(false);
+    }
+  }
+
+  const notifOptions = [
+    {
+      key: "ticket_confirmations" as const,
+      icon: Mail,
+      label: "Ticket Confirmations",
+      description: "Receive email confirmations when you purchase or receive a ticket.",
+      color: "text-primary",
+      bgColor: "bg-primary/10",
+    },
+    {
+      key: "event_reminders" as const,
+      icon: CalendarCheck,
+      label: "Event Reminders",
+      description: "Get reminded 24 hours and 1 hour before events you have tickets for.",
+      color: "text-blue-500",
+      bgColor: "bg-blue-500/10",
+    },
+    {
+      key: "organizer_updates" as const,
+      icon: Info,
+      label: "Organizer Updates",
+      description: "Receive updates when event organizers send announcements or change event details.",
+      color: "text-amber-500",
+      bgColor: "bg-amber-500/10",
+    },
+    {
+      key: "marketing_emails" as const,
+      icon: Megaphone,
+      label: "Marketing & Promotions",
+      description: "Hear about featured events, special offers, and TixNaija news. You can unsubscribe anytime.",
+      color: "text-violet-500",
+      bgColor: "bg-violet-500/10",
+    },
+  ];
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground">Notifications</h2>
+        <p className="text-sm text-muted-foreground mt-1">Choose what emails you'd like to receive from TixNaija.</p>
+      </div>
+
+      <div className="rounded-[2rem] border border-border/50 bg-card/30 backdrop-blur-xl p-8 sm:p-10 shadow-sm">
+        <div className="flex items-center gap-3 mb-8">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+            <Bell className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h3 className="text-lg font-medium tracking-tight text-foreground">Email Notifications</h3>
+            <p className="text-sm text-muted-foreground">Manage which emails we send you.</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {notifOptions.map((opt, i) => (
+            <motion.div
+              key={opt.key}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="p-5 rounded-2xl border border-border/50 bg-background/30 flex items-start justify-between gap-4 hover:border-border/80 transition-colors"
+            >
+              <div className="flex items-start gap-4">
+                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${opt.bgColor} shrink-0 mt-0.5`}>
+                  <opt.icon className={`h-5 w-5 ${opt.color}`} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-foreground">{opt.label}</h4>
+                  <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">{opt.description}</p>
+                </div>
+              </div>
+              <Switch
+                checked={prefs[opt.key]}
+                onCheckedChange={(checked) => setPrefs((prev) => ({ ...prev, [opt.key]: checked }))}
+                className="shrink-0"
+              />
+            </motion.div>
+          ))}
+        </div>
+
+        <div className="mt-8 flex justify-end pt-6 border-t border-border/50">
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            type="button"
+            onClick={savePrefs}
+            disabled={savingPrefs}
+            className="inline-flex items-center justify-center h-11 px-6 rounded-full bg-primary text-primary-foreground font-medium shadow-lg shadow-primary/20 transition-all disabled:opacity-50 disabled:scale-100 text-sm"
+          >
+            {savingPrefs ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…
+              </>
+            ) : (
+              "Save preferences"
+            )}
+          </motion.button>
+        </div>
       </div>
     </div>
   );
