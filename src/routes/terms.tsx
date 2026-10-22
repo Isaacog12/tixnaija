@@ -11,39 +11,42 @@ export const Route = createFileRoute("/terms")({
       {
         name: "description",
         content:
-          "Read TixNaija's Terms of Service. Understand your rights and responsibilities as a buyer or event organizer on Nigeria's ticket marketplace.",
+          "Read TixNaija's Terms of Service. Understand your rights and responsibilities as a buyer or event organizer on Nigeria's ticketing marketplace.",
       },
     ],
   }),
 });
 
 const SECTIONS = [
-  { id: "overview", label: "Overview" },
+  { id: "overview", label: "Overview & Capacity" },
+  { id: "age", label: "Age & Legal Capacity" },
   { id: "role", label: "Role of TixNaija" },
-  { id: "organizers", label: "Organizer Responsibilities" },
-  { id: "buyers", label: "Buyer Responsibilities" },
+  { id: "organizers", label: "Organizer Obligations" },
+  { id: "buyers", label: "Buyer Obligations" },
   { id: "refunds", label: "Refunds & Cancellations" },
-  { id: "prohibited", label: "Prohibited Conduct" },
+  { id: "fees", label: "Platform Fees & Settlement" },
+  { id: "prohibited", label: "Prohibited Activities" },
   { id: "liability", label: "Limitation of Liability" },
+  { id: "complaints", label: "Disputes & Complaints" },
   { id: "termination", label: "Account Termination" },
   { id: "governing", label: "Governing Law" },
-  { id: "changes", label: "Changes to Terms" },
+  { id: "contact", label: "Business Details" },
 ];
 
-const LAST_UPDATED = "July 14, 2025";
+const LAST_UPDATED = "October 22, 2026";
 
 function TermsPage() {
   return (
-    <div className="min-h-dvh">
+    <div className="min-h-dvh flex flex-col bg-background text-foreground">
       <SiteNav />
-      {/* ── Hero header ── */}
-      <div className="relative overflow-hidden border-b border-border/60 pb-12 pt-6 md:pb-16">
-        <div className="mx-auto max-w-7xl px-4 w-full relative z-20 mb-6 md:mb-10">
+
+      {/* Header */}
+      <div className="border-b border-border/60 pb-10 pt-6">
+        <div className="mx-auto max-w-6xl px-4 w-full mb-6">
           <BackButton />
         </div>
-        <div className="absolute inset-0 gradient-sunset opacity-10 pointer-events-none" />
         <div className="mx-auto max-w-6xl px-4">
-          <h1 className="font-display text-5xl md:text-7xl leading-[0.95] mb-4">
+          <h1 className="font-display text-4xl md:text-6xl font-bold tracking-tight">
             Terms of Service
           </h1>
           <p className="text-muted-foreground text-sm mt-3">
@@ -52,13 +55,12 @@ function TermsPage() {
         </div>
       </div>
 
-      {/* ── Body: sidebar + content ── */}
-      <div className="mx-auto max-w-6xl px-4 py-12 md:py-16 grid grid-cols-1 md:grid-cols-[220px_1fr] gap-12">
-
+      {/* Body: sidebar + content */}
+      <div className="mx-auto max-w-6xl px-4 py-12 grid grid-cols-1 md:grid-cols-[220px_1fr] gap-12 flex-1 w-full">
         {/* Sticky sidebar TOC */}
         <aside className="hidden md:block">
           <div className="sticky top-8">
-            <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-4 font-semibold">
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-4 font-semibold">
               Contents
             </p>
             <nav className="flex flex-col gap-1">
@@ -66,9 +68,9 @@ function TermsPage() {
                 <a
                   key={s.id}
                   href={`#${s.id}`}
-                  className="flex items-center gap-2.5 rounded px-2 py-1.5 text-sm text-muted-foreground hover:text-primary hover:bg-primary/5 transition group"
+                  className="flex items-center gap-2 rounded px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/40 transition"
                 >
-                  <span className="font-display text-xs text-muted-foreground/50 group-hover:text-primary/60 w-5 shrink-0">
+                  <span className="font-mono text-[10px] text-muted-foreground/60 w-4 shrink-0">
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   {s.label}
@@ -76,238 +78,170 @@ function TermsPage() {
               ))}
             </nav>
 
-            <div className="mt-8 pt-6 border-t border-border/50">
-              <Link
-                to="/privacy"
-                className="text-xs text-muted-foreground hover:text-primary transition"
-              >
+            <div className="mt-8 pt-6 border-t border-border/50 flex flex-col gap-2">
+              <Link to="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition">
                 Privacy Policy →
+              </Link>
+              <Link to="/refunds" className="text-xs text-muted-foreground hover:text-foreground transition">
+                Refund Policy →
+              </Link>
+              <Link to="/cookies" className="text-xs text-muted-foreground hover:text-foreground transition">
+                Cookie Policy →
               </Link>
             </div>
           </div>
         </aside>
 
         {/* Main content */}
-        <main className="min-w-0 space-y-1">
-
+        <main className="min-w-0 space-y-12">
           {/* Section 1 — Overview */}
-          <section id="overview" className="scroll-mt-8 pb-10 border-b border-border/40">
+          <section id="overview" className="scroll-mt-8 space-y-3">
             <SectionHeading number="01" title="Overview" />
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              Welcome to <strong className="text-foreground">TixNaija</strong>. By accessing or using our platform —
-              whether as a ticket buyer, event organizer, or general visitor — you agree to be bound by these
-              Terms of Service ("Terms"). If you do not agree, please do not use TixNaija.
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              These Terms of Service ("Terms") constitute a legally binding agreement between you and <strong className="text-foreground">{{BUSINESS_LEGAL_NAME}}</strong> (RC/CAC: {{RC_NUMBER}}), trading as <strong className="text-foreground">TixNaija</strong>.
             </p>
-            <p className="text-muted-foreground leading-relaxed mt-3">
-              TixNaija operates as a ticketing marketplace that connects event organizers with attendees across Nigeria.
-              We currently operate as an independent platform facilitating transactions through the{" "}
-              <strong className="text-foreground">Paystack</strong> payment gateway.
-            </p>
-          </section>
-
-          {/* Section 2 — Role */}
-          <section id="role" className="scroll-mt-8 py-10 border-b border-border/40">
-            <SectionHeading number="02" title="Role of TixNaija" />
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              TixNaija is solely a <strong className="text-foreground">technology platform and marketplace</strong>.
-              We provide the infrastructure for organizers to list and sell tickets, and for buyers to discover and
-              purchase them. TixNaija is not the creator, owner, organizer, or promoter of any event listed on the platform.
-            </p>
-            <p className="text-muted-foreground leading-relaxed mt-3">
-              All agreements and responsibilities for event delivery lie strictly between the Organizer and the Attendee.
-              TixNaija acts as a neutral facilitator and bears no liability for the execution of any event.
-            </p>
-          </section>
-
-          {/* Section 3 — Organizers */}
-          <section id="organizers" className="scroll-mt-8 py-10 border-b border-border/40">
-            <SectionHeading number="03" title="Organizer Responsibilities" />
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              By creating and listing events on TixNaija, you ("Organizer") agree to the following:
-            </p>
-            <ul className="mt-4 space-y-3">
-              {[
-                "Provide accurate, complete, and current event information — including date, time, venue, ticket types, and pricing.",
-                "Honor all valid tickets purchased through TixNaija at the door without dispute.",
-                "Comply with all applicable Nigerian laws, venue regulations, and public safety guidelines.",
-                "Communicate all event changes (postponements, cancellations, venue changes) to TixNaija and your attendees promptly.",
-                "Manage refunds and disputes with attendees directly. TixNaija provides the tooling but does not adjudicate disputes.",
-                "Not misrepresent the nature, scale, or content of your event in listings.",
-              ].map((item, i) => (
-                <li key={i} className="flex gap-3 text-sm text-muted-foreground">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          {/* Section 4 — Buyers */}
-          <section id="buyers" className="scroll-mt-8 py-10 border-b border-border/40">
-            <SectionHeading number="04" title="Buyer Responsibilities" />
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              By purchasing tickets on TixNaija, you ("Attendee" or "Buyer") agree to:
-            </p>
-            <ul className="mt-4 space-y-3">
-              {[
-                "Provide accurate contact information (name, email, phone) so your tickets and event updates can reach you.",
-                "Review all event details carefully before completing your purchase — all sales are final unless the Organizer states otherwise.",
-                "Present your QR ticket code and a valid form of identification at the event entrance for check-in.",
-                "Not resell or transfer tickets in ways that violate the Organizer's stated policy.",
-                "Conduct yourself lawfully and respectfully at all events.",
-              ].map((item, i) => (
-                <li key={i} className="flex gap-3 text-sm text-muted-foreground">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          {/* Section 5 — Refunds */}
-          <section id="refunds" className="scroll-mt-8 py-10 border-b border-border/40">
-            <SectionHeading number="05" title="Refunds, Cancellations & Postponements" />
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              <strong className="text-foreground">All ticket sales are final</strong> unless the Organizer explicitly
-              offers refunds in their event listing.
-            </p>
-            <p className="text-muted-foreground leading-relaxed mt-3">
-              If an Organizer cancels or postpones an event, TixNaija's platform provides tools for the Organizer to
-              notify attendees. However, <strong className="text-foreground">the responsibility for issuing refunds
-              lies entirely with the Organizer</strong>. TixNaija does not hold ticket funds in escrow and cannot
-              guarantee refunds if an Organizer fails to fulfill their obligations.
-            </p>
-            <p className="text-muted-foreground leading-relaxed mt-3">
-              In the event of a cancellation, TixNaija will make reasonable efforts to contact affected buyers and
-              provide available information, but accepts no financial liability for the Organizer's failure to perform.
-            </p>
-          </section>
-
-          {/* Section 6 — Prohibited */}
-          <section id="prohibited" className="scroll-mt-8 py-10 border-b border-border/40">
-            <SectionHeading number="06" title="Prohibited Conduct" />
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              The following activities are strictly prohibited on TixNaija:
-            </p>
-            <ul className="mt-4 space-y-3">
-              {[
-                "Creating fraudulent or fictitious events to collect payment from buyers.",
-                "Purchasing tickets using stolen, cloned, or unauthorized payment credentials.",
-                "Attempting to duplicate, counterfeit, or redistribute QR tickets.",
-                "Using automated bots, scrapers, or scripts to bulk-purchase or access the platform.",
-                "Uploading content that is unlawful, defamatory, discriminatory, or sexually explicit.",
-                "Impersonating another person, organizer, or TixNaija staff in any capacity.",
-              ].map((item, i) => (
-                <li key={i} className="flex gap-3 text-sm text-muted-foreground">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-destructive shrink-0" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              Violations may result in immediate account suspension and referral to the appropriate Nigerian authorities.
-            </p>
-          </section>
-
-          {/* Section 7 — Liability */}
-          <section id="liability" className="scroll-mt-8 py-10 border-b border-border/40">
-            <SectionHeading number="07" title="Limitation of Liability" />
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              To the maximum extent permitted by Nigerian law, TixNaija, its officers, employees, and affiliates
-              shall not be held liable for:
-            </p>
-            <ul className="mt-4 space-y-3">
-              {[
-                "The quality, safety, existence, or execution of any event listed on the platform.",
-                "The conduct, negligence, or actions of any Organizer, venue operator, or attendee.",
-                "Any personal injury, property damage, financial loss, or other harm arising from attending an event.",
-                "Event cancellations, postponements, or changes made by the Organizer.",
-                "Technical outages, payment failures, or data loss caused by third-party services (e.g., Paystack, Supabase).",
-              ].map((item, i) => (
-                <li key={i} className="flex gap-3 text-sm text-muted-foreground">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              By using TixNaija, you agree to release and hold harmless TixNaija from any claims, damages, or
-              losses arising from your use of the platform or attendance at any event facilitated through it.
-            </p>
-          </section>
-
-          {/* Section 8 — Termination */}
-          <section id="termination" className="scroll-mt-8 py-10 border-b border-border/40">
-            <SectionHeading number="08" title="Account Termination" />
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              TixNaija reserves the right to suspend, restrict, or permanently terminate any account —
-              whether Organizer or Buyer — that:
-            </p>
-            <ul className="mt-4 space-y-3">
-              {[
-                "Violates any provision of these Terms of Service.",
-                "Engages in fraudulent, deceptive, or criminal activity on or off the platform.",
-                "Repeatedly receives verified complaints from other users.",
-                "Poses a risk to the integrity, security, or reputation of TixNaija.",
-              ].map((item, i) => (
-                <li key={i} className="flex gap-3 text-sm text-muted-foreground">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              Terminations may be enacted without prior notice. Any outstanding payouts owed to an Organizer
-              at the time of termination for cause may be withheld pending investigation.
-            </p>
-          </section>
-
-          {/* Section 9 — Governing Law */}
-          <section id="governing" className="scroll-mt-8 py-10 border-b border-border/40">
-            <SectionHeading number="09" title="Governing Law" />
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              These Terms are governed by and construed in accordance with the laws of the{" "}
-              <strong className="text-foreground">Federal Republic of Nigeria</strong>, including but not limited to
-              the Nigerian Data Protection Regulation (NDPR), the Consumer Protection Council Act, and any
-              applicable CBN guidelines on electronic payments.
-            </p>
-            <p className="text-muted-foreground leading-relaxed mt-3">
-              Any disputes arising from these Terms shall first be attempted to be resolved amicably. Failing that,
-              disputes shall be subject to the jurisdiction of the competent courts in Lagos State, Nigeria.
-            </p>
-          </section>
-
-          {/* Section 10 — Changes */}
-          <section id="changes" className="scroll-mt-8 py-10">
-            <SectionHeading number="10" title="Changes to These Terms" />
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              TixNaija reserves the right to update these Terms at any time. When we make material changes, we will
-              update the "Last updated" date at the top of this page and, where appropriate, notify registered users
-              via email.
-            </p>
-            <p className="text-muted-foreground leading-relaxed mt-3">
-              Your continued use of TixNaija after any changes constitutes your acceptance of the updated Terms.
-              We encourage you to review this page periodically.
-            </p>
-
-            {/* CTA footer block */}
-            <div className="mt-10 flex flex-col sm:flex-row items-start sm:items-center gap-4 rounded-lg border border-border bg-card/60 p-6">
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">Questions about these terms?</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Reach out to the TixNaija team and we'll be happy to clarify.
-                </p>
-              </div>
-              <Link
-                to="/privacy"
-                className="shrink-0 text-xs font-semibold uppercase tracking-[0.2em] text-primary hover:underline"
-              >
-                View Privacy Policy →
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              By accessing, browsing, creating an account, publishing an event, or purchasing tickets on TixNaija, you acknowledge that you have read, understood, and agree to be bound by these Terms and our{" "}
+              <Link to="/privacy" className="text-foreground underline hover:text-primary">
+                Privacy Policy
               </Link>
+              .
+            </p>
+          </section>
+
+          {/* Section 2 — Age & Legal Capacity */}
+          <section id="age" className="scroll-mt-8 space-y-3">
+            <SectionHeading number="02" title="Age & Legal Capacity" />
+            <div className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground space-y-2 leading-relaxed">
+              <p>
+                To use TixNaija, register an account, list an event, or purchase tickets, you must be at least <strong className="text-foreground">eighteen (18) years of age</strong> and have the legal capacity to enter into binding commercial contracts under Nigerian law.
+              </p>
+              <p>
+                Individuals under 18 may only attend events and access our platform under the direct supervision, consent, and authorization of a parent or legal guardian who agrees to be bound by these Terms.
+              </p>
+            </div>
+          </section>
+
+          {/* Section 3 — Role of TixNaija */}
+          <section id="role" className="scroll-mt-8 space-y-3">
+            <SectionHeading number="03" title="Role of TixNaija" />
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              TixNaija operates strictly as an independent software intermediary and ticketing marketplace. We are not an event promoter, producer, organizer, or venue operator. We do not set ticket prices, establish event door rules, or manage event logistics.
+            </p>
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              When a buyer purchases a ticket, the contract for event admission is entered into directly between the buyer and the organizer. TixNaija facilitates ticket issuance, check-in validation tools, and payment settlement.
+            </p>
+          </section>
+
+          {/* Section 4 — Organizer Obligations */}
+          <section id="organizers" className="scroll-mt-8 space-y-3">
+            <SectionHeading number="04" title="Organizer Obligations" />
+            <ul className="list-disc pl-5 text-sm md:text-base text-muted-foreground space-y-1.5 leading-relaxed">
+              <li>Organizers must provide accurate, non-misleading event details, venues, start times, and ticket tier rules.</li>
+              <li>Organizers must complete identity verification and connect a legitimate Nigerian bank account via Paystack before receiving payouts.</li>
+              <li>Organizers agree to honor all legitimate tickets issued through TixNaija and scan QR codes using our check-in software.</li>
+              <li>Organizers bear sole legal and financial responsibility for event delivery, attendee safety, and issuing refunds for cancelled or postponed events.</li>
+            </ul>
+          </section>
+
+          {/* Section 5 — Buyer Obligations */}
+          <section id="buyers" className="scroll-mt-8 space-y-3">
+            <SectionHeading number="05" title="Buyer Obligations" />
+            <ul className="list-disc pl-5 text-sm md:text-base text-muted-foreground space-y-1.5 leading-relaxed">
+              <li>Buyers must provide an accurate email address to ensure ticket delivery.</li>
+              <li>Each QR ticket is valid for one (1) admission. Counterfeiting, unauthorized duplication, or reselling above face value is strictly prohibited.</li>
+              <li>Buyers are responsible for presenting their ticket code at entry and complying with the organizer's venue rules.</li>
+            </ul>
+          </section>
+
+          {/* Section 6 — Refunds */}
+          <section id="refunds" className="scroll-mt-8 space-y-3">
+            <SectionHeading number="06" title="Refunds, Cancellations & Postponements" />
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              Our refund rules are set in accordance with Nigerian consumer protection standards and the Federal Competition and Consumer Protection Act (FCCPA).
+            </p>
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              Please review our full, dedicated{" "}
+              <Link to="/refunds" className="text-foreground font-semibold underline hover:text-primary">
+                Refund & Cancellation Policy
+              </Link>
+              , which governs cancelled events, postponements, change-of-mind requests, and escalation timelines.
+            </p>
+          </section>
+
+          {/* Section 7 — Fees */}
+          <section id="fees" className="scroll-mt-8 space-y-3">
+            <SectionHeading number="07" title="Platform Fees & Settlement" />
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              <strong className="text-foreground">Transparent Checkout:</strong> The ticket price displayed to buyers at checkout is the full price paid. There are no hidden fees or unexpected checkout surcharges added to ticket buyers.
+            </p>
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              For paid events, TixNaija retains a 10% platform fee from gross ticket sales. Payment processing charges levied by Paystack (typically 1.5% + ₦100, capped at ₦2,000) are deducted upon settlement to the organizer's connected bank account.
+            </p>
+          </section>
+
+          {/* Section 8 — Prohibited Conduct */}
+          <section id="prohibited" className="scroll-mt-8 space-y-3">
+            <SectionHeading number="08" title="Prohibited Activities" />
+            <ul className="list-disc pl-5 text-sm md:text-base text-muted-foreground space-y-1.5 leading-relaxed">
+              <li>Listing fraudulent, non-existent, or unlawfully duplicated events.</li>
+              <li>Using stolen, compromised, or unauthorized credit cards, bank accounts, or USSD credentials.</li>
+              <li>Deploying automated bots, web scrapers, or excessive requests to game ticket availability.</li>
+              <li>Uploading defamatory, abusive, infringing, or illegal promotional materials.</li>
+            </ul>
+          </section>
+
+          {/* Section 9 — Limitation of Liability */}
+          <section id="liability" className="scroll-mt-8 space-y-3">
+            <SectionHeading number="09" title="Limitation of Liability" />
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              To the maximum extent permitted under Nigerian law, TixNaija shall not be liable for any indirect, incidental, or consequential damages resulting from event cancellations, organizer insolvency, technical downtime of third-party networks (Paystack, telecommunications providers), or personal injury occurring at an event venue.
+            </p>
+          </section>
+
+          {/* Section 10 — Complaints & Consumer Rights */}
+          <section id="complaints" className="scroll-mt-8 space-y-3">
+            <SectionHeading number="10" title="Consumer Protection & Complaint Escalation" />
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              In accordance with FCCPC directives, consumers with grievances regarding unfulfilled services or dispute resolutions should follow our escalation procedure:
+            </p>
+            <ol className="list-decimal pl-5 text-sm text-muted-foreground space-y-1.5 leading-relaxed">
+              <li>Directly contact the organizer using the messaging tools or email provided on the event page.</li>
+              <li>If unresolved within 48 hours, contact TixNaija support at <strong className="text-foreground">tixnaijaapp@gmail.com</strong>. Our team mediates disputes and may withhold unremitted payouts pending inquiry.</li>
+              <li>Unresolved consumer rights claims may be submitted to the <strong className="text-foreground">Federal Competition and Consumer Protection Commission (FCCPC)</strong> at <a href="https://fccpc.gov.ng" target="_blank" rel="noopener noreferrer" className="text-foreground underline hover:text-primary">fccpc.gov.ng</a>.</li>
+            </ol>
+          </section>
+
+          {/* Section 11 — Account Termination */}
+          <section id="termination" className="scroll-mt-8 space-y-3">
+            <SectionHeading number="11" title="Account Termination" />
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              Users may terminate their account at any time using the self-serve "Delete Account" option in Account Settings. We reserve the right to suspend or terminate accounts that breach these Terms, commit ticketing fraud, or abuse other users.
+            </p>
+          </section>
+
+          {/* Section 12 — Governing Law */}
+          <section id="governing" className="scroll-mt-8 space-y-3">
+            <SectionHeading number="12" title="Governing Law & Jurisdiction" />
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              These Terms are governed by and construed in accordance with the laws of the <strong className="text-foreground">Federal Republic of Nigeria</strong>. Any disputes arising out of these Terms shall be submitted to the exclusive jurisdiction of the competent courts of Nigeria.
+            </p>
+          </section>
+
+          {/* Section 13 — Contact Details */}
+          <section id="contact" className="scroll-mt-8 space-y-3 border-t border-border/40 pt-8">
+            <SectionHeading number="13" title="Corporate & Contact Information" />
+            <div className="rounded-xl border border-border bg-card p-4 text-xs md:text-sm space-y-1 text-muted-foreground">
+              <p><strong className="text-foreground">Entity:</strong> {{BUSINESS_LEGAL_NAME}}</p>
+              <p><strong className="text-foreground">Registration:</strong> RC/CAC Number: {{RC_NUMBER}}</p>
+              <p><strong className="text-foreground">Registered Office:</strong> {{REGISTERED_ADDRESS}}</p>
+              <p><strong className="text-foreground">Email:</strong> tixnaijaapp@gmail.com</p>
+              <p><strong className="text-foreground">Phone:</strong> +234 901 127 5275</p>
             </div>
           </section>
         </main>
       </div>
+
       <SiteFooter />
     </div>
   );
@@ -316,10 +250,10 @@ function TermsPage() {
 function SectionHeading({ number, title }: { number: string; title: string }) {
   return (
     <div className="flex items-baseline gap-3">
-      <span className="font-display text-3xl leading-none text-gradient-sunset shrink-0">{number}</span>
+      <span className="font-mono text-xs font-bold text-primary shrink-0">{number}</span>
       <div className="flex flex-1 items-baseline gap-3">
-        <h2 className="font-display text-2xl md:text-3xl leading-tight">{title}</h2>
-        <span className="h-px flex-1 bg-border hidden sm:block" />
+        <h2 className="text-xl md:text-2xl font-bold tracking-tight">{title}</h2>
+        <span className="h-px flex-1 bg-border/60 hidden sm:block" />
       </div>
     </div>
   );

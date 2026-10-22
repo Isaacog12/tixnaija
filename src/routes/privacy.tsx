@@ -11,7 +11,7 @@ export const Route = createFileRoute("/privacy")({
       {
         name: "description",
         content:
-          "How TixNaija collects, uses, and protects your personal data in accordance with the Nigeria Data Protection Regulation (NDPR).",
+          "How TixNaija collects, uses, and protects your personal data in accordance with the Nigeria Data Protection Act 2023 (NDPA).",
       },
     ],
   }),
@@ -19,31 +19,34 @@ export const Route = createFileRoute("/privacy")({
 
 const SECTIONS = [
   { id: "intro", label: "Introduction" },
+  { id: "legal-basis", label: "Lawful Basis & NDPA" },
   { id: "data-collected", label: "Data We Collect" },
+  { id: "children", label: "Children's Privacy (Under 18)" },
   { id: "payments", label: "Payment Processing" },
-  { id: "why", label: "Why We Collect Data" },
+  { id: "why", label: "Purpose of Processing" },
   { id: "cookies", label: "Cookies & Analytics" },
-  { id: "sharing", label: "Data Sharing" },
-  { id: "retention", label: "Data Retention" },
-  { id: "rights", label: "Your NDPR Rights" },
-  { id: "security", label: "Security" },
-  { id: "contact", label: "Contact Us" },
+  { id: "sharing", label: "Third-Party Data Sharing" },
+  { id: "retention", label: "Data Retention & Erasure" },
+  { id: "rights", label: "Your NDPA Statutory Rights" },
+  { id: "security", label: "Information Security" },
+  { id: "complaints", label: "Regulatory Complaints" },
+  { id: "contact", label: "Contact & DPO" },
 ];
 
-const LAST_UPDATED = "July 14, 2025";
+const LAST_UPDATED = "October 22, 2026";
 
 function PrivacyPage() {
   return (
-    <div className="min-h-dvh">
+    <div className="min-h-dvh flex flex-col bg-background text-foreground">
       <SiteNav />
-      {/* ── Hero header ── */}
-      <div className="relative overflow-hidden border-b border-border/60 pb-12 pt-6 md:pb-16">
-        <div className="mx-auto max-w-7xl px-4 w-full relative z-20 mb-6 md:mb-10">
+
+      {/* Hero header */}
+      <div className="border-b border-border/60 pb-10 pt-6">
+        <div className="mx-auto max-w-6xl px-4 w-full mb-6">
           <BackButton />
         </div>
-        <div className="absolute inset-0 gradient-sunset opacity-10 pointer-events-none" />
         <div className="mx-auto max-w-6xl px-4">
-          <h1 className="font-display text-5xl md:text-7xl leading-[0.95] mb-4">
+          <h1 className="font-display text-4xl md:text-6xl font-bold tracking-tight">
             Privacy Policy
           </h1>
           <p className="text-muted-foreground text-sm mt-3">
@@ -52,13 +55,12 @@ function PrivacyPage() {
         </div>
       </div>
 
-      {/* ── Body ── */}
-      <div className="mx-auto max-w-6xl px-4 py-12 md:py-16 grid grid-cols-1 md:grid-cols-[220px_1fr] gap-12">
-
+      {/* Body: sidebar + content */}
+      <div className="mx-auto max-w-6xl px-4 py-12 grid grid-cols-1 md:grid-cols-[220px_1fr] gap-12 flex-1 w-full">
         {/* Sticky sidebar TOC */}
         <aside className="hidden md:block">
           <div className="sticky top-8">
-            <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-4 font-semibold">
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-4 font-semibold">
               Contents
             </p>
             <nav className="flex flex-col gap-1">
@@ -66,9 +68,9 @@ function PrivacyPage() {
                 <a
                   key={s.id}
                   href={`#${s.id}`}
-                  className="flex items-center gap-2.5 rounded px-2 py-1.5 text-sm text-muted-foreground hover:text-primary hover:bg-primary/5 transition group"
+                  className="flex items-center gap-2 rounded px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/40 transition"
                 >
-                  <span className="font-display text-xs text-muted-foreground/50 group-hover:text-primary/60 w-5 shrink-0">
+                  <span className="font-mono text-[10px] text-muted-foreground/60 w-4 shrink-0">
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   {s.label}
@@ -76,265 +78,239 @@ function PrivacyPage() {
               ))}
             </nav>
 
-            <div className="mt-8 pt-6 border-t border-border/50">
-              <Link
-                to="/terms"
-                className="text-xs text-muted-foreground hover:text-primary transition"
-              >
+            <div className="mt-8 pt-6 border-t border-border/50 flex flex-col gap-2">
+              <Link to="/terms" className="text-xs text-muted-foreground hover:text-foreground transition">
                 Terms of Service →
+              </Link>
+              <Link to="/refunds" className="text-xs text-muted-foreground hover:text-foreground transition">
+                Refund Policy →
+              </Link>
+              <Link to="/cookies" className="text-xs text-muted-foreground hover:text-foreground transition">
+                Cookie Policy →
               </Link>
             </div>
           </div>
         </aside>
 
         {/* Main content */}
-        <main className="min-w-0 space-y-1">
-
+        <main className="min-w-0 space-y-12">
           {/* Section 1 — Introduction */}
-          <section id="intro" className="scroll-mt-8 pb-10 border-b border-border/40">
+          <section id="intro" className="scroll-mt-8 space-y-3">
             <SectionHeading number="01" title="Introduction" />
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              <strong className="text-foreground">TixNaija</strong> respects your privacy and is committed to protecting
-              your personal data. This Privacy Policy explains how we collect, use, store, and protect information you
-              provide when using our platform — whether as a ticket buyer, event organizer, or visitor.
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              <strong className="text-foreground">TixNaija</strong> (referred to as "we", "us", or "our"), operated by <strong className="text-foreground">{{BUSINESS_LEGAL_NAME}}</strong> (RC/CAC: {{RC_NUMBER}}), is committed to safeguarding the personal data of our users. This Privacy Policy governs our data handling practices for ticket buyers, event attendees, event organizers, and platform visitors.
             </p>
-            <p className="text-muted-foreground leading-relaxed mt-3">
-              This policy is informed by the <strong className="text-foreground">Nigeria Data Protection Regulation (NDPR)</strong>
-              {" "}and other applicable Nigerian data protection laws. By using TixNaija, you consent to the practices
-              described in this policy.
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              TixNaija is proudly independent and completely separate from Tix Africa. This platform operates under its own legal entity, data controllership, and technical architecture.
             </p>
           </section>
 
-          {/* Section 2 — Data Collected */}
-          <section id="data-collected" className="scroll-mt-8 py-10 border-b border-border/40">
-            <SectionHeading number="02" title="Data We Collect" />
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              We only collect data that is strictly necessary to deliver our ticketing services:
+          {/* Section 2 — Lawful Basis & NDPA */}
+          <section id="legal-basis" className="scroll-mt-8 space-y-3">
+            <SectionHeading number="02" title="Lawful Basis & Governing Law" />
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              This policy is established in strict compliance with the <strong className="text-foreground">Nigeria Data Protection Act 2023 (NDPA)</strong> and general data protection standards. We process personal data solely on the following lawful bases under the NDPA:
             </p>
-
-            <div className="mt-5 grid gap-4">
-              {[
-                {
-                  role: "Buyers & Attendees",
-                  data: "Full name, email address, and phone number — used to generate, deliver, and validate your tickets.",
-                },
-                {
-                  role: "Event Organizers",
-                  data: "Full name, email address, phone number, and Nigerian bank account details for processing payouts via Paystack.",
-                },
-                {
-                  role: "All Users",
-                  data: "Basic usage data such as IP address, browser type, and pages visited — collected in anonymized form to improve platform performance.",
-                },
-              ].map(({ role, data }) => (
-                <div key={role} className="rounded-lg border border-border bg-card/60 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary mb-1">{role}</p>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{data}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Section 3 — Payments */}
-          <section id="payments" className="scroll-mt-8 py-10 border-b border-border/40">
-            <SectionHeading number="03" title="Payment Processing" />
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              <strong className="text-foreground">TixNaija does not store, process, or have access to your payment
-              card details</strong>. All payments on the platform are handled securely by{" "}
-              <strong className="text-foreground">Paystack</strong>, a PCI-DSS compliant payment gateway.
-            </p>
-            <p className="text-muted-foreground leading-relaxed mt-3">
-              When you make a purchase, your card or bank transfer details are entered directly on Paystack's secure
-              infrastructure and are subject to{" "}
-              <a
-                href="https://paystack.com/privacy"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary underline underline-offset-4 hover:opacity-80"
-              >
-                Paystack's Privacy Policy
-              </a>
-              . TixNaija only receives a transaction reference and confirmation status from Paystack to issue your ticket.
-            </p>
-          </section>
-
-          {/* Section 4 — Why */}
-          <section id="why" className="scroll-mt-8 py-10 border-b border-border/40">
-            <SectionHeading number="04" title="Why We Collect Data" />
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              Your data is used strictly for the following purposes:
-            </p>
-            <ul className="mt-4 space-y-3">
-              {[
-                "To generate, deliver, and validate your QR-coded event tickets.",
-                "To process payouts to event organizers after successful ticket sales.",
-                "To send critical event notifications — including cancellations, postponements, or venue changes.",
-                "To provide customer support and respond to inquiries or disputes.",
-                "To detect and prevent fraudulent activity on the platform.",
-                "To comply with our legal and regulatory obligations under Nigerian law.",
-              ].map((item, i) => (
-                <li key={i} className="flex gap-3 text-sm text-muted-foreground">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              We do <strong className="text-foreground">not</strong> sell, rent, or trade your personal data to
-              third-party advertisers under any circumstances.
-            </p>
-          </section>
-
-          {/* Section 5 — Cookies */}
-          <section id="cookies" className="scroll-mt-8 py-10 border-b border-border/40">
-            <SectionHeading number="05" title="Cookies & Analytics" />
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              TixNaija uses cookies and standard analytics tools to understand how users interact with our platform
-              and to improve the experience over time. The types of cookies we use:
-            </p>
-            <ul className="mt-4 space-y-3">
-              {[
-                {
-                  name: "Essential Cookies",
-                  desc: "Required for the platform to function — managing your session, authentication state, and security tokens.",
-                },
-                {
-                  name: "Analytical Cookies",
-                  desc: "Anonymized data (e.g., Google Analytics) that helps us understand traffic patterns and feature usage.",
-                },
-              ].map(({ name, desc }) => (
-                <li key={name} className="flex gap-3 text-sm text-muted-foreground">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                  <span>
-                    <strong className="text-foreground">{name}: </strong>
-                    {desc}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              By continuing to use TixNaija, you consent to our use of these cookies. You may disable non-essential
-              cookies through your browser settings at any time.
-            </p>
-          </section>
-
-          {/* Section 6 — Sharing */}
-          <section id="sharing" className="scroll-mt-8 py-10 border-b border-border/40">
-            <SectionHeading number="06" title="Data Sharing" />
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              TixNaija shares your personal data only in the following limited circumstances:
-            </p>
-            <ul className="mt-4 space-y-3">
-              {[
-                "With the Event Organizer — your name and contact details are shared so the organizer can manage check-in, notify you of updates, and resolve disputes.",
-                "With Paystack — your transaction details are processed under Paystack's data governance framework.",
-                "With Supabase — our backend infrastructure provider, which stores your data securely under their data processing terms.",
-                "With law enforcement or regulatory authorities — only when required by a valid court order or Nigerian regulatory directive.",
-              ].map((item, i) => (
-                <li key={i} className="flex gap-3 text-sm text-muted-foreground">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                  {item}
-                </li>
-              ))}
+            <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1 leading-relaxed">
+              <li><strong className="text-foreground">Contractual Necessity:</strong> To issue tickets, process registrations, confirm orders, and facilitate event entry.</li>
+              <li><strong className="text-foreground">Consent:</strong> For voluntary opt-in marketing notifications, non-essential analytical cookies, and social proof attendee sharing.</li>
+              <li><strong className="text-foreground">Legal & Regulatory Obligation:</strong> To maintain accounting and financial transaction records under Nigerian taxation statutes.</li>
+              <li><strong className="text-foreground">Legitimate Interest:</strong> To secure the platform, prevent ticketing fraud, and defend against unauthorized automated scrapers.</li>
             </ul>
           </section>
 
-          {/* Section 7 — Retention */}
-          <section id="retention" className="scroll-mt-8 py-10 border-b border-border/40">
-            <SectionHeading number="07" title="Data Retention" />
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              We retain your personal data only for as long as necessary to fulfill the purposes outlined in this
-              policy, to maintain your account, or to comply with applicable legal obligations.
+          {/* Section 3 — Data Collected */}
+          <section id="data-collected" className="scroll-mt-8 space-y-3">
+            <SectionHeading number="03" title="Data We Collect" />
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              Under the principle of data minimisation, we collect only information that is adequate, relevant, and strictly necessary:
             </p>
-            <p className="text-muted-foreground leading-relaxed mt-3">
-              If you delete your TixNaija account, your personal data will be removed from our active systems
-              within <strong className="text-foreground">30 days</strong>, except where retention is required by law
-              (e.g., transaction records for tax or regulatory purposes, which may be retained for up to 7 years).
-            </p>
-          </section>
-
-          {/* Section 8 — Rights */}
-          <section id="rights" className="scroll-mt-8 py-10 border-b border-border/40">
-            <SectionHeading number="08" title="Your NDPR Rights" />
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              Under the Nigeria Data Protection Regulation (NDPR), you have the following rights regarding your
-              personal data held by TixNaija:
-            </p>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {[
-                { right: "Right of Access", desc: "Request a copy of all personal data we hold about you." },
-                { right: "Right to Rectification", desc: "Request correction of inaccurate or incomplete data." },
-                { right: "Right to Erasure", desc: "Request deletion of your personal data (subject to legal retention obligations)." },
-                { right: "Right to Withdraw Consent", desc: "Withdraw consent for any processing based on consent at any time." },
-                { right: "Right to Object", desc: "Object to processing of your data for certain purposes, including direct marketing." },
-                { right: "Right to Portability", desc: "Request your data in a structured, machine-readable format." },
-              ].map(({ right, desc }) => (
-                <div key={right} className="rounded-lg border border-border bg-card/60 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary mb-1">{right}</p>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
-                </div>
-              ))}
-            </div>
-            <p className="text-muted-foreground leading-relaxed mt-5">
-              To exercise any of these rights, contact us at the details in Section 10 below. We will respond within
-              a reasonable timeframe in accordance with the NDPR.
-            </p>
-          </section>
-
-          {/* Section 9 — Security */}
-          <section id="security" className="scroll-mt-8 py-10 border-b border-border/40">
-            <SectionHeading number="09" title="Security" />
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              We implement industry-standard security measures to protect your personal data:
-            </p>
-            <ul className="mt-4 space-y-3">
-              {[
-                "All data is encrypted in transit using TLS/HTTPS.",
-                "Database access is restricted using row-level security (RLS) policies.",
-                "Authentication is managed through Supabase Auth with secure session tokens.",
-                "Payment credentials are never stored on TixNaija's servers.",
-              ].map((item, i) => (
-                <li key={i} className="flex gap-3 text-sm text-muted-foreground">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              While we take all reasonable precautions, no online system is 100% secure. We encourage you to use a
-              strong, unique password for your TixNaija account and to report any suspicious activity immediately.
-            </p>
-          </section>
-
-          {/* Section 10 — Contact */}
-          <section id="contact" className="scroll-mt-8 py-10">
-            <SectionHeading number="10" title="Contact Us" />
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              If you have any questions, requests, or concerns about this Privacy Policy or how your data is
-              handled, please contact the TixNaija team. We are committed to resolving any privacy concerns promptly
-              and transparently.
-            </p>
-
-            {/* CTA footer block */}
-            <div className="mt-10 flex flex-col sm:flex-row items-start sm:items-center gap-4 rounded-lg border border-border bg-card/60 p-6">
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">Want to understand your rights further?</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Read our Terms of Service or visit the Nigeria Data Protection Commission website.
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-border bg-card p-4 space-y-1">
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">Ticket Buyers & Attendees</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Full name, email address, optional contact phone number, and optional recipient details for gift purchases. Used to deliver QR-coded tickets and issue event updates.
                 </p>
               </div>
-              <div className="flex gap-4 shrink-0">
-                <Link
-                  to="/terms"
-                  className="text-xs font-semibold uppercase tracking-[0.2em] text-primary hover:underline"
-                >
-                  Terms of Service →
-                </Link>
+              <div className="rounded-xl border border-border bg-card p-4 space-y-1">
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">Event Organizers</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Full name, email address, phone number, Nigerian settlement bank account details (for automated Paystack payouts), and an identity verification document/selfie stored in a private vault.
+                </p>
               </div>
+              <div className="rounded-xl border border-border bg-card p-4 space-y-1">
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">Careers & Contact Inquiries</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Name, email address, optional phone number, resume/CV attachments, and message content submitted for customer support or job applications.
+                </p>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-4 space-y-1">
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">System & Device Data</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  IP addresses (anonymized for analytics), device browser user-agents, and session authentication tokens required for cybersecurity and rate limiting.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 4 — Children's Data */}
+          <section id="children" className="scroll-mt-8 space-y-3">
+            <SectionHeading number="04" title="Children's Data (Under 18 Years)" />
+            <div className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground leading-relaxed space-y-2">
+              <p>
+                In compliance with <strong className="text-foreground">Section 31 of the Nigeria Data Protection Act 2023</strong>, TixNaija does not knowingly solicit or collect personal data directly from children under 18 years of age without prior parental or legal guardian consent.
+              </p>
+              <p>
+                Users must be at least 18 years old to create an account or purchase tickets independently. If an event is designated for families or minors, tickets must be acquired by a parent or legal guardian on behalf of the minor attendee. If we become aware that a child under 18 has provided personal data without verified parental consent, we will promptly delete such records from our active systems.
+              </p>
+            </div>
+          </section>
+
+          {/* Section 5 — Payments */}
+          <section id="payments" className="scroll-mt-8 space-y-3">
+            <SectionHeading number="05" title="Payment Processing" />
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              <strong className="text-foreground">TixNaija never stores, processes, or handles your credit or debit card numbers, CVVs, or bank PINs.</strong> All payments are processed end-to-end by <strong className="text-foreground">Paystack</strong>, a PCI-DSS Level 1 certified payment infrastructure provider regulated by the Central Bank of Nigeria.
+            </p>
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              When you make a payment, your credentials go directly to Paystack's secure interface. TixNaija receives only a transaction token, payment reference, and settlement confirmation to issue your QR-coded ticket. Review{" "}
+              <a href="https://paystack.com/privacy" target="_blank" rel="noopener noreferrer" className="text-foreground underline hover:text-primary">
+                Paystack's Privacy Policy
+              </a>
+              .
+            </p>
+          </section>
+
+          {/* Section 6 — Purpose of Processing */}
+          <section id="why" className="scroll-mt-8 space-y-3">
+            <SectionHeading number="06" title="Purpose of Processing" />
+            <ul className="list-disc pl-5 text-sm md:text-base text-muted-foreground space-y-1.5 leading-relaxed">
+              <li>To generate, deliver, and digitally validate your tickets at the venue entrance.</li>
+              <li>To automatically notify you of event cancellations, emergency schedule revisions, or venue relocations.</li>
+              <li>To remit ticket sale proceeds directly to verified organizers.</li>
+              <li>To investigate fraud, counterfeit ticket duplication, and unauthorized chargebacks.</li>
+              <li>To comply with regulatory audit requirements and lawful court directives under Nigerian law.</li>
+            </ul>
+          </section>
+
+          {/* Section 7 — Cookies */}
+          <section id="cookies" className="scroll-mt-8 space-y-3">
+            <SectionHeading number="07" title="Cookies & Local Storage" />
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              We use strictly necessary cookies and local storage tokens to manage your sign-in sessions and preserve theme preferences. We do not use third-party advertising cookies. Optional performance analytics (Google Analytics) are strictly consent-gated.
+            </p>
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              For a full breakdown of specific identifiers, lifespans, and management controls, see our dedicated{" "}
+              <Link to="/cookies" className="text-foreground underline font-medium hover:text-primary">
+                Cookie Policy
+              </Link>
+              .
+            </p>
+          </section>
+
+          {/* Section 8 — Third-Party Sharing */}
+          <section id="sharing" className="scroll-mt-8 space-y-3">
+            <SectionHeading number="08" title="Third-Party Data Sharing" />
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              We never sell or lease your personal information. Data is disclosed only to authorized third parties under strict processing safeguards:
+            </p>
+            <ul className="list-disc pl-5 text-sm md:text-base text-muted-foreground space-y-1.5 leading-relaxed">
+              <li><strong className="text-foreground">Event Organizers:</strong> Attendee names and emails are shared with the specific organizer of an event you booked to enable entrance check-in and attendee management.</li>
+              <li><strong className="text-foreground">Paystack Payments Limited:</strong> To initiate and reconcile ticket purchases and subaccount payouts.</li>
+              <li><strong className="text-foreground">Supabase Inc.:</strong> Cloud infrastructure provider hosting our database, access-controlled storage vaults, and authentication services.</li>
+              <li><strong className="text-foreground">ZeptoMail / Zoho Corporation:</strong> Transactional email infrastructure delivering QR tickets and critical event alerts.</li>
+              <li><strong className="text-foreground">Law Enforcement:</strong> Only when compelled by a valid warrant, subpoena, or directive issued under Nigerian law.</li>
+            </ul>
+          </section>
+
+          {/* Section 9 — Data Retention */}
+          <section id="retention" className="scroll-mt-8 space-y-3">
+            <SectionHeading number="09" title="Data Retention & Erasure" />
+            <div className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground space-y-2 leading-relaxed">
+              <p>
+                We retain personal data only as long as necessary to provide ticketing services or satisfy statutory legal requirements:
+              </p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li><strong className="text-foreground">Active Account Data:</strong> Retained while your account remains active. Users may trigger self-serve account deletion in their Account settings at any time.</li>
+                <li><strong className="text-foreground">Deleted Accounts:</strong> Upon an erasure request, personal profiles and marketing preferences are purged within thirty (30) days.</li>
+                <li><strong className="text-foreground">Financial & Audit Records:</strong> Payment references, ticket sales, and settlement ledgers are retained in anonymized format for up to seven (7) years to comply with Nigerian corporate accounting and tax laws.</li>
+                <li><strong className="text-foreground">Organizer Verification Media:</strong> Organizer identity photos are retained in a private vault during verification and permanently purged thirty (30) days after a review determination is reached.</li>
+              </ul>
+            </div>
+          </section>
+
+          {/* Section 10 — Rights */}
+          <section id="rights" className="scroll-mt-8 space-y-3">
+            <SectionHeading number="10" title="Your NDPA Statutory Rights" />
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              Under Sections 34–38 of the Nigeria Data Protection Act 2023, you have the following enforceable rights:
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2 text-xs md:text-sm text-muted-foreground">
+              <div className="rounded-lg border border-border bg-card p-3">
+                <p className="font-semibold text-foreground">Right of Access</p>
+                <p className="mt-1">Request confirmation and a copy of personal data we hold about you.</p>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-3">
+                <p className="font-semibold text-foreground">Right to Rectification</p>
+                <p className="mt-1">Update or correct inaccurate or incomplete profile information.</p>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-3">
+                <p className="font-semibold text-foreground">Right to Erasure ("Right to be Forgotten")</p>
+                <p className="mt-1">Request complete deletion of your data when no longer needed.</p>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-3">
+                <p className="font-semibold text-foreground">Right to Object & Restrict</p>
+                <p className="mt-1">Object to processing for marketing or request restriction of data handling.</p>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-3">
+                <p className="font-semibold text-foreground">Right to Data Portability</p>
+                <p className="mt-1">Receive your personal data in a structured, machine-readable format.</p>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-3">
+                <p className="font-semibold text-foreground">Right to Withdraw Consent</p>
+                <p className="mt-1">Revoke any consent previously granted without affecting prior lawful processing.</p>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 11 — Security */}
+          <section id="security" className="scroll-mt-8 space-y-3">
+            <SectionHeading number="11" title="Information Security" />
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              We implement rigorous technical and organizational measures to safeguard personal data, including TLS 1.3 encryption in transit, strict database Row Level Security (RLS) enforcement, short-lived signed URLs for verification media, and automated rate-limiting to defend against brute-force attacks.
+            </p>
+          </section>
+
+          {/* Section 12 — Regulatory Complaints */}
+          <section id="complaints" className="scroll-mt-8 space-y-3">
+            <SectionHeading number="12" title="Right to Complain to the Regulator" />
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              If you have concerns about how your data has been handled and we have not resolved your concern satisfactorily, you have the statutory right under the NDPA to lodge a formal complaint with the:
+            </p>
+            <div className="rounded-xl border border-border bg-card p-4 text-xs md:text-sm text-muted-foreground space-y-1">
+              <p><strong className="text-foreground">Regulatory Authority:</strong> Nigeria Data Protection Commission (NDPC)</p>
+              <p><strong className="text-foreground">Official Website:</strong> <a href="https://ndpc.gov.ng" target="_blank" rel="noopener noreferrer" className="text-foreground underline hover:text-primary">ndpc.gov.ng</a></p>
+              <p><strong className="text-foreground">Complaints Portal:</strong> info@ndpc.gov.ng</p>
+            </div>
+          </section>
+
+          {/* Section 13 — Contact & DPO */}
+          <section id="contact" className="scroll-mt-8 space-y-3 border-t border-border/40 pt-8">
+            <SectionHeading number="13" title="Contact Us & Data Protection Officer" />
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              To exercise your statutory privacy rights, update your profile, or submit a data inquiry, contact our Data Protection Officer (DPO) and compliance team:
+            </p>
+            <div className="rounded-xl border border-border bg-card p-4 text-xs md:text-sm space-y-1 text-muted-foreground">
+              <p><strong className="text-foreground">Data Controller:</strong> {{BUSINESS_LEGAL_NAME}}</p>
+              <p><strong className="text-foreground">Corporate Registration:</strong> RC/CAC Number: {{RC_NUMBER}}</p>
+              <p><strong className="text-foreground">Registered Office:</strong> {{REGISTERED_ADDRESS}}</p>
+              <p><strong className="text-foreground">DPO Email:</strong> {{DPO_EMAIL}} / tixnaijaapp@gmail.com</p>
+              <p><strong className="text-foreground">Contact Phone / WhatsApp:</strong> +234 901 127 5275</p>
             </div>
           </section>
         </main>
       </div>
+
       <SiteFooter />
     </div>
   );
@@ -343,10 +319,10 @@ function PrivacyPage() {
 function SectionHeading({ number, title }: { number: string; title: string }) {
   return (
     <div className="flex items-baseline gap-3">
-      <span className="font-display text-3xl leading-none text-gradient-sunset shrink-0">{number}</span>
+      <span className="font-mono text-xs font-bold text-primary shrink-0">{number}</span>
       <div className="flex flex-1 items-baseline gap-3">
-        <h2 className="font-display text-2xl md:text-3xl leading-tight">{title}</h2>
-        <span className="h-px flex-1 bg-border hidden sm:block" />
+        <h2 className="text-xl md:text-2xl font-bold tracking-tight">{title}</h2>
+        <span className="h-px flex-1 bg-border/60 hidden sm:block" />
       </div>
     </div>
   );

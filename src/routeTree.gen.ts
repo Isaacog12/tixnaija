@@ -18,6 +18,7 @@ import { Route as BrowseRouteImport } from './routes/browse'
 import { Route as BrowseV2RouteImport } from './routes/browse-v2'
 import { Route as CareersRouteImport } from './routes/careers'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as DownloadRouteImport } from './routes/download'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -26,6 +27,7 @@ import { Route as MyTicketsRouteImport } from './routes/my-tickets'
 import { Route as OtpRouteImport } from './routes/otp'
 import { Route as OtpV2RouteImport } from './routes/otp-v2'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as RefundsRouteImport } from './routes/refunds'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as V2RouteImport } from './routes/v2'
@@ -95,6 +97,11 @@ const ContactRoute = ContactRouteImport.update({
   path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CookiesRoute = CookiesRouteImport.update({
+  id: '/cookies',
+  path: '/cookies',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DownloadRoute = DownloadRouteImport.update({
   id: '/download',
   path: '/download',
@@ -133,6 +140,11 @@ const OtpV2Route = OtpV2RouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RefundsRoute = RefundsRouteImport.update({
+  id: '/refunds',
+  path: '/refunds',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -274,6 +286,7 @@ export interface FileRoutesByFullPath {
   '/browse-v2': typeof BrowseV2Route
   '/careers': typeof CareersRoute
   '/contact': typeof ContactRoute
+  '/cookies': typeof CookiesRoute
   '/download': typeof DownloadRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -282,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/otp': typeof OtpRoute
   '/otp-v2': typeof OtpV2Route
   '/privacy': typeof PrivacyRoute
+  '/refunds': typeof RefundsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/v2': typeof V2Route
@@ -316,6 +330,7 @@ export interface FileRoutesByTo {
   '/browse-v2': typeof BrowseV2Route
   '/careers': typeof CareersRoute
   '/contact': typeof ContactRoute
+  '/cookies': typeof CookiesRoute
   '/download': typeof DownloadRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -324,6 +339,7 @@ export interface FileRoutesByTo {
   '/otp': typeof OtpRoute
   '/otp-v2': typeof OtpV2Route
   '/privacy': typeof PrivacyRoute
+  '/refunds': typeof RefundsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/v2': typeof V2Route
@@ -360,6 +376,7 @@ export interface FileRoutesById {
   '/browse-v2': typeof BrowseV2Route
   '/careers': typeof CareersRoute
   '/contact': typeof ContactRoute
+  '/cookies': typeof CookiesRoute
   '/download': typeof DownloadRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -368,6 +385,7 @@ export interface FileRoutesById {
   '/otp': typeof OtpRoute
   '/otp-v2': typeof OtpV2Route
   '/privacy': typeof PrivacyRoute
+  '/refunds': typeof RefundsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/v2': typeof V2Route
@@ -404,6 +422,7 @@ export interface FileRouteTypes {
     | '/browse-v2'
     | '/careers'
     | '/contact'
+    | '/cookies'
     | '/download'
     | '/faq'
     | '/forgot-password'
@@ -412,6 +431,7 @@ export interface FileRouteTypes {
     | '/otp'
     | '/otp-v2'
     | '/privacy'
+    | '/refunds'
     | '/reset-password'
     | '/terms'
     | '/v2'
@@ -446,6 +466,7 @@ export interface FileRouteTypes {
     | '/browse-v2'
     | '/careers'
     | '/contact'
+    | '/cookies'
     | '/download'
     | '/faq'
     | '/forgot-password'
@@ -454,6 +475,7 @@ export interface FileRouteTypes {
     | '/otp'
     | '/otp-v2'
     | '/privacy'
+    | '/refunds'
     | '/reset-password'
     | '/terms'
     | '/v2'
@@ -489,6 +511,7 @@ export interface FileRouteTypes {
     | '/browse-v2'
     | '/careers'
     | '/contact'
+    | '/cookies'
     | '/download'
     | '/faq'
     | '/forgot-password'
@@ -497,6 +520,7 @@ export interface FileRouteTypes {
     | '/otp'
     | '/otp-v2'
     | '/privacy'
+    | '/refunds'
     | '/reset-password'
     | '/terms'
     | '/v2'
@@ -533,6 +557,7 @@ export interface RootRouteChildren {
   BrowseV2Route: typeof BrowseV2Route
   CareersRoute: typeof CareersRoute
   ContactRoute: typeof ContactRoute
+  CookiesRoute: typeof CookiesRoute
   DownloadRoute: typeof DownloadRoute
   FaqRoute: typeof FaqRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -541,6 +566,7 @@ export interface RootRouteChildren {
   OtpRoute: typeof OtpRoute
   OtpV2Route: typeof OtpV2Route
   PrivacyRoute: typeof PrivacyRoute
+  RefundsRoute: typeof RefundsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
   V2Route: typeof V2Route
@@ -618,6 +644,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cookies': {
+      id: '/cookies'
+      path: '/cookies'
+      fullPath: '/cookies'
+      preLoaderRoute: typeof CookiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/download': {
       id: '/download'
       path: '/download'
@@ -672,6 +705,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/refunds': {
+      id: '/refunds'
+      path: '/refunds'
+      fullPath: '/refunds'
+      preLoaderRoute: typeof RefundsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -896,6 +936,7 @@ const rootRouteChildren: RootRouteChildren = {
   BrowseV2Route: BrowseV2Route,
   CareersRoute: CareersRoute,
   ContactRoute: ContactRoute,
+  CookiesRoute: CookiesRoute,
   DownloadRoute: DownloadRoute,
   FaqRoute: FaqRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
@@ -904,6 +945,7 @@ const rootRouteChildren: RootRouteChildren = {
   OtpRoute: OtpRoute,
   OtpV2Route: OtpV2Route,
   PrivacyRoute: PrivacyRoute,
+  RefundsRoute: RefundsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
   V2Route: V2Route,

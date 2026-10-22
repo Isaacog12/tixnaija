@@ -1,4 +1,6 @@
 @import "tailwindcss" source(none);
+@import "@fontsource-variable/cinzel";
+@import "@fontsource-variable/inter";
 @source "../src";
 @custom-variant dark (&:is(.dark *));
 
@@ -147,7 +149,7 @@
   --popover-foreground: oklch(0.14 0.02 40);
 
   --primary:       oklch(0.66 0.22  40);      /* 🔒 Locked ember orange */
-  --primary-foreground: oklch(0.98 0.008 80);
+  --primary-foreground: oklch(0.14 0.02 40);
 
   --secondary:     oklch(0.93 0.01  80);      /* warm light gray */
   --secondary-foreground: oklch(0.25 0.03 40);

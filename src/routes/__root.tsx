@@ -200,12 +200,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { rel: "stylesheet", href: appCss },
         { rel: "icon", href: "/icon-192.png", type: "image/png" },
         { rel: "apple-touch-icon", href: "/icon-192.png" },
-        { rel: "preconnect", href: "https://fonts.googleapis.com" },
-        { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-        {
-          rel: "stylesheet",
-          href: "https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
-        },
         { rel: "preload", as: "image", href: "/hero-concert.jpg" },
       ],
     };
@@ -232,20 +226,14 @@ function RootShell({ children }: { children: ReactNode }) {
           }}
         />
         <HeadContent />
-        {/* Google Analytics */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-PLT1VPPEQR"></script>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-PLT1VPPEQR');
-            `,
-          }}
-        />
       </head>
       <body className="overflow-x-hidden" suppressHydrationWarning>
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2.5 focus:bg-background focus:text-foreground focus:border focus:border-primary focus:rounded-xl focus:shadow-2xl focus:font-semibold focus:outline-none focus:ring-2 focus:ring-primary"
+        >
+          Skip to main content
+        </a>
         {children}
         <Scripts />
       </body>
@@ -307,7 +295,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <GlobalLoader />
       <AppErrorBoundary>
-        <main>
+        <main id="main-content" tabIndex={-1} className="outline-none">
           <Outlet />
         </main>
       </AppErrorBoundary>

@@ -1,28 +1,82 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-
-const STORAGE_KEY = "tixnaija_cookie_consent";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import {
+  getCookieConsent,
+  saveCookieConsent,
+  initConsentMode,
+  OPEN_SETTINGS_EVENT,
+} from "@/lib/cookie-consent";
 
 export function CookieBanner() {
   const [visible, setVisible] = useState(false);
+  const [showManage, setShowManage] = useState(false);
+  const [analyticsEnabled, setAnalyticsEnabled] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Small delay so the page renders first, then banner slides in
-    const timer = setTimeout(() => {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) setVisible(true);
-    }, 800);
-    return () => clearTimeout(timer);
+    // Initialize default denied consent mode
+    initConsentMode();
+
+    const saved = getCookieConsent();
+    if (!saved) {
+      const timer = setTimeout(() => setVisible(true), 600);
+      return () => clearTimeout(timer);
+    } else {
+      setAnalyticsEnabled(saved.analytics);
+    }
   }, []);
 
-  function accept() {
-    localStorage.setItem(STORAGE_KEY, "accepted");
+  // Listen for open settings event from footer
+  useEffect(() => {
+    function handleOpenSettings() {
+      const current = getCookieConsent();
+      setAnalyticsEnabled(current?.analytics ?? false);
+      setShowManage(true);
+      setVisible(true);
+    }
+
+    window.addEventListener(OPEN_SETTINGS_EVENT, handleOpenSettings);
+    return () => window.removeEventListener(OPEN_SETTINGS_EVENT, handleOpenSettings);
+  }, []);
+
+  // Keyboard navigation: Escape key closes if already consented, or toggles manage
+  useEffect(() => {
+    if (!visible) return;
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        if (showManage) {
+          setShowManage(false);
+        } else if (getCookieConsent()) {
+          setVisible(false);
+        }
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [visible, showManage]);
+
+  function handleAcceptAll() {
+    saveCookieConsent(true);
+    setAnalyticsEnabled(true);
+    setShowManage(false);
     setVisible(false);
   }
 
-  function decline() {
-    localStorage.setItem(STORAGE_KEY, "declined");
+  function handleRejectNonEssential() {
+    saveCookieConsent(false);
+    setAnalyticsEnabled(false);
+    setShowManage(false);
+    setVisible(false);
+  }
+
+  function handleSavePreferences() {
+    saveCookieConsent(analyticsEnabled);
+    setShowManage(false);
     setVisible(false);
   }
 
@@ -31,56 +85,147 @@ export function CookieBanner() {
   return (
     <div
       role="dialog"
-      aria-label="Cookie consent"
-      aria-live="polite"
-      className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 md:px-6 md:pb-6 animate-in slide-in-from-bottom-4 duration-500"
+      aria-modal="true"
+      aria-labelledby="cookie-banner-title"
+      aria-describedby="cookie-banner-description"
+      className="fixed bottom-0 left-0 right-0 z-50 p-4 md:p-6"
     >
-      <div className="mx-auto max-w-4xl rounded-2xl border border-border bg-card/95 p-5 shadow-glow backdrop-blur-md md:flex md:items-center md:gap-6">
-        {/* Cookie icon */}
-        <div className="mb-3 shrink-0 md:mb-0">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full gradient-sunset shadow-glow text-primary-foreground text-lg">
-            🍪
+      <div
+        ref={containerRef}
+        className="mx-auto max-w-3xl rounded-xl border border-border bg-card p-5 text-card-foreground shadow-lg md:p-6"
+      >
+        {!showManage ? (
+          <div>
+            <h2 id="cookie-banner-title" className="text-base font-semibold text-foreground">
+              Cookie and Data Privacy Settings
+            </h2>
+            <p id="cookie-banner-description" className="mt-1.5 text-xs md:text-sm text-muted-foreground leading-relaxed">
+              We use strictly necessary cookies to keep you signed in and maintain secure sessions. With your permission, we also use anonymized analytical cookies to measure platform traffic and performance. We do not use third-party advertising cookies or sell your personal data. Read our{" "}
+              <Link to="/cookies" className="text-foreground underline underline-offset-4 hover:text-primary">
+                Cookie Policy
+              </Link>{" "}
+              and{" "}
+              <Link to="/privacy" className="text-foreground underline underline-offset-4 hover:text-primary">
+                Privacy Policy
+              </Link>
+              .
+            </p>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2 pt-2 border-t border-border/40">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleRejectNonEssential}
+                className="h-9 px-4 text-xs font-medium border-border hover:bg-muted"
+              >
+                Reject non-essential
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowManage(true)}
+                className="h-9 px-4 text-xs font-medium border-border hover:bg-muted"
+              >
+                Manage preferences
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAcceptAll}
+                className="h-9 px-4 text-xs font-medium border-border hover:bg-muted"
+              >
+                Accept all
+              </Button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div>
+            <div className="flex items-center justify-between border-b border-border/40 pb-3">
+              <h2 id="cookie-banner-title" className="text-base font-semibold text-foreground">
+                Manage Cookie Preferences
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowManage(false)}
+                className="text-xs text-muted-foreground hover:text-foreground"
+                aria-label="Back to overview"
+              >
+                Back
+              </button>
+            </div>
 
-        {/* Text */}
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground">
-            We use cookies to improve your experience
-          </p>
-          <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
-            TixNaija uses essential cookies to keep you signed in and analytical
-            cookies (e.g. Google Analytics) to understand platform usage. No data
-            is sold to advertisers.{" "}
-            <Link
-              to="/privacy"
-              className="text-primary underline underline-offset-2 hover:opacity-80"
-            >
-              Learn more
-            </Link>
-          </p>
-        </div>
+            <div className="mt-4 space-y-4">
+              <div className="flex items-start justify-between gap-4 rounded-lg border border-border/50 bg-muted/20 p-3">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm font-semibold text-foreground">
+                      Strictly Essential Cookies & Storage
+                    </Label>
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      Always Active
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Required for core security, account authentication, and system preferences (theme and cookie choice storage). These cannot be deactivated.
+                  </p>
+                </div>
+                <Switch checked disabled aria-label="Essential cookies always enabled" />
+              </div>
 
-        {/* Actions */}
-        <div className="mt-4 flex shrink-0 flex-wrap gap-2 md:mt-0 md:flex-nowrap">
-          <Button
-            id="cookie-decline"
-            variant="outline"
-            size="sm"
-            onClick={decline}
-            className="border-border text-muted-foreground hover:text-foreground hover:border-foreground/40"
-          >
-            Decline optional
-          </Button>
-          <Button
-            id="cookie-accept"
-            size="sm"
-            onClick={accept}
-            className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90"
-          >
-            Accept all
-          </Button>
-        </div>
+              <div className="flex items-start justify-between gap-4 rounded-lg border border-border/50 bg-muted/20 p-3">
+                <div className="space-y-0.5">
+                  <Label htmlFor="analytics-toggle" className="text-sm font-semibold text-foreground cursor-pointer">
+                    Analytical Cookies (Google Analytics)
+                  </Label>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Collects aggregated, IP-anonymized metrics on pages viewed and checkout completion rates so we can identify technical issues and improve usability.
+                  </p>
+                </div>
+                <Switch
+                  id="analytics-toggle"
+                  checked={analyticsEnabled}
+                  onCheckedChange={setAnalyticsEnabled}
+                  aria-label="Toggle analytical cookies"
+                />
+              </div>
+            </div>
+
+            <div className="mt-5 flex flex-wrap items-center justify-end gap-2 border-t border-border/40 pt-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleRejectNonEssential}
+                className="h-9 px-4 text-xs font-medium border-border hover:bg-muted"
+              >
+                Reject all non-essential
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSavePreferences}
+                className="h-9 px-4 text-xs font-medium border-border hover:bg-muted font-semibold"
+              >
+                Save preferences
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAcceptAll}
+                className="h-9 px-4 text-xs font-medium border-border hover:bg-muted"
+              >
+                Accept all
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
