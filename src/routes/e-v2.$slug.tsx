@@ -198,10 +198,18 @@ const checkoutSchema = z
     recipientName: z.string().optional(),
     recipientEmail: z.string().optional(),
     giftMessage: z.string().optional(),
-    promoCode: z.string().optional(),
+    isOfAge: z
+      .boolean()
+      .refine(
+        (val) => val === true,
+        "You must confirm you are at least 18 years old (or have parental/guardian consent)",
+      ),
     termsAccepted: z
       .boolean()
-      .refine((val) => val === true, "You must agree to the Terms of Service and Privacy Policy"),
+      .refine(
+        (val) => val === true,
+        "You must agree to the Terms of Service, Privacy Policy, and Refund Policy",
+      ),
     attendees: z.record(
       z.string(),
       z.array(

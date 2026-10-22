@@ -219,9 +219,18 @@ const checkoutSchema = z
     recipientEmail: z.string().optional(),
     giftMessage: z.string().optional(),
     promoCode: z.string().optional(),
+    isOfAge: z
+      .boolean()
+      .refine(
+        (val) => val === true,
+        "You must confirm you are at least 18 years old (or have parental/guardian consent)",
+      ),
     termsAccepted: z
       .boolean()
-      .refine((val) => val === true, "You must agree to the Terms of Service and Privacy Policy"),
+      .refine(
+        (val) => val === true,
+        "You must agree to the Terms of Service, Privacy Policy, and Refund Policy",
+      ),
     attendees: z.record(
       z.string(),
       z.array(
@@ -334,6 +343,7 @@ function EventDetailPage() {
       recipientEmail: "",
       giftMessage: "",
       promoCode: "",
+      isOfAge: false,
       termsAccepted: false,
       attendees: {},
       answers: {},
@@ -436,11 +446,6 @@ function EventDetailPage() {
 
   function onCheckout() {
     if (!totalCount) return;
-    if (!sessionUser) {
-      toast.error("You must create an account or sign in to buy tickets.", { duration: 5000 });
-      navigate({ to: "/auth", search: { mode: "signup", redirect: `/e/${slug}` } });
-      return;
-    }
     setCheckoutOpen(true);
   }
 
@@ -928,7 +933,25 @@ function EventDetailPage() {
                 </div>
               )}
 
-              <div className="border-t border-border pt-4">
+              <div className="border-t border-border pt-4 space-y-3">
+                <FormField
+                  control={form.control}
+                  name="isOfAge"
+                  render={({ field }: { field: any }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-2">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-xs text-muted-foreground font-normal leading-relaxed">
+                          I confirm that I am 18 years of age or older, or that I have the consent and involvement of a parent or legal guardian.
+                        </FormLabel>
+                        <FormMessage />
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="termsAccepted"
@@ -946,14 +969,22 @@ function EventDetailPage() {
                             className="text-primary hover:underline"
                           >
                             Terms of Service
-                          </Link>{" "}
-                          and{" "}
+                          </Link>
+                          ,{" "}
                           <Link
                             to="/privacy"
                             target="_blank"
                             className="text-primary hover:underline"
                           >
                             Privacy Policy
+                          </Link>
+                          , and{" "}
+                          <Link
+                            to="/refunds"
+                            target="_blank"
+                            className="text-primary hover:underline"
+                          >
+                            Refund Policy
                           </Link>
                           .
                         </FormLabel>
@@ -967,7 +998,7 @@ function EventDetailPage() {
               <Button
                 type="submit"
                 disabled={checkoutBusy}
-                className="w-full gradient-sunset text-primary-foreground shadow-glow mt-4"
+                className="w-full gradient-sunset text-primary-foreground mt-4"
               >
                 {checkoutBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 {totalKobo === 0 ? "Get free tickets" : `Pay ${formatNaira(totalKobo)}`}
@@ -1017,7 +1048,14 @@ function EventDetailPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={waitlistBusy} className="w-full mt-4">
+              <p className="text-xs text-muted-foreground">
+                We collect your name and email solely to alert you if tickets become available. For details, see our{" "}
+                <Link to="/privacy" target="_blank" className="underline hover:text-foreground">
+                  Privacy Policy
+                </Link>
+                .
+              </p>
+              <Button type="submit" disabled={waitlistBusy} className="w-full mt-2">
                 {waitlistBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Join Waitlist
               </Button>
