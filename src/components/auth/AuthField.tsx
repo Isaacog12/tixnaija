@@ -21,7 +21,7 @@ export const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
           {label}
         </Label>
         <div className="relative group">
-          <Icon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 dark:text-white/40 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
+          <Icon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 dark:text-white/70 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
           <Input
             id={id}
             ref={ref}

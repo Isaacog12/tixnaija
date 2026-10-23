@@ -353,7 +353,7 @@ function OtpPage() {
               </div>
 
               {/* Resend countdown */}
-              <p className="mb-6 text-sm text-white/40">
+              <p className="mb-6 text-sm text-white/70">
                 Didn't receive the code?{" "}
                 {countdown > 0 ? (
                   <span className="font-semibold text-primary">

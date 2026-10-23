@@ -1,4 +1,6 @@
 // @ts-nocheck
+declare const Deno: any;
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
@@ -14,6 +16,7 @@ serve(async (req: Request) => {
   }
 
   try {
+    // 1. Authenticate user strictly via verified JWT
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Missing authorization header" }), {
@@ -26,11 +29,11 @@ serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || supabaseServiceKey;
 
-    // Verify user JWT
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
     const { data: { user }, error: authErr } = await userClient.auth.getUser();
+
     if (authErr || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized session" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -38,75 +41,137 @@ serve(async (req: Request) => {
       });
     }
 
-    const userId = user.id;
+    const userId = user.id; // User ID derived exclusively from verified JWT
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    // 1. Safety check: Check if organizer has active published upcoming events
-    const { data: activeEvents, error: evErr } = await adminClient
+    // 2. Ownership check: Block deletion if user owns ANY events or event series
+    const { count: eventsCount, error: evErr } = await adminClient
       .from("events")
-      .select("id, title")
-      .eq("organizer_id", userId)
-      .eq("status", "published")
-      .gte("start_datetime", new Date().toISOString());
+      .select("id", { count: "exact", head: true })
+      .eq("organizer_id", userId);
 
     if (evErr) {
-      console.error("Error checking organizer events:", evErr);
-    } else if (activeEvents && activeEvents.length > 0) {
+      console.error("[DELETE-ACCOUNT] Error checking organizer events:", evErr);
+      return new Response(JSON.stringify({ error: "Failed to verify event ownership" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
+    }
+
+    const { count: seriesCount, error: seriesErr } = await adminClient
+      .from("event_series")
+      .select("id", { count: "exact", head: true })
+      .eq("organizer_id", userId);
+
+    if (seriesErr) {
+      console.error("[DELETE-ACCOUNT] Error checking event series:", seriesErr);
+      return new Response(JSON.stringify({ error: "Failed to verify event series ownership" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
+    }
+
+    if ((eventsCount && eventsCount > 0) || (seriesCount && seriesCount > 0)) {
       return new Response(
         JSON.stringify({
-          error:
-            "You cannot delete your account while you have active, published upcoming events. Please cancel or complete your events first to protect ticket holders.",
+          error: "You have events on TixNaija. Contact support to close your account",
         }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 409 }
       );
     }
 
-    // 2. Anonymize personal profile data via anonymize_deleted_user_profile RPC
+    // 3. Step (a): Delete user's files in id-photos and avatars buckets
+    // If any step fails, stop and return an error; never continue to user deletion.
+    const { data: idFiles, error: listIdErr } = await adminClient.storage
+      .from("id-photos")
+      .list(userId);
+
+    if (listIdErr) {
+      console.error("[DELETE-ACCOUNT] Failed to list id-photos:", listIdErr);
+      return new Response(JSON.stringify({ error: "Failed to inspect identity verification files" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
+    }
+
+    if (idFiles && idFiles.length > 0) {
+      const idPaths = idFiles.map((f) => `${userId}/${f.name}`);
+      const { error: removeIdErr } = await adminClient.storage
+        .from("id-photos")
+        .remove(idPaths);
+
+      if (removeIdErr) {
+        console.error("[DELETE-ACCOUNT] Failed to delete id-photos:", removeIdErr);
+        return new Response(JSON.stringify({ error: "Failed to delete identity verification files" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        });
+      }
+    }
+
+    const { data: avatarFiles, error: listAvatarErr } = await adminClient.storage
+      .from("avatars")
+      .list(userId);
+
+    if (!listAvatarErr && avatarFiles && avatarFiles.length > 0) {
+      const avatarPaths = avatarFiles.map((f) => `${userId}/${f.name}`);
+      const { error: removeAvatarErr } = await adminClient.storage
+        .from("avatars")
+        .remove(avatarPaths);
+
+      if (removeAvatarErr) {
+        console.error("[DELETE-ACCOUNT] Failed to delete avatars:", removeAvatarErr);
+        return new Response(JSON.stringify({ error: "Failed to delete avatar files" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        });
+      }
+    }
+
+    // 4. Step (b): Delete waitlist_entries rows and null buyer_phone on orders
+    const { error: waitlistErr } = await adminClient
+      .from("waitlist_entries")
+      .delete()
+      .eq("user_id", userId);
+
+    if (waitlistErr) {
+      console.error("[DELETE-ACCOUNT] Failed to delete waitlist entries:", waitlistErr);
+      return new Response(JSON.stringify({ error: "Failed to clear waitlist registrations" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
+    }
+
+    const { error: orderPhoneErr } = await adminClient
+      .from("orders")
+      .update({ buyer_phone: null })
+      .eq("user_id", userId);
+
+    if (orderPhoneErr) {
+      console.warn("[DELETE-ACCOUNT] Notice: could not null buyer_phone on orders:", orderPhoneErr.message);
+    }
+
+    // 5. Step (c): Anonymize profile data via RPC
     const { error: rpcErr } = await adminClient.rpc("anonymize_deleted_user_profile", {
       p_user_id: userId,
     });
 
     if (rpcErr) {
-      console.warn("anonymize_deleted_user_profile RPC error, falling back to direct update:", rpcErr);
-      const { error: profileErr } = await adminClient
-        .from("profiles")
-        .update({
-          full_name: "Deleted User",
-          phone: null,
-          avatar_url: null,
-          bank_account_name: null,
-          bank_account_number: null,
-          bank_name: null,
-          paystack_subaccount_code: null,
-          is_organizer: false,
-          is_verified_organizer: false,
-          notification_preferences: {},
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId);
-
-      if (profileErr) {
-        console.error("Error anonymizing profile:", profileErr);
-        throw new Error("Failed to anonymize profile data.");
-      }
+      console.error("[DELETE-ACCOUNT] Failed to call anonymize_deleted_user_profile:", rpcErr);
+      return new Response(JSON.stringify({ error: "Failed to anonymize personal profile record" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
     }
 
-    // 3. Remove uploaded ID documents from storage bucket
-    try {
-      const { data: files } = await adminClient.storage.from("id-photos").list(userId);
-      if (files && files.length > 0) {
-        const filePaths = files.map((f) => `${userId}/${f.name}`);
-        await adminClient.storage.from("id-photos").remove(filePaths);
-      }
-    } catch (storageErr) {
-      console.warn("Storage cleanup note:", storageErr);
-    }
-
-    // 4. Delete the user from auth.users via admin API
+    // 6. Step (d): Delete auth user record
     const { error: deleteUserErr } = await adminClient.auth.admin.deleteUser(userId);
     if (deleteUserErr) {
-      console.error("Error deleting auth user:", deleteUserErr);
-      throw new Error("Failed to delete user authentication record.");
+      console.error("[DELETE-ACCOUNT] Failed to delete auth user record:", deleteUserErr);
+      return new Response(JSON.stringify({ error: "Failed to delete authentication credentials" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
     }
 
     return new Response(
@@ -117,7 +182,7 @@ serve(async (req: Request) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   } catch (error: any) {
-    console.error("Delete account error:", error);
+    console.error("[DELETE-ACCOUNT] Unexpected error:", error);
     return new Response(
       JSON.stringify({ error: error.message || "Failed to delete account." }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }

@@ -1096,7 +1096,7 @@ function EventBody({
                   <Calendar className="h-5 w-5 text-orange-500" />
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-widest text-white/40 font-bold mb-1">Date & Time</p>
+                  <p className="text-xs uppercase tracking-widest text-white/70 font-bold mb-1">Date & Time</p>
                   <p className="text-sm font-medium text-white/90">
                     {start.toLocaleString("en-NG", {
                       weekday: "short",
@@ -1116,7 +1116,7 @@ function EventBody({
                     <MapPin className="h-5 w-5 text-orange-500" />
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-widest text-white/40 font-bold mb-1">Location</p>
+                    <p className="text-xs uppercase tracking-widest text-white/70 font-bold mb-1">Location</p>
                     <p className="text-sm font-medium text-white/90">
                       {[event.venue_name, event.city, event.state].filter(Boolean).join(", ")}
                     </p>
@@ -1235,7 +1235,7 @@ function EventBody({
 
             <div className="mt-8 flex items-end justify-between border-t border-white/10 pt-6">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-white/40 block mb-1">Total</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-white/70 block mb-1">Total</span>
                 <span className="font-display text-3xl md:text-4xl text-white">
                   {totalKobo ? formatNaira(totalKobo) : "—"}
                 </span>

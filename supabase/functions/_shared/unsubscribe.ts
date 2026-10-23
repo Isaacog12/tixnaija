@@ -7,9 +7,9 @@ export async function generateUnsubscribeToken(
   email: string,
   category: string = "marketing_emails"
 ): Promise<string> {
-  const secret = Deno.env.get("UNSUBSCRIBE_HMAC_SECRET") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const secret = Deno.env.get("UNSUBSCRIBE_HMAC_SECRET");
   if (!secret) {
-    throw new Error("Missing HMAC secret for unsubscribe token generation; failing closed.");
+    throw new Error("Missing UNSUBSCRIBE_HMAC_SECRET environment variable; failing closed.");
   }
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(

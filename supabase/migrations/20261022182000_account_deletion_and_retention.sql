@@ -5,8 +5,9 @@
 -- 1. Support self-serve account deletion per Nigeria Data Protection Act 2023 (NDPA).
 -- 2. Anonymize personal data in public.profiles while preserving required accounting
 --    records in orders, order_items, and payments.
--- 3. Define automated cleanup function and scheduled job for expired KYC ID photos.
+-- 3. Define automated cleanup functions for expired KYC ID photos.
 -- 4. Enforce SET search_path = public on all SECURITY DEFINER functions.
+-- 5. Restrict execution permissions strictly to service_role.
 --
 -- Ready for review. DO NOT apply without user confirmation.
 
@@ -19,7 +20,7 @@ SET search_path = public
 AS $$
 BEGIN
   -- Verify caller is service_role or the user themselves
-  IF auth.uid() <> p_user_id AND auth.role() <> 'service_role' THEN
+  IF auth.role() <> 'service_role' AND auth.uid() IS DISTINCT FROM p_user_id THEN
     RAISE EXCEPTION 'Not authorized to delete this user profile';
   END IF;
 
@@ -85,16 +86,12 @@ BEGIN
 END;
 $$;
 
--- 4. Scheduled job via pg_cron: Run daily at 03:00 AM UTC to purge expired KYC ID records older than 30 days
-SELECT cron.schedule(
-  'purge_expired_kyc_id_photos_daily',
-  '0 3 * * *',
-  $$
-  UPDATE public.organizer_applications
-  SET id_photo_url = 'DELETED_' || now()::text
-  WHERE status IN ('approved', 'rejected')
-    AND reviewed_at IS NOT NULL
-    AND reviewed_at < (now() - interval '30 days')
-    AND id_photo_url NOT LIKE 'DELETED%';
-  $$
-);
+-- 4. Permissions: Revoke execute from PUBLIC, anon, and authenticated; grant to service_role only
+REVOKE EXECUTE ON FUNCTION public.anonymize_deleted_user_profile(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.anonymize_deleted_user_profile(uuid) TO service_role;
+
+REVOKE EXECUTE ON FUNCTION public.get_expired_id_photos_for_cleanup(int) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_expired_id_photos_for_cleanup(int) TO service_role;
+
+REVOKE EXECUTE ON FUNCTION public.mark_id_photos_deleted(uuid[]) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.mark_id_photos_deleted(uuid[]) TO service_role;

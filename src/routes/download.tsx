@@ -169,7 +169,7 @@ function DownloadPage() {
         >
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-display font-semibold tracking-tighter">Installation is instant</h2>
-            <p className="text-white/40 mt-3 text-lg tracking-tight">Sideloading takes just 60 seconds.</p>
+            <p className="text-white/70 mt-3 text-lg tracking-tight">Sideloading takes just 60 seconds.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -242,7 +242,7 @@ function BentoCard({ step, title, desc, className, highlight }: { step: string, 
       </div>
       <div className="relative z-10">
         <h3 className={cn("text-xl sm:text-2xl font-semibold mb-3 tracking-tight", highlight ? "text-primary" : "text-white")}>{title}</h3>
-        <p className="text-white/50 leading-relaxed text-sm sm:text-base">{desc}</p>
+        <p className="text-white/70 leading-relaxed text-sm sm:text-base">{desc}</p>
       </div>
     </div>
   );
@@ -256,7 +256,7 @@ function InfoCard({ icon: Icon, title, desc }: { icon: any, title: string, desc:
       </div>
       <div>
         <h3 className="text-lg sm:text-xl font-semibold mb-3 tracking-tight text-white/90">{title}</h3>
-        <p className="text-white/40 leading-relaxed text-sm sm:text-base">{desc}</p>
+        <p className="text-white/70 leading-relaxed text-sm sm:text-base">{desc}</p>
       </div>
     </div>
   );

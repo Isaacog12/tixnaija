@@ -22,7 +22,7 @@ export const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputPro
           {label}
         </Label>
         <div className="relative group">
-          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 dark:text-white/40 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
+          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 dark:text-white/70 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
           <Input
             id={id}
             ref={ref}
@@ -33,8 +33,8 @@ export const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputPro
           <button
             type="button"
             onClick={onToggleVisibility}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-white/40 hover:text-zinc-900 dark:hover:text-white transition-colors outline-none"
-            tabIndex={-1}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-white/70 hover:text-zinc-900 dark:hover:text-white transition-colors rounded p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>

@@ -162,7 +162,7 @@ function LandingV2() {
                       <div className="absolute bottom-0 left-0 right-0 p-5">
                         <h3 className="font-display text-xl leading-tight text-white line-clamp-2 mb-2 group-hover:text-orange-300 transition-colors duration-200">{ev.title}</h3>
                         {ev.city && (
-                          <div className="flex items-center gap-1.5 text-white/40 text-xs font-medium">
+                          <div className="flex items-center gap-1.5 text-white/70 text-xs font-medium">
                             <MapPin className="h-3 w-3 text-orange-500 shrink-0" />
                             {ev.venue_name || ev.city}
                           </div>
@@ -199,7 +199,7 @@ function LandingV2() {
                     <card.icon className="h-6 w-6" style={{ color: card.accent }} />
                   </div>
                   <h3 className="font-display text-xl text-white mb-3 group-hover:text-orange-300 transition-colors duration-200">{card.title}</h3>
-                  <p className="text-white/40 text-sm leading-relaxed">{card.body}</p>
+                  <p className="text-white/70 text-sm leading-relaxed">{card.body}</p>
                 </motion.div>
               ))}
             </div>
@@ -219,7 +219,7 @@ function LandingV2() {
               Selling tickets?<br />
               <span style={{ background: "linear-gradient(110deg,#EA580C 0%,#FBBF24 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Start here.</span>
             </motion.h2>
-            <motion.p variants={fadeUp} className="text-white/40 text-lg md:text-xl max-w-xl mx-auto leading-relaxed">
+            <motion.p variants={fadeUp} className="text-white/70 text-lg md:text-xl max-w-xl mx-auto leading-relaxed">
               Set up your event, publish instantly, and get paid to your Nigerian bank account. Zero listing fees.
             </motion.p>
             <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4 justify-center items-center">

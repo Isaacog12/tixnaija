@@ -70,9 +70,9 @@ function AuthV2Page() {
           <motion.div initial="hidden" animate="show" variants={{ show: { transition: { staggerChildren: 0.1 } } }}>
             <motion.h1 variants={fadeUp} className="font-display text-5xl leading-[1.05] tracking-tight text-white mb-6">
               The stage is yours.<br />
-              <span className="text-white/40">Step into the spotlight.</span>
+              <span className="text-white/70">Step into the spotlight.</span>
             </motion.h1>
-            <motion.p variants={fadeUp} className="text-white/50 text-lg leading-relaxed">
+            <motion.p variants={fadeUp} className="text-white/70 text-lg leading-relaxed">
               Join thousands of creators and attendees powering the future of live events across Nigeria.
             </motion.p>
           </motion.div>
@@ -109,10 +109,10 @@ function AuthV2Page() {
                 >
                   <div className="mb-8">
                     <h2 className="font-display text-3xl tracking-tight text-white mb-2">Create Account</h2>
-                    <p className="text-white/50 text-sm">Join us today to access your secure workspace.</p>
+                    <p className="text-white/70 text-sm">Join us today to access your secure workspace.</p>
                   </div>
                   {/* We wrap the existing form. Note: You may need to tweak the internal form's CSS to fit the dark theme perfectly. */}
-                  <div className="[&_label]:text-white/70 [&_input]:bg-white/5 [&_input]:border-white/10 [&_input]:text-white [&_input]:h-12 [&_input:focus]:border-orange-500/50 [&_button[type='submit']]:bg-orange-600 [&_button[type='submit']]:hover:bg-orange-500 [&_button[type='submit']]:text-white [&_button[type='submit']]:h-12 [&_button[type='submit']]:rounded-xl [&_p.text-muted-foreground]:text-white/40">
+                  <div className="[&_label]:text-white/70 [&_input]:bg-white/5 [&_input]:border-white/10 [&_input]:text-white [&_input]:h-12 [&_input:focus]:border-orange-500/50 [&_button[type='submit']]:bg-orange-600 [&_button[type='submit']]:hover:bg-orange-500 [&_button[type='submit']]:text-white [&_button[type='submit']]:h-12 [&_button[type='submit']]:rounded-xl [&_p.text-muted-foreground]:text-white/70">
                     <SignUpForm redirectUrl={redirect} />
                   </div>
                 </motion.div>
@@ -127,9 +127,9 @@ function AuthV2Page() {
                 >
                   <div className="mb-8">
                     <h2 className="font-display text-3xl tracking-tight text-white mb-2">Welcome Back</h2>
-                    <p className="text-white/50 text-sm">Enter your credentials to access your account.</p>
+                    <p className="text-white/70 text-sm">Enter your credentials to access your account.</p>
                   </div>
-                  <div className="[&_label]:text-white/70 [&_input]:bg-white/5 [&_input]:border-white/10 [&_input]:text-white [&_input]:h-12 [&_input:focus]:border-orange-500/50 [&_button[type='submit']]:bg-orange-600 [&_button[type='submit']]:hover:bg-orange-500 [&_button[type='submit']]:text-white [&_button[type='submit']]:h-12 [&_button[type='submit']]:rounded-xl [&_p.text-muted-foreground]:text-white/40 [&_a]:text-orange-500 [&_a:hover]:text-orange-400">
+                  <div className="[&_label]:text-white/70 [&_input]:bg-white/5 [&_input]:border-white/10 [&_input]:text-white [&_input]:h-12 [&_input:focus]:border-orange-500/50 [&_button[type='submit']]:bg-orange-600 [&_button[type='submit']]:hover:bg-orange-500 [&_button[type='submit']]:text-white [&_button[type='submit']]:h-12 [&_button[type='submit']]:rounded-xl [&_p.text-muted-foreground]:text-white/70 [&_a]:text-orange-500 [&_a:hover]:text-orange-400">
                     <SignInForm redirectUrl={redirect} />
                   </div>
                 </motion.div>
@@ -139,14 +139,14 @@ function AuthV2Page() {
           
           <div className="mt-8 text-center">
             {isSignUp ? (
-              <p className="text-sm text-white/40">
+              <p className="text-sm text-white/70">
                 Already have an account?{" "}
                 <Link to="/auth-v2" search={{ mode: "signin", redirect }} className="text-orange-500 hover:text-orange-400 font-medium transition-colors">
                   Sign in
                 </Link>
               </p>
             ) : (
-              <p className="text-sm text-white/40">
+              <p className="text-sm text-white/70">
                 Don't have an account?{" "}
                 <Link to="/auth-v2" search={{ mode: "signup", redirect }} className="text-orange-500 hover:text-orange-400 font-medium transition-colors">
                   Sign up

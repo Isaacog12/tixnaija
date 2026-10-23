@@ -189,7 +189,7 @@ function OtpV2Page() {
           <motion.div initial="hidden" animate="show" variants={{ show: { transition: { staggerChildren: 0.1 } } }}>
             <motion.h1 variants={fadeUp} className="font-display text-5xl leading-[1.05] tracking-tight text-white mb-6">
               Secure access.<br />
-              <span className="text-white/40">Zero passwords.</span>
+              <span className="text-white/70">Zero passwords.</span>
             </motion.h1>
             <motion.p variants={fadeUp} className="text-white/50 text-lg leading-relaxed">
               We use secure, one-time passcodes to keep your account safe and your sign-ins fast.
@@ -313,7 +313,7 @@ function OtpV2Page() {
                       </motion.div>
                     ))}
                   </div>
-                  <p className="mb-6 text-sm text-white/40 text-center">
+                  <p className="mb-6 text-sm text-white/70 text-center">
                     Didn't receive the code?{" "}
                     {countdown > 0 ? (
                       <span className="font-semibold text-orange-500">Resend in {formatCountdown(countdown)}</span>

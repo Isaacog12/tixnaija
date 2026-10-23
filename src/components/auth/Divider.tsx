@@ -7,7 +7,7 @@ export function Divider({ text = "OR CONTINUE WITH" }: { text?: string }) {
         <span className="w-full border-t border-black/10 dark:border-white/10" />
       </div>
       <div className="relative flex justify-center text-xs">
-        <span className="bg-background px-3 text-zinc-400 dark:text-white/40">{text}</span>
+        <span className="bg-background px-3 text-zinc-500 dark:text-white/70">{text}</span>
       </div>
     </div>
   );

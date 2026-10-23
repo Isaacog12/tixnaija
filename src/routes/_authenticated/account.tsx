@@ -865,8 +865,20 @@ function SecurityTab({ email }: { email: string }) {
     setDeletingAccount(true);
     try {
       const { data, error } = await supabase.functions.invoke("delete-account");
-      if (error || data?.error) {
-        throw new Error(error?.message || data?.error || "Failed to delete account");
+      let errorMsg = null;
+      if (error) {
+        try {
+          const body = await error.context?.json?.();
+          errorMsg = body?.error || error.message;
+        } catch {
+          errorMsg = error.message;
+        }
+      } else if (data?.error) {
+        errorMsg = data.error;
+      }
+
+      if (errorMsg) {
+        throw new Error(errorMsg);
       }
 
       await supabase.auth.signOut();
