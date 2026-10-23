@@ -164,13 +164,13 @@ serve(async (req: Request) => {
             You received this transactional receipt because an order was placed on TixNaija with this email address.
           </p>
           <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">
-            Order Ref: ${orderRef} · <a href="https://tixnaija.name.ng/refunds" style="color: #ea580c; text-decoration: underline;">Refund Policy</a>
+            Order Ref: ${orderRef} · <a href="https://tixnaija.name.ng/refunds" style="color: #ea580c; text-decoration: underline;">Refund Policy</a> · <a href="https://tixnaija.name.ng/privacy" style="color: #ea580c; text-decoration: underline;">Privacy Policy</a>
           </p>
           <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">
             Manage notifications: <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a>
           </p>
           <p style="margin: 12px 0 0; font-size: 11px; color: #636366; line-height: 1.4;">
-            TixNaija · Lagos, Nigeria
+            TixNaija · Independent Nigerian Ticketing Platform
           </p>
         </div>
       </div>
@@ -292,13 +292,13 @@ serve(async (req: Request) => {
               You received this ticket because a spot was booked for you for this event on TixNaija.
             </p>
             <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">
-              Questions? View our <a href="https://tixnaija.name.ng/refunds" style="color: #ea580c; text-decoration: underline;">Refund Policy</a> or contact the organizer.
+              Questions? View our <a href="https://tixnaija.name.ng/refunds" style="color: #ea580c; text-decoration: underline;">Refund Policy</a> · <a href="https://tixnaija.name.ng/privacy" style="color: #ea580c; text-decoration: underline;">Privacy Policy</a>
             </p>
             <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">
               Manage notifications: <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a>
             </p>
             <p style="margin: 12px 0 0; font-size: 11px; color: #636366; line-height: 1.4;">
-              TixNaija · Lagos, Nigeria
+              TixNaija · Independent Nigerian Ticketing Platform
             </p>
           </div>
         </div>

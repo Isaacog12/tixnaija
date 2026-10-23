@@ -80,10 +80,10 @@ serve(async (req) => {
             <div style="text-align: center; color: #6b7280; font-size: 12px; line-height: 1.5;">
               <p style="margin: 0 0 6px;">You received this reminder because you initiated a checkout on TixNaija while signed into your account.</p>
               <p style="margin: 0 0 12px;">
-                <a href="${unsubUrl}" style="color: #ea580c; text-decoration: underline;">Click here to unsubscribe instantly</a> or manage your <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a>.
+                <a href="${unsubUrl}" style="color: #ea580c; text-decoration: underline;">Click here to unsubscribe instantly</a> · <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a> · <a href="https://tixnaija.name.ng/privacy" style="color: #ea580c; text-decoration: underline;">Privacy Policy</a>
               </p>
               <p style="margin: 0; font-size: 11px; color: #9ca3af;">
-                TixNaija · Lagos, Nigeria
+                TixNaija · Independent Nigerian Ticketing Platform
               </p>
             </div>
           </div>

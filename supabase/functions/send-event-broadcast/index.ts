@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { sendEmail } from "../_shared/zeptomail.ts";
 import { filterOptedInEmails } from "../_shared/notification-preferences.ts";
+import { generateUnsubscribeToken } from "../_shared/unsubscribe.ts";
 
 const allowedOrigins = [
   "https://tixnaija.vercel.app",
@@ -89,6 +90,9 @@ serve(async (req: Request) => {
         continue;
       }
 
+      const unsubToken = await generateUnsubscribeToken(email, "organizer_updates");
+      const unsubUrl = `https://tixnaija.name.ng/unsubscribe?email=${encodeURIComponent(email)}&type=organizer_updates&token=${unsubToken}`;
+
       const htmlBody = `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1a1a1a; padding: 20px;">
           <h2 style="color: #ea580c; font-size: 20px; font-weight: 700; margin-bottom: 12px;">Update: ${broadcast.events?.title || "Event Announcement"}</h2>
@@ -101,8 +105,11 @@ serve(async (req: Request) => {
               You received this update because you bought a ticket to this event on TixNaija.<br>
               <a href="${eventLink}" style="color: #ea580c; text-decoration: underline;">View Event Page</a>
             </p>
-            <p style="font-size: 12px; color: #71717a; margin: 0;">
-              To change your notification preferences, visit your <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Account Settings</a>.
+            <p style="font-size: 12px; color: #71717a; margin-bottom: 12px;">
+              <a href="${unsubUrl}" style="color: #ea580c; text-decoration: underline;">Unsubscribe from event updates</a> · <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a> · <a href="https://tixnaija.name.ng/privacy" style="color: #ea580c; text-decoration: underline;">Privacy Policy</a>
+            </p>
+            <p style="font-size: 11px; color: #a1a1aa; margin: 0;">
+              TixNaija · Independent Nigerian Ticketing Platform
             </p>
           </div>
         </div>
@@ -113,6 +120,10 @@ serve(async (req: Request) => {
           to: { address: email, name },
           subject: broadcast.subject,
           htmlBody,
+          headers: [
+            { name: "List-Unsubscribe", value: `<${unsubUrl}>, <mailto:tixnaijaapp@gmail.com?subject=Unsubscribe>` },
+            { name: "List-Unsubscribe-Post", value: "List-Unsubscribe=One-Click" },
+          ],
         });
         successCount++;
       } catch (err) {

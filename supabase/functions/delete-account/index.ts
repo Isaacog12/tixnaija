@@ -61,27 +61,34 @@ serve(async (req: Request) => {
       );
     }
 
-    // 2. Anonymize personal profile data in public.profiles
-    const { error: profileErr } = await adminClient
-      .from("profiles")
-      .update({
-        full_name: "Deleted User",
-        phone: null,
-        avatar_url: null,
-        bank_account_name: null,
-        bank_account_number: null,
-        bank_name: null,
-        paystack_subaccount_code: null,
-        is_organizer: false,
-        is_verified_organizer: false,
-        notification_preferences: {},
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", userId);
+    // 2. Anonymize personal profile data via anonymize_deleted_user_profile RPC
+    const { error: rpcErr } = await adminClient.rpc("anonymize_deleted_user_profile", {
+      p_user_id: userId,
+    });
 
-    if (profileErr) {
-      console.error("Error anonymizing profile:", profileErr);
-      throw new Error("Failed to anonymize profile data.");
+    if (rpcErr) {
+      console.warn("anonymize_deleted_user_profile RPC error, falling back to direct update:", rpcErr);
+      const { error: profileErr } = await adminClient
+        .from("profiles")
+        .update({
+          full_name: "Deleted User",
+          phone: null,
+          avatar_url: null,
+          bank_account_name: null,
+          bank_account_number: null,
+          bank_name: null,
+          paystack_subaccount_code: null,
+          is_organizer: false,
+          is_verified_organizer: false,
+          notification_preferences: {},
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", userId);
+
+      if (profileErr) {
+        console.error("Error anonymizing profile:", profileErr);
+        throw new Error("Failed to anonymize profile data.");
+      }
     }
 
     // 3. Remove uploaded ID documents from storage bucket

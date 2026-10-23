@@ -25,7 +25,8 @@ export async function sendEmail(
 ) {
   const token = Deno.env.get("ZEPTOMAIL_TOKEN");
   const fromAddress = Deno.env.get("MAIL_FROM_ADDRESS") ??
-    "tixnaija@tixnaija.name.ng";
+    "noreply@tixnaija.name.ng";
+  "tixnaija@tixnaija.name.ng";
   const fromName = Deno.env.get("MAIL_FROM_NAME") ?? "TixNaija";
 
   if (!token) {

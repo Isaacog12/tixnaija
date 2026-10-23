@@ -70,10 +70,10 @@ serve(async (req: Request) => {
               You received this message because you opted in to marketing updates from TixNaija.
             </p>
             <p style="font-size: 12px; color: #71717a; margin-bottom: 12px;">
-              <a href="${unsubUrl}" style="color: #ea580c; text-decoration: underline;">Click here to unsubscribe instantly</a> or manage your <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a>.
+              <a href="${unsubUrl}" style="color: #ea580c; text-decoration: underline;">Click here to unsubscribe instantly</a> · <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a> · <a href="https://tixnaija.name.ng/privacy" style="color: #ea580c; text-decoration: underline;">Privacy Policy</a>
             </p>
             <p style="font-size: 11px; color: #a1a1aa; margin: 0; line-height: 1.4;">
-              TixNaija · Lagos, Nigeria
+              TixNaija · Independent Nigerian Ticketing Platform
             </p>
           </div>
         </div>

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { BackButton } from "@/components/back-button";
+import { BUSINESS_DETAILS } from "@/lib/business";
 
 export const Route = createFileRoute("/terms")({
   component: TermsPage,
@@ -207,7 +208,7 @@ function TermsPage() {
             </p>
             <ol className="list-decimal pl-5 text-sm text-muted-foreground space-y-1.5 leading-relaxed">
               <li>Directly contact the organizer using the messaging tools or email provided on the event page.</li>
-              <li>If unresolved within 48 hours, contact TixNaija support at <strong className="text-foreground">tixnaijaapp@gmail.com</strong>. Our team mediates disputes and may withhold unremitted payouts pending inquiry.</li>
+              <li>If unresolved within 48 hours, contact TixNaija support at <a href={`mailto:${BUSINESS_DETAILS.supportEmail}`} className="text-foreground underline font-semibold">{BUSINESS_DETAILS.supportEmail}</a>. Our team mediates disputes and may withhold unremitted payouts pending inquiry.</li>
               <li>Unresolved consumer rights claims may be submitted to the <strong className="text-foreground">Federal Competition and Consumer Protection Commission (FCCPC)</strong> at <a href="https://fccpc.gov.ng" target="_blank" rel="noopener noreferrer" className="text-foreground underline hover:text-primary">fccpc.gov.ng</a>.</li>
             </ol>
           </section>
@@ -230,11 +231,11 @@ function TermsPage() {
 
           {/* Section 13 — Contact Details */}
           <section id="contact" className="scroll-mt-8 space-y-3 border-t border-border/40 pt-8">
-            <SectionHeading number="13" title="Corporate & Contact Information" />
+            <SectionHeading number="13" title="Contact Information" />
             <div className="rounded-xl border border-border bg-card p-4 text-xs md:text-sm space-y-1 text-muted-foreground">
-              <p><strong className="text-foreground">Platform:</strong> TixNaija</p>
-              <p><strong className="text-foreground">Email:</strong> tixnaijaapp@gmail.com</p>
-              <p><strong className="text-foreground">Phone:</strong> +234 901 127 5275</p>
+              <p><strong className="text-foreground">Platform:</strong> {BUSINESS_DETAILS.platformName}</p>
+              <p><strong className="text-foreground">Email:</strong> <a href={`mailto:${BUSINESS_DETAILS.supportEmail}`} className="text-foreground underline">{BUSINESS_DETAILS.supportEmail}</a></p>
+              <p><strong className="text-foreground">Phone:</strong> {BUSINESS_DETAILS.supportPhone}</p>
             </div>
           </section>
         </main>

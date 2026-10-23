@@ -5,7 +5,8 @@
 -- 1. Support self-serve account deletion per Nigeria Data Protection Act 2023 (NDPA).
 -- 2. Anonymize personal data in public.profiles while preserving required accounting
 --    records in orders, order_items, and payments.
--- 3. Define automated cleanup function for expired KYC ID photos.
+-- 3. Define automated cleanup function and scheduled job for expired KYC ID photos.
+-- 4. Enforce SET search_path = public on all SECURITY DEFINER functions.
 --
 -- Ready for review. DO NOT apply without user confirmation.
 
@@ -14,6 +15,7 @@ CREATE OR REPLACE FUNCTION public.anonymize_deleted_user_profile(p_user_id uuid)
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   -- Verify caller is service_role or the user themselves
@@ -52,6 +54,7 @@ CREATE OR REPLACE FUNCTION public.get_expired_id_photos_for_cleanup(p_retention_
 RETURNS TABLE (application_id uuid, id_photo_path text)
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   RETURN QUERY
@@ -63,3 +66,35 @@ BEGIN
     AND id_photo_url NOT LIKE 'DELETED%';
 END;
 $$;
+
+-- 3. RPC to mark expired KYC photos as deleted in database
+CREATE OR REPLACE FUNCTION public.mark_id_photos_deleted(p_application_ids uuid[])
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.role() <> 'service_role' THEN
+    RAISE EXCEPTION 'Only service_role can mark KYC photos deleted';
+  END IF;
+
+  UPDATE public.organizer_applications
+  SET id_photo_url = 'DELETED_' || now()::text
+  WHERE id = ANY(p_application_ids);
+END;
+$$;
+
+-- 4. Scheduled job via pg_cron: Run daily at 03:00 AM UTC to purge expired KYC ID records older than 30 days
+SELECT cron.schedule(
+  'purge_expired_kyc_id_photos_daily',
+  '0 3 * * *',
+  $$
+  UPDATE public.organizer_applications
+  SET id_photo_url = 'DELETED_' || now()::text
+  WHERE status IN ('approved', 'rejected')
+    AND reviewed_at IS NOT NULL
+    AND reviewed_at < (now() - interval '30 days')
+    AND id_photo_url NOT LIKE 'DELETED%';
+  $$
+);

@@ -170,8 +170,11 @@ serve(async (req) => {
                   <p style="margin: 0 0 8px; font-size: 12px; color: #71717a;">
                     You received this email because you have a ticket to this event.
                   </p>
-                  <p style="margin: 0; font-size: 12px; color: #71717a;">
-                    To update your preferences or opt out of reminders, manage your <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a>.
+                  <p style="margin: 0 0 12px; font-size: 12px; color: #71717a;">
+                    To update your preferences or opt out of reminders, manage your <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a> · <a href="https://tixnaija.name.ng/privacy" style="color: #ea580c; text-decoration: underline;">Privacy Policy</a>
+                  </p>
+                  <p style="margin: 0; font-size: 11px; color: #71717a;">
+                    TixNaija · Independent Nigerian Ticketing Platform
                   </p>
                 </div>
               </div>

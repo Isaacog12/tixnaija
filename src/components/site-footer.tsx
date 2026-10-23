@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { openCookieSettings } from "@/lib/cookie-consent";
+import { BUSINESS_DETAILS } from "@/lib/business";
 
 export function SiteFooter() {
   return (
@@ -32,15 +33,15 @@ export function SiteFooter() {
         <div className="border-t border-border/40 pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs leading-relaxed text-center md:text-left">
           <div className="space-y-1">
             <p className="font-semibold text-foreground">
-              TixNaija
+              {BUSINESS_DETAILS.platformName}
             </p>
             <p>
-              Email: <a href="mailto:tixnaijaapp@gmail.com" className="hover:text-foreground underline">tixnaijaapp@gmail.com</a> · Phone: +234 901 127 5275
+              Email: <a href={`mailto:${BUSINESS_DETAILS.supportEmail}`} className="hover:text-foreground underline">{BUSINESS_DETAILS.supportEmail}</a> · Phone: {BUSINESS_DETAILS.supportPhone}
             </p>
           </div>
 
           <p className="font-medium text-muted-foreground shrink-0">
-            © {new Date().getFullYear()} TixNaija. All rights reserved.
+            © {new Date().getFullYear()} {BUSINESS_DETAILS.platformName}. All rights reserved.
           </p>
         </div>
       </div>

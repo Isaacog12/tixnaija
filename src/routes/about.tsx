@@ -10,6 +10,7 @@ import { BackButton } from "@/components/back-button";
 import { Label } from "@/components/ui/label";
 import { Instagram, Send, PhoneCall, Mail, AlertCircle, HelpCircle, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { BUSINESS_DETAILS } from "@/lib/business";
 
 export const Route = createFileRoute("/about")({
   component: AboutPage,
@@ -166,8 +167,7 @@ function AboutPage() {
           {/* Direct contact */}
           <div  className="grid sm:grid-cols-2 gap-4">
             <a
-              
-              href="tel:+2349011275275"
+              href={`tel:${BUSINESS_DETAILS.supportPhone.replace(/\s+/g, '')}`}
               className="flex items-center gap-5 rounded-3xl border border-border/50 bg-card/60 backdrop-blur-sm p-6 transition-all duration-[350ms] ease-out hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 press-sm group hover:-translate-y-0.5"
             >
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
@@ -175,13 +175,12 @@ function AboutPage() {
               </div>
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-bold mb-1">Call / WhatsApp</p>
-                <p className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">+234 901 127 5275</p>
+                <p className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">{BUSINESS_DETAILS.supportPhone}</p>
               </div>
             </a>
 
             <a
-              
-              href="mailto:tixnaijaapp@gmail.com"
+              href={`mailto:${BUSINESS_DETAILS.supportEmail}`}
               className="flex items-center gap-5 rounded-3xl border border-border/50 bg-card/60 backdrop-blur-sm p-6 transition-all duration-[350ms] ease-out hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 press-sm group hover:-translate-y-0.5"
             >
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
@@ -189,7 +188,7 @@ function AboutPage() {
               </div>
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-bold mb-1">Email us</p>
-                <p className="text-base font-semibold text-foreground group-hover:text-primary transition-colors truncate w-full" title="tixnaijaapp@gmail.com">tixnaijaapp@gmail.com</p>
+                <p className="text-base font-semibold text-foreground group-hover:text-primary transition-colors truncate w-full" title={BUSINESS_DETAILS.supportEmail}>{BUSINESS_DETAILS.supportEmail}</p>
               </div>
             </a>
 

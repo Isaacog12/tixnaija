@@ -424,7 +424,6 @@ function EventDetailPage() {
   function onCheckout() {
     if (!totalCount) return;
     if (!sessionUser) {
-      toast.error("You must create an account or sign in to buy tickets.", { duration: 5000 });
       navigate({ to: "/auth", search: { mode: "signup", redirect: `/e-v2/${slug}` } });
       return;
     }
@@ -572,6 +571,7 @@ function EventDetailPage() {
               setWaitlistTier(t);
               setWaitlistOpen(true);
             }}
+            isAuthenticated={!!sessionUser}
           />
           {similarEvents && similarEvents.length > 0 && <SimilarEvents events={similarEvents} />}
         </>
@@ -596,14 +596,19 @@ function EventDetailPage() {
                   <p className="truncate font-display text-xl leading-none text-white mt-1">
                     {totalKobo ? formatNaira(totalKobo) : "Pick a tier"}
                   </p>
+                  {!sessionUser && (
+                    <p className="text-[10px] text-white/60 mt-0.5 truncate">
+                      Account needed · Tickets tied to account
+                    </p>
+                  )}
                 </div>
                 <Button
                   onClick={onCheckout}
                   disabled={!totalCount}
                   size="lg"
-                  className="rounded-full font-bold text-sm bg-white text-black hover:bg-white/90 disabled:opacity-50 px-8"
+                  className="rounded-full font-bold text-sm bg-white text-black hover:bg-white/90 disabled:opacity-50 px-6 shrink-0"
                 >
-                  Buy tickets
+                  {!sessionUser ? "Sign in to buy" : "Buy tickets"}
                 </Button>
               </div>
             </div>
@@ -980,6 +985,7 @@ function EventBody({
   totalCount,
   totalKobo,
   onJoinWaitlist,
+  isAuthenticated,
 }: {
   event: NonNullable<Awaited<ReturnType<typeof fetchEventBySlug>>>["event"];
   types: TicketType[];
@@ -989,6 +995,7 @@ function EventBody({
   totalCount: number;
   totalKobo: number;
   onJoinWaitlist: (tier: TicketType) => void;
+  isAuthenticated?: boolean;
 }) {
   const start = new Date(event.start_datetime);
   const end = event.end_datetime
@@ -1234,6 +1241,11 @@ function EventBody({
                 </span>
               </div>
             </div>
+            {!isAuthenticated && (
+              <p className="mt-4 text-xs text-white/60 text-center">
+                An account is needed to buy tickets. Your tickets will be securely tied to it.
+              </p>
+            )}
             <Button
               disabled={!totalCount || isPastEvent || event.status === "cancelled"}
               onClick={onCheckout}
@@ -1243,7 +1255,9 @@ function EventBody({
                 ? "Event ended"
                 : event.status === "cancelled"
                   ? "Sales closed"
-                  : "Buy tickets"}
+                  : !isAuthenticated
+                    ? "Sign in to buy"
+                    : "Buy tickets"}
             </Button>
           </div>
         </aside>

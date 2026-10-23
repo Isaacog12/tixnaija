@@ -71,9 +71,16 @@ serve(async (req) => {
           <h2>Good news, ${person.name}!</h2>
           <p>A ticket for <strong>${tier.events.title}</strong> (${tier.name}) has become available.</p>
           <p>Please claim it before it sells out again!</p>
-          <a href="${eventUrl}" style="display: inline-block; padding: 12px 24px; background: #000; color: #fff; text-decoration: none; border-radius: 6px;">
+          <a href="${eventUrl}" style="display: inline-block; padding: 12px 24px; background: #000; color: #fff; text-decoration: none; border-radius: 6px; margin-bottom: 24px;">
             Get Ticket Now
           </a>
+          <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 24px 0 16px;" />
+          <p style="font-size: 12px; color: #6b7280; margin: 0 0 6px;">
+            You received this email because you joined the waitlist for this event on TixNaija.
+          </p>
+          <p style="font-size: 11px; color: #9ca3af; margin: 0;">
+            TixNaija · Independent Nigerian Ticketing Platform · <a href="https://tixnaija.name.ng/privacy" style="color: #6b7280; text-decoration: underline;">Privacy Policy</a>
+          </p>
         </div>
       `;
 

@@ -4,6 +4,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { BackButton } from "@/components/back-button";
 import { Button } from "@/components/ui/button";
 import { openCookieSettings } from "@/lib/cookie-consent";
+import { BUSINESS_DETAILS } from "@/lib/business";
 
 export const Route = createFileRoute("/cookies")({
   component: CookiePolicyPage,
@@ -54,6 +55,22 @@ const COOKIE_INVENTORY: CookieItem[] = [
     storageType: "Local Storage",
     category: "Strictly Essential",
     lifespan: "Session / until sign-out",
+  },
+  {
+    name: "sidebar_state",
+    provider: "TixNaija",
+    purpose: "Remembers the expanded or collapsed state of dashboard navigation sidebars.",
+    storageType: "Cookie",
+    category: "Strictly Essential",
+    lifespan: "7 days",
+  },
+  {
+    name: "notif_prefs_[userId]",
+    provider: "TixNaija",
+    purpose: "Local browser cache for notification preference settings.",
+    storageType: "Local Storage",
+    category: "Strictly Essential",
+    lifespan: "Persistent until cleared or account sign-out",
   },
   {
     name: "_ga",
@@ -191,12 +208,12 @@ function CookiePolicyPage() {
         <section className="space-y-4 border-t border-border/40 pt-8">
           <h2 className="text-xl font-semibold tracking-tight">6. Inquiries and Contact</h2>
           <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-            For questions about this policy or our data handling practices, please contact our Data Protection Officer at:
+            For questions about this policy or our data handling practices, please contact our team:
           </p>
           <div className="rounded-xl border border-border bg-card p-4 text-xs md:text-sm space-y-1 text-muted-foreground">
-            <p><strong className="text-foreground">Platform:</strong> TixNaija</p>
-            <p><strong className="text-foreground">Email:</strong> tixnaijaapp@gmail.com</p>
-            <p><strong className="text-foreground">Phone:</strong> +234 901 127 5275</p>
+            <p><strong className="text-foreground">Platform:</strong> {BUSINESS_DETAILS.platformName}</p>
+            <p><strong className="text-foreground">Email:</strong> <a href={`mailto:${BUSINESS_DETAILS.supportEmail}`} className="text-foreground underline">{BUSINESS_DETAILS.supportEmail}</a></p>
+            <p><strong className="text-foreground">Phone:</strong> {BUSINESS_DETAILS.supportPhone}</p>
           </div>
         </section>
       </main>

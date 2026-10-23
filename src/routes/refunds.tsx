@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { BackButton } from "@/components/back-button";
+import { BUSINESS_DETAILS } from "@/lib/business";
 
 export const Route = createFileRoute("/refunds")({
   component: RefundsPage,
@@ -118,7 +119,7 @@ function RefundsPage() {
             <div className="rounded-xl border border-border bg-card p-4 space-y-1.5">
               <span className="text-xs font-bold uppercase tracking-wider text-primary">Step 2</span>
               <p className="font-semibold text-foreground text-sm">Send Email</p>
-              <p className="text-xs text-muted-foreground">Email support at <span className="text-foreground font-medium">tixnaijaapp@gmail.com</span> with subject: "Refund Request - [Order Reference]".</p>
+              <p className="text-xs text-muted-foreground">Email support at <a href={`mailto:${BUSINESS_DETAILS.supportEmail}`} className="text-foreground font-medium underline">{BUSINESS_DETAILS.supportEmail}</a> with subject: "Refund Request - [Order Reference]".</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 space-y-1.5">
               <span className="text-xs font-bold uppercase tracking-wider text-primary">Step 3</span>
@@ -136,7 +137,7 @@ function RefundsPage() {
           </p>
           <ol className="list-decimal pl-5 text-sm md:text-base text-muted-foreground space-y-2 leading-relaxed">
             <li>
-              Submit a formal grievance to <strong className="text-foreground">tixnaijaapp@gmail.com</strong>. We will freeze pending organizer payouts and initiate an internal compliance inquiry.
+              Submit a formal grievance to <a href={`mailto:${BUSINESS_DETAILS.supportEmail}`} className="text-foreground font-semibold underline">{BUSINESS_DETAILS.supportEmail}</a>. We will freeze pending organizer payouts and initiate an internal compliance inquiry.
             </li>
             <li>
               In accordance with Nigerian consumer protection standards, consumers retain the right to escalate unresolved grievances to the <strong className="text-foreground">Federal Competition and Consumer Protection Commission (FCCPC)</strong> via their online portal at <a href="https://fccpc.gov.ng" target="_blank" rel="noopener noreferrer" className="text-foreground underline hover:text-primary">fccpc.gov.ng</a>.
@@ -144,13 +145,13 @@ function RefundsPage() {
           </ol>
         </section>
 
-        {/* Business details */}
+        {/* Contact details */}
         <section className="space-y-4 border-t border-border/40 pt-8">
-          <h2 className="text-xl font-semibold tracking-tight">7. Corporate Information</h2>
+          <h2 className="text-xl font-semibold tracking-tight">7. Contact Information</h2>
           <div className="rounded-xl border border-border bg-card p-4 text-xs md:text-sm space-y-1 text-muted-foreground">
-            <p><strong className="text-foreground">Platform:</strong> TixNaija</p>
-            <p><strong className="text-foreground">Email:</strong> tixnaijaapp@gmail.com</p>
-            <p><strong className="text-foreground">Phone:</strong> +234 901 127 5275</p>
+            <p><strong className="text-foreground">Platform:</strong> {BUSINESS_DETAILS.platformName}</p>
+            <p><strong className="text-foreground">Email:</strong> <a href={`mailto:${BUSINESS_DETAILS.supportEmail}`} className="text-foreground underline">{BUSINESS_DETAILS.supportEmail}</a></p>
+            <p><strong className="text-foreground">Phone:</strong> {BUSINESS_DETAILS.supportPhone}</p>
           </div>
         </section>
       </main>

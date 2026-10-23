@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { BackButton } from "@/components/back-button";
+import { BUSINESS_DETAILS } from "@/lib/business";
 
 export const Route = createFileRoute("/privacy")({
   component: PrivacyPage,
@@ -30,7 +31,7 @@ const SECTIONS = [
   { id: "rights", label: "Your NDPA Statutory Rights" },
   { id: "security", label: "Information Security" },
   { id: "complaints", label: "Regulatory Complaints" },
-  { id: "contact", label: "Contact & DPO" },
+  { id: "contact", label: "Contact & Inquiries" },
 ];
 
 const LAST_UPDATED = "October 22, 2026";
@@ -101,7 +102,7 @@ function PrivacyPage() {
               <strong className="text-foreground">TixNaija</strong> (referred to as "we", "us", or "our") is committed to safeguarding the personal data of our users. This Privacy Policy governs our data handling practices for ticket buyers, event attendees, event organizers, and platform visitors.
             </p>
             <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-              TixNaija is proudly independent and completely separate from Tix Africa. This platform operates under its own legal entity, data controllership, and technical architecture.
+              TixNaija is proudly independent and completely separate from Tix Africa. This platform operates under its own independent brand, data stewardship, and technical architecture.
             </p>
           </section>
 
@@ -230,11 +231,11 @@ function PrivacyPage() {
               <p>
                 We retain personal data only as long as necessary to provide ticketing services or satisfy statutory legal requirements:
               </p>
-              <ul className="list-disc pl-5 space-y-1">
+              <ul className="list-disc pl-5 space-y-1.5">
                 <li><strong className="text-foreground">Active Account Data:</strong> Retained while your account remains active. Users may trigger self-serve account deletion in their Account settings at any time.</li>
-                <li><strong className="text-foreground">Deleted Accounts:</strong> Upon an erasure request, personal profiles and marketing preferences are purged within thirty (30) days.</li>
-                <li><strong className="text-foreground">Financial & Audit Records:</strong> Payment references, ticket sales, and settlement ledgers are retained in anonymized format for up to seven (7) years to comply with Nigerian corporate accounting and tax laws.</li>
-                <li><strong className="text-foreground">Organizer Verification Media:</strong> Organizer identity photos are retained in a private vault during verification and permanently purged thirty (30) days after a review determination is reached.</li>
+                <li><strong className="text-foreground">Account Deletion (What is Deleted):</strong> Upon self-serve account deletion, your user profile information (full name, phone, bio, avatar), authentication credentials, notification preferences, organizer verification photos, and active sessions are permanently erased immediately.</li>
+                <li><strong className="text-foreground">Account Deletion (What is Kept):</strong> Completed order records, ticket codes, and payment transaction references are retained in anonymized format strictly as required for corporate accounting, tax reconciliation, and financial audit compliance under Nigerian financial laws.</li>
+                <li><strong className="text-foreground">Organizer Verification Media:</strong> Uploaded identity photos are stored in a private, access-restricted storage vault accessible only to authorized administrators reviewing the application. Files are retained for thirty (30) days following review determination (approval or rejection), after which they are permanently deleted from storage.</li>
               </ul>
             </div>
           </section>
@@ -243,7 +244,7 @@ function PrivacyPage() {
           <section id="rights" className="scroll-mt-8 space-y-3">
             <SectionHeading number="10" title="Your NDPA Statutory Rights" />
             <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-              Under Sections 34–38 of the Nigeria Data Protection Act 2023, you have the following enforceable rights:
+              Under the Nigeria Data Protection Act 2023 (NDPA), you have the following enforceable statutory rights:
             </p>
             <div className="grid gap-3 sm:grid-cols-2 text-xs md:text-sm text-muted-foreground">
               <div className="rounded-lg border border-border bg-card p-3">
@@ -294,16 +295,16 @@ function PrivacyPage() {
             </div>
           </section>
 
-          {/* Section 13 — Contact & DPO */}
+          {/* Section 13 — Contact Information */}
           <section id="contact" className="scroll-mt-8 space-y-3 border-t border-border/40 pt-8">
-            <SectionHeading number="13" title="Contact Us & Data Protection Officer" />
+            <SectionHeading number="13" title="Contact Information" />
             <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-              To exercise your statutory privacy rights, update your profile, or submit a data inquiry, contact our Data Protection Officer (DPO) and compliance team:
+              To exercise your statutory privacy rights, update your profile, or submit a data inquiry, contact our team:
             </p>
             <div className="rounded-xl border border-border bg-card p-4 text-xs md:text-sm space-y-1 text-muted-foreground">
-              <p><strong className="text-foreground">Data Controller:</strong> TixNaija</p>
-              <p><strong className="text-foreground">Privacy & Support Email:</strong> tixnaijaapp@gmail.com</p>
-              <p><strong className="text-foreground">Contact Phone / WhatsApp:</strong> +234 901 127 5275</p>
+              <p><strong className="text-foreground">Platform:</strong> {BUSINESS_DETAILS.platformName}</p>
+              <p><strong className="text-foreground">Email:</strong> <a href={`mailto:${BUSINESS_DETAILS.supportEmail}`} className="text-foreground underline">{BUSINESS_DETAILS.supportEmail}</a></p>
+              <p><strong className="text-foreground">Phone:</strong> {BUSINESS_DETAILS.supportPhone}</p>
             </div>
           </section>
         </main>

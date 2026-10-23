@@ -447,7 +447,6 @@ function EventDetailPage() {
   function onCheckout() {
     if (!totalCount) return;
     if (!sessionUser) {
-      toast.error("You must create an account or sign in to buy tickets.", { duration: 5000 });
       navigate({ to: "/auth", search: { mode: "signup", redirect: `/e/${slug}` } });
       return;
     }
@@ -611,6 +610,7 @@ function EventDetailPage() {
               setWaitlistOpen(true);
             }}
             socialProof={(data as any).socialProof}
+            isAuthenticated={!!sessionUser}
           />
           {similarEvents && similarEvents.length > 0 && <SimilarEvents events={similarEvents} />}
         </>
@@ -635,14 +635,19 @@ function EventDetailPage() {
                   <p className="truncate font-display text-xl leading-none">
                     {totalKobo ? formatNaira(totalKobo) : "Pick a tier"}
                   </p>
+                  {!sessionUser && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                      Account needed · Tickets tied to account
+                    </p>
+                  )}
                 </div>
                 <Button
                   onClick={onCheckout}
                   disabled={!totalCount}
                   size="lg"
-                  className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90 disabled:opacity-40"
+                  className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90 disabled:opacity-40 shrink-0"
                 >
-                  Buy tickets
+                  {!sessionUser ? "Sign in to buy" : "Buy tickets"}
                 </Button>
               </div>
             </div>
@@ -1082,6 +1087,7 @@ function EventBody({
   totalKobo,
   onJoinWaitlist,
   socialProof,
+  isAuthenticated,
 }: {
   event: NonNullable<Awaited<ReturnType<typeof fetchEventBySlug>>>["event"];
   types: TicketType[];
@@ -1092,6 +1098,7 @@ function EventBody({
   totalKobo: number;
   onJoinWaitlist: (tier: TicketType) => void;
   socialProof: any;
+  isAuthenticated?: boolean;
 }) {
   const start = new Date(event.start_datetime);
   const end = event.end_datetime
@@ -1426,6 +1433,11 @@ function EventBody({
                 {totalKobo ? formatNaira(totalKobo) : "—"}
               </span>
             </div>
+            {!isAuthenticated && (
+              <p className="mt-3 text-xs text-muted-foreground text-center">
+                An account is needed to buy tickets. Your tickets will be securely tied to it.
+              </p>
+            )}
             <Button
               disabled={!totalCount || isPastEvent || event.status === "cancelled"}
               onClick={onCheckout}
@@ -1436,7 +1448,9 @@ function EventBody({
                 ? "Event ended"
                 : event.status === "cancelled"
                   ? "Sales closed"
-                  : "Buy tickets"}
+                  : !isAuthenticated
+                    ? "Sign in to buy"
+                    : "Buy tickets"}
             </Button>
           </div>
         </aside>
