@@ -98,7 +98,7 @@ function PrivacyPage() {
           <section id="intro" className="scroll-mt-8 space-y-3">
             <SectionHeading number="01" title="Introduction" />
             <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-              <strong className="text-foreground">TixNaija</strong> (referred to as "we", "us", or "our"), operated by <strong className="text-foreground">{"{{BUSINESS_LEGAL_NAME}}"}</strong> (RC/CAC: {"{{RC_NUMBER}}"}), is committed to safeguarding the personal data of our users. This Privacy Policy governs our data handling practices for ticket buyers, event attendees, event organizers, and platform visitors.
+              <strong className="text-foreground">TixNaija</strong> (referred to as "we", "us", or "our") is committed to safeguarding the personal data of our users. This Privacy Policy governs our data handling practices for ticket buyers, event attendees, event organizers, and platform visitors.
             </p>
             <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
               TixNaija is proudly independent and completely separate from Tix Africa. This platform operates under its own legal entity, data controllership, and technical architecture.
@@ -301,10 +301,8 @@ function PrivacyPage() {
               To exercise your statutory privacy rights, update your profile, or submit a data inquiry, contact our Data Protection Officer (DPO) and compliance team:
             </p>
             <div className="rounded-xl border border-border bg-card p-4 text-xs md:text-sm space-y-1 text-muted-foreground">
-              <p><strong className="text-foreground">Data Controller:</strong> {"{{BUSINESS_LEGAL_NAME}}"}</p>
-              <p><strong className="text-foreground">Corporate Registration:</strong> RC/CAC Number: {"{{RC_NUMBER}}"}</p>
-              <p><strong className="text-foreground">Registered Office:</strong> {"{{REGISTERED_ADDRESS}}"}</p>
-              <p><strong className="text-foreground">DPO Email:</strong> {"{{DPO_EMAIL}}"} / tixnaijaapp@gmail.com</p>
+              <p><strong className="text-foreground">Data Controller:</strong> TixNaija</p>
+              <p><strong className="text-foreground">Privacy & Support Email:</strong> tixnaijaapp@gmail.com</p>
               <p><strong className="text-foreground">Contact Phone / WhatsApp:</strong> +234 901 127 5275</p>
             </div>
           </section>

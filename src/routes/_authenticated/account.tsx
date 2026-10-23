@@ -1595,7 +1595,7 @@ function ApplicationForm({
             <strong className="text-foreground">Privacy Notice (Identity Verification):</strong> We collect your identity photo solely to verify organizer identity, prevent ticket fraud, and ensure platform safety in compliance with the Nigeria Data Protection Act 2023 (NDPA).
           </p>
           <p>
-            Your document is stored in a private, access-restricted storage bucket accessible only to authorized administrators reviewing your application. It is never made public or used for marketing. Uploaded identity files are retained for {"{{RETENTION_PERIODS.KYC_DOCUMENTS}}"} after review, after which they are permanently deleted. For details on how we protect your information, see our{" "}
+            Your document is stored in a private, access-restricted storage bucket accessible only to authorized administrators reviewing your application. It is never made public or used for marketing. Uploaded identity files are retained for 30 days after review, after which they are permanently deleted. For details on how we protect your information, see our{" "}
             <a href="/privacy" target="_blank" rel="noreferrer" className="underline hover:text-foreground">
               Privacy Policy
             </a>

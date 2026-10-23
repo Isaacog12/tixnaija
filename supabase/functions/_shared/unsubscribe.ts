@@ -1,3 +1,4 @@
+// @ts-nocheck
 // supabase/functions/_shared/unsubscribe.ts
 //
 // Cryptographically signed token utility for one-click, session-less unsubscriptions.

@@ -27,11 +27,7 @@ function VerifyCheckoutPage() {
   
   const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying");
   const [errorMsg, setErrorMsg] = useState("");
-  const [userId, setUserId] = useState<string | null>(null);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }: { data: any }) => setUserId(data.session?.user?.id || null));
-  }, []);
 
   useEffect(() => {
     if (!reference) {
@@ -80,32 +76,17 @@ function VerifyCheckoutPage() {
             <CheckCircle className="mb-6 h-16 w-16 text-green-500" />
             <h1 className="font-display text-3xl">Payment Successful!</h1>
             
-            {userId ? (
-              <>
-                <p className="mt-2 text-muted-foreground">
-                  Your tickets have been generated. We've sent them to your email and your notifications.
-                </p>
-                <Button asChild className="mt-8 w-full gradient-sunset press-sm transition-all duration-[120ms]" size="lg">
-                  <Link to="/notifications">Go to Notifications</Link>
-                </Button>
-              </>
-            ) : (
-              <>
-                <p className="mt-2 text-muted-foreground">
-                  Your tickets have been sent to your email. You can also view and download them using your email address.
-                </p>
-                <Button asChild className="mt-6 w-full gradient-sunset press-sm transition-all duration-[120ms]" size="lg">
-                  <Link to="/my-tickets">View My Tickets</Link>
-                </Button>
-                <p className="mt-4 text-xs text-muted-foreground">
-                  Want everything in one place?{" "}
-                  <Link to="/auth" search={{ mode: "signup" }} className="text-primary hover:underline">
-                    Create a free account
-                  </Link>
-                  {" "}with the email you used at checkout.
-                </p>
-              </>
-            )}
+            <p className="mt-2 text-muted-foreground">
+              Your tickets have been generated and sent to your email. You can also view and download them right now in your account.
+            </p>
+            <div className="mt-8 flex flex-col sm:flex-row gap-3 w-full">
+              <Button asChild className="flex-1 gradient-sunset text-primary-foreground press-sm transition-all duration-[120ms]" size="lg">
+                <Link to="/my-tickets">View My Tickets</Link>
+              </Button>
+              <Button asChild variant="outline" className="flex-1" size="lg">
+                <Link to="/notifications">Notifications</Link>
+              </Button>
+            </div>
           </>
         )}
 

@@ -126,14 +126,20 @@ export default function HomeScreen({ navigation }: any) {
     try {
       const { data, error } = await supabase
         .from('events')
-        .select('id, title, start_datetime, venue_name, cover_image_url')
+        .select('id, title, start_datetime, end_datetime, venue_name, cover_image_url')
         .eq('status', 'published')
         .ilike('title', `%${query}%`)
         .order('start_datetime', { ascending: true })
         .limit(20);
 
       if (!error && data) {
-        setSearchResults(data);
+        const now = new Date();
+        const upcomingResults = data.filter((ev: any) => {
+          const start = new Date(ev.start_datetime);
+          const end = ev.end_datetime ? new Date(ev.end_datetime) : start;
+          return end >= now;
+        });
+        setSearchResults(upcomingResults);
       }
     } catch (err) {
       console.error('Search error', err);
@@ -144,27 +150,37 @@ export default function HomeScreen({ navigation }: any) {
 
   const fetchEvents = async () => {
     try {
-      // 1. Try to load cached data first
+      const now = new Date();
+      // 1. Try to load cached data first (filtering out expired ones)
       const cached = await AsyncStorage.getItem('cached_home_events');
       if (cached) {
-        const events = JSON.parse(cached);
-        setAllEvents(events);
-        setFeaturedEvents(events.slice(0, 3));
-        setUpcomingEvents(events.slice(3, 10));
+        const allCached = JSON.parse(cached);
+        const validCached = allCached.filter((ev: any) => {
+          const start = new Date(ev.start_datetime);
+          const end = ev.end_datetime ? new Date(ev.end_datetime) : start;
+          return end >= now;
+        });
+        setAllEvents(validCached);
+        setFeaturedEvents(validCached.slice(0, 3));
+        setUpcomingEvents(validCached.slice(3, 10));
         setLoading(false); // Stop loading early if we have cache
       }
       
       // 2. Fetch fresh data
       const { data, error } = await supabase
         .from('events')
-        .select('id, title, start_datetime, venue_name, cover_image_url')
+        .select('id, title, start_datetime, end_datetime, venue_name, cover_image_url')
         .eq('status', 'published')
         .order('start_datetime', { ascending: true })
         .limit(30);
       
       if (error) throw error;
       
-      const events = data || [];
+      const events = (data || []).filter((ev: any) => {
+        const start = new Date(ev.start_datetime);
+        const end = ev.end_datetime ? new Date(ev.end_datetime) : start;
+        return end >= now;
+      });
       
       // 3. Update state and cache
       setAllEvents(events);

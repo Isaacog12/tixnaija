@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { sendEmail } from "../_shared/zeptomail.ts";
@@ -82,8 +83,7 @@ serve(async (req) => {
                 <a href="${unsubUrl}" style="color: #ea580c; text-decoration: underline;">Click here to unsubscribe instantly</a> or manage your <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a>.
               </p>
               <p style="margin: 0; font-size: 11px; color: #9ca3af;">
-                {{BUSINESS_LEGAL_NAME}} · RC/CAC: {{RC_NUMBER}}<br />
-                Registered Address: {{REGISTERED_ADDRESS}}
+                TixNaija · Lagos, Nigeria
               </p>
             </div>
           </div>

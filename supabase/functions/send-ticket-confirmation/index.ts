@@ -170,8 +170,7 @@ serve(async (req: Request) => {
             Manage notifications: <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a>
           </p>
           <p style="margin: 12px 0 0; font-size: 11px; color: #636366; line-height: 1.4;">
-            {{BUSINESS_LEGAL_NAME}} · RC/CAC: {{RC_NUMBER}}<br />
-            Registered Address: {{REGISTERED_ADDRESS}}
+            TixNaija · Lagos, Nigeria
           </p>
         </div>
       </div>
@@ -299,8 +298,7 @@ serve(async (req: Request) => {
               Manage notifications: <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a>
             </p>
             <p style="margin: 12px 0 0; font-size: 11px; color: #636366; line-height: 1.4;">
-              {{BUSINESS_LEGAL_NAME}} · RC/CAC: {{RC_NUMBER}}<br />
-              Registered Address: {{REGISTERED_ADDRESS}}
+              TixNaija · Lagos, Nigeria
             </p>
           </div>
         </div>

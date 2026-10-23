@@ -446,6 +446,11 @@ function EventDetailPage() {
 
   function onCheckout() {
     if (!totalCount) return;
+    if (!sessionUser) {
+      toast.error("You must create an account or sign in to buy tickets.", { duration: 5000 });
+      navigate({ to: "/auth", search: { mode: "signup", redirect: `/e/${slug}` } });
+      return;
+    }
     setCheckoutOpen(true);
   }
 

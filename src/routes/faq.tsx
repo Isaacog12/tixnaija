@@ -41,11 +41,11 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "Do I need to create an account to buy a ticket?",
-        a: "No — you can check out as a guest using just your name and email. Creating an account lets you see all your tickets in one place under 'My Tickets'.",
+        a: "Yes. To protect your tickets from unauthorized access, prevent fraud, and ensure easy recovery, an account is required before checkout. Creating an account takes less than a minute and lets you access your tickets anytime under 'My Tickets'.",
       },
       {
         q: "Where do I find my tickets after purchase?",
-        a: "Check your email for a confirmation with your QR tickets attached. If you created an account, you can also visit My Tickets at any time to view and download them.",
+        a: "Your tickets are sent immediately to your registered email address with QR codes attached. You can also log into your TixNaija account and view or download them anytime in My Tickets.",
       },
       {
         q: "Can I buy tickets for someone else?",

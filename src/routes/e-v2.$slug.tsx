@@ -423,6 +423,11 @@ function EventDetailPage() {
 
   function onCheckout() {
     if (!totalCount) return;
+    if (!sessionUser) {
+      toast.error("You must create an account or sign in to buy tickets.", { duration: 5000 });
+      navigate({ to: "/auth", search: { mode: "signup", redirect: `/e-v2/${slug}` } });
+      return;
+    }
     setCheckoutOpen(true);
   }
 
@@ -430,7 +435,7 @@ function EventDetailPage() {
     if (!waitlistTier || !data?.event) return;
     setWaitlistBusy(true);
     try {
-      const { error } = await supabase.from("waitlist_entries").insert({
+      const { error } = await (supabase.from("waitlist_entries" as any) as any).insert({
         event_id: data.event.id,
         ticket_tier_id: waitlistTier.id,
         user_id: userId,

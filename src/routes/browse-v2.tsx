@@ -77,7 +77,12 @@ async function fetchEvents(q: string, category: string, dateFilter: string) {
   const { data, error } = await query;
   if (error) throw error;
 
-  const validEvents: any[] = data ?? [];
+  const validEvents: any[] = (data ?? []).filter((ev: any) => {
+    if (ev.status === "completed" || ev.status === "cancelled") return false;
+    const start = new Date(ev.start_datetime);
+    const end = ev.end_datetime ? new Date(ev.end_datetime) : start;
+    return end >= now;
+  });
 
   let minPrice: Record<string, number> = {};
   for (const ev of validEvents) {
