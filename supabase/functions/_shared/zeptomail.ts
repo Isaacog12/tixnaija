@@ -10,6 +10,8 @@
 // Get ZEPTOMAIL_TOKEN from: ZeptoMail dashboard > your Agent > SMTP/API tab
 // > Send Mail Token.
 
+declare const Deno: any;
+
 const ZEPTOMAIL_URL = "https://api.zeptomail.com/v1.1/email";
 
 interface SendEmailParams {
@@ -24,9 +26,7 @@ export async function sendEmail(
   { to, subject, htmlBody, textBody, headers }: SendEmailParams,
 ) {
   const token = Deno.env.get("ZEPTOMAIL_TOKEN");
-  const fromAddress = Deno.env.get("MAIL_FROM_ADDRESS") ??
-    "noreply@tixnaija.name.ng";
-  "tixnaija@tixnaija.name.ng";
+  const fromAddress = Deno.env.get("MAIL_FROM_ADDRESS") ?? "noreply@tixnaija.name.ng";
   const fromName = Deno.env.get("MAIL_FROM_NAME") ?? "TixNaija";
 
   if (!token) {

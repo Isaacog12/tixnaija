@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { GlobalLoader } from "@/components/global-loader";
 import { BackButton } from "@/components/back-button";
 import { toast } from "sonner";
+import { BUSINESS_DETAILS } from "@/lib/business";
 import type { Tables } from "@/lib/database.types";
 
 // This route is intentionally NOT under _authenticated —
@@ -259,6 +260,32 @@ function OrderTicketsPage() {
                  </Button>
               </div>
             )}
+
+            {/* Need Help Support Banner */}
+            <div className="rounded-2xl border border-border/70 bg-card/70 backdrop-blur-md p-4 text-center sm:text-left sm:flex sm:items-center sm:justify-between gap-4 shadow-sm">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Need help or missing an email?</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Contact support directly on WhatsApp/Text ({BUSINESS_DETAILS.supportPhone}) or email ({BUSINESS_DETAILS.supportEmail}).
+                </p>
+              </div>
+              <div className="mt-3 sm:mt-0 flex items-center justify-center gap-2 shrink-0">
+                <a
+                  href={`https://wa.me/${BUSINESS_DETAILS.supportPhone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hello TixNaija Support, I need assistance with Order ${data.order?.id || ""}.`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-3 py-1.5 text-xs font-semibold transition-colors"
+                >
+                  WhatsApp
+                </a>
+                <a
+                  href={`mailto:${BUSINESS_DETAILS.supportEmail}?subject=${encodeURIComponent(`Order Support - ${data.order?.id || ""}`)}`}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border px-3 py-1.5 text-xs font-medium transition-colors"
+                >
+                  Email
+                </a>
+              </div>
+            </div>
           </div>
         )}
       </div>
