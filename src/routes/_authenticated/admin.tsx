@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import {
   Users, Calendar, BarChart3, Search, MoreVertical,
   Ban, CheckCircle, ClipboardList, ExternalLink, ShieldOff, ShieldCheck, Trash2, Image as ImageIcon, RefreshCcw, Briefcase,
+  ShieldAlert, Mail,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -240,6 +241,22 @@ function AdminDashboard() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const customerCareRoleMutation = useMutation({
+    mutationFn: async ({ userId, grant }: { userId: string; grant: boolean }) => {
+      const { error } = await (supabase.rpc as any)("admin_set_customer_care_role", {
+        p_user_id: userId,
+        p_grant: grant,
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      toast.success(variables.grant ? "Customer Care role granted." : "Customer Care role revoked.");
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   const filteredUsers = useMemo(() => {
     return (users ?? []).filter((u) => {
       const q = userSearch.toLowerCase();
@@ -269,8 +286,9 @@ function AdminDashboard() {
             <div className="flex gap-2 flex-wrap">
               {roles.includes("admin") && <Badge className="uppercase tracking-wider text-[10px] font-bold">Admin</Badge>}
               {roles.includes("organizer") && <Badge variant="secondary" className="uppercase tracking-wider text-[10px] font-bold border-border/50">Organizer</Badge>}
+              {roles.includes("customer_care") && <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white uppercase tracking-wider text-[10px] font-bold">Support</Badge>}
               {roles.includes("organizer") && u.is_verified_organizer && <Badge className="bg-blue-500 hover:bg-blue-600 text-white uppercase tracking-wider text-[10px] font-bold">Verified</Badge>}
-              {!roles.includes("admin") && !roles.includes("organizer") && <span className="text-xs text-muted-foreground font-medium">User</span>}
+              {!roles.includes("admin") && !roles.includes("organizer") && !roles.includes("customer_care") && <span className="text-xs text-muted-foreground font-medium">User</span>}
               {u.suspended && <Badge variant="destructive" className="uppercase tracking-wider text-[10px] font-bold">Suspended</Badge>}
             </div>
           );
@@ -324,6 +342,28 @@ function AdminDashboard() {
                       <span className="font-medium">{u.is_verified_organizer ? "Unverify Organizer" : "Verify Organizer"}</span>
                     </DropdownMenuItem>
                   )}
+
+                  {/* Customer Care Staff Role Management */}
+                  {u.roles.includes("customer_care") ? (
+                    <DropdownMenuItem
+                      className="text-amber-500 focus:text-amber-500 focus:bg-amber-500/10 rounded-xl px-3 py-2 cursor-pointer"
+                      onClick={() => customerCareRoleMutation.mutate({ userId: u.id, grant: false })}
+                    >
+                      <ShieldOff className="mr-2 h-4 w-4" />
+                      <span className="font-medium">Revoke Customer Care</span>
+                    </DropdownMenuItem>
+                  ) : (
+                    !u.roles.includes("organizer") && (
+                      <DropdownMenuItem
+                        className="text-emerald-500 focus:text-emerald-500 focus:bg-emerald-500/10 rounded-xl px-3 py-2 cursor-pointer"
+                        onClick={() => customerCareRoleMutation.mutate({ userId: u.id, grant: true })}
+                      >
+                        <ShieldCheck className="mr-2 h-4 w-4" />
+                        <span className="font-medium">Grant Customer Care</span>
+                      </DropdownMenuItem>
+                    )
+                  )}
+
                   {u.suspended ? (
                     <DropdownMenuItem
                       className="text-green-500 focus:text-green-500 focus:bg-green-500/10 rounded-xl px-3 py-2 cursor-pointer"
@@ -570,6 +610,30 @@ function AdminDashboard() {
           subtext="Manage slots &rarr;"
           colorClass="primary"
         />
+        <LinkCard 
+          to="/support"
+          icon={ShieldCheck}
+          label="Support"
+          value="Care"
+          subtext="Support portal &rarr;"
+          colorClass="emerald"
+        />
+        <LinkCard 
+          to="/admin/email-changes"
+          icon={Mail}
+          label="Email Changes"
+          value="Approvals"
+          subtext="Dual-control &rarr;"
+          colorClass="amber"
+        />
+        <LinkCard 
+          to="/admin/audit-logs"
+          icon={ShieldAlert}
+          label="Audit Logs"
+          value="Security"
+          subtext="Audit trail &rarr;"
+          colorClass="blue"
+        />
       </motion.div>
 
       <div className="mb-12 rounded-3xl border border-destructive/20 bg-destructive/5 p-6">
@@ -736,11 +800,12 @@ function LinkCard({
   label: string;
   value: string | number;
   subtext: string;
-  colorClass: "amber" | "blue" | "primary";
+  colorClass: "amber" | "blue" | "emerald" | "primary";
 }) {
   const colorStyles = {
     amber: "border-amber-500/30 text-amber-500 hover:border-amber-500/60 hover:shadow-amber-500/10 bg-amber-500/10 hover:bg-amber-500/20",
     blue: "border-blue-500/30 text-blue-500 hover:border-blue-500/60 hover:shadow-blue-500/10 bg-blue-500/10 hover:bg-blue-500/20",
+    emerald: "border-emerald-500/30 text-emerald-500 hover:border-emerald-500/60 hover:shadow-emerald-500/10 bg-emerald-500/10 hover:bg-emerald-500/20",
     primary: "border-primary/30 text-primary hover:border-primary/60 hover:shadow-primary/10 bg-primary/10 hover:bg-primary/20",
   };
 
@@ -749,7 +814,7 @@ function LinkCard({
   const hoverBgClass = "bg-" + style.split(" bg-")[1];
 
   return (
-    <Link to={to} className="group block cursor-pointer h-full">
+    <Link to={to as any} className="group block cursor-pointer h-full">
       <div className={`rounded-2xl border flex flex-col justify-between shadow-sm transition-all h-full p-5 bg-card ${bgClass}`}>
         <div className="flex items-start justify-between">
           <div className={`rounded-xl p-2.5 transition-colors ${hoverBgClass}`}>

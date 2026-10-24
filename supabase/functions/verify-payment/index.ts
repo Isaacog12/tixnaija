@@ -197,6 +197,29 @@ serve(async (req) => {
         });
       }
 
+      const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+      const supabase = createClient(supabaseUrl, supabaseKey);
+
+      // Record charge event into payment_events
+      try {
+        await supabase.from("payment_events").upsert(
+          {
+            reference: txData.reference,
+            event_type: event.event,
+            amount_kobo: txData.amount,
+            customer_email: txData.customer?.email || null,
+            channel: txData.channel || null,
+            status: txData.status,
+            metadata: txData.metadata || null,
+            raw_payload: event,
+          },
+          { onConflict: "reference,event_type" }
+        );
+      } catch (logErr) {
+        console.error("Failed to persist payment_event:", logErr);
+      }
+
       const metadata = txData.metadata;
       if (!metadata || !metadata.eventId || !metadata.tickets) {
         return new Response(
@@ -210,6 +233,15 @@ serve(async (req) => {
         txData.amount,
         metadata,
       );
+
+      // Link matched order ID in payment_events
+      if (result && result.order_id) {
+        await supabase
+          .from("payment_events")
+          .update({ matched_order_id: result.order_id })
+          .eq("reference", txData.reference)
+          .eq("event_type", event.event);
+      }
 
       return new Response(JSON.stringify({ success: true, ...result }), {
         headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },

@@ -971,7 +971,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "attendee" | "organizer" | "admin"
+      app_role: "attendee" | "organizer" | "admin" | "customer_care"
       application_status: "pending" | "approved" | "rejected"
       discount_type: "percent" | "fixed"
       event_category:
@@ -1118,7 +1118,7 @@ export const Constants = {
   },
   public: {
     Enums: {
-      app_role: ["attendee", "organizer", "admin"],
+      app_role: ["attendee", "organizer", "admin", "customer_care"],
       application_status: ["pending", "approved", "rejected"],
       discount_type: ["percent", "fixed"],
       event_category: [

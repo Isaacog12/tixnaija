@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { formatNaira } from "@/lib/currency";
 import { BackButton } from "@/components/back-button";
-import { Ticket as TicketIcon, Calendar, MapPin, QrCode, RefreshCcw, Frown } from "lucide-react";
+import { Ticket as TicketIcon, Calendar, MapPin, QrCode, RefreshCcw, Frown, HelpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -207,6 +207,114 @@ function RefundRequestModal({ open, onClose, event, ticketId, buyerEmail, buyerN
   );
 }
 
+interface SupportCaseModalProps {
+  open: boolean;
+  onClose: () => void;
+  event: {
+    id: string;
+    title: string;
+  };
+  orderId?: string;
+}
+
+function SupportCaseModal({ open, onClose, event, orderId }: SupportCaseModalProps) {
+  const [subject, setSubject] = useState("");
+  const [category, setCategory] = useState<"missing_ticket" | "payment" | "refund" | "event_inquiry" | "other">("missing_ticket");
+  const [description, setDescription] = useState("");
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      if (!subject.trim()) throw new Error("Please enter a subject.");
+      if (!description.trim() || description.trim().length < 5) throw new Error("Please describe your issue in detail.");
+
+      const { data, error } = await (supabase.rpc as any)("open_support_case", {
+        p_subject: subject.trim(),
+        p_category: category,
+        p_description: description.trim(),
+        p_order_id: orderId || null,
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      toast.success(`Support case opened! Reference: ${data?.case_number || "Submitted"}. Our care team will reply shortly.`);
+      setSubject("");
+      setDescription("");
+      onClose();
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Failed to open support case. Please try again.");
+    },
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="sm:max-w-md rounded-[2rem] p-6 border-border/50 shadow-2xl">
+        <DialogHeader className="mb-2">
+          <DialogTitle className="font-display text-2xl tracking-tight">Need Help with Your Order?</DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground mt-1">
+            Open a support inquiry for <span className="font-medium text-foreground">{event.title}</span>. Our care team will respond directly.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }} className="space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-muted-foreground">Category</Label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as any)}
+              className="w-full h-11 px-3 rounded-xl border border-border/60 bg-card text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="missing_ticket">Missing Ticket / Resend Issue</option>
+              <option value="payment">Payment / Bank Transfer Issue</option>
+              <option value="event_inquiry">Event Schedule / Venue Question</option>
+              <option value="other">Other Inquiry</option>
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-muted-foreground">Subject</Label>
+            <input
+              type="text"
+              placeholder="e.g. Need ticket sent to another email"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              maxLength={150}
+              className="w-full h-11 px-3 rounded-xl border border-border/60 bg-card text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-muted-foreground">Message Details</Label>
+            <Textarea
+              placeholder="Please describe how we can assist you..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={4}
+              className="rounded-xl text-sm"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={onClose} className="rounded-xl">
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={mutation.isPending}
+              className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+            >
+              {mutation.isPending ? "Submitting..." : "Send to Support"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
 /** Stagger delay per card (ms) — matches the original framer-motion staggerChildren: 0.1 */
 const STAGGER_MS = 80;
 
@@ -344,6 +452,7 @@ function TicketsPage() {
 
 function EventList({ events, emptyMessage, type }: { events: any[]; emptyMessage: string; type: "upcoming" | "live" | "past" }) {
   const [refundTarget, setRefundTarget] = useState<{ event: any; ticketId: string } | null>(null);
+  const [supportTarget, setSupportTarget] = useState<{ event: any; orderId?: string } | null>(null);
   const [userEmail, setUserEmail] = useState<string>("");
   const [userName, setUserName] = useState<string>("");
 
@@ -470,24 +579,42 @@ function EventList({ events, emptyMessage, type }: { events: any[]; emptyMessage
                     Request Refund
                   </Button>
                 )}
+
+                <Button
+                  variant="ghost"
+                  className="w-full text-muted-foreground hover:text-foreground text-sm gap-2 font-medium h-10 rounded-xl"
+                  onClick={() =>
+                    setSupportTarget({ event: ev, orderId: ev.orderId })
+                  }
+                >
+                  <HelpCircle className="h-4 w-4" />
+                  Need Help with Order?
+                </Button>
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      
-        {refundTarget && (
-          <RefundRequestModal
-            open={!!refundTarget}
-            onClose={() => setRefundTarget(null)}
-            event={refundTarget.event}
-            ticketId={refundTarget.ticketId}
-            buyerEmail={userEmail}
-            buyerName={userName}
-          />
-        )}
-      
+      {refundTarget && (
+        <RefundRequestModal
+          open={!!refundTarget}
+          onClose={() => setRefundTarget(null)}
+          event={refundTarget.event}
+          ticketId={refundTarget.ticketId}
+          buyerEmail={userEmail}
+          buyerName={userName}
+        />
+      )}
+
+      {supportTarget && (
+        <SupportCaseModal
+          open={!!supportTarget}
+          onClose={() => setSupportTarget(null)}
+          event={supportTarget.event}
+          orderId={supportTarget.orderId}
+        />
+      )}
     </>
   );
 }
