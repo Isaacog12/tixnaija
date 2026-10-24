@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/admin_/support-cases" as any)({
+export const Route = createFileRoute("/_authenticated/admin_/support-cases")({
   beforeLoad: async () => {
     const {
       data: { session },

@@ -33,7 +33,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export const Route = createFileRoute("/_authenticated/admin_/audit-logs" as any)({
+export const Route = createFileRoute("/_authenticated/admin_/audit-logs")({
   beforeLoad: async () => {
     const {
       data: { session },

@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/admin_/email-changes" as any)({
+export const Route = createFileRoute("/_authenticated/admin_/email-changes")({
   beforeLoad: async () => {
     const {
       data: { session },

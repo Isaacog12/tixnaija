@@ -26,7 +26,7 @@ import { SupportCasesTab } from "@/components/support/SupportCasesTab";
 import { SupportEventsTab } from "@/components/support/SupportEventsTab";
 import { SupportMacrosTab } from "@/components/support/SupportMacrosTab";
 
-export const Route = createFileRoute("/_authenticated/support" as any)({
+export const Route = createFileRoute("/_authenticated/support")({
   beforeLoad: async () => {
     const {
       data: { session },
