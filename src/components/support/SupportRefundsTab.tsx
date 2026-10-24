@@ -44,8 +44,24 @@ export function SupportRefundsTab() {
   const qc = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedRefund, setSelectedRefund] = useState<any>(null);
-  const [recommendStatus, setRecommendStatus] = useState<"needs_admin_review" | "customer_contacted">("needs_admin_review");
+  const [recommendStatus, setRecommendStatus] = useState<string>("needs_admin_review");
   const [recommendNote, setRecommendNote] = useState<string>("");
+
+  // Check if current user is admin
+  const { data: isAdmin } = useQuery({
+    queryKey: ["current-user-is-admin"],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return false;
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      return Boolean(data);
+    },
+  });
 
   // Fetch refund requests via support_get_refund_requests
   const { data: refundRequests, isLoading, refetch } = useQuery({
@@ -287,13 +303,23 @@ export function SupportRefundsTab() {
                       <SelectItem value="customer_contacted">
                         Customer Contacted (Gathering Info / Denied by Organizer Policy)
                       </SelectItem>
+                      {isAdmin && (
+                        <>
+                          <SelectItem value="approved" className="text-emerald-400 font-medium">
+                            ✓ Approve Refund (Final Decision & Ticket Invalidation)
+                          </SelectItem>
+                          <SelectItem value="rejected" className="text-rose-400 font-medium">
+                            ✕ Reject Claim (Final Decision)
+                          </SelectItem>
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground">
-                    Support Staff Justification Note:
+                    Support Staff / Admin Justification Note:
                   </label>
                   <Textarea
                     placeholder="e.g. Organizer postponed date by 2 weeks; buyer cannot attend. Recommending approval under platform policy."
@@ -330,9 +356,21 @@ export function SupportRefundsTab() {
                 });
               }}
               disabled={recommendMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs"
+              className={`rounded-xl text-xs text-white ${
+                recommendStatus === "approved"
+                  ? "bg-emerald-600 hover:bg-emerald-500"
+                  : recommendStatus === "rejected"
+                  ? "bg-rose-600 hover:bg-rose-500"
+                  : "bg-blue-600 hover:bg-blue-500"
+              }`}
             >
-              {recommendMutation.isPending ? "Submitting..." : "Save Recommendation"}
+              {recommendMutation.isPending
+                ? "Submitting..."
+                : recommendStatus === "approved"
+                ? "Approve Refund"
+                : recommendStatus === "rejected"
+                ? "Reject Claim"
+                : "Save Recommendation"}
             </Button>
           </DialogFooter>
         </DialogContent>

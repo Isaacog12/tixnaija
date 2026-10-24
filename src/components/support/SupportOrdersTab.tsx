@@ -14,6 +14,7 @@ import {
   Calendar,
   Lock,
   RefreshCw,
+  FileText,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/currency";
@@ -71,6 +72,10 @@ export function SupportOrdersTab({
 
   // Resend Modal
   const [resendConfirmOpen, setResendConfirmOpen] = useState(false);
+
+  // Order Notes State
+  const [newNote, setNewNote] = useState("");
+  const [noteInputVisible, setNoteInputVisible] = useState(false);
 
   useEffect(() => {
     if (initialOrderId) {
@@ -179,9 +184,31 @@ export function SupportOrdersTab({
     },
   });
 
+  // Add Internal Order Note Mutation
+  const addNoteMutation = useMutation({
+    mutationFn: async ({ orderId, note }: { orderId: string; note: string }) => {
+      const { data, error } = await (supabase.rpc as any)("support_add_order_note", {
+        p_order_id: orderId,
+        p_note: note,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Staff note logged successfully.");
+      setNewNote("");
+      setNoteInputVisible(false);
+      refetchDetails();
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to add note");
+    },
+  });
+
   const orderData = orderDetails?.order;
   const ticketsData = orderDetails?.tickets || [];
   const outboxData = orderDetails?.delivery_log || orderDetails?.outbox || [];
+  const notesData = orderDetails?.notes || [];
 
   return (
     <div className="space-y-6">
@@ -372,12 +399,12 @@ export function SupportOrdersTab({
                     <span className="font-semibold">{orderData.buyer_name || "N/A"}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Masked Email: </span>
-                    <span className="font-mono font-medium">{orderData.masked_buyer_email}</span>
+                    <span className="text-muted-foreground">Buyer Email: </span>
+                    <span className="font-mono font-medium">{orderData?.buyer_email || orderData?.masked_buyer_email || "N/A"}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Masked Phone: </span>
-                    <span className="font-mono">{orderData.masked_buyer_phone || "N/A"}</span>
+                    <span className="text-muted-foreground">Buyer Phone: </span>
+                    <span className="font-mono">{orderData?.buyer_phone || orderData?.masked_buyer_phone || "N/A"}</span>
                   </div>
                 </div>
 
@@ -418,6 +445,15 @@ export function SupportOrdersTab({
                   <Button
                     size="sm"
                     variant="outline"
+                    onClick={() => setNoteInputVisible((v) => !v)}
+                    className="h-8 rounded-xl text-xs gap-1.5"
+                  >
+                    <FileText className="h-3.5 w-3.5 text-emerald-400" />
+                    Add Note
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
                     onClick={() => setResendConfirmOpen(true)}
                     className="h-8 rounded-xl text-xs gap-1.5"
                   >
@@ -435,6 +471,74 @@ export function SupportOrdersTab({
                   </Button>
                 </div>
               </div>
+
+              {/* Note Input Box */}
+              {noteInputVisible && (
+                <div className="p-3.5 rounded-xl bg-secondary/30 border border-emerald-500/20 space-y-2">
+                  <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                    <FileText className="h-3.5 w-3.5 text-emerald-400" />
+                    Log Internal Staff Note
+                  </div>
+                  <Textarea
+                    placeholder="Enter confidential internal note (e.g. Buyer called confirming name typo, ID verified)..."
+                    value={newNote}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    rows={2}
+                    className="rounded-xl text-xs"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setNoteInputVisible(false)}
+                      className="h-7 text-xs rounded-lg"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={addNoteMutation.isPending || !newNote.trim()}
+                      onClick={() => {
+                        if (!newNote.trim()) return;
+                        inspectOrderId &&
+                          addNoteMutation.mutate({
+                            orderId: inspectOrderId,
+                            note: newNote.trim(),
+                          });
+                      }}
+                      className="h-7 text-xs rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white"
+                    >
+                      {addNoteMutation.isPending ? "Saving..." : "Save Note"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Staff Notes History */}
+              {notesData.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <FileText className="h-3.5 w-3.5 text-emerald-400" />
+                    Staff Audit Notes ({notesData.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {notesData.map((n: any) => (
+                      <div
+                        key={n.id}
+                        className="p-3 rounded-xl bg-secondary/20 border border-border/40 text-xs space-y-1"
+                      >
+                        <div className="flex justify-between items-center text-[11px] text-muted-foreground">
+                          <span className="font-semibold text-foreground">
+                            {n.author_name || "Support Staff"}
+                          </span>
+                          <span>{new Date(n.created_at).toLocaleString()}</span>
+                        </div>
+                        <p className="text-foreground/90 whitespace-pre-wrap">{n.note}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Tickets List */}
               <div className="space-y-2">
@@ -568,7 +672,7 @@ export function SupportOrdersTab({
           <div className="p-3 rounded-xl bg-secondary/40 border border-border/50 text-xs space-y-1">
             <div>
               <span className="text-muted-foreground">Recipient Email: </span>
-              <span className="font-mono font-semibold">{orderData?.masked_buyer_email}</span>
+              <span className="font-mono font-semibold">{orderData?.buyer_email || orderData?.masked_buyer_email || "N/A"}</span>
             </div>
             <div>
               <span className="text-muted-foreground">Order Reference: </span>

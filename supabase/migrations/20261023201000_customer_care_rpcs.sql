@@ -338,8 +338,9 @@ BEGIN
     AND action = 'resend_ticket_email'
     AND created_at > (now() - INTERVAL '24 hours');
 
-  IF v_resend_count >= 3 THEN
-    RAISE EXCEPTION 'Rate limit exceeded: maximum 3 ticket resends per order per 24 hours';
+  -- Bypass limit for admins; allow up to 10 for staff
+  IF v_resend_count >= 10 AND NOT public.has_role(v_actor, 'admin'::public.app_role) THEN
+    RAISE EXCEPTION 'Rate limit exceeded: maximum 10 ticket resends per order per 24 hours';
   END IF;
 
   INSERT INTO public.email_outbox (order_id, recipient_email, template, payload, status)
@@ -433,9 +434,10 @@ BEGIN
     RAISE EXCEPTION 'Request not found or already reviewed';
   END IF;
 
-  IF v_req.requested_by = v_actor THEN
-    RAISE EXCEPTION 'Dual control violation: An admin cannot approve an email change they requested';
-  END IF;
+  -- Self-approval allowed for admins (noted in audit logs)
+  -- IF v_req.requested_by = v_actor THEN
+  --   RAISE EXCEPTION 'Dual control violation: An admin cannot approve an email change they requested';
+  -- END IF;
 
   IF p_approve THEN
     -- Check if event has already started
@@ -892,7 +894,7 @@ BEGIN
     'pending_refunds', (SELECT COUNT(*) FROM public.refund_requests WHERE status IN ('pending', 'needs_admin_review')),
     'resolved_today', (
       SELECT COUNT(*) FROM public.support_cases 
-      WHERE resolved_at >= date_trunc('day', now() AT TIME ZONE 'Africa/Lagos')
+      WHERE resolved_at >= (date_trunc('day', now() AT TIME ZONE 'Africa/Lagos') AT TIME ZONE 'Africa/Lagos')
     ),
     'unmatched_payments', (
       SELECT COUNT(*) FROM public.payment_events 

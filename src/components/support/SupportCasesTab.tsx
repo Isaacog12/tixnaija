@@ -16,6 +16,7 @@ import {
   UserCheck,
   RefreshCw,
   Search,
+  Plus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -70,6 +71,17 @@ export function SupportCasesTab({
   const [replyContent, setReplyContent] = useState("");
   const [isInternalNote, setIsInternalNote] = useState(false);
   const [selectedMacro, setSelectedMacro] = useState<string>("");
+
+  // Search Filter
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // New Case Modal State
+  const [newCaseModalOpen, setNewCaseModalOpen] = useState(false);
+  const [newCaseCustomerEmail, setNewCaseCustomerEmail] = useState("");
+  const [newCaseSubject, setNewCaseSubject] = useState("");
+  const [newCaseCategory, setNewCaseCategory] = useState("other");
+  const [newCasePriority, setNewCasePriority] = useState("medium");
+  const [newCaseMessage, setNewCaseMessage] = useState("");
 
   // Escalation Modal
   const [escalateModalOpen, setEscalateModalOpen] = useState(false);
@@ -164,6 +176,15 @@ export function SupportCasesTab({
         p_is_internal: isInternal,
       });
       if (error) throw error;
+
+      if (!isInternal) {
+        try {
+          await supabase.functions.invoke("process-email-outbox");
+        } catch (e) {
+          console.warn("Trigger process-email-outbox:", e);
+        }
+      }
+
       return data;
     },
     onSuccess: (_, variables) => {
@@ -180,6 +201,47 @@ export function SupportCasesTab({
     },
     onError: (err: any) => {
       toast.error(err.message || "Failed to submit reply");
+    },
+  });
+
+  // Create Case Mutation
+  const createCaseMutation = useMutation({
+    mutationFn: async ({
+      customerEmail,
+      subject,
+      category,
+      priority,
+      message,
+    }: {
+      customerEmail: string;
+      subject: string;
+      category: string;
+      priority: string;
+      message: string;
+    }) => {
+      const { data, error } = await (supabase.rpc as any)("support_create_case", {
+        p_customer_email: customerEmail.trim() || null,
+        p_subject: subject.trim(),
+        p_category: category,
+        p_priority: priority,
+        p_initial_message: message.trim() || null,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (res: any) => {
+      toast.success(`Support case ${res?.case_number || "created"} logged successfully.`);
+      setNewCaseModalOpen(false);
+      setNewCaseCustomerEmail("");
+      setNewCaseSubject("");
+      setNewCaseMessage("");
+      refetchCases();
+      if (res?.case_id) {
+        setSelectedCaseId(res.case_id);
+      }
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to create support case");
     },
   });
 
@@ -257,8 +319,18 @@ export function SupportCasesTab({
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              <div className="relative w-44">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="Search cases..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8 rounded-xl text-xs h-9"
+                />
+              </div>
+
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[130px] rounded-xl text-xs h-9">
+                <SelectTrigger className="w-[125px] rounded-xl text-xs h-9">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -271,7 +343,7 @@ export function SupportCasesTab({
               </Select>
 
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-[140px] rounded-xl text-xs h-9">
+                <SelectTrigger className="w-[130px] rounded-xl text-xs h-9">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -292,7 +364,15 @@ export function SupportCasesTab({
                 className="h-9 rounded-xl text-xs gap-1.5"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
-                Refresh
+              </Button>
+
+              <Button
+                size="sm"
+                onClick={() => setNewCaseModalOpen(true)}
+                className="h-9 rounded-xl text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                New Case
               </Button>
             </div>
           </CardHeader>
@@ -327,7 +407,16 @@ export function SupportCasesTab({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {casesList.map((c: any) => (
+                    {(casesList || [])
+                      .filter((c: any) => {
+                        if (!searchTerm.trim()) return true;
+                        const q = searchTerm.toLowerCase();
+                        return (
+                          c.case_number?.toLowerCase().includes(q) ||
+                          c.subject?.toLowerCase().includes(q)
+                        );
+                      })
+                      .map((c: any) => (
                       <TableRow
                         key={c.id}
                         className={c.is_escalated ? "bg-amber-500/5 hover:bg-amber-500/10" : ""}
@@ -773,6 +862,121 @@ export function SupportCasesTab({
                   className="bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs"
                 >
                   {escalateMutation.isPending ? "Escalating..." : "Confirm Escalation"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* New Support Case Modal */}
+          <Dialog open={newCaseModalOpen} onOpenChange={setNewCaseModalOpen}>
+            <DialogContent className="max-w-md rounded-2xl">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Inbox className="h-5 w-5 text-emerald-500" />
+                  Open New Support Case
+                </DialogTitle>
+                <DialogDescription className="text-xs">
+                  Log customer phone, email, or chat inquiries directly into the support queue.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-3 py-2">
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-foreground">Customer Email (optional):</label>
+                  <Input
+                    type="email"
+                    placeholder="customer@example.com"
+                    value={newCaseCustomerEmail}
+                    onChange={(e) => setNewCaseCustomerEmail(e.target.value)}
+                    className="rounded-xl text-xs h-9"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-foreground">Subject:</label>
+                  <Input
+                    type="text"
+                    placeholder="e.g. Cannot find ticket confirmation in inbox"
+                    value={newCaseSubject}
+                    onChange={(e) => setNewCaseSubject(e.target.value)}
+                    className="rounded-xl text-xs h-9"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-foreground">Category:</label>
+                    <Select value={newCaseCategory} onValueChange={setNewCaseCategory}>
+                      <SelectTrigger className="rounded-xl text-xs h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="payment">Payment</SelectItem>
+                        <SelectItem value="missing_ticket">Missing Ticket</SelectItem>
+                        <SelectItem value="refund">Refund</SelectItem>
+                        <SelectItem value="event_inquiry">Event Inquiry</SelectItem>
+                        <SelectItem value="account">Account</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-foreground">Priority:</label>
+                    <Select value={newCasePriority} onValueChange={setNewCasePriority}>
+                      <SelectTrigger className="rounded-xl text-xs h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="urgent">Urgent</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-foreground">Initial Inquiry / Message:</label>
+                  <Textarea
+                    placeholder="Details about customer problem, transaction reference, or caller notes..."
+                    value={newCaseMessage}
+                    onChange={(e) => setNewCaseMessage(e.target.value)}
+                    rows={3}
+                    className="rounded-xl text-xs"
+                  />
+                </div>
+              </div>
+
+              <DialogFooter className="gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setNewCaseModalOpen(false)}
+                  className="rounded-xl"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={createCaseMutation.isPending}
+                  onClick={() => {
+                    if (!newCaseSubject.trim()) {
+                      toast.error("Please enter a subject");
+                      return;
+                    }
+                    createCaseMutation.mutate({
+                      customerEmail: newCaseCustomerEmail,
+                      subject: newCaseSubject,
+                      category: newCaseCategory,
+                      priority: newCasePriority,
+                      message: newCaseMessage,
+                    });
+                  }}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs"
+                >
+                  {createCaseMutation.isPending ? "Creating..." : "Create Case"}
                 </Button>
               </DialogFooter>
             </DialogContent>
