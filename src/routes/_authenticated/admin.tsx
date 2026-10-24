@@ -353,15 +353,13 @@ function AdminDashboard() {
                       <span className="font-medium">Revoke Customer Care</span>
                     </DropdownMenuItem>
                   ) : (
-                    !u.roles.includes("organizer") && (
-                      <DropdownMenuItem
-                        className="text-emerald-500 focus:text-emerald-500 focus:bg-emerald-500/10 rounded-xl px-3 py-2 cursor-pointer"
-                        onClick={() => customerCareRoleMutation.mutate({ userId: u.id, grant: true })}
-                      >
-                        <ShieldCheck className="mr-2 h-4 w-4" />
-                        <span className="font-medium">Grant Customer Care</span>
-                      </DropdownMenuItem>
-                    )
+                    <DropdownMenuItem
+                      className="text-emerald-500 focus:text-emerald-500 focus:bg-emerald-500/10 rounded-xl px-3 py-2 cursor-pointer"
+                      onClick={() => customerCareRoleMutation.mutate({ userId: u.id, grant: true })}
+                    >
+                      <ShieldCheck className="mr-2 h-4 w-4" />
+                      <span className="font-medium">Grant Customer Care</span>
+                    </DropdownMenuItem>
                   )}
 
                   {u.suspended ? (
