@@ -335,7 +335,8 @@ CREATE TABLE IF NOT EXISTS public.support_email_change_requests (
   status VARCHAR(16) DEFAULT 'pending_admin' NOT NULL CHECK (status IN ('pending_admin', 'approved', 'rejected')),
   reviewed_by UUID REFERENCES auth.users(id),
   reviewed_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT now() NOT NULL
+  created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
 
 -- Canned Macros / Knowledge Base
@@ -344,7 +345,7 @@ CREATE TABLE IF NOT EXISTS public.support_macros (
   title VARCHAR(100) NOT NULL,
   category VARCHAR(32) NOT NULL DEFAULT 'general',
   content TEXT NOT NULL,
-  created_by UUID REFERENCES auth.users(id) NOT NULL,
+  created_by UUID REFERENCES auth.users(id),
   created_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
 

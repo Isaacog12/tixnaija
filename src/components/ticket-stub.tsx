@@ -12,8 +12,15 @@ interface TicketStubProps {
   ticketType: any;
 }
 
-export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps) {
+export function TicketStub({ ticket = {}, event = {}, order = {}, ticketType = {} }: TicketStubProps) {
   const ticketRef = useRef<HTMLDivElement>(null);
+  const safeEvent = event || {};
+  const safeTicket = ticket || {};
+  const safeOrder = order || {};
+  const safeTicketType = ticketType || {};
+
+  const ticketCode = String(safeTicket.ticket_code || safeTicket.id || "TICKET");
+  const ticketShortCode = ticketCode.includes("-") ? ticketCode.split("-")[0] : ticketCode.substring(0, 8);
 
   const handleDownload = async () => {
     if (!ticketRef.current) return;
@@ -30,7 +37,6 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
         cacheBust: true,
         pixelRatio: 2,
         backgroundColor: '#ffffff', // Ensure background isn't transparent so text stays legible
-        // html-to-image supports modern CSS natively, but we ensure CORS is handled:
         skipFonts: false,
       });
       
@@ -46,7 +52,7 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
       });
       
       pdf.addImage(dataUrl, 'PNG', 0, 0, width, height);
-      pdf.save(`Ticket_${event.title}_${ticket.ticket_code.split("-")[0]}.pdf`);
+      pdf.save(`Ticket_${safeEvent.title || "Tix"}_${ticketShortCode}.pdf`);
       toast.success("Ticket downloaded successfully!");
     } catch (err: any) {
       console.error("Failed to download ticket", err);
@@ -54,34 +60,52 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
     }
   };
 
-  const formattedDate = event.start_datetime 
-    ? format(new Date(event.start_datetime), "EEEE, MMMM do, yyyy") 
+  const formattedDate = safeEvent.start_datetime 
+    ? (() => {
+        try {
+          return format(new Date(safeEvent.start_datetime), "EEEE, MMMM do, yyyy");
+        } catch {
+          return "TBA";
+        }
+      })()
     : "TBA";
     
-  const formattedTime = event.start_datetime 
-    ? format(new Date(event.start_datetime), "h:mm a") 
+  const formattedTime = safeEvent.start_datetime 
+    ? (() => {
+        try {
+          return format(new Date(safeEvent.start_datetime), "h:mm a");
+        } catch {
+          return "TBA";
+        }
+      })()
     : "TBA";
 
   const generateCalendarDates = () => {
-    const start = new Date(event.start_datetime);
-    const end = event.end_datetime ? new Date(event.end_datetime) : new Date(start.getTime() + 2 * 60 * 60 * 1000);
-    const formatForCal = (d: Date) => d.toISOString().replace(/-|:|\.\d+/g, "");
-    return { startStr: formatForCal(start), endStr: formatForCal(end) };
+    try {
+      const start = new Date(safeEvent.start_datetime);
+      const end = safeEvent.end_datetime ? new Date(safeEvent.end_datetime) : new Date(start.getTime() + 2 * 60 * 60 * 1000);
+      const formatForCal = (d: Date) => d.toISOString().replace(/-|:|\.\d+/g, "");
+      return { startStr: formatForCal(start), endStr: formatForCal(end) };
+    } catch {
+      return { startStr: "", endStr: "" };
+    }
   };
 
   const handleGoogleCalendar = () => {
-    if (!event.start_datetime) return;
+    if (!safeEvent.start_datetime) return;
     const { startStr, endStr } = generateCalendarDates();
-    const title = encodeURIComponent(event.title);
-    const details = encodeURIComponent(event.description || "");
-    const location = encodeURIComponent([event.venue_name, event.address, event.city, event.state].filter(Boolean).join(", "));
+    if (!startStr || !endStr) return;
+    const title = encodeURIComponent(safeEvent.title || "Event");
+    const details = encodeURIComponent(safeEvent.description || "");
+    const location = encodeURIComponent([safeEvent.venue_name, safeEvent.address, safeEvent.city, safeEvent.state].filter(Boolean).join(", "));
     window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startStr}/${endStr}&details=${details}&location=${location}`, "_blank");
   };
 
   const handleIcsDownload = () => {
-    if (!event.start_datetime) return;
+    if (!safeEvent.start_datetime) return;
     const { startStr, endStr } = generateCalendarDates();
-    const location = [event.venue_name, event.address, event.city, event.state].filter(Boolean).join(", ");
+    if (!startStr || !endStr) return;
+    const location = [safeEvent.venue_name, safeEvent.address, safeEvent.city, safeEvent.state].filter(Boolean).join(", ");
     
     const icsContent = [
       "BEGIN:VCALENDAR",
@@ -89,8 +113,8 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
       "BEGIN:VEVENT",
       `DTSTART:${startStr}`,
       `DTEND:${endStr}`,
-      `SUMMARY:${event.title}`,
-      `DESCRIPTION:${event.description || ""}`,
+      `SUMMARY:${safeEvent.title || "Event"}`,
+      `DESCRIPTION:${safeEvent.description || ""}`,
       `LOCATION:${location}`,
       "END:VEVENT",
       "END:VCALENDAR"
@@ -100,7 +124,7 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `${event.slug || "event"}.ics`);
+    link.setAttribute("download", `${safeEvent.slug || "event"}.ics`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -121,10 +145,10 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
         <div className="flex-1 relative min-h-[300px] flex flex-col">
           {/* Banner Image with dark gradient */}
           <div className="h-36 w-full relative shrink-0">
-            {event.cover_image_url ? (
+            {safeEvent.cover_image_url ? (
               <img 
-                src={event.cover_image_url} 
-                alt={event.title} 
+                src={safeEvent.cover_image_url} 
+                alt={safeEvent.title || "Event"} 
                 className="w-full h-full object-cover"
                 crossOrigin="anonymous"
               />
@@ -134,7 +158,7 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
             <div className="absolute inset-0 bg-gradient-to-t from-card/95 via-card/40 to-transparent" />
             <div className="absolute bottom-4 left-6 right-6 text-white drop-shadow-lg">
               <h2 className="font-display text-4xl font-extrabold truncate tracking-tight">
-                {event.title}
+                {safeEvent.title || "Event Ticket"}
               </h2>
             </div>
           </div>
@@ -157,10 +181,10 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
                   <MapPin className="w-6 h-6 text-primary drop-shadow-sm" />
                 </div>
                 <div>
-                  <p className="font-semibold text-foreground text-lg leading-tight tracking-tight">{event.venue_name || "Online Event"}</p>
-                  {(event.address || event.city || event.state) && (
+                  <p className="font-semibold text-foreground text-lg leading-tight tracking-tight">{safeEvent.venue_name || "Online Event"}</p>
+                  {(safeEvent.address || safeEvent.city || safeEvent.state) && (
                     <p className="text-muted-foreground font-medium">
-                      {[event.address, event.city, event.state].filter(Boolean).join(", ")}
+                      {[safeEvent.address, safeEvent.city, safeEvent.state].filter(Boolean).join(", ")}
                     </p>
                   )}
                 </div>
@@ -169,10 +193,10 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
 
             <div className="flex items-center justify-between gap-2 mt-2">
               <span className="px-4 py-1.5 bg-primary text-primary-foreground text-sm font-bold rounded-full uppercase tracking-wider shadow-sm">
-                {ticketType.name}
+                {safeTicketType.name || "General Admission"}
               </span>
               <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest opacity-60">
-                TIX-{ticket.id.substring(0, 8)}
+                TIX-{safeTicket.id ? String(safeTicket.id).substring(0, 8) : ticketShortCode}
               </span>
             </div>
           </div>
@@ -202,13 +226,13 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
           <div className="text-center w-full mb-6 z-10">
             <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1 font-semibold">Admit One</p>
             <p className="font-display font-semibold text-xl truncate px-2 text-foreground">
-              {ticket.attendee_name || order.buyer_name}
+              {safeTicket.attendee_name || safeOrder.buyer_name || "Guest"}
             </p>
           </div>
           
           <div className="bg-white p-4 rounded-2xl shadow-md border border-black/5 mb-4 z-10 hover:scale-105 transition-transform duration-300">
             <QRCodeCanvas 
-              value={ticket.ticket_code}
+              value={ticketCode}
               size={150}
               bgColor={"#ffffff"}
               fgColor={"#000000"}
@@ -218,14 +242,14 @@ export function TicketStub({ ticket, event, order, ticketType }: TicketStubProps
           </div>
           
           <p className="text-sm font-mono font-medium text-muted-foreground uppercase tracking-widest bg-background/50 px-3 py-1 rounded-md z-10">
-            {ticket.ticket_code.split("-")[0]}
+            {ticketShortCode}
           </p>
         </div>
       </div>
 
       {/* Action Buttons */}
       <div className="flex flex-wrap justify-end gap-3 mt-6">
-        {event.start_datetime && (
+        {safeEvent.start_datetime && (
           <>
             <Button variant="outline" onClick={handleGoogleCalendar} className="gap-2 bg-card/50 backdrop-blur-sm border-border/60 hover:bg-accent/50">
               <CalendarPlus className="w-4 h-4 text-primary" /> <span className="hidden sm:inline">Google Calendar</span>

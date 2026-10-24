@@ -329,12 +329,14 @@ function TicketsPage() {
   
   if (tickets) {
     for (const t of tickets) {
-      const order = t.order_items.orders;
-      const event = order.events;
+      const orderItem = Array.isArray(t.order_items) ? t.order_items[0] : t.order_items;
+      const order = (orderItem as any)?.orders;
+      const event = order?.events;
+      if (!event || !event.id) continue;
       if (!eventsMap.has(event.id)) {
         eventsMap.set(event.id, {
           ...event,
-          orderId: order.id,
+          orderId: order?.id || (orderItem as any)?.order_id || "",
           tickets: [],
         });
       }

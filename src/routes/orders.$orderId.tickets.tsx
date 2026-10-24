@@ -17,13 +17,34 @@ import { BUSINESS_DETAILS } from "@/lib/business";
 import type { Tables } from "@/lib/database.types";
 
 // This route is intentionally NOT under _authenticated —
+// This route is intentionally NOT under _authenticated —
 // guests can reach it from /my-tickets with ?email=... query param.
 export const Route = createFileRoute("/orders/$orderId/tickets")({
+  ssr: false,
   component: OrderTicketsPage,
   validateSearch: (search: Record<string, unknown>): { email?: string; download?: boolean } => ({
     email: typeof search.email === "string" ? search.email : undefined,
     download: search.download === "true" || search.download === true,
   }),
+  errorComponent: ({ error }) => (
+    <div className="min-h-dvh bg-background flex flex-col items-center justify-center p-6 text-center">
+      <div className="max-w-md w-full bg-card p-8 rounded-2xl border border-border shadow-sm">
+        <Ticket className="mx-auto h-12 w-12 text-muted-foreground/60 mb-4" />
+        <h2 className="text-xl font-bold font-display text-foreground mb-2">Unable to load tickets</h2>
+        <p className="text-sm text-muted-foreground mb-6">
+          {error instanceof Error ? error.message : "The requested order could not be retrieved."}
+        </p>
+        <div className="flex gap-3 justify-center">
+          <Button asChild variant="outline">
+            <Link to="/tickets">My Tickets</Link>
+          </Button>
+          <Button asChild className="gradient-sunset text-white">
+            <Link to="/">Go Home</Link>
+          </Button>
+        </div>
+      </div>
+    </div>
+  ),
 });
 
 /** Shape returned by the get_guest_order_full RPC (a JSON blob). */
@@ -43,7 +64,7 @@ async function fetchOrderTickets(orderId: string, guestEmail?: string) {
     });
     
     if (error || !data) {
-      throw notFound();
+      return null;
     }
     
     const result = data as unknown as GuestOrderFull;
@@ -60,15 +81,12 @@ async function fetchOrderTickets(orderId: string, guestEmail?: string) {
   const { data: order, error: orderErr } = await query.single();
 
   if (orderErr || !order) {
-    // Check if the user is even logged in
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      // If not logged in and RLS failed, they need to log in to see their tickets!
+    if (!session && typeof window !== "undefined") {
       window.location.href = `/auth?mode=login&returnTo=/orders/${orderId}/tickets`;
-      // Pause execution while redirect happens
-      await new Promise(() => {});
+      return null;
     }
-    throw notFound();
+    return null;
   }
 
   const { data: tickets, error: ticketsErr } = await supabase
@@ -81,10 +99,6 @@ async function fetchOrderTickets(orderId: string, guestEmail?: string) {
       )
     `)
     .eq("order_items.order_id", orderId);
-
-  if (ticketsErr) {
-    throw ticketsErr;
-  }
 
   return { order, tickets: tickets || [], isGuest: false };
 }
@@ -186,8 +200,10 @@ function OrderTicketsPage() {
             {data && data.order && (
               <div className="bg-background/80 backdrop-blur-md rounded-xl p-4 border border-border/50 shadow-sm md:text-right">
                 <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Total Paid</p>
-                <p className="text-2xl font-bold font-mono">{formatNaira(data.order.total_kobo)}</p>
-                <p className="text-xs text-muted-foreground mt-1">Order #{data.order.id.split("-")[0]}</p>
+                <p className="text-2xl font-bold font-mono">{formatNaira(data.order.total_kobo || 0)}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Order #{data.order.id ? (String(data.order.id).includes("-") ? String(data.order.id).split("-")[0] : String(data.order.id).substring(0, 8)) : ""}
+                </p>
               </div>
             )}
           </div>
@@ -201,14 +217,21 @@ function OrderTicketsPage() {
             <Skeleton className="h-[300px] w-full max-w-2xl mx-auto rounded-2xl" />
             <Skeleton className="h-[300px] w-full max-w-2xl mx-auto rounded-2xl" />
           </div>
-        ) : isError || !data ? (
+        ) : isError || !data || !data.order ? (
           <div className="text-center py-24 text-muted-foreground">
-            <p>Failed to load tickets or order not found.</p>
-            {searchEmail && (
-              <Button asChild variant="outline" className="mt-4">
-                <Link to="/my-tickets">Try again</Link>
+            <Ticket className="mx-auto h-12 w-12 text-muted-foreground/40 mb-3" />
+            <p className="text-base font-semibold text-foreground">Failed to load tickets or order not found.</p>
+            <p className="text-sm mt-1 mb-6 text-muted-foreground">Please make sure you are logged into the account that purchased the ticket.</p>
+            <div className="flex justify-center gap-3">
+              <Button asChild variant="outline">
+                <Link to="/tickets">View My Tickets</Link>
               </Button>
-            )}
+              {searchEmail && (
+                <Button asChild variant="outline">
+                  <Link to="/my-tickets">Try again</Link>
+                </Button>
+              )}
+            </div>
           </div>
         ) : data.tickets.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border py-24 text-center">
@@ -218,35 +241,43 @@ function OrderTicketsPage() {
           </div>
         ) : (
           <div className="space-y-12">
-            {data.tickets.map((ticket, index) => (
-              <div 
-                key={ticket.id} 
-                className="animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-both"
-                style={{ animationDelay: `${index * 150}ms` }}
-              >
-                <div className="relative">
-                  <TicketStub
-                    ticket={ticket}
-                    event={data.order.events}
-                    order={data.order}
-                    ticketType={ticket.order_items.ticket_types}
-                  />
-                  {!data.isGuest && (
-                    <div className="absolute top-4 right-4 z-10 print:hidden">
-                      <Button 
-                        size="sm" 
-                        variant="secondary" 
-                        className="bg-background/80 backdrop-blur shadow-sm hover:bg-background"
-                        onClick={() => handleEditOpen(ticket)}
-                      >
-                        <Edit2 className="h-4 w-4 mr-2" />
-                        Reassign Ticket
-                      </Button>
-                    </div>
-                  )}
+            {data.tickets.map((ticket, index) => {
+              const ticketType = Array.isArray(ticket.order_items)
+                ? (ticket.order_items[0]?.ticket_types || {})
+                : (ticket.order_items?.ticket_types || (ticket as any).ticket_types || { name: "General Admission", price_kobo: 0 });
+
+              const event = Array.isArray(data.order?.events) ? data.order.events[0] : (data.order?.events || {});
+
+              return (
+                <div 
+                  key={ticket.id || index} 
+                  className="animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-both"
+                  style={{ animationDelay: `${index * 150}ms` }}
+                >
+                  <div className="relative">
+                    <TicketStub
+                      ticket={ticket}
+                      event={event}
+                      order={data.order}
+                      ticketType={ticketType}
+                    />
+                    {!data.isGuest && (
+                      <div className="absolute top-4 right-4 z-10 print:hidden">
+                        <Button 
+                          size="sm" 
+                          variant="secondary" 
+                          className="bg-background/80 backdrop-blur shadow-sm hover:bg-background"
+                          onClick={() => handleEditOpen(ticket)}
+                        >
+                          <Edit2 className="h-4 w-4 mr-2" />
+                          Reassign Ticket
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Upsell for guests */}
             {data.isGuest && (

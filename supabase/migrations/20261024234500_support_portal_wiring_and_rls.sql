@@ -569,6 +569,8 @@ REVOKE ALL ON FUNCTION public.support_get_order_details(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.support_get_order_details(uuid) TO authenticated;
 
 -- 13. Allow Admin Self-Approval in admin_review_email_change
+ALTER TABLE public.support_email_change_requests ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now();
+
 CREATE OR REPLACE FUNCTION public.admin_review_email_change(
   p_request_id UUID,
   p_approve BOOLEAN
