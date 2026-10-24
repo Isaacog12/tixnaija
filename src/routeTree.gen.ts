@@ -37,6 +37,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDashboardV2RouteImport } from './routes/_authenticated/dashboard-v2'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
+import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated/support'
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
 import { Route as BoxOfficeOrganizerSlugRouteImport } from './routes/box-office.$organizerSlug'
 import { Route as CareersApplyRouteImport } from './routes/careers_.apply'
@@ -44,9 +45,12 @@ import { Route as CheckoutVerifyRouteImport } from './routes/checkout.verify'
 import { Route as EV2SlugRouteImport } from './routes/e-v2.$slug'
 import { Route as ESlugRouteImport } from './routes/e.$slug'
 import { Route as TTicketCodeRouteImport } from './routes/t.$ticketCode'
+import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authenticated/admin_.audit-logs'
 import { Route as AuthenticatedAdminBannersRouteImport } from './routes/_authenticated/admin_.banners'
+import { Route as AuthenticatedAdminEmailChangesRouteImport } from './routes/_authenticated/admin_.email-changes'
 import { Route as AuthenticatedAdminJobApplicationsRouteImport } from './routes/_authenticated/admin_.job-applications'
 import { Route as AuthenticatedAdminOrganizerApplicationsRouteImport } from './routes/_authenticated/admin_.organizer-applications'
+import { Route as AuthenticatedAdminSupportCasesRouteImport } from './routes/_authenticated/admin_.support-cases'
 import { Route as AuthenticatedEventsNewRouteImport } from './routes/_authenticated/events.new'
 import { Route as OrdersOrderIdTicketsRouteImport } from './routes/orders.$orderId.tickets'
 import { Route as AuthenticatedEventsEventIdAnalyticsRouteImport } from './routes/_authenticated/events.$eventId.analytics'
@@ -195,6 +199,11 @@ const AuthenticatedNotificationsRoute =
     path: '/notifications',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSupportRoute = AuthenticatedSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedTicketsRoute = AuthenticatedTicketsRouteImport.update({
   id: '/tickets',
   path: '/tickets',
@@ -230,10 +239,22 @@ const TTicketCodeRoute = TTicketCodeRouteImport.update({
   path: '/t/$ticketCode',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminAuditLogsRoute =
+  AuthenticatedAdminAuditLogsRouteImport.update({
+    id: '/admin_/audit-logs',
+    path: '/admin/audit-logs',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminBannersRoute =
   AuthenticatedAdminBannersRouteImport.update({
     id: '/admin_/banners',
     path: '/admin/banners',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminEmailChangesRoute =
+  AuthenticatedAdminEmailChangesRouteImport.update({
+    id: '/admin_/email-changes',
+    path: '/admin/email-changes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminJobApplicationsRoute =
@@ -246,6 +267,12 @@ const AuthenticatedAdminOrganizerApplicationsRoute =
   AuthenticatedAdminOrganizerApplicationsRouteImport.update({
     id: '/admin_/organizer-applications',
     path: '/admin/organizer-applications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminSupportCasesRoute =
+  AuthenticatedAdminSupportCasesRouteImport.update({
+    id: '/admin_/support-cases',
+    path: '/admin/support-cases',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedEventsNewRoute = AuthenticatedEventsNewRouteImport.update({
@@ -311,6 +338,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dashboard-v2': typeof AuthenticatedDashboardV2Route
   '/notifications': typeof AuthenticatedNotificationsRoute
+  '/support': typeof AuthenticatedSupportRoute
   '/tickets': typeof AuthenticatedTicketsRoute
   '/box-office/$organizerSlug': typeof BoxOfficeOrganizerSlugRoute
   '/careers/apply': typeof CareersApplyRoute
@@ -318,9 +346,12 @@ export interface FileRoutesByFullPath {
   '/e-v2/$slug': typeof EV2SlugRoute
   '/e/$slug': typeof ESlugRoute
   '/t/$ticketCode': typeof TTicketCodeRoute
+  '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
+  '/admin/email-changes': typeof AuthenticatedAdminEmailChangesRoute
   '/admin/job-applications': typeof AuthenticatedAdminJobApplicationsRoute
   '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
+  '/admin/support-cases': typeof AuthenticatedAdminSupportCasesRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
   '/events/$eventId/analytics': typeof AuthenticatedEventsEventIdAnalyticsRoute
@@ -356,6 +387,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dashboard-v2': typeof AuthenticatedDashboardV2Route
   '/notifications': typeof AuthenticatedNotificationsRoute
+  '/support': typeof AuthenticatedSupportRoute
   '/tickets': typeof AuthenticatedTicketsRoute
   '/box-office/$organizerSlug': typeof BoxOfficeOrganizerSlugRoute
   '/careers/apply': typeof CareersApplyRoute
@@ -363,9 +395,12 @@ export interface FileRoutesByTo {
   '/e-v2/$slug': typeof EV2SlugRoute
   '/e/$slug': typeof ESlugRoute
   '/t/$ticketCode': typeof TTicketCodeRoute
+  '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
+  '/admin/email-changes': typeof AuthenticatedAdminEmailChangesRoute
   '/admin/job-applications': typeof AuthenticatedAdminJobApplicationsRoute
   '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
+  '/admin/support-cases': typeof AuthenticatedAdminSupportCasesRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
   '/events/$eventId/analytics': typeof AuthenticatedEventsEventIdAnalyticsRoute
@@ -403,6 +438,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/dashboard-v2': typeof AuthenticatedDashboardV2Route
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
+  '/_authenticated/support': typeof AuthenticatedSupportRoute
   '/_authenticated/tickets': typeof AuthenticatedTicketsRoute
   '/box-office/$organizerSlug': typeof BoxOfficeOrganizerSlugRoute
   '/careers_/apply': typeof CareersApplyRoute
@@ -410,9 +446,12 @@ export interface FileRoutesById {
   '/e-v2/$slug': typeof EV2SlugRoute
   '/e/$slug': typeof ESlugRoute
   '/t/$ticketCode': typeof TTicketCodeRoute
+  '/_authenticated/admin_/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/_authenticated/admin_/banners': typeof AuthenticatedAdminBannersRoute
+  '/_authenticated/admin_/email-changes': typeof AuthenticatedAdminEmailChangesRoute
   '/_authenticated/admin_/job-applications': typeof AuthenticatedAdminJobApplicationsRoute
   '/_authenticated/admin_/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
+  '/_authenticated/admin_/support-cases': typeof AuthenticatedAdminSupportCasesRoute
   '/_authenticated/events/new': typeof AuthenticatedEventsNewRoute
   '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
   '/_authenticated/events/$eventId/analytics': typeof AuthenticatedEventsEventIdAnalyticsRoute
@@ -450,6 +489,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboard-v2'
     | '/notifications'
+    | '/support'
     | '/tickets'
     | '/box-office/$organizerSlug'
     | '/careers/apply'
@@ -457,9 +497,12 @@ export interface FileRouteTypes {
     | '/e-v2/$slug'
     | '/e/$slug'
     | '/t/$ticketCode'
+    | '/admin/audit-logs'
     | '/admin/banners'
+    | '/admin/email-changes'
     | '/admin/job-applications'
     | '/admin/organizer-applications'
+    | '/admin/support-cases'
     | '/events/new'
     | '/orders/$orderId/tickets'
     | '/events/$eventId/analytics'
@@ -495,6 +538,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboard-v2'
     | '/notifications'
+    | '/support'
     | '/tickets'
     | '/box-office/$organizerSlug'
     | '/careers/apply'
@@ -502,9 +546,12 @@ export interface FileRouteTypes {
     | '/e-v2/$slug'
     | '/e/$slug'
     | '/t/$ticketCode'
+    | '/admin/audit-logs'
     | '/admin/banners'
+    | '/admin/email-changes'
     | '/admin/job-applications'
     | '/admin/organizer-applications'
+    | '/admin/support-cases'
     | '/events/new'
     | '/orders/$orderId/tickets'
     | '/events/$eventId/analytics'
@@ -541,6 +588,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/dashboard-v2'
     | '/_authenticated/notifications'
+    | '/_authenticated/support'
     | '/_authenticated/tickets'
     | '/box-office/$organizerSlug'
     | '/careers_/apply'
@@ -548,9 +596,12 @@ export interface FileRouteTypes {
     | '/e-v2/$slug'
     | '/e/$slug'
     | '/t/$ticketCode'
+    | '/_authenticated/admin_/audit-logs'
     | '/_authenticated/admin_/banners'
+    | '/_authenticated/admin_/email-changes'
     | '/_authenticated/admin_/job-applications'
     | '/_authenticated/admin_/organizer-applications'
+    | '/_authenticated/admin_/support-cases'
     | '/_authenticated/events/new'
     | '/orders/$orderId/tickets'
     | '/_authenticated/events/$eventId/analytics'
@@ -790,6 +841,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/support': {
+      id: '/_authenticated/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof AuthenticatedSupportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/tickets': {
       id: '/_authenticated/tickets'
       path: '/tickets'
@@ -839,11 +897,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TTicketCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin_/audit-logs': {
+      id: '/_authenticated/admin_/audit-logs'
+      path: '/admin/audit-logs'
+      fullPath: '/admin/audit-logs'
+      preLoaderRoute: typeof AuthenticatedAdminAuditLogsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin_/banners': {
       id: '/_authenticated/admin_/banners'
       path: '/admin/banners'
       fullPath: '/admin/banners'
       preLoaderRoute: typeof AuthenticatedAdminBannersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin_/email-changes': {
+      id: '/_authenticated/admin_/email-changes'
+      path: '/admin/email-changes'
+      fullPath: '/admin/email-changes'
+      preLoaderRoute: typeof AuthenticatedAdminEmailChangesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin_/job-applications': {
@@ -858,6 +930,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/organizer-applications'
       fullPath: '/admin/organizer-applications'
       preLoaderRoute: typeof AuthenticatedAdminOrganizerApplicationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin_/support-cases': {
+      id: '/_authenticated/admin_/support-cases'
+      path: '/admin/support-cases'
+      fullPath: '/admin/support-cases'
+      preLoaderRoute: typeof AuthenticatedAdminSupportCasesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/events/new': {
@@ -911,10 +990,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDashboardV2Route: typeof AuthenticatedDashboardV2Route
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
+  AuthenticatedSupportRoute: typeof AuthenticatedSupportRoute
   AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRoute
+  AuthenticatedAdminAuditLogsRoute: typeof AuthenticatedAdminAuditLogsRoute
   AuthenticatedAdminBannersRoute: typeof AuthenticatedAdminBannersRoute
+  AuthenticatedAdminEmailChangesRoute: typeof AuthenticatedAdminEmailChangesRoute
   AuthenticatedAdminJobApplicationsRoute: typeof AuthenticatedAdminJobApplicationsRoute
   AuthenticatedAdminOrganizerApplicationsRoute: typeof AuthenticatedAdminOrganizerApplicationsRoute
+  AuthenticatedAdminSupportCasesRoute: typeof AuthenticatedAdminSupportCasesRoute
   AuthenticatedEventsNewRoute: typeof AuthenticatedEventsNewRoute
   AuthenticatedEventsEventIdAnalyticsRoute: typeof AuthenticatedEventsEventIdAnalyticsRoute
   AuthenticatedEventsEventIdAttendeesRoute: typeof AuthenticatedEventsEventIdAttendeesRoute
@@ -928,12 +1011,16 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDashboardV2Route: AuthenticatedDashboardV2Route,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
+  AuthenticatedSupportRoute: AuthenticatedSupportRoute,
   AuthenticatedTicketsRoute: AuthenticatedTicketsRoute,
+  AuthenticatedAdminAuditLogsRoute: AuthenticatedAdminAuditLogsRoute,
   AuthenticatedAdminBannersRoute: AuthenticatedAdminBannersRoute,
+  AuthenticatedAdminEmailChangesRoute: AuthenticatedAdminEmailChangesRoute,
   AuthenticatedAdminJobApplicationsRoute:
     AuthenticatedAdminJobApplicationsRoute,
   AuthenticatedAdminOrganizerApplicationsRoute:
     AuthenticatedAdminOrganizerApplicationsRoute,
+  AuthenticatedAdminSupportCasesRoute: AuthenticatedAdminSupportCasesRoute,
   AuthenticatedEventsNewRoute: AuthenticatedEventsNewRoute,
   AuthenticatedEventsEventIdAnalyticsRoute:
     AuthenticatedEventsEventIdAnalyticsRoute,
@@ -981,13 +1068,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
