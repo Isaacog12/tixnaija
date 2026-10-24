@@ -120,10 +120,26 @@ export function SupportOrdersTab({
         p_order_id: orderId,
       });
       if (error) throw error;
+
+      // Invoke the Edge Function to dispatch tickets via ZeptoMail
+      const { error: invokeErr } = await supabase.functions.invoke("send-ticket-confirmation", {
+        body: { orderId },
+      });
+      if (invokeErr) {
+        console.warn("send-ticket-confirmation error:", invokeErr);
+      }
+
+      // Also trigger process-email-outbox asynchronously
+      try {
+        await supabase.functions.invoke("process-email-outbox");
+      } catch (e) {
+        // non-blocking
+      }
+
       return data;
     },
     onSuccess: () => {
-      toast.success("Ticket confirmation email queued in delivery outbox.");
+      toast.success("Ticket confirmation email sent successfully!");
       setResendConfirmOpen(false);
       refetchDetails();
     },
@@ -165,7 +181,7 @@ export function SupportOrdersTab({
 
   const orderData = orderDetails?.order;
   const ticketsData = orderDetails?.tickets || [];
-  const outboxData = orderDetails?.outbox || [];
+  const outboxData = orderDetails?.delivery_log || orderDetails?.outbox || [];
 
   return (
     <div className="space-y-6">

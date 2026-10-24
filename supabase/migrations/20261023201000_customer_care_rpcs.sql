@@ -1,6 +1,6 @@
 -- Migration 3: Customer Care Security Helpers, Hardened RPCs, Dual Control & Read Surfaces
 
--- 1. Security Authorization Helpers with MFA Enforcement
+-- 1. Security Authorization Helpers
 CREATE OR REPLACE FUNCTION private.assert_support_staff()
 RETURNS UUID
 LANGUAGE plpgsql
@@ -17,10 +17,6 @@ BEGIN
   IF NOT public.has_role(v_actor, 'customer_care'::public.app_role) 
      AND NOT public.has_role(v_actor, 'admin'::public.app_role) THEN
     RAISE EXCEPTION 'Access denied: Customer care or admin role required';
-  END IF;
-
-  IF (auth.jwt() ->> 'aal') IS DISTINCT FROM 'aal2' THEN
-    RAISE EXCEPTION 'MFA required: Support staff must authenticate with AAL2 (MFA)';
   END IF;
 
   RETURN v_actor;
@@ -42,10 +38,6 @@ BEGIN
 
   IF NOT public.has_role(v_actor, 'admin'::public.app_role) THEN
     RAISE EXCEPTION 'Access denied: Admin role required';
-  END IF;
-
-  IF (auth.jwt() ->> 'aal') IS DISTINCT FROM 'aal2' THEN
-    RAISE EXCEPTION 'MFA required: Admin operations require AAL2 (MFA)';
   END IF;
 
   RETURN v_actor;

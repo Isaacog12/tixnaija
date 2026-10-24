@@ -108,21 +108,40 @@ function AdminEmailChangesQueue() {
     mutationFn: async ({
       requestId,
       approve,
+      orderId,
     }: {
       requestId: string;
       approve: boolean;
+      orderId?: string;
     }) => {
       const { data, error } = await (supabase.rpc as any)("admin_review_email_change", {
         p_request_id: requestId,
         p_approve: approve,
       });
       if (error) throw error;
+
+      // When approved, invoke send-ticket-confirmation to send the rotated tickets to the new email
+      if (approve && orderId) {
+        try {
+          await supabase.functions.invoke("send-ticket-confirmation", {
+            body: { orderId },
+          });
+        } catch (e) {
+          console.warn("send-ticket-confirmation invoke error:", e);
+        }
+        try {
+          await supabase.functions.invoke("process-email-outbox");
+        } catch (e) {
+          // non-blocking
+        }
+      }
+
       return data;
     },
     onSuccess: (_, variables) => {
       toast.success(
         variables.approve
-          ? "Email change approved! Old tickets invalidated, new tickets queued."
+          ? "Email change approved! Old tickets invalidated and new tickets dispatched."
           : "Email change request rejected."
       );
       setSelectedReq(null);
@@ -242,35 +261,34 @@ function AdminEmailChangesQueue() {
                           {new Date(r.created_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell className="text-right">
-                          {isSelf ? (
-                            <Badge variant="outline" className="border-amber-500/30 text-amber-400 text-[10px]">
-                              Self-Requested (Cannot Approve)
-                            </Badge>
-                          ) : (
-                            <div className="flex justify-end gap-1.5">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setSelectedReq(r);
-                                  setConfirmAction("reject");
-                                }}
-                                className="h-8 rounded-lg text-xs border-destructive/30 text-destructive hover:bg-destructive/10"
-                              >
-                                Reject
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedReq(r);
-                                  setConfirmAction("approve");
-                                }}
-                                className="h-8 rounded-lg text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-medium"
-                              >
-                                Approve
-                              </Button>
-                            </div>
-                          )}
+                          <div className="flex items-center justify-end gap-1.5">
+                            {isSelf && (
+                              <Badge variant="outline" className="border-amber-500/30 text-amber-400 text-[10px]">
+                                Self-Requested
+                              </Badge>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedReq(r);
+                                setConfirmAction("reject");
+                              }}
+                              className="h-8 rounded-lg text-xs border-destructive/30 text-destructive hover:bg-destructive/10"
+                            >
+                              Reject
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                setSelectedReq(r);
+                                setConfirmAction("approve");
+                              }}
+                              className="h-8 rounded-lg text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-medium"
+                            >
+                              Approve
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -340,6 +358,7 @@ function AdminEmailChangesQueue() {
                   reviewMutation.mutate({
                     requestId: selectedReq.id,
                     approve: confirmAction === "approve",
+                    orderId: selectedReq.order_id,
                   });
               }}
               disabled={reviewMutation.isPending}

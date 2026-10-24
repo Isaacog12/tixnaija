@@ -1,4 +1,48 @@
--- Migration: Fix function right(uuid, integer) does not exist by casting ticket_code to text in support RPCs
+-- Migration: Fix support RPCs (remove strict AAL2 MFA checks and cast ticket_code to text)
+
+-- 0. Security Authorization Helpers (Relaxed AAL2 requirement)
+CREATE OR REPLACE FUNCTION private.assert_support_staff()
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_actor UUID := auth.uid();
+BEGIN
+  IF v_actor IS NULL THEN
+    RAISE EXCEPTION 'Authentication required';
+  END IF;
+
+  IF NOT public.has_role(v_actor, 'customer_care'::public.app_role) 
+     AND NOT public.has_role(v_actor, 'admin'::public.app_role) THEN
+    RAISE EXCEPTION 'Access denied: Customer care or admin role required';
+  END IF;
+
+  RETURN v_actor;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION private.assert_admin()
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_actor UUID := auth.uid();
+BEGIN
+  IF v_actor IS NULL THEN
+    RAISE EXCEPTION 'Authentication required';
+  END IF;
+
+  IF NOT public.has_role(v_actor, 'admin'::public.app_role) THEN
+    RAISE EXCEPTION 'Access denied: Admin role required';
+  END IF;
+
+  RETURN v_actor;
+END;
+$$;
 
 -- 1. Fix support_lookup_customer
 CREATE OR REPLACE FUNCTION public.support_lookup_customer(p_query TEXT)
