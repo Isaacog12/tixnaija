@@ -70,8 +70,8 @@ DECLARE
   v_result JSONB;
 BEGIN
   v_clean_query := trim(p_query);
-  IF length(v_clean_query) < 4 THEN
-    RAISE EXCEPTION 'Query must be at least 4 characters long';
+  IF length(v_clean_query) < 3 THEN
+    RAISE EXCEPTION 'Query must be at least 3 characters long';
   END IF;
 
   -- 1. Rate Limits: Max 30 lookups / min, max 200 lookups / day per agent
@@ -157,7 +157,7 @@ BEGIN
       SELECT jsonb_agg(s.x) FROM (
         SELECT jsonb_build_object(
           'id', t.id,
-          'masked_code', '••••-••••-' || RIGHT(t.ticket_code, 4),
+          'masked_code', '••••-••••-' || RIGHT(t.ticket_code::text, 4),
           'status', t.status,
           'attendee_name', t.attendee_name,
           'attendee_email', t.attendee_email,
@@ -165,7 +165,7 @@ BEGIN
         ) AS x
         FROM public.tickets t
         JOIN public.order_items oi ON oi.id = t.order_item_id
-        WHERE t.ticket_code = v_clean_query                            -- EXACT MATCH
+        WHERE t.ticket_code::text = v_clean_query                            -- EXACT MATCH
         ORDER BY t.created_at DESC
         LIMIT 10
       ) s
@@ -222,7 +222,7 @@ BEGIN
         'status', t.status,
         'checked_in_at', t.checked_in_at,
         'checked_in_by', t.checked_in_by,
-        'masked_code', '••••-••••-' || RIGHT(t.ticket_code, 4)
+        'masked_code', '••••-••••-' || RIGHT(t.ticket_code::text, 4)
       ))
       FROM public.tickets t
       JOIN public.order_items oi ON oi.id = t.order_item_id
@@ -467,9 +467,9 @@ BEGIN
       RAISE EXCEPTION 'Cannot change recipient: One or more tickets for this order have already been checked in';
     END IF;
 
-    -- Invalidate old QR codes by rotating ticket_code and attendee_email in a single update
+    -- Invalidate old QR codes by rotating ticket_code to a fresh UUID
     UPDATE public.tickets
-    SET ticket_code = 'TN-' || upper(substring(replace(gen_random_uuid()::text, '-', ''), 1, 12)),
+    SET ticket_code = gen_random_uuid(),
         attendee_email = v_req.new_email
     WHERE order_item_id IN (
       SELECT id FROM public.order_items WHERE order_id = v_req.order_id

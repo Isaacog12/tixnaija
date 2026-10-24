@@ -13,6 +13,8 @@ import {
   Sun,
   Moon,
   Smartphone,
+  Headset,
+  ShieldCheck,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -56,21 +58,22 @@ export function SiteNav() {
     enabled: !!user,
   });
 
-  // ── Admin role check ─────────────────────────────────────────────────────────
-  const { data: isAdmin } = useQuery({
-    queryKey: ["is-admin", user?.id],
+  // ── Role check (Admin & Customer Care) ──────────────────────────────────────
+  const { data: userRoles = [] } = useQuery({
+    queryKey: ["user-roles", user?.id],
     queryFn: async () => {
-      if (!user) return false;
+      if (!user) return [];
       const { data } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-      return !!data;
+        .eq("user_id", user.id);
+      return (data ?? []).map((r: any) => r.role as string);
     },
     enabled: !!user,
   });
+
+  const isAdmin = userRoles.includes("admin");
+  const isCustomerCare = userRoles.includes("customer_care");
 
   // ── Nav pill hover tracking ─────────────────────────────────────────────────
   const [hoveredPath, setHoveredPath] = useState<string | null>(null);
@@ -328,6 +331,22 @@ export function SiteNav() {
                                 <span className="font-medium">Account Settings</span>
                               </Link>
                             </DropdownMenuItem>
+                            {(isCustomerCare || isAdmin) && (
+                              <DropdownMenuItem asChild className="cursor-pointer rounded-xl px-3 py-2.5 focus:bg-secondary">
+                                <Link to="/support" onClick={() => setMenuOpen(false)}>
+                                  <Headset className="mr-3 h-4 w-4 text-emerald-500 shrink-0" />
+                                  <span className="font-medium">Support Portal</span>
+                                </Link>
+                              </DropdownMenuItem>
+                            )}
+                            {isAdmin && (
+                              <DropdownMenuItem asChild className="cursor-pointer rounded-xl px-3 py-2.5 focus:bg-secondary">
+                                <Link to="/admin" onClick={() => setMenuOpen(false)}>
+                                  <ShieldCheck className="mr-3 h-4 w-4 text-primary shrink-0" />
+                                  <span className="font-medium">Admin Panel</span>
+                                </Link>
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator className="mx-2" />
                             <DropdownMenuItem
                               onClick={() => { setMenuOpen(false); handleSignOut(); }}

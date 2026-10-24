@@ -26,12 +26,13 @@ async function fetchMyEvents() {
     .eq("id", userId)
     .maybeSingle()) as { data: any };
 
-  const { data: adminRole } = (await supabase
+  const { data: roleRows } = (await supabase
     .from("user_roles")
     .select("role")
-    .eq("user_id", userId)
-    .eq("role", "admin")
-    .maybeSingle()) as { data: any };
+    .eq("user_id", userId)) as { data: any[] | null };
+  const userRoles = (roleRows ?? []).map((r: any) => r.role);
+  const isAdmin = userRoles.includes("admin");
+  const isCustomerCare = userRoles.includes("customer_care");
 
   const { data: latestApp } = (await supabase
     .from("organizer_applications")
@@ -76,7 +77,8 @@ async function fetchMyEvents() {
 
   return {
     profile,
-    isAdmin: !!adminRole,
+    isAdmin,
+    isCustomerCare,
     latestApp: latestApp as { status: "pending" | "approved" | "rejected"; admin_note: string | null; created_at: string } | null,
     events: events ?? [],
     statsByEvent,
@@ -91,6 +93,7 @@ function Dashboard() {
 
   const isOrganizer = data?.profile?.is_organizer ?? false;
   const isAdmin = data?.isAdmin ?? false;
+  const isCustomerCare = data?.isCustomerCare ?? false;
   const latestApp = data?.latestApp ?? null;
 
   return (
@@ -103,6 +106,11 @@ function Dashboard() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3 shrink-0">
+          {(isCustomerCare || isAdmin) && (
+            <Button asChild variant="outline" className="h-11 md:h-9 px-4 rounded-md border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10">
+              <Link to="/support">Support Portal</Link>
+            </Button>
+          )}
           {isAdmin && (
             <>
               <Button asChild variant="outline" className="h-11 md:h-9 px-4 rounded-md border-border text-foreground hover:bg-secondary">
