@@ -81,39 +81,54 @@ function ScannerPage() {
     try {
       const { data: result, error: rpcError } = await supabase.rpc("check_in_ticket", {
         p_ticket_code: text,
-        p_event_id: eventId,
       });
 
       if (rpcError) throw rpcError;
 
-      const res = result as { success: boolean; reason: string; message: string; checked_in_at?: string };
+      const res = result as {
+        success: boolean;
+        error?: string;
+        already_checked_in?: boolean;
+        checked_in_at?: string;
+        attendee_name?: string;
+        ticket_name?: string;
+      };
 
       if (!res.success) {
-        if (res.reason === "already_scanned") {
-          const time = res.checked_in_at
-            ? new Date(res.checked_in_at).toLocaleTimeString()
-            : "unknown time";
-          setScanResult({
-            status: "warning",
-            message: "Already Scanned",
-            details: `This ticket was checked in at ${time}.`,
-          });
-          triggerHaptic("warning");
-        } else {
-          setScanResult({
-            status: "error",
-            message: "Invalid Ticket",
-            details: res.message,
-          });
-          triggerHaptic("error");
-        }
+        setScanResult({
+          status: "error",
+          message: "Invalid Ticket",
+          details: res.error || "Ticket verification failed.",
+        });
+        triggerHaptic("error");
+        return;
+      }
+
+      const attendeeInfo = [res.attendee_name, res.ticket_name ? `(${res.ticket_name})` : ""]
+        .filter(Boolean)
+        .join(" ");
+
+      if (res.already_checked_in) {
+        const time = res.checked_in_at
+          ? new Date(res.checked_in_at).toLocaleTimeString()
+          : "unknown time";
+        setScanResult({
+          status: "warning",
+          message: "Already Scanned",
+          details: attendeeInfo
+            ? `${attendeeInfo} was checked in at ${time}.`
+            : `This ticket was checked in at ${time}.`,
+        });
+        triggerHaptic("warning");
         return;
       }
 
       setScanResult({
         status: "success",
         message: "Check-in Successful",
-        details: "Ticket is valid and marked as used.",
+        details: attendeeInfo
+          ? `${attendeeInfo} marked as used.`
+          : "Ticket is valid and marked as used.",
       });
       triggerHaptic("success");
 
@@ -126,7 +141,7 @@ function ScannerPage() {
       });
       triggerHaptic("error");
     }
-  }, [eventId, isScanning]);
+  }, [isScanning]);
 
   const resetScanner = () => {
     setScanResult({ status: "idle", message: "Scanning..." });

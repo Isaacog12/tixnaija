@@ -36,6 +36,28 @@ serve(async (req: Request) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || supabaseKey;
+
+    // 1. Verify caller session
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Missing Authorization header" }), {
+        status: 401,
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
+
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: authErr } = await authClient.auth.getUser();
+    if (authErr || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized: Invalid session" }), {
+        status: 401,
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
+
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const { broadcastId } = await req.json();
@@ -49,6 +71,23 @@ serve(async (req: Request) => {
       .single();
 
     if (bErr || !broadcast) throw new Error("Broadcast not found");
+
+    // 2. Authorize: Caller must be the event organizer or an admin
+    const { data: adminRole } = await authClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    const isOrganizer = broadcast.organizer_id === user.id || broadcast.events?.organizer_id === user.id;
+    if (!adminRole && !isOrganizer) {
+      return new Response(JSON.stringify({ error: "Forbidden: You are not authorized to send broadcasts for this event" }), {
+        status: 403,
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
+
     if (broadcast.recipient_count && broadcast.recipient_count > 0) throw new Error("Broadcast already sent");
 
     // Fetch all unique attendees for this event (successful paid orders)

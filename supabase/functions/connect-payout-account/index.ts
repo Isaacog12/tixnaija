@@ -16,7 +16,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS, PUT, DELETE",
 };
 
-function getCorsHeaders(req) {
+function getCorsHeaders(req: any) {
   const origin = req?.headers?.get("origin") || "";
   const isAllowed = allowedOrigins.includes(origin) || origin.endsWith(".vercel.app");
   return {
@@ -41,7 +41,7 @@ serve(async (req) => {
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
     
     // Rate Limiting Check
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
+    const ip = req.headers.get("cf-connecting-ip") || req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     await supabaseAdmin.from("rate_limit_log").insert({ ip_address: ip, endpoint: "connect_payout_account" });
     const fiveMinsAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
     const { count, error: countError } = await supabaseAdmin
@@ -74,6 +74,31 @@ serve(async (req) => {
     }
 
     if (req.method === "POST") {
+      // Authenticate caller first before any resolution or modification
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader) {
+        return new Response(JSON.stringify({ error: "Missing Authorization header" }), {
+          status: 401,
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+        });
+      }
+
+      const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+      const supabaseAuth = createClient(supabaseUrl, anonKey, {
+        auth: { persistSession: false },
+        global: { headers: { Authorization: authHeader } },
+      });
+
+      const jwt = authHeader.replace('Bearer ', '');
+      const { data: userData, error: userError } = await supabaseAuth.auth.getUser(jwt);
+      if (userError || !userData?.user) {
+        return new Response(JSON.stringify({ error: `Unauthorized: ${userError?.message || "No user found"}` }), {
+          status: 401,
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+        });
+      }
+
+      const userId = userData.user.id;
       const body = await req.json();
 
       if (body.action === "resolve") {
@@ -96,24 +121,6 @@ serve(async (req) => {
       if (!bank_code || !account_number || !business_name) {
         throw new Error("Missing required fields");
       }
-
-      const authHeader = req.headers.get("Authorization");
-      if (!authHeader) throw new Error("Missing Authorization header");
-
-      const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-      const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-      const supabaseAuth = createClient(supabaseUrl, anonKey, {
-        auth: { persistSession: false },
-        global: { headers: { Authorization: authHeader } },
-      });
-
-      const jwt = authHeader.replace('Bearer ', '');
-      const { data: userData, error: userError } = await supabaseAuth.auth.getUser(jwt);
-      if (userError || !userData?.user) {
-        throw new Error(`Unauthorized: ${userError?.message || "No user found"}`);
-      }
-
-      const userId = userData.user.id;
 
       // Create Paystack Subaccount
       const response = await fetch("https://api.paystack.co/subaccount", {
@@ -164,6 +171,3 @@ serve(async (req) => {
     });
   }
 });
-
-
-

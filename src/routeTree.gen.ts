@@ -52,6 +52,7 @@ import { Route as AuthenticatedAdminJobApplicationsRouteImport } from './routes/
 import { Route as AuthenticatedAdminOrganizerApplicationsRouteImport } from './routes/_authenticated/admin_.organizer-applications'
 import { Route as AuthenticatedAdminSupportCasesRouteImport } from './routes/_authenticated/admin_.support-cases'
 import { Route as AuthenticatedEventsNewRouteImport } from './routes/_authenticated/events.new'
+import { Route as ApiSitemapXmlRouteImport } from './routes/api/sitemap.xml'
 import { Route as OrdersOrderIdTicketsRouteImport } from './routes/orders.$orderId.tickets'
 import { Route as AuthenticatedEventsEventIdAnalyticsRouteImport } from './routes/_authenticated/events.$eventId.analytics'
 import { Route as AuthenticatedEventsEventIdAttendeesRouteImport } from './routes/_authenticated/events.$eventId.attendees'
@@ -280,6 +281,11 @@ const AuthenticatedEventsNewRoute = AuthenticatedEventsNewRouteImport.update({
   path: '/events/new',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiSitemapXmlRoute = ApiSitemapXmlRouteImport.update({
+  id: '/api/sitemap/xml',
+  path: '/api/sitemap/xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrdersOrderIdTicketsRoute = OrdersOrderIdTicketsRouteImport.update({
   id: '/orders/$orderId/tickets',
   path: '/orders/$orderId/tickets',
@@ -353,6 +359,7 @@ export interface FileRoutesByFullPath {
   '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/admin/support-cases': typeof AuthenticatedAdminSupportCasesRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
+  '/api/sitemap/xml': typeof ApiSitemapXmlRoute
   '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
   '/events/$eventId/analytics': typeof AuthenticatedEventsEventIdAnalyticsRoute
   '/events/$eventId/attendees': typeof AuthenticatedEventsEventIdAttendeesRoute
@@ -402,6 +409,7 @@ export interface FileRoutesByTo {
   '/admin/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/admin/support-cases': typeof AuthenticatedAdminSupportCasesRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
+  '/api/sitemap/xml': typeof ApiSitemapXmlRoute
   '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
   '/events/$eventId/analytics': typeof AuthenticatedEventsEventIdAnalyticsRoute
   '/events/$eventId/attendees': typeof AuthenticatedEventsEventIdAttendeesRoute
@@ -453,6 +461,7 @@ export interface FileRoutesById {
   '/_authenticated/admin_/organizer-applications': typeof AuthenticatedAdminOrganizerApplicationsRoute
   '/_authenticated/admin_/support-cases': typeof AuthenticatedAdminSupportCasesRoute
   '/_authenticated/events/new': typeof AuthenticatedEventsNewRoute
+  '/api/sitemap/xml': typeof ApiSitemapXmlRoute
   '/orders/$orderId/tickets': typeof OrdersOrderIdTicketsRoute
   '/_authenticated/events/$eventId/analytics': typeof AuthenticatedEventsEventIdAnalyticsRoute
   '/_authenticated/events/$eventId/attendees': typeof AuthenticatedEventsEventIdAttendeesRoute
@@ -504,6 +513,7 @@ export interface FileRouteTypes {
     | '/admin/organizer-applications'
     | '/admin/support-cases'
     | '/events/new'
+    | '/api/sitemap/xml'
     | '/orders/$orderId/tickets'
     | '/events/$eventId/analytics'
     | '/events/$eventId/attendees'
@@ -553,6 +563,7 @@ export interface FileRouteTypes {
     | '/admin/organizer-applications'
     | '/admin/support-cases'
     | '/events/new'
+    | '/api/sitemap/xml'
     | '/orders/$orderId/tickets'
     | '/events/$eventId/analytics'
     | '/events/$eventId/attendees'
@@ -603,6 +614,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin_/organizer-applications'
     | '/_authenticated/admin_/support-cases'
     | '/_authenticated/events/new'
+    | '/api/sitemap/xml'
     | '/orders/$orderId/tickets'
     | '/_authenticated/events/$eventId/analytics'
     | '/_authenticated/events/$eventId/attendees'
@@ -640,6 +652,7 @@ export interface RootRouteChildren {
   EV2SlugRoute: typeof EV2SlugRoute
   ESlugRoute: typeof ESlugRoute
   TTicketCodeRoute: typeof TTicketCodeRoute
+  ApiSitemapXmlRoute: typeof ApiSitemapXmlRoute
   OrdersOrderIdTicketsRoute: typeof OrdersOrderIdTicketsRoute
 }
 
@@ -946,6 +959,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/sitemap/xml': {
+      id: '/api/sitemap/xml'
+      path: '/api/sitemap/xml'
+      fullPath: '/api/sitemap/xml'
+      preLoaderRoute: typeof ApiSitemapXmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/orders/$orderId/tickets': {
       id: '/orders/$orderId/tickets'
       path: '/orders/$orderId/tickets'
@@ -1063,6 +1083,7 @@ const rootRouteChildren: RootRouteChildren = {
   EV2SlugRoute: EV2SlugRoute,
   ESlugRoute: ESlugRoute,
   TTicketCodeRoute: TTicketCodeRoute,
+  ApiSitemapXmlRoute: ApiSitemapXmlRoute,
   OrdersOrderIdTicketsRoute: OrdersOrderIdTicketsRoute,
 }
 export const routeTree = rootRouteImport

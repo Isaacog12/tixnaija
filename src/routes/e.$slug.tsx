@@ -332,6 +332,14 @@ function EventDetailPage() {
     validatePromoter();
   }, [ref, data?.event]);
 
+  useEffect(() => {
+    if (!data?.event?.id) return;
+    supabase
+      .from("event_page_views")
+      .insert({ event_id: data.event.id })
+      .then();
+  }, [data?.event?.id]);
+
   const form = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
@@ -507,20 +515,19 @@ function EventDetailPage() {
 
       if (totalKobo === 0) {
         // Handle free tickets locally
-        const { data: orderId, error: checkoutError } = await supabase.rpc("process_checkout", {
+        const { data: orderId, error: checkoutError } = await supabase.rpc("process_free_checkout", {
           p_event_id: data!.event.id,
           p_user_id: (userId || null) as string,
           p_buyer_name: values.buyerName,
           p_buyer_email: values.buyerEmail,
           p_buyer_phone: (values.buyerPhone || null) as string,
           p_tickets: ticketsPayload,
-          p_amount_paid: 0,
-          p_payment_reference: `FREE_${Date.now()}_${Math.random().toString(36).substring(7)}`,
           p_promo_code_id: appliedPromo?.id ?? undefined,
           p_is_gift: values.isGift,
           p_recipient_name: values.isGift ? values.recipientName : null,
           p_recipient_email: values.isGift ? values.recipientEmail : null,
           p_gift_message: values.isGift ? values.giftMessage : null,
+          p_access_code: accessCode || undefined,
           p_promoter_link_id: appliedPromoterLink?.link_id ?? undefined,
           p_checkout_answers: values.answers || {},
         } as any);
