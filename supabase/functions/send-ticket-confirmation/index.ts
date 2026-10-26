@@ -107,7 +107,7 @@ serve(async (req: Request) => {
           .from("user_roles")
           .select("role")
           .eq("user_id", user.id)
-          .in("role", ["admin", "super_admin", "support"])
+          .in("role", ["admin", "customer_care"])
           .maybeSingle();
         if (roleRow) {
           isStaff = true;
@@ -168,7 +168,8 @@ serve(async (req: Request) => {
       ? `You received a gift for ${eventTitle} 🎁 (Ref: ${orderRef})`
       : `Your tickets for ${eventTitle} are ready 🎟️ (Ref: ${orderRef})`;
 
-    const ticketUrl = `https://tixnaija.name.ng/orders/${order.id}/tickets?email=${encodeURIComponent(recipientEmail)}`;
+    const accessParam = order.access_code ? `&code=${encodeURIComponent(order.access_code)}` : (order.payment_reference ? `&code=${encodeURIComponent(order.payment_reference)}` : '');
+    const ticketUrl = `https://tixnaija.name.ng/orders/${order.id}/tickets?email=${encodeURIComponent(recipientEmail)}${accessParam}`;
     const downloadUrl = `${ticketUrl}&download=true`;
 
     const ticketTypes = order.order_items?.map((item: any) => item.ticket_types?.name).filter(Boolean).join(', ') || 'General Admission';

@@ -18,7 +18,7 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || serviceKey;
-    const internalSecret = Deno.env.get("WAITLIST_TRIGGER_SECRET") || "tix_internal_waitlist_sec_9942a0e7d5b14c8f";
+    const internalSecret = Deno.env.get("WAITLIST_TRIGGER_SECRET");
 
     // 1. Authorize caller: Must be organizer of this event, platform admin, or dedicated internal trigger secret
     const authHeader = req.headers.get("Authorization");
@@ -30,8 +30,13 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace(/^Bearer\s+/i, "").trim();
-    const isServiceRole = token === serviceKey;
-    const isInternalTrigger = (token === internalSecret) || (req.headers.get("x-internal-trigger-secret") === internalSecret);
+    const isServiceRole = Boolean(serviceKey && token === serviceKey);
+    const isInternalTrigger = Boolean(
+      internalSecret && (
+        token === internalSecret ||
+        req.headers.get("x-internal-trigger-secret") === internalSecret
+      )
+    );
     let isAuthorized = isServiceRole || isInternalTrigger;
 
     const supabaseClient = createClient(supabaseUrl, serviceKey);
@@ -77,14 +82,6 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-    }
-
-    const isOrganizer = tier.events?.organizer_id === user.id;
-    if (!adminRole && !isOrganizer) {
-      return new Response(JSON.stringify({ error: "Forbidden: You are not authorized to notify waitlists for this event" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
     }
 
     const availableSpots = tier.quantity_available - (tier.quantity_sold - (tier.quantity_cancelled || 0));

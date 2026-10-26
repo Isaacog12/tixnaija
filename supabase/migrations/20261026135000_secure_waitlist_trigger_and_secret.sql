@@ -47,3 +47,13 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+-- Drop obsolete waitlist trigger that called handle_ticket_tier_waitlist()
+DROP TRIGGER IF EXISTS on_ticket_tier_update ON public.ticket_types;
+
+-- Recreate trigger pointing to the secured notification function
+CREATE TRIGGER on_ticket_tier_update
+  AFTER UPDATE ON public.ticket_types
+  FOR EACH ROW
+  EXECUTE FUNCTION public.trigger_waitlist_notification();
+
