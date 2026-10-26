@@ -102,7 +102,19 @@ async function fetchOrderTickets(orderId: string, guestEmail?: string, accessCod
     `)
     .eq("order_items.order_id", orderId);
 
-  return { order, tickets: tickets || [], isGuest: false };
+  let siblingOrders: any[] = [];
+  if (order.user_id && order.event_id) {
+    const { data: siblings } = await supabase
+      .from("orders")
+      .select("id, created_at, total_kobo, status")
+      .eq("user_id", order.user_id)
+      .eq("event_id", order.event_id)
+      .neq("id", orderId)
+      .order("created_at", { ascending: false });
+    siblingOrders = siblings || [];
+  }
+
+  return { order, tickets: tickets || [], isGuest: false, siblingOrders };
 }
 
 import { useEffect, useState } from "react";
@@ -245,6 +257,35 @@ function OrderTicketsPage() {
           </div>
         ) : (
           <div className="space-y-12">
+            {data.siblingOrders && data.siblingOrders.length > 0 && (
+              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Ticket className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      You have tickets from {data.siblingOrders.length} other order{data.siblingOrders.length > 1 ? "s" : ""} for this event
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      View all your passes together in My Tickets or switch directly to another order.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {data.siblingOrders.map((sib: any) => (
+                    <Button key={sib.id} asChild variant="outline" size="sm" className="rounded-xl h-8 text-xs font-mono bg-card/80">
+                      <Link to="/orders/$orderId/tickets" params={{ orderId: sib.id }}>
+                        Order #{sib.id.slice(0, 8)} →
+                      </Link>
+                    </Button>
+                  ))}
+                  <Button asChild size="sm" className="rounded-xl h-8 text-xs gradient-sunset text-primary-foreground font-semibold">
+                    <Link to="/tickets">View All in My Tickets</Link>
+                  </Button>
+                </div>
+              </div>
+            )}
             {data.tickets.map((ticket, index) => {
               const ticketType = Array.isArray(ticket.order_items)
                 ? (ticket.order_items[0]?.ticket_types || {})
