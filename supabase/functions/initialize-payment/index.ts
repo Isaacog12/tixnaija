@@ -131,11 +131,21 @@ serve(async (req) => {
     if (promoCodeId) {
        const { data: promo } = await supabase
          .from("promo_codes")
-         .select("discount_percentage, active")
+         .select("discount_type, discount_value, active, expires_at, max_uses, times_used")
          .eq("id", promoCodeId)
          .single();
-       if (promo && promo.active) {
-          finalTotalKobo = Math.round(finalTotalKobo * (1 - promo.discount_percentage / 100));
+       if (
+         promo && 
+         promo.active && 
+         (!promo.expires_at || new Date(promo.expires_at) > new Date()) && 
+         (!promo.max_uses || promo.times_used < promo.max_uses)
+       ) {
+          if (promo.discount_type === "percent") {
+            const disc = Math.round((finalTotalKobo * promo.discount_value) / 100);
+            finalTotalKobo = Math.max(0, finalTotalKobo - disc);
+          } else {
+            finalTotalKobo = Math.max(0, finalTotalKobo - promo.discount_value);
+          }
        }
     }
 
