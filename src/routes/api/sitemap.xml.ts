@@ -7,11 +7,17 @@ export const Route = createFileRoute("/api/sitemap/xml")({
       GET: async () => {
         const baseUrl = "https://www.tixnaija.name.ng";
         
-        // Fetch all public events (slugs)
+        // Fetch active published events
         const { data: events } = await supabase
           .from("events")
-          .select("slug, updated_at")
+          .select("slug, start_datetime, end_datetime, updated_at")
           .eq("status", "published");
+
+        const now = new Date();
+        const activeEvents = (events || []).filter((ev: any) => {
+          const end = ev.end_datetime ? new Date(ev.end_datetime) : new Date(ev.start_datetime);
+          return end >= now;
+        });
 
         const staticRoutes = [
           "/",
@@ -39,23 +45,20 @@ export const Route = createFileRoute("/api/sitemap/xml")({
 `;
         });
 
-        // Add dynamic event routes
-        if (events) {
-          events.forEach((event) => {
-            // Fallback to current date if updated_at is null
-            const lastMod = event.updated_at 
-              ? new Date(event.updated_at).toISOString().split('T')[0]
-              : new Date().toISOString().split('T')[0];
-              
-            xml += `  <url>
+        // Add dynamic active event routes
+        activeEvents.forEach((event: any) => {
+          const lastMod = event.updated_at 
+            ? new Date(event.updated_at).toISOString().split('T')[0]
+            : new Date().toISOString().split('T')[0];
+            
+          xml += `  <url>
     <loc>${baseUrl}/e/${event.slug}</loc>
     <lastmod>${lastMod}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
 `;
-          });
-        }
+        });
 
         xml += `</urlset>`;
 

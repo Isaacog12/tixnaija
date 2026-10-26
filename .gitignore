@@ -41,3 +41,8 @@ dist-ssr
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Build artifacts & scratch
+stats.html
+.delta/
+brag-output-*/
