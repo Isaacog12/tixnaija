@@ -278,7 +278,9 @@ function RootComponent() {
         'postgres_changes',
         { event: '*', schema: 'public' },
         (payload) => {
-          console.log('Realtime DB change detected:', payload);
+          if (import.meta.env.DEV) {
+            console.log('Realtime DB change detected:', payload);
+          }
           queryClient.invalidateQueries();
         }
       )
