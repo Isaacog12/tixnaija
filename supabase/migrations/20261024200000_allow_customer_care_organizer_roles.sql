@@ -54,6 +54,7 @@ $$;
 
 -- 4. Update audit logs and payment events policies to allow admin role without strict AAL2 MFA
 DROP POLICY IF EXISTS "Admins with MFA can view audit logs" ON public.support_audit_logs;
+DROP POLICY IF EXISTS "Admins can view audit logs" ON public.support_audit_logs;
 CREATE POLICY "Admins can view audit logs"
 ON public.support_audit_logs FOR SELECT TO authenticated
 USING (
@@ -61,6 +62,7 @@ USING (
 );
 
 DROP POLICY IF EXISTS "Admins with MFA can view payment events" ON public.payment_events;
+DROP POLICY IF EXISTS "Admins can view payment events" ON public.payment_events;
 CREATE POLICY "Admins can view payment events"
 ON public.payment_events FOR SELECT TO authenticated
 USING (

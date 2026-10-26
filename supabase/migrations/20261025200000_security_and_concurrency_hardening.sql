@@ -268,7 +268,15 @@ DECLARE
   v_ticket_type_id uuid;
   v_count integer;
   v_free_reference text;
+  v_actual_user_id uuid;
 BEGIN
+  -- Prevent caller from spoofing user_id: bind strictly to auth.uid()
+  IF auth.uid() IS NOT NULL THEN
+    v_actual_user_id := auth.uid();
+  ELSE
+    v_actual_user_id := NULL;
+  END IF;
+
   -- Validate that items calculate to 0
   FOR v_item IN SELECT * FROM jsonb_array_elements(p_tickets)
   LOOP
@@ -325,7 +333,7 @@ BEGIN
   -- Call the internal process_checkout function
   RETURN public.process_checkout(
     p_event_id,
-    p_user_id,
+    v_actual_user_id,
     p_buyer_name,
     p_buyer_email,
     p_buyer_phone,
@@ -347,13 +355,13 @@ $$;
 GRANT EXECUTE ON FUNCTION public.process_free_checkout TO anon, authenticated, service_role;
 
 
--- 4. Secure Guest Orders Lookup with Access Code Validation
+-- 4. Secure Guest Orders Lookup with Mandatory Access Code and Rate Limiting
 DROP FUNCTION IF EXISTS public.get_guest_orders(text);
 DROP FUNCTION IF EXISTS public.get_guest_orders(text, text);
 
 CREATE OR REPLACE FUNCTION public.get_guest_orders(
   p_email text,
-  p_access_code text default null
+  p_access_code text
 ) returns table (
   id uuid,
   event_id uuid,
@@ -371,9 +379,44 @@ CREATE OR REPLACE FUNCTION public.get_guest_orders(
 language plpgsql security definer
 set search_path = public
 as $$
+declare
+  v_ip_address text;
+  v_attempt_count integer;
+  v_headers json;
 begin
-  -- Require either a matching access_code or payment_reference or matching order prefix
-  -- to prevent unauthenticated enumeration of someone's ticket orders with just an email.
+  -- Access code is strictly mandatory to prevent email-only enumeration
+  if p_email is null or trim(p_email) = '' or p_access_code is null or trim(p_access_code) = '' then
+    raise exception 'Both email and access code are required to view guest orders.';
+  end if;
+
+  -- 1. Extract IP address from request headers
+  begin
+    v_headers := current_setting('request.headers', true)::json;
+    v_ip_address := v_headers->>'x-forwarded-for';
+  exception when others then
+    v_ip_address := 'unknown';
+  end;
+
+  if v_ip_address is null then
+    v_ip_address := 'unknown';
+  end if;
+  v_ip_address := split_part(v_ip_address, ',', 1);
+
+  -- 2. Log attempt in rate_limit_log
+  insert into public.rate_limit_log (ip_address, endpoint)
+  values (v_ip_address, 'get_guest_orders');
+
+  -- 3. Enforce rate limit: max 5 attempts per 10 minutes per IP
+  select count(*) into v_attempt_count
+  from public.rate_limit_log
+  where ip_address = v_ip_address
+    and endpoint = 'get_guest_orders'
+    and created_at > now() - interval '10 minutes';
+
+  if v_attempt_count > 5 then
+    raise exception 'Too many lookup attempts. Please wait 10 minutes and try again.';
+  end if;
+
   return query
     select
       o.id,
@@ -393,15 +436,206 @@ begin
     where lower(o.buyer_email) = lower(trim(p_email))
       and o.status IN ('paid', 'comp')
       and (
-        p_access_code is null
-        or trim(p_access_code) = ''
-        or o.access_code = trim(p_access_code)
-        or o.payment_reference ilike '%' || trim(p_access_code) || '%'
-        or o.id::text ilike trim(p_access_code) || '%'
+        o.access_code = trim(p_access_code)
+        or o.payment_reference = trim(p_access_code)
       )
     order by o.created_at desc
-    limit 50;
+    limit 20;
 end;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.get_guest_orders(text, text) TO anon, authenticated, service_role;
+
+
+-- 5. Secure get_guest_order_full: Drop email-only overload and require access_code
+DROP FUNCTION IF EXISTS public.get_guest_order_full(uuid, text);
+DROP FUNCTION IF EXISTS public.get_guest_order_full(uuid, text, text);
+
+CREATE OR REPLACE FUNCTION public.get_guest_order_full(
+  p_order_id uuid,
+  p_email text,
+  p_access_code text
+) returns jsonb
+language plpgsql security definer
+set search_path = public
+as $$
+declare
+  v_ip_address text;
+  v_attempt_count integer;
+  v_headers json;
+  v_result jsonb;
+begin
+  if p_email is null or trim(p_email) = '' or p_access_code is null or trim(p_access_code) = '' then
+    raise exception 'Both email and access code are required.';
+  end if;
+
+  -- Extract IP address
+  begin
+    v_headers := current_setting('request.headers', true)::json;
+    v_ip_address := v_headers->>'x-forwarded-for';
+  exception when others then
+    v_ip_address := 'unknown';
+  end;
+
+  if v_ip_address is null then
+    v_ip_address := 'unknown';
+  end if;
+  v_ip_address := split_part(v_ip_address, ',', 1);
+
+  -- Log attempt
+  insert into public.rate_limit_log (ip_address, endpoint)
+  values (v_ip_address, 'get_guest_order_full');
+
+  -- Rate limit check
+  select count(*) into v_attempt_count
+  from public.rate_limit_log
+  where ip_address = v_ip_address
+    and endpoint = 'get_guest_order_full'
+    and created_at > now() - interval '10 minutes';
+
+  if v_attempt_count > 5 then
+    raise exception 'Too many ticket lookup attempts. Please wait 10 minutes.';
+  end if;
+
+  select jsonb_build_object(
+    'order', (
+      select jsonb_build_object(
+        'id', o.id,
+        'event_id', o.event_id,
+        'user_id', o.user_id,
+        'buyer_name', o.buyer_name,
+        'buyer_email', o.buyer_email,
+        'buyer_phone', o.buyer_phone,
+        'subtotal_kobo', o.subtotal_kobo,
+        'discount_kobo', o.discount_kobo,
+        'total_kobo', o.total_kobo,
+        'promo_code_id', o.promo_code_id,
+        'status', o.status,
+        'payment_reference', o.payment_reference,
+        'access_code', o.access_code,
+        'created_at', o.created_at,
+        'updated_at', o.updated_at,
+        'events', (select row_to_json(e) from events e where e.id = o.event_id)
+      )
+    ),
+    'tickets', coalesce((
+      select jsonb_agg(
+        jsonb_build_object(
+          'id', t.id,
+          'ticket_code', t.ticket_code,
+          'attendee_name', t.attendee_name,
+          'status', t.status,
+          'order_items', jsonb_build_object(
+            'order_id', oi.order_id,
+            'ticket_types', (select row_to_json(tt) from ticket_types tt where tt.id = oi.ticket_type_id)
+          )
+        )
+      )
+      from tickets t
+      join order_items oi on oi.id = t.order_item_id
+      where oi.order_id = p_order_id
+    ), '[]'::jsonb)
+  ) into v_result
+  from orders o
+  where o.id = p_order_id
+    and (lower(o.buyer_email) = lower(trim(p_email)) or lower(coalesce(o.recipient_email, '')) = lower(trim(p_email)))
+    and (o.access_code = trim(p_access_code) or o.payment_reference = trim(p_access_code))
+    and o.status IN ('paid', 'comp');
+
+  if v_result is null then
+    raise exception 'Order not found or invalid access credentials.';
+  end if;
+
+  return v_result;
+end;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_guest_order_full(uuid, text, text) TO anon, authenticated, service_role;
+
+
+-- 6. Allow Admins to Scan Tickets in check_in_ticket
+CREATE OR REPLACE FUNCTION public.check_in_ticket(p_ticket_code text)
+RETURNS json
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_ticket_id uuid;
+    v_status public.ticket_status;
+    v_checked_in_at timestamp with time zone;
+    v_organizer_id uuid;
+    v_attendee_name text;
+    v_ticket_name text;
+    v_caller_uid uuid;
+    v_is_admin boolean := false;
+BEGIN
+    v_caller_uid := auth.uid();
+    
+    IF v_caller_uid IS NULL THEN
+        RETURN json_build_object('success', false, 'error', 'Not authenticated');
+    END IF;
+
+    -- Lookup ticket details along with event organizer_id
+    SELECT 
+        t.id, t.status, t.checked_in_at, t.attendee_name, e.organizer_id, tt.name
+    INTO 
+        v_ticket_id, v_status, v_checked_in_at, v_attendee_name, v_organizer_id, v_ticket_name
+    FROM public.tickets t
+    JOIN public.order_items oi ON oi.id = t.order_item_id
+    JOIN public.ticket_types tt ON tt.id = oi.ticket_type_id
+    JOIN public.events e ON e.id = tt.event_id
+    WHERE t.ticket_code = p_ticket_code::uuid
+    FOR UPDATE OF t;
+
+    -- If ticket doesn't exist
+    IF v_ticket_id IS NULL THEN
+        RETURN json_build_object('success', false, 'error', 'Invalid ticket code');
+    END IF;
+
+    -- Check if caller is admin
+    SELECT EXISTS (
+        SELECT 1 FROM public.user_roles WHERE user_id = v_caller_uid AND role = 'admin'
+    ) INTO v_is_admin;
+
+    -- Ensure caller is organizer or admin
+    IF v_caller_uid != v_organizer_id AND NOT v_is_admin THEN
+        RETURN json_build_object('success', false, 'error', 'Unauthorized: You are not the organizer of this event or an admin');
+    END IF;
+
+    -- Check current status
+    IF v_status = 'cancelled' THEN
+        RETURN json_build_object('success', false, 'error', 'This ticket has been cancelled');
+    END IF;
+
+    IF v_status = 'checked_in' THEN
+        RETURN json_build_object(
+            'success', true, 
+            'already_checked_in', true, 
+            'checked_in_at', v_checked_in_at,
+            'attendee_name', v_attendee_name,
+            'ticket_name', v_ticket_name
+        );
+    END IF;
+
+    -- Valid and unused -> Check in!
+    UPDATE public.tickets
+    SET 
+        status = 'checked_in',
+        checked_in_at = now(),
+        checked_in_by = v_caller_uid
+    WHERE id = v_ticket_id AND status != 'checked_in';
+
+    RETURN json_build_object(
+        'success', true, 
+        'already_checked_in', false,
+        'checked_in_at', now(),
+        'attendee_name', v_attendee_name,
+        'ticket_name', v_ticket_name
+    );
+EXCEPTION WHEN invalid_text_representation THEN
+    RETURN json_build_object('success', false, 'error', 'Invalid ticket code format');
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.check_in_ticket(text) TO authenticated;
+

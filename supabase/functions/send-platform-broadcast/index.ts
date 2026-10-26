@@ -21,7 +21,7 @@ serve(async (req: Request) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || supabaseKey;
 
-    // 1. Verify caller identity and admin authorization
+    // 1. Verify caller identity: service_role key OR verified admin JWT
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Missing Authorization header" }), {
@@ -30,29 +30,35 @@ serve(async (req: Request) => {
       });
     }
 
-    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user }, error: authErr } = await authClient.auth.getUser();
-    if (authErr || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized: Invalid session" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    const isServiceRole = token === supabaseKey;
 
-    const { data: adminRole } = await authClient
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle();
-
-    if (!adminRole) {
-      return new Response(JSON.stringify({ error: "Forbidden: Admin privileges required" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    if (!isServiceRole) {
+      const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: { persistSession: false },
       });
+      const { data: { user }, error: authErr } = await authClient.auth.getUser(token);
+      if (authErr || !user) {
+        return new Response(JSON.stringify({ error: "Unauthorized: Invalid session" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const adminClient = createClient(supabaseUrl, supabaseKey);
+      const { data: adminRole } = await adminClient
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (!adminRole) {
+        return new Response(JSON.stringify({ error: "Forbidden: Admin privileges required" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -60,17 +66,25 @@ serve(async (req: Request) => {
     const { subject, htmlBody } = await req.json();
     if (!subject || !htmlBody) throw new Error("Missing subject or htmlBody");
 
-    // Fetch all users using the Service Role Key
-    const { data: { users }, error: uErr } = await supabase.auth.admin.listUsers();
-    if (uErr) throw new Error("Failed to fetch users");
-
-    // De-duplicate emails
+    // Fetch all users with pagination using the Service Role Key
     const uniqueUsers = new Map<string, string>();
-    users.forEach(u => {
-      if (u.email) {
-        uniqueUsers.set(u.email.trim().toLowerCase(), u.user_metadata?.full_name || "TixNaija Member");
-      }
-    });
+    let page = 1;
+    const perPage = 1000;
+    while (true) {
+      const { data, error: uErr } = await supabase.auth.admin.listUsers({ page, perPage });
+      if (uErr) throw new Error(`Failed to fetch users page ${page}: ${uErr.message}`);
+      const pageUsers = data?.users || [];
+      if (pageUsers.length === 0) break;
+
+      pageUsers.forEach((u: any) => {
+        if (u.email) {
+          uniqueUsers.set(u.email.trim().toLowerCase(), u.user_metadata?.full_name || "TixNaija Member");
+        }
+      });
+
+      if (pageUsers.length < perPage) break;
+      page++;
+    }
 
     const candidateEmails = Array.from(uniqueUsers.keys());
     if (candidateEmails.length === 0) {
@@ -88,7 +102,6 @@ serve(async (req: Request) => {
 
     for (const [email, name] of uniqueUsers.entries()) {
       if (!optedInEmails.has(email)) {
-        // User has not opted into promotional emails
         skippedCount++;
         continue;
       }
@@ -96,7 +109,6 @@ serve(async (req: Request) => {
       const unsubToken = await generateUnsubscribeToken(email, "marketing_emails");
       const unsubUrl = `https://tixnaija.name.ng/unsubscribe?email=${encodeURIComponent(email)}&category=marketing_emails&token=${unsubToken}`;
 
-      // Append standard opt-out footer with signed one-click token and business identity
       const fullHtmlBody = `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1a1a1a;">
           ${htmlBody}

@@ -22,8 +22,9 @@ import type { Tables } from "@/lib/database.types";
 export const Route = createFileRoute("/orders/$orderId/tickets")({
   ssr: false,
   component: OrderTicketsPage,
-  validateSearch: (search: Record<string, unknown>): { email?: string; download?: boolean } => ({
+  validateSearch: (search: Record<string, unknown>): { email?: string; code?: string; download?: boolean } => ({
     email: typeof search.email === "string" ? search.email : undefined,
+    code: typeof search.code === "string" ? search.code : (typeof search.accessCode === "string" ? search.accessCode : undefined),
     download: search.download === "true" || search.download === true,
   }),
   errorComponent: ({ error }) => (
@@ -55,12 +56,13 @@ interface GuestOrderFull {
   })[];
 }
 
-async function fetchOrderTickets(orderId: string, guestEmail?: string) {
-  // If guest mode: check email matches via RPC
-  if (guestEmail) {
-    const { data, error } = await supabase.rpc("get_guest_order_full", {
+async function fetchOrderTickets(orderId: string, guestEmail?: string, accessCode?: string) {
+  // If guest mode: require both email and access code to unlock
+  if (guestEmail && accessCode) {
+    const { data, error } = await supabase.rpc("get_guest_order_full" as any, {
       p_order_id: orderId,
-      p_email: guestEmail.toLowerCase(),
+      p_email: guestEmail.trim().toLowerCase(),
+      p_access_code: accessCode.trim(),
     });
     
     if (error || !data) {
@@ -107,11 +109,11 @@ import { useEffect, useState } from "react";
 
 function OrderTicketsPage() {
   const { orderId } = Route.useParams();
-  const { email: searchEmail, download: shouldDownload } = useSearch({ from: "/orders/$orderId/tickets" });
+  const { email: searchEmail, code: searchCode, download: shouldDownload } = useSearch({ from: "/orders/$orderId/tickets" });
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["order-tickets", orderId, searchEmail],
-    queryFn: () => fetchOrderTickets(orderId, searchEmail),
+    queryKey: ["order-tickets", orderId, searchEmail, searchCode],
+    queryFn: () => fetchOrderTickets(orderId, searchEmail, searchCode),
   });
 
   const [editingTicket, setEditingTicket] = useState<GuestOrderFull["tickets"][number] | null>(null);
@@ -221,16 +223,14 @@ function OrderTicketsPage() {
           <div className="text-center py-24 text-muted-foreground">
             <Ticket className="mx-auto h-12 w-12 text-muted-foreground/40 mb-3" />
             <p className="text-base font-semibold text-foreground">Failed to load tickets or order not found.</p>
-            <p className="text-sm mt-1 mb-6 text-muted-foreground">Please make sure you are logged into the account that purchased the ticket.</p>
+            <p className="text-sm mt-1 mb-6 text-muted-foreground">Please make sure you are logged in or provide your order email and access code.</p>
             <div className="flex justify-center gap-3">
               <Button asChild variant="outline">
                 <Link to="/tickets">View My Tickets</Link>
               </Button>
-              {searchEmail && (
-                <Button asChild variant="outline">
-                  <Link to="/my-tickets">Try again</Link>
-                </Button>
-              )}
+              <Button asChild className="gradient-sunset text-white">
+                <Link to="/my-tickets">Find with Access Code</Link>
+              </Button>
             </div>
           </div>
         ) : data.tickets.length === 0 ? (

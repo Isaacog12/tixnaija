@@ -28,16 +28,10 @@ serve(async (req) => {
       });
     }
 
-    const authClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user }, error: authErr } = await authClient.auth.getUser();
-    if (authErr || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized: Invalid session" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    const isServiceRole = token === serviceKey;
+    const isInternalTrigger = token === anonKey;
+    let isAuthorized = isServiceRole || isInternalTrigger;
 
     const supabaseClient = createClient(supabaseUrl, serviceKey);
 
@@ -55,13 +49,34 @@ serve(async (req) => {
 
     if (tierError || !tier) throw new Error("Tier not found");
 
-    // Check organizer or admin role
-    const { data: adminRole } = await authClient
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle();
+    if (!isAuthorized) {
+      const authClient = createClient(supabaseUrl, anonKey, {
+        auth: { persistSession: false },
+      });
+      const { data: { user }, error: authErr } = await authClient.auth.getUser(token);
+      if (authErr || !user) {
+        return new Response(JSON.stringify({ error: "Unauthorized: Invalid session" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Check organizer or admin role
+      const { data: adminRole } = await supabaseClient
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      const isOrganizer = tier.events?.organizer_id === user.id;
+      if (!isOrganizer && !adminRole) {
+        return new Response(JSON.stringify({ error: "Forbidden: You are not authorized to notify this waitlist" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
 
     const isOrganizer = tier.events?.organizer_id === user.id;
     if (!adminRole && !isOrganizer) {

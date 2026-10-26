@@ -48,6 +48,7 @@ function GuestTicketsPage() {
     mutationFn: async ({ emailVal, accessCodeVal }: { emailVal: string, accessCodeVal: string }) => {
       const { data, error } = await supabase.rpc("get_guest_orders" as any, {
         p_email: emailVal.trim().toLowerCase(),
+        p_access_code: accessCodeVal.trim(),
       });
       if (error) throw error;
       return (data ?? []) as GuestOrder[];
@@ -63,8 +64,8 @@ function GuestTicketsPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email.trim()) return;
-    lookup.mutate({ emailVal: email.trim(), accessCodeVal: "" });
+    if (!email.trim() || !accessCode.trim()) return;
+    lookup.mutate({ emailVal: email.trim(), accessCodeVal: accessCode.trim() });
   }
 
   return (
@@ -105,6 +106,24 @@ function GuestTicketsPage() {
                 required
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="guest-access-code" className="text-sm font-semibold">
+                Order Reference or Access Code
+              </Label>
+              <Input
+                id="guest-access-code"
+                type="text"
+                placeholder="e.g. TN-123456 or checkout code"
+                value={accessCode}
+                onChange={(e) => setAccessCode(e.target.value)}
+                className="h-12 text-base bg-background font-mono"
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Found in your ticket confirmation email or SMS.
+              </p>
+            </div>
             
             <div className="space-y-2">
               <div className="flex flex-col sm:flex-row gap-3">
@@ -112,7 +131,7 @@ function GuestTicketsPage() {
                    type="submit"
                    size="lg"
                    className="h-12 w-full sm:w-auto px-8 font-semibold text-primary-foreground shadow-md gradient-sunset press-sm transition-all duration-[120ms] hover:-translate-y-0.5"
-                   disabled={lookup.isPending || !email.trim()}
+                   disabled={lookup.isPending || !email.trim() || !accessCode.trim()}
                  >
                   {lookup.isPending ? (
                     <span className="flex items-center gap-2">
@@ -208,7 +227,7 @@ function GuestTicketsPage() {
                           <Link
                             to="/orders/$orderId/tickets"
                             params={{ orderId: order.id }}
-                            search={{ email: submitted.email }}
+                            search={{ email: submitted.email, code: submitted.accessCode }}
                           >
                             <QrCode className="mr-2 h-4 w-4" />
                             View Tickets

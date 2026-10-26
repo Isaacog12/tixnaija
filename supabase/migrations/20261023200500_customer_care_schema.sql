@@ -379,6 +379,8 @@ ALTER TABLE public.support_email_change_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.support_macros ENABLE ROW LEVEL SECURITY;
 
 -- Admins with AAL2 MFA can view audit logs
+DROP POLICY IF EXISTS "Admins with MFA can view audit logs" ON public.support_audit_logs;
+DROP POLICY IF EXISTS "Admins can view audit logs" ON public.support_audit_logs;
 CREATE POLICY "Admins with MFA can view audit logs"
 ON public.support_audit_logs FOR SELECT TO authenticated
 USING (
@@ -387,11 +389,13 @@ USING (
 );
 
 -- Customer views own cases only. Staff accesses strictly via RPC.
+DROP POLICY IF EXISTS "Customers can view own cases" ON public.support_cases;
 CREATE POLICY "Customers can view own cases"
 ON public.support_cases FOR SELECT TO authenticated
 USING (customer_id = auth.uid());
 
 -- Customer views non-internal messages of own cases only
+DROP POLICY IF EXISTS "Customers can view non-internal messages of own cases" ON public.support_case_messages;
 CREATE POLICY "Customers can view non-internal messages of own cases"
 ON public.support_case_messages FOR SELECT TO authenticated
 USING (
@@ -401,6 +405,7 @@ USING (
   ) AND is_internal = FALSE
 );
 
+DROP POLICY IF EXISTS "Customers can insert messages into open cases" ON public.support_case_messages;
 CREATE POLICY "Customers can insert messages into open cases"
 ON public.support_case_messages FOR INSERT TO authenticated
 WITH CHECK (
@@ -447,6 +452,8 @@ AFTER INSERT ON public.support_case_messages
 FOR EACH ROW EXECUTE FUNCTION public.handle_customer_case_reply();
 
 -- Admins with AAL2 can view payment events
+DROP POLICY IF EXISTS "Admins with MFA can view payment events" ON public.payment_events;
+DROP POLICY IF EXISTS "Admins can view payment events" ON public.payment_events;
 CREATE POLICY "Admins with MFA can view payment events"
 ON public.payment_events FOR SELECT TO authenticated
 USING (

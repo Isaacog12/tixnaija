@@ -16,7 +16,6 @@ serve(async (req: Request) => {
   }
 
   try {
-    // 1. Authenticate user strictly via verified JWT
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Missing authorization header" }), {
@@ -25,6 +24,8 @@ serve(async (req: Request) => {
       });
     }
 
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || supabaseServiceKey;
@@ -32,7 +33,7 @@ serve(async (req: Request) => {
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: { user }, error: authErr } = await userClient.auth.getUser();
+    const { data: { user }, error: authErr } = await userClient.auth.getUser(token);
 
     if (authErr || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized session" }), {

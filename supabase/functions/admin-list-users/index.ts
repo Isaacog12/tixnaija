@@ -44,7 +44,8 @@ serve(async (req) => {
     const callerClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    const { data: { user }, error: userError } = await callerClient.auth.getUser(token);
     if (userError || !user) throw new Error("Unauthorized: not logged in");
 
     // Check admin role

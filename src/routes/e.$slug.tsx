@@ -527,7 +527,6 @@ function EventDetailPage() {
           p_recipient_name: values.isGift ? values.recipientName : null,
           p_recipient_email: values.isGift ? values.recipientEmail : null,
           p_gift_message: values.isGift ? values.giftMessage : null,
-          p_access_code: accessCode || undefined,
           p_promoter_link_id: appliedPromoterLink?.link_id ?? undefined,
           p_checkout_answers: values.answers || {},
         } as any);

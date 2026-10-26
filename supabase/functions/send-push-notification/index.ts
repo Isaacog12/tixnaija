@@ -24,13 +24,14 @@ serve(async (req) => {
       });
     }
 
-    const isServiceRole = authHeader === `Bearer ${serviceKey}`;
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    const isServiceRole = token === serviceKey;
     if (!isServiceRole) {
       const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || serviceKey;
       const authClient = createClient(supabaseUrl, anonKey, {
-        global: { headers: { Authorization: authHeader } },
+        auth: { persistSession: false },
       });
-      const { data: { user }, error: authErr } = await authClient.auth.getUser();
+      const { data: { user }, error: authErr } = await authClient.auth.getUser(token);
       if (authErr || !user) {
         return new Response(JSON.stringify({ error: "Unauthorized: Invalid session" }), {
           status: 401,
@@ -38,7 +39,8 @@ serve(async (req) => {
         });
       }
 
-      const { data: adminRole } = await authClient
+      const adminClient = createClient(supabaseUrl, serviceKey);
+      const { data: adminRole } = await adminClient
         .from("user_roles")
         .select("role")
         .eq("user_id", user.id)

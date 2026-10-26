@@ -47,15 +47,33 @@ serve(async (req: Request) => {
       });
     }
 
-    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user }, error: authErr } = await authClient.auth.getUser();
-    if (authErr || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized: Invalid session" }), {
-        status: 401,
-        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    const isServiceRole = token === supabaseKey;
+    let userId: string | null = null;
+    let isAdmin = false;
+
+    if (!isServiceRole) {
+      const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: { persistSession: false },
       });
+      const { data: { user }, error: authErr } = await authClient.auth.getUser(token);
+      if (authErr || !user) {
+        return new Response(JSON.stringify({ error: "Unauthorized: Invalid session" }), {
+          status: 401,
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+        });
+      }
+      userId = user.id;
+
+      const adminClient = createClient(supabaseUrl, supabaseKey);
+      const { data: adminRole } = await adminClient
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      isAdmin = !!adminRole;
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -72,16 +90,9 @@ serve(async (req: Request) => {
 
     if (bErr || !broadcast) throw new Error("Broadcast not found");
 
-    // 2. Authorize: Caller must be the event organizer or an admin
-    const { data: adminRole } = await authClient
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle();
-
-    const isOrganizer = broadcast.organizer_id === user.id || broadcast.events?.organizer_id === user.id;
-    if (!adminRole && !isOrganizer) {
+    // 2. Authorize: Caller must be service_role, event organizer, or an admin
+    const isOrganizer = isServiceRole || isAdmin || broadcast.organizer_id === userId || broadcast.events?.organizer_id === userId;
+    if (!isOrganizer) {
       return new Response(JSON.stringify({ error: "Forbidden: You are not authorized to send broadcasts for this event" }), {
         status: 403,
         headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
