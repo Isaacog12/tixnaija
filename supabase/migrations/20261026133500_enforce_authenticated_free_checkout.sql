@@ -1,0 +1,121 @@
+-- Enforce authenticated session for process_free_checkout RPC
+-- Binds database security boundary to product rule: all ticket purchases and registrations require login.
+
+CREATE OR REPLACE FUNCTION public.process_free_checkout(
+  p_event_id uuid,
+  p_user_id uuid,
+  p_buyer_name text,
+  p_buyer_email text,
+  p_buyer_phone text,
+  p_tickets jsonb,
+  p_promo_code_id uuid default null,
+  p_is_gift boolean default false,
+  p_recipient_name text default null,
+  p_recipient_email text default null,
+  p_gift_message text default null,
+  p_access_code text default null,
+  p_promoter_link_id uuid default null,
+  p_checkout_answers jsonb default null
+) returns uuid
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_computed_subtotal integer := 0;
+  v_computed_discount integer := 0;
+  v_computed_total integer := 0;
+  v_promo record;
+  v_item jsonb;
+  v_ticket_type record;
+  v_ticket_type_id uuid;
+  v_count integer;
+  v_free_reference text;
+  v_actual_user_id uuid;
+BEGIN
+  -- 1. Enforce authentication: guest ticket claims must not bypass login
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Authentication required: You must be logged in to claim tickets.';
+  END IF;
+
+  -- Strictly bind order to verified session
+  v_actual_user_id := auth.uid();
+
+  -- 2. Validate that ticket items belong to the event and count is positive
+  FOR v_item IN SELECT * FROM jsonb_array_elements(p_tickets)
+  LOOP
+    v_ticket_type_id := (v_item->>'ticketTypeId')::uuid;
+    v_count := (v_item->>'count')::integer;
+
+    IF v_count IS NULL OR v_count <= 0 THEN
+      RAISE EXCEPTION 'Ticket count must be a positive integer';
+    END IF;
+
+    SELECT price_kobo, event_id INTO v_ticket_type
+    FROM public.ticket_types
+    WHERE id = v_ticket_type_id;
+
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'Ticket type % not found', v_ticket_type_id;
+    END IF;
+
+    IF v_ticket_type.event_id != p_event_id THEN
+      RAISE EXCEPTION 'Ticket type does not belong to this event';
+    END IF;
+
+    v_computed_subtotal := v_computed_subtotal + (v_ticket_type.price_kobo * v_count);
+  END LOOP;
+
+  -- 3. Calculate promo code if provided
+  IF p_promo_code_id IS NOT NULL THEN
+    SELECT discount_type, discount_value INTO v_promo
+    FROM public.promo_codes
+    WHERE id = p_promo_code_id
+      AND event_id = p_event_id
+      AND active = true
+      AND (expires_at IS NULL OR expires_at > now())
+      AND (max_uses IS NULL OR times_used < max_uses);
+
+    IF FOUND THEN
+      IF v_promo.discount_type = 'percent' THEN
+        v_computed_discount := (v_computed_subtotal * v_promo.discount_value) / 100;
+      ELSE
+        v_computed_discount := v_promo.discount_value;
+      END IF;
+    END IF;
+  END IF;
+
+  v_computed_total := greatest(0, v_computed_subtotal - v_computed_discount);
+
+  -- STRICT SECURITY GUARD:
+  -- Any order with a computed total above 0 MUST go through Paystack gateway verification!
+  IF v_computed_total > 0 THEN
+    RAISE EXCEPTION 'Security error: Paid orders must be processed and verified through the payment gateway.';
+  END IF;
+
+  v_free_reference := 'FREE_' || floor(extract(epoch from now()) * 1000)::text || '_' || substr(md5(random()::text), 1, 8);
+
+  -- Call the internal process_checkout function
+  RETURN public.process_checkout(
+    p_event_id,
+    v_actual_user_id,
+    p_buyer_name,
+    p_buyer_email,
+    p_buyer_phone,
+    p_tickets,
+    0,
+    v_free_reference,
+    p_promo_code_id,
+    p_is_gift,
+    p_recipient_name,
+    p_recipient_email,
+    p_gift_message,
+    p_access_code,
+    p_promoter_link_id,
+    p_checkout_answers
+  );
+END;
+$$;
+
+-- Revoke execute from anonymous/public callers; allow only authenticated users and service_role
+REVOKE EXECUTE ON FUNCTION public.process_free_checkout FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.process_free_checkout TO authenticated, service_role;
