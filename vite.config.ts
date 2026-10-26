@@ -10,6 +10,9 @@ import path from "path";
 
 export default defineConfig({
   vite: {
+    esbuild: {
+      drop: process.env.NODE_ENV === "production" ? ["console", "debugger"] : [],
+    },
     resolve: {
       alias: {
         "node:async_hooks": path.resolve("./src/lib/empty-mock.ts"),
