@@ -1482,17 +1482,33 @@ function EventSkeleton() {
 
 function EventMissing() {
   return (
-    <div className="mx-auto max-w-lg px-4 py-24 text-center">
-      <h1 className="font-display text-4xl text-gradient-sunset">Event unavailable</h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        This event may have been unpublished or removed.
-      </p>
-      <Button
-        asChild
-        className="mt-6 gradient-sunset text-primary-foreground shadow-glow hover:opacity-90"
-      >
-        <Link to="/">Back to events</Link>
-      </Button>
+    <div className="relative flex min-h-[70vh] items-center justify-center px-4 py-16 selection:bg-primary/20">
+      <div className="relative z-10 w-full max-w-md rounded-3xl border border-border/80 bg-card/75 p-8 sm:p-10 text-center shadow-2xl backdrop-blur-2xl">
+        <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20">
+          <Calendar className="h-7 w-7 text-primary" />
+        </div>
+        <h1 className="font-display text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+          Event Unavailable
+        </h1>
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          This event may have ended, expired, or been made private by the organizer.
+        </p>
+        <div className="mt-8 flex flex-col sm:flex-row justify-center gap-3">
+          <Button
+            asChild
+            className="rounded-2xl gradient-sunset px-6 text-sm font-semibold text-primary-foreground shadow-glow transition-all hover:opacity-95 active:scale-[0.98]"
+          >
+            <Link to="/browse">Explore Events</Link>
+          </Button>
+          <Button
+            asChild
+            variant="outline"
+            className="rounded-2xl border-border/80 bg-secondary/50 px-6 text-sm font-medium text-foreground transition-all hover:bg-secondary/80 active:scale-[0.98]"
+          >
+            <Link to="/">Go Home</Link>
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

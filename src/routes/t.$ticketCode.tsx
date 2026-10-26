@@ -1,10 +1,11 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute, notFound, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { TicketStub } from "@/components/ticket-stub";
 import { SiteNav } from "@/components/site-nav";
 import { BackButton } from "@/components/back-button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { Ticket } from "lucide-react";
 import { useEffect } from "react";
 
@@ -75,10 +76,19 @@ function SingleTicketPage() {
         {isLoading ? (
           <Skeleton className="h-[300px] w-full max-w-2xl mx-auto rounded-2xl" />
         ) : isError || !ticket ? (
-          <div className="text-center py-24 text-muted-foreground rounded-2xl border border-dashed border-border">
-            <Ticket className="mx-auto h-12 w-12 text-muted-foreground/50" />
-            <h3 className="mt-4 font-semibold text-foreground">Ticket not found</h3>
-            <p className="text-sm mt-2">We couldn't find a ticket with this code. It may be invalid or deleted.</p>
+          <div className="mx-auto max-w-md my-12 rounded-3xl border border-border/80 bg-card/75 p-8 sm:p-10 text-center shadow-2xl backdrop-blur-2xl">
+            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20">
+              <Ticket className="h-7 w-7 text-primary" />
+            </div>
+            <h2 className="font-display text-xl sm:text-2xl font-semibold text-foreground">Ticket Not Found</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              We couldn't locate a ticket matching this verification code. It may have expired or been reissued.
+            </p>
+            <div className="mt-6 flex justify-center gap-3">
+              <Button asChild className="rounded-xl gradient-sunset text-white shadow-glow active:scale-[0.98]">
+                <Link to="/my-tickets">Find My Tickets</Link>
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="flex justify-center">

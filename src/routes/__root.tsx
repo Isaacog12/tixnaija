@@ -20,48 +20,95 @@ import { supabase } from "@/integrations/supabase/client";
 // Catches any JS error thrown during React render (e.g. a failed dynamic import
 // or a bad hook call in a component) so users see a message instead of a blank
 // screen. In dev mode the actual error is shown in an expanded panel.
+// ── Render-phase crash boundary ────────────────────────────────────────────────
+// Catches any JS error thrown during React render so users see a calm, reassuring
+// Apple-grade recovery screen instead of a blank page or jarring technical crash.
 class AppErrorBoundary extends Component<
   { children: ReactNode },
-  { error: Error | null }
+  { error: Error | null; showDetails: boolean }
 > {
-  state = { error: null };
+  state = { error: null, showDetails: false };
 
   static getDerivedStateFromError(error: Error) {
-    return { error };
+    return { error, showDetails: false };
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error("[AppErrorBoundary]", error, info);
+    if (import.meta.env.DEV) {
+      console.error("[AppErrorBoundary]", error, info);
+    }
   }
 
   render() {
     if (this.state.error) {
       return (
-        <div className="flex min-h-dvh items-center justify-center bg-background px-4">
-          <div className="max-w-md w-full rounded-2xl border border-border bg-card p-8 shadow-sm text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
-              <svg className="h-6 w-6 text-destructive" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        <div className="relative flex min-h-dvh items-center justify-center bg-background px-4 py-12 selection:bg-primary/20">
+          {/* Ambient lighting mesh */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute left-1/2 top-1/4 -translate-x-1/2 -translate-y-1/2 h-[420px] w-[540px] rounded-full bg-primary/10 blur-[120px]" />
+          </div>
+
+          <div className="relative z-10 w-full max-w-md rounded-3xl border border-border/80 bg-card/75 p-8 sm:p-10 text-center shadow-2xl backdrop-blur-2xl">
+            {/* Reassuring status badge */}
+            <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 shadow-inner">
+              <svg className="h-7 w-7 text-primary" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0 3.75h.007M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Application Error</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              An unexpected error occurred. Try refreshing — if it keeps happening, please contact us.
+
+            <h1 className="font-display text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+              Page Interrupted
+            </h1>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              Your session and tickets are completely safe. A quick refresh usually restores the page immediately.
             </p>
-            <div className="mt-6">
+
+            {/* Apple fluid action buttons */}
+            <div className="mt-8 flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl gradient-sunset px-6 text-sm font-semibold text-primary-foreground shadow-glow transition-all duration-150 hover:opacity-95 active:scale-[0.98]"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                </svg>
+                Refresh Page
+              </button>
               <a
                 href="/"
-                className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground shadow transition-colors hover:bg-primary/90"
+                className="inline-flex h-12 w-full items-center justify-center rounded-2xl border border-border/80 bg-secondary/50 px-6 text-sm font-medium text-foreground transition-all duration-150 hover:bg-secondary/80 active:scale-[0.98]"
               >
-                Reload app
+                Return to Home
               </a>
             </div>
+
+            {/* Support link */}
+            <div className="mt-6 pt-6 border-t border-border/40 text-xs text-muted-foreground">
+              Persistent issue?{" "}
+              <a href="/support" className="text-primary font-medium hover:underline">
+                Contact Customer Support
+              </a>
+            </div>
+
+            {/* Dev trace */}
             {import.meta.env.DEV && (
-              <pre className="mt-6 text-left text-xs text-destructive bg-destructive/5 border border-destructive/20 rounded-lg p-4 overflow-auto max-h-48 whitespace-pre-wrap break-words">
-                {(this.state.error as Error).message}
-                {"\n"}
-                {(this.state.error as Error).stack}
-              </pre>
+              <div className="mt-6 text-left">
+                <button
+                  type="button"
+                  onClick={() => this.setState((s) => ({ showDetails: !s.showDetails }))}
+                  className="text-[11px] text-muted-foreground/80 hover:text-foreground font-mono underline"
+                >
+                  {this.state.showDetails ? "Hide technical details" : "Show technical details (Dev)"}
+                </button>
+                {this.state.showDetails && (
+                  <pre className="mt-3 overflow-auto max-h-48 rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-[11px] font-mono text-destructive whitespace-pre-wrap break-words">
+                    {(this.state.error as Error).message}
+                    {"\n"}
+                    {(this.state.error as Error).stack}
+                  </pre>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -73,46 +120,55 @@ class AppErrorBoundary extends Component<
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4">
-      <div className="relative max-w-lg text-center">
-        <div className="relative mb-6">
-          <h1 className="font-display text-[120px] leading-none md:text-[160px] font-bold text-foreground/5 select-none">
+    <div className="relative flex min-h-dvh flex-col items-center justify-center bg-background px-4 py-16 selection:bg-primary/20">
+      {/* Ambient glow */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 h-[450px] w-[600px] rounded-full bg-primary/8 blur-[130px]" />
+      </div>
+
+      <div className="relative z-10 max-w-lg text-center">
+        <div className="relative mb-6 select-none">
+          <span className="font-display text-[110px] sm:text-[140px] font-bold tracking-tight text-foreground/5 leading-none block">
             404
-          </h1>
+          </span>
           <div className="absolute inset-0 flex items-center justify-center">
-            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">Page not found</h2>
+            <h1 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">
+              Page Not Found
+            </h1>
           </div>
         </div>
 
-        <p className="mt-4 text-base text-muted-foreground max-w-sm mx-auto leading-relaxed">
-          The event or page you're looking for doesn't exist, may have moved, or the link might be broken.
+        <p className="mt-2 text-sm sm:text-base leading-relaxed text-muted-foreground max-w-sm mx-auto">
+          The event or link you're looking for doesn't exist, has ended, or may have moved.
         </p>
 
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
             to="/browse"
-            className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-8 text-sm font-semibold text-primary-foreground shadow transition-colors hover:bg-primary/90"
+            className="inline-flex h-12 w-full sm:w-auto items-center justify-center rounded-2xl gradient-sunset px-8 text-sm font-semibold text-primary-foreground shadow-glow transition-all duration-150 hover:opacity-95 active:scale-[0.98]"
           >
-            Browse events
+            Explore Events
           </Link>
           <Link
             to="/"
-            className="inline-flex h-11 items-center justify-center rounded-md border border-input bg-background px-8 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+            className="inline-flex h-12 w-full sm:w-auto items-center justify-center rounded-2xl border border-border/80 bg-secondary/50 px-8 text-sm font-medium text-foreground transition-all duration-150 hover:bg-secondary/80 active:scale-[0.98]"
           >
-            Go home
+            Go Home
           </Link>
         </div>
 
-        {/* Secondary links */}
-        <div className="mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground/60">
-          <Link to="/faq" className="hover:text-foreground transition-colors">Help / FAQ</Link>
+        {/* Secondary helpful links */}
+        <div className="mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-medium text-muted-foreground">
+          <Link to="/browse" className="hover:text-foreground transition-colors">Concerts & Shows</Link>
           <span className="text-border">·</span>
-          <Link to="/about" className="hover:text-foreground transition-colors">Contact us</Link>
+          <Link to="/my-tickets" className="hover:text-foreground transition-colors">Find My Tickets</Link>
+          <span className="text-border">·</span>
+          <Link to="/support" className="hover:text-foreground transition-colors">Support Desk</Link>
         </div>
 
-        <div className="mt-12 flex items-baseline justify-center gap-0 opacity-50">
-          <span className="font-display text-lg leading-none tracking-[0.02em] text-foreground">TIX</span>
-          <span className="font-display text-lg leading-none tracking-[0.02em] font-light text-foreground">NAIJA</span>
+        <div className="mt-10 flex items-baseline justify-center gap-0.5 opacity-40">
+          <span className="font-display text-sm tracking-[0.08em] font-bold text-foreground">TIX</span>
+          <span className="font-display text-sm tracking-[0.08em] font-light text-foreground">NAIJA</span>
         </div>
       </div>
     </div>
@@ -120,39 +176,55 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
-  console.error(error);
   const router = useRouter();
-  useEffect(() => {
-    // Custom error logging could go here if needed in the future
-  }, [error]);
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-background px-4">
-      <div className="max-w-md w-full rounded-2xl border border-border bg-card p-8 shadow-sm text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-           <svg className="h-6 w-6 text-muted-foreground" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-           </svg>
+    <div className="relative flex min-h-dvh items-center justify-center bg-background px-4 py-12 selection:bg-primary/20">
+      {/* Ambient lighting mesh */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute left-1/2 top-1/4 -translate-x-1/2 -translate-y-1/2 h-[420px] w-[540px] rounded-full bg-primary/10 blur-[120px]" />
+      </div>
+
+      <div className="relative z-10 w-full max-w-md rounded-3xl border border-border/80 bg-card/75 p-8 sm:p-10 text-center shadow-2xl backdrop-blur-2xl">
+        <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 shadow-inner">
+          <svg className="h-7 w-7 text-primary" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0 3.75h.007M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
         </div>
-          <h1 className="font-display text-4xl mb-4 text-foreground">Something went wrong. Please refresh the page or try again.</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          We encountered an unexpected issue while loading this page.
+
+        <h1 className="font-display text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+          Unable to Load Section
+        </h1>
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          We couldn't load this content right now. Your data and account are untouched.
         </p>
-        <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+
+        <div className="mt-8 flex flex-col gap-3">
           <button
+            type="button"
             onClick={() => {
               router.invalidate();
               reset();
             }}
-            className="inline-flex h-10 w-full sm:w-auto items-center justify-center rounded-md bg-primary px-6 text-sm font-semibold text-primary-foreground shadow transition-colors hover:bg-primary/90"
+            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl gradient-sunset px-6 text-sm font-semibold text-primary-foreground shadow-glow transition-all duration-150 hover:opacity-95 active:scale-[0.98]"
           >
-            Try again
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+            Try Again
           </button>
           <a
             href="/"
-            className="inline-flex h-10 w-full sm:w-auto items-center justify-center rounded-md border border-input bg-background px-6 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+            className="inline-flex h-12 w-full items-center justify-center rounded-2xl border border-border/80 bg-secondary/50 px-6 text-sm font-medium text-foreground transition-all duration-150 hover:bg-secondary/80 active:scale-[0.98]"
           >
-            Go home
+            Return to Home
+          </a>
+        </div>
+
+        <div className="mt-6 pt-6 border-t border-border/40 text-xs text-muted-foreground">
+          Need assistance?{" "}
+          <a href="/support" className="text-primary font-medium hover:underline">
+            Visit Support Desk
           </a>
         </div>
       </div>

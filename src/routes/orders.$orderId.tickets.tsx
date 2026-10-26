@@ -220,16 +220,20 @@ function OrderTicketsPage() {
             <Skeleton className="h-[300px] w-full max-w-2xl mx-auto rounded-2xl" />
           </div>
         ) : isError || !data || !data.order ? (
-          <div className="text-center py-24 text-muted-foreground">
-            <Ticket className="mx-auto h-12 w-12 text-muted-foreground/40 mb-3" />
-            <p className="text-base font-semibold text-foreground">Failed to load tickets or order not found.</p>
-            <p className="text-sm mt-1 mb-6 text-muted-foreground">Please make sure you are logged in or provide your order email and access code.</p>
-            <div className="flex justify-center gap-3">
-              <Button asChild variant="outline">
-                <Link to="/tickets">View My Tickets</Link>
+          <div className="mx-auto max-w-md my-16 rounded-3xl border border-border/80 bg-card/75 p-8 sm:p-10 text-center shadow-2xl backdrop-blur-2xl">
+            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20">
+              <Ticket className="h-7 w-7 text-primary" />
+            </div>
+            <h2 className="font-display text-xl sm:text-2xl font-semibold text-foreground">Tickets Unavailable</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              We couldn't retrieve these tickets. If this was a guest checkout, please provide your email and Order Access Code.
+            </p>
+            <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
+              <Button asChild variant="outline" className="rounded-xl active:scale-[0.98]">
+                <Link to="/tickets">My Account</Link>
               </Button>
-              <Button asChild className="gradient-sunset text-white">
-                <Link to="/my-tickets">Find with Access Code</Link>
+              <Button asChild className="gradient-sunset text-white shadow-glow rounded-xl active:scale-[0.98]">
+                <Link to="/my-tickets">Enter Access Code</Link>
               </Button>
             </div>
           </div>
