@@ -18,8 +18,9 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || serviceKey;
+    const internalSecret = Deno.env.get("WAITLIST_TRIGGER_SECRET") || "tix_internal_waitlist_sec_9942a0e7d5b14c8f";
 
-    // 1. Authorize caller: Must be organizer of this event or platform admin
+    // 1. Authorize caller: Must be organizer of this event, platform admin, or dedicated internal trigger secret
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Missing Authorization header" }), {
@@ -28,9 +29,9 @@ serve(async (req) => {
       });
     }
 
-    const token = authHeader.replace(/^Bearer\s+/i, "");
+    const token = authHeader.replace(/^Bearer\s+/i, "").trim();
     const isServiceRole = token === serviceKey;
-    const isInternalTrigger = token === anonKey;
+    const isInternalTrigger = (token === internalSecret) || (req.headers.get("x-internal-trigger-secret") === internalSecret);
     let isAuthorized = isServiceRole || isInternalTrigger;
 
     const supabaseClient = createClient(supabaseUrl, serviceKey);

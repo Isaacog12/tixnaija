@@ -36,13 +36,15 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { orderId, ticketId } = await req.json();
+    const { orderId, ticketId, accessCode } = await req.json();
     if (!orderId) throw new Error("Missing orderId");
 
     // @ts-ignore
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     // @ts-ignore
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    // @ts-ignore
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || supabaseKey;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const { data: order, error: orderError } = await supabase
@@ -55,7 +57,8 @@ serve(async (req: Request) => {
           venue_name,
           address,
           cover_image_url,
-          custom_order_confirmation
+          custom_order_confirmation,
+          organizer_id
         ),
         order_items (
           quantity,
@@ -67,6 +70,88 @@ serve(async (req: Request) => {
       .single();
 
     if (orderError || !order) throw new Error("Order not found");
+
+    // Authorization & Ownership Verification:
+    // Authorized callers:
+    // 1. service_role (e.g. verify-payment webhook or backend task)
+    // 2. The buyer who owns the order (order.user_id === user.id or user.email === order.buyer_email)
+    // 3. The event organizer (order.events.organizer_id === user.id)
+    // 4. Platform staff (admin, super_admin, or support role)
+    // 5. Valid order accessCode / payment reference provided in body (for guest order viewers)
+
+    const authHeader = req.headers.get("Authorization");
+    const token = authHeader ? authHeader.replace(/^Bearer\s+/i, "").trim() : null;
+    const isServiceRole = Boolean(token && token === supabaseKey);
+
+    let isBuyer = false;
+    let isOrganizer = false;
+    let isStaff = false;
+
+    if (token && !isServiceRole) {
+      const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: { persistSession: false },
+      });
+      const { data: { user } } = await authClient.auth.getUser(token);
+      if (user) {
+        if (order.user_id && order.user_id === user.id) {
+          isBuyer = true;
+        } else if (user.email && user.email.toLowerCase() === order.buyer_email?.toLowerCase()) {
+          isBuyer = true;
+        }
+
+        if (order.events?.organizer_id && order.events.organizer_id === user.id) {
+          isOrganizer = true;
+        }
+
+        const { data: roleRow } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .in("role", ["admin", "super_admin", "support"])
+          .maybeSingle();
+        if (roleRow) {
+          isStaff = true;
+        }
+      }
+    }
+
+    const normalizedAccessCode = (accessCode || "").trim().toUpperCase();
+    const isGuestAuthorized = Boolean(
+      normalizedAccessCode && (
+        (order.access_code && order.access_code.toUpperCase() === normalizedAccessCode) ||
+        (order.payment_reference && order.payment_reference.toUpperCase() === normalizedAccessCode)
+      )
+    );
+
+    const isAuthorized = isServiceRole || isBuyer || isOrganizer || isStaff || isGuestAuthorized;
+    if (!isAuthorized) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: You are not authorized to send confirmation for this order." }),
+        { headers: getCorsHeaders(req), status: 403 }
+      );
+    }
+
+    // Rate limit resend requests (max 5 per 10 minutes per order)
+    if (!isServiceRole) {
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      const { count } = await supabase
+        .from("rate_limit_log")
+        .select("*", { count: "exact", head: true })
+        .eq("endpoint", `resend_order_${order.id}`)
+        .gte("created_at", tenMinutesAgo);
+
+      if (count && count >= 5) {
+        return new Response(
+          JSON.stringify({ error: "Too many email requests for this order. Please wait a few minutes." }),
+          { headers: getCorsHeaders(req), status: 429 }
+        );
+      }
+
+      await supabase.from("rate_limit_log").insert({
+        ip_address: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown",
+        endpoint: `resend_order_${order.id}`,
+      });
+    }
 
     const eventTitle = order.events?.title || "Event";
     const date = new Date(order.events?.start_datetime || "").toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });

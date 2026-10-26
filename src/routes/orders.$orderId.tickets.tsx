@@ -146,7 +146,7 @@ function OrderTicketsPage() {
 
       // Trigger the edge function to re-send the specific ticket to the new email
       await supabase.functions.invoke("send-ticket-confirmation", {
-        body: { orderId: data?.order?.id, ticketId: editingTicket.id },
+        body: { orderId: data?.order?.id, ticketId: editingTicket.id, accessCode: searchCode || undefined },
       });
 
     } catch (err: unknown) {
