@@ -229,7 +229,7 @@ export function SupportLookupTab({
                           {o.masked_buyer_email || o.buyer_email}
                         </TableCell>
                         <TableCell className="text-xs font-medium text-foreground max-w-[200px] truncate">
-                          {o.event_title || "Event #" + o.event_id?.slice(0, 8)}
+                          {o.event_title || (o.event_id ? `Event #${o.event_id.slice(0, 8)}` : "Event")}
                         </TableCell>
                         <TableCell className="text-xs font-semibold text-emerald-400">
                           {formatNaira(o.total_kobo || 0)}

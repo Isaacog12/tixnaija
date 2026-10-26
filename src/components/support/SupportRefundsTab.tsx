@@ -182,7 +182,7 @@ export function SupportRefundsTab() {
                   {refundRequests.map((rr: any) => (
                     <TableRow key={rr.id}>
                       <TableCell className="font-semibold text-xs text-foreground max-w-[180px] truncate">
-                        {rr.event_title || "Event #" + rr.event_id?.slice(0, 8)}
+                        {rr.event_title || (rr.event_id ? `Event #${rr.event_id.slice(0, 8)}` : "Event")}
                       </TableCell>
                       <TableCell>
                         <div className="font-semibold text-xs text-foreground">{rr.buyer_name || "Buyer"}</div>
