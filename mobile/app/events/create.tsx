@@ -50,6 +50,13 @@ interface TicketTierInput {
   capacity: string;
 }
 
+interface CustomQuestionInput {
+  id: string;
+  question_text: string;
+  type: 'text' | 'long_text' | 'checkbox';
+  required: boolean;
+}
+
 export default function CreateEventScreen() {
   const router = useRouter();
   const { user } = useAuth();
@@ -83,6 +90,9 @@ export default function CreateEventScreen() {
   const [tiers, setTiers] = useState<TicketTierInput[]>([
     { id: '1', name: 'Regular', priceNaira: '2500', capacity: '100' },
   ]);
+
+  // Custom Questions
+  const [customQuestions, setCustomQuestions] = useState<CustomQuestionInput[]>([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -130,6 +140,32 @@ export default function CreateEventScreen() {
   const handleUpdateTier = (id: string, field: keyof TicketTierInput, value: string) => {
     setTiers((prev) =>
       prev.map((t) => (t.id === id ? { ...t, [field]: value } : t))
+    );
+  };
+
+  const handleAddQuestion = () => {
+    setCustomQuestions((prev) => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        question_text: '',
+        type: 'text',
+        required: false,
+      },
+    ]);
+  };
+
+  const handleRemoveQuestion = (id: string) => {
+    setCustomQuestions((prev) => prev.filter((q) => q.id !== id));
+  };
+
+  const handleUpdateQuestion = (
+    id: string,
+    field: keyof CustomQuestionInput,
+    value: any
+  ) => {
+    setCustomQuestions((prev) =>
+      prev.map((q) => (q.id === id ? { ...q, [field]: value } : q))
     );
   };
 
@@ -242,6 +278,20 @@ export default function CreateEventScreen() {
         .insert(tiersToInsert as any);
 
       if (tiersError) throw tiersError;
+
+      // 4. Insert custom checkout questions if any
+      const validQuestions = customQuestions.filter((q) => q.question_text.trim());
+      if (validQuestions.length > 0) {
+        const questionsToInsert = validQuestions.map((q, idx) => ({
+          event_id: eventData.id,
+          question_text: q.question_text.trim(),
+          type: q.type,
+          required: q.required,
+          position: idx,
+        }));
+
+        await supabase.from('checkout_questions').insert(questionsToInsert as any);
+      }
 
       Alert.alert(
         'Success',
@@ -457,6 +507,89 @@ export default function CreateEventScreen() {
           ))}
         </View>
 
+        {/* Custom Checkout Questions */}
+        <View style={styles.sectionCard}>
+          <View style={styles.tierHeaderRow}>
+            <View>
+              <Text style={styles.sectionHeader}>Custom Questions</Text>
+              <Text style={styles.sectionSubtitle}>
+                Ask buyers for additional info (e.g. T-Shirt Size, Company)
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.addTierBtn}
+              onPress={handleAddQuestion}
+              activeOpacity={0.7}
+            >
+              <Plus size={14} color={colors.primary} />
+              <Text style={styles.addTierBtnText}>Add Question</Text>
+            </TouchableOpacity>
+          </View>
+
+          {customQuestions.length === 0 ? (
+            <Text style={styles.emptyPrompt}>No custom questions added. (Optional)</Text>
+          ) : (
+            customQuestions.map((q, idx) => (
+              <View key={q.id} style={styles.tierBox}>
+                <View style={styles.tierTopRow}>
+                  <Text style={styles.tierIndexLabel}>Question #{idx + 1}</Text>
+                  <TouchableOpacity onPress={() => handleRemoveQuestion(q.id)}>
+                    <Trash2 size={16} color={colors.error} />
+                  </TouchableOpacity>
+                </View>
+
+                <Input
+                  label="Question Prompt"
+                  placeholder="e.g. What is your T-shirt size?"
+                  value={q.question_text}
+                  onChangeText={(val) => handleUpdateQuestion(q.id, 'question_text', val)}
+                />
+
+                <View style={styles.questionOptionsRow}>
+                  <View style={styles.typeSelectorRow}>
+                    {(['text', 'long_text', 'checkbox'] as const).map((t) => (
+                      <TouchableOpacity
+                        key={t}
+                        style={[
+                          styles.qTypePill,
+                          q.type === t && styles.qTypePillSelected,
+                        ]}
+                        onPress={() => handleUpdateQuestion(q.id, 'type', t)}
+                      >
+                        <Text
+                          style={[
+                            styles.qTypeText,
+                            q.type === t && styles.qTypeTextSelected,
+                          ]}
+                        >
+                          {t === 'text' ? 'Text' : t === 'long_text' ? 'Paragraph' : 'Checkbox'}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.requiredToggle,
+                      q.required && styles.requiredToggleActive,
+                    ]}
+                    onPress={() => handleUpdateQuestion(q.id, 'required', !q.required)}
+                  >
+                    <Text
+                      style={[
+                        styles.requiredToggleText,
+                        q.required && styles.requiredToggleTextActive,
+                      ]}
+                    >
+                      {q.required ? 'Required *' : 'Optional'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))
+          )}
+        </View>
+
         {/* Submission Buttons */}
         <View style={styles.submitSection}>
           <Button
@@ -629,5 +762,65 @@ const styles = StyleSheet.create({
   },
   submitSection: {
     marginTop: 8,
+  },
+  sectionSubtitle: {
+    color: colors.textMuted,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  emptyPrompt: {
+    color: colors.textMuted,
+    fontSize: 13,
+    paddingVertical: 8,
+  },
+  questionOptionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  typeSelectorRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  qTypePill: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  qTypePillSelected: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primaryDark,
+  },
+  qTypeText: {
+    color: colors.textMuted,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  qTypeTextSelected: {
+    color: '#fff',
+  },
+  requiredToggle: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  requiredToggleActive: {
+    borderColor: colors.warning,
+    backgroundColor: `${colors.warning}18`,
+  },
+  requiredToggleText: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  requiredToggleTextActive: {
+    color: colors.warning,
   },
 });

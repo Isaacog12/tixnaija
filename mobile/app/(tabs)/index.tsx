@@ -39,14 +39,19 @@ const CATEGORIES = [
 ];
 
 const CACHE_KEY = '@home_events_cache';
+const PAGE_SIZE = 10;
 
 export default function HomeScreen() {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [isOffline, setIsOffline] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [paginatedEvents, setPaginatedEvents] = useState<any[]>([]);
 
-  // Fetch events function
+  // Fetch initial events
   const fetchEvents = async () => {
     try {
       let query = supabase
@@ -60,12 +65,17 @@ export default function HomeScreen() {
           )
         `)
         .eq('status', 'published')
-        .order('start_datetime', { ascending: true });
+        .order('start_datetime', { ascending: true })
+        .range(0, PAGE_SIZE - 1);
 
       const { data, error } = await query;
       if (error) throw error;
 
-      // Save to cache for offline availability
+      setPage(0);
+      setHasMore((data?.length || 0) === PAGE_SIZE);
+      setPaginatedEvents(data || []);
+
+      // Save first page to cache for offline availability
       if (data && data.length > 0) {
         await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(data));
       }
@@ -76,7 +86,9 @@ export default function HomeScreen() {
       const cached = await AsyncStorage.getItem(CACHE_KEY);
       if (cached) {
         setIsOffline(true);
-        return JSON.parse(cached);
+        const parsed = JSON.parse(cached);
+        setPaginatedEvents(parsed);
+        return parsed;
       }
       throw err;
     }
@@ -94,10 +106,50 @@ export default function HomeScreen() {
     queryFn: fetchEvents,
   });
 
+  // Load next page
+  const loadMoreEvents = async () => {
+    if (isLoadingMore || !hasMore || isOffline) return;
+    setIsLoadingMore(true);
+    const nextPage = page + 1;
+    const from = nextPage * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select(`
+          *,
+          ticket_types (
+            price_kobo,
+            quantity_available,
+            quantity_sold
+          )
+        `)
+        .eq('status', 'published')
+        .order('start_datetime', { ascending: true })
+        .range(from, to);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setPaginatedEvents((prev) => [...prev, ...data]);
+        setPage(nextPage);
+        setHasMore(data.length === PAGE_SIZE);
+      } else {
+        setHasMore(false);
+      }
+    } catch (err) {
+      console.warn('Pagination load error:', err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
   // Filter events by category and search query
+  const displayedEvents = paginatedEvents.length > 0 ? paginatedEvents : (events || []);
   const filteredEvents = useMemo(() => {
-    if (!events) return [];
-    return events.filter((e) => {
+    if (!displayedEvents) return [];
+    return displayedEvents.filter((e) => {
       const matchesCategory =
         selectedCategory === 'All' ||
         e.category?.toLowerCase() === selectedCategory.toLowerCase();
@@ -112,7 +164,7 @@ export default function HomeScreen() {
 
       return matchesCategory && matchesSearch;
     });
-  }, [events, selectedCategory, searchQuery]);
+  }, [displayedEvents, selectedCategory, searchQuery]);
 
   const renderHeader = () => (
     <View style={styles.header}>
@@ -246,6 +298,15 @@ export default function HomeScreen() {
           />
         }
         contentContainerStyle={styles.listContent}
+        onEndReached={loadMoreEvents}
+        onEndReachedThreshold={0.4}
+        ListFooterComponent={
+          isLoadingMore ? (
+            <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+              <ActivityIndicator size="small" color={colors.primary} />
+            </View>
+          ) : null
+        }
         refreshControl={
           <RefreshControl
             refreshing={isRefetching}

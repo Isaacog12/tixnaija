@@ -125,6 +125,7 @@ async function processVerifiedPayment(
       p_recipient_email: metadata.recipientEmail || null,
       p_gift_message: metadata.giftMessage || null,
       p_promoter_link_id: metadata.promoterLinkId || null,
+      p_checkout_answers: metadata.checkoutAnswers || null,
     },
   );
 

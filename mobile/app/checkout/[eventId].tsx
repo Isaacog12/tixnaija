@@ -33,13 +33,31 @@ interface SelectedTicket {
 
 export default function CheckoutScreen() {
   const router = useRouter();
-  const { eventId, ticketsPayload, totalAmountKobo } = useLocalSearchParams<{
+  const { eventId, ticketsPayload, totalAmountKobo, promoterLinkId } = useLocalSearchParams<{
     eventId: string;
     ticketsPayload: string;
     totalAmountKobo: string;
+    promoterLinkId?: string;
   }>();
 
   const { user, profile } = useAuth();
+
+  // Custom Questions State
+  const [checkoutQuestions, setCheckoutQuestions] = useState<any[]>([]);
+  const [answers, setAnswers] = useState<Record<string, any>>({});
+
+  // Fetch checkout questions for the event
+  useEffect(() => {
+    if (!eventId) return;
+    supabase
+      .from('checkout_questions')
+      .select('*')
+      .eq('event_id', eventId)
+      .order('position', { ascending: true })
+      .then(({ data }) => {
+        if (data) setCheckoutQuestions(data);
+      });
+  }, [eventId]);
 
   // Parse tickets
   const selectedTickets: SelectedTicket[] = useMemo(() => {
@@ -208,6 +226,17 @@ export default function CheckoutScreen() {
       return;
     }
 
+    // Validate required custom checkout questions
+    for (const q of checkoutQuestions) {
+      if (q.required) {
+        const ans = answers[q.id];
+        if (ans === undefined || ans === null || String(ans).trim() === '') {
+          Alert.alert('Required Question', `Please answer: "${q.question_text}"`);
+          return;
+        }
+      }
+    }
+
     // Prepare tickets array for backend RPC / Edge Function
     const enrichedTickets = selectedTickets.map((t) => ({
       ticketTypeId: t.ticketTypeId,
@@ -236,6 +265,8 @@ export default function CheckoutScreen() {
           p_recipient_name: isGift ? recipientName.trim() || null : null,
           p_recipient_email: isGift ? recipientEmail.trim().toLowerCase() || null : null,
           p_gift_message: isGift ? giftMessage.trim() || null : null,
+          p_promoter_link_id: promoterLinkId || null,
+          p_checkout_answers: answers,
         });
 
         if (error) throw error;
@@ -275,6 +306,8 @@ export default function CheckoutScreen() {
           recipientName: isGift ? recipientName.trim() : null,
           recipientEmail: isGift ? recipientEmail.trim().toLowerCase() : null,
           giftMessage: isGift ? giftMessage.trim() : null,
+          promoterLinkId: promoterLinkId || null,
+          checkoutAnswers: answers,
         },
       };
 
@@ -463,6 +496,52 @@ export default function CheckoutScreen() {
             ) : null}
           </View>
 
+          {/* Custom Event Questions */}
+          {checkoutQuestions.length > 0 && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Additional Information</Text>
+              <Text style={styles.cardSubtitle}>
+                The organizer has requested the following information for this event:
+              </Text>
+              {checkoutQuestions.map((q) => {
+                const isRequired = q.required;
+                const label = `${q.question_text}${isRequired ? ' *' : ''}`;
+                const val = answers[q.id] || '';
+
+                if (q.type === 'checkbox') {
+                  const checked = Boolean(answers[q.id]);
+                  return (
+                    <View key={q.id} style={styles.questionCheckboxRow}>
+                      <Switch
+                        value={checked}
+                        onValueChange={(newVal) =>
+                          setAnswers((prev) => ({ ...prev, [q.id]: newVal }))
+                        }
+                        trackColor={{ false: colors.border, true: colors.primary }}
+                        thumbColor={colors.text}
+                      />
+                      <Text style={styles.questionCheckboxLabel}>{label}</Text>
+                    </View>
+                  );
+                }
+
+                return (
+                  <Input
+                    key={q.id}
+                    label={label}
+                    placeholder={q.type === 'long_text' ? 'Type your response...' : 'Your answer'}
+                    value={val}
+                    onChangeText={(newVal) =>
+                      setAnswers((prev) => ({ ...prev, [q.id]: newVal }))
+                    }
+                    multiline={q.type === 'long_text'}
+                    numberOfLines={q.type === 'long_text' ? 3 : 1}
+                  />
+                );
+              })}
+            </View>
+          )}
+
           {/* Pay Button */}
           <Button
             title={
@@ -577,7 +656,24 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text,
     letterSpacing: -0.3,
+    marginBottom: 8,
+  },
+  cardSubtitle: {
+    fontSize: 12,
+    color: colors.textMuted,
+    lineHeight: 16,
     marginBottom: 12,
+  },
+  questionCheckboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 8,
+  },
+  questionCheckboxLabel: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.text,
   },
   summaryRow: {
     flexDirection: 'row',

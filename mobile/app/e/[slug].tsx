@@ -37,13 +37,14 @@ import { formatNaira } from '../../src/utils/currency';
 const { width } = Dimensions.get('window');
 
 export default function EventDetailScreen() {
-  const { slug } = useLocalSearchParams<{ slug: string }>();
+  const { slug, ref } = useLocalSearchParams<{ slug: string; ref?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
 
   // Selected tickets state: { [ticketTypeId]: count }
   const [selectedCounts, setSelectedCounts] = useState<Record<string, number>>({});
+  const [promoterLinkId, setPromoterLinkId] = useState<string | null>(null);
 
   // 1. Fetch event and ticket tiers
   const fetchEventData = async () => {
@@ -75,6 +76,13 @@ export default function EventDetailScreen() {
 
     if (typesErr) throw typesErr;
 
+    // Fetch custom checkout questions
+    const { data: questions } = await supabase
+      .from('checkout_questions')
+      .select('*')
+      .eq('event_id', event.id)
+      .order('position', { ascending: true });
+
     // Optional: Social proof public attendees
     let attendees: any[] = [];
     try {
@@ -92,6 +100,7 @@ export default function EventDetailScreen() {
       event,
       organizer: event.profiles as any,
       ticketTypes: ticketTypes || [],
+      questions: questions || [],
       attendees,
     };
   };
@@ -101,6 +110,34 @@ export default function EventDetailScreen() {
     queryFn: fetchEventData,
     enabled: Boolean(slug),
   });
+
+  // Track page-view analytics in database
+  useEffect(() => {
+    if (!data?.event?.id) return;
+    supabase
+      .from('event_page_views')
+      .insert({ event_id: data.event.id })
+      .then();
+  }, [data?.event?.id]);
+
+  // Validate promoter link if ref param is present
+  useEffect(() => {
+    async function validatePromoter() {
+      if (!ref || !data?.event?.id) return;
+      try {
+        const { data: res, error: pErr } = await supabase.rpc('validate_promoter_code' as any, {
+          p_event_id: data.event.id,
+          p_code: ref.trim().toUpperCase(),
+        });
+        if (!pErr && res && (res as any).length > 0) {
+          setPromoterLinkId((res as any)[0].link_id);
+        }
+      } catch (err) {
+        console.warn('Promoter validation error:', err);
+      }
+    }
+    validatePromoter();
+  }, [ref, data?.event?.id]);
 
   // Share event
   const handleShare = async () => {
@@ -186,6 +223,7 @@ export default function EventDetailScreen() {
         eventId: data.event.id,
         ticketsPayload: JSON.stringify(selectedTiersPayload),
         totalAmountKobo: String(totalAmountKobo),
+        promoterLinkId: promoterLinkId || '',
       },
     });
   };

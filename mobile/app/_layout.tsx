@@ -65,6 +65,7 @@ export default function RootLayout() {
                 <Stack.Screen name="events/[id]/attendees" options={{ headerShown: false }} />
                 <Stack.Screen name="events/[id]/analytics" options={{ headerShown: false }} />
                 <Stack.Screen name="events/[id]/promos" options={{ headerShown: false }} />
+                <Stack.Screen name="events/[id]/promoters" options={{ headerShown: false }} />
               </Stack>
             </AuthNavigationGuard>
           </AuthProvider>

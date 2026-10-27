@@ -20,6 +20,7 @@ import {
   DollarSign,
   ChevronRight,
   BarChart,
+  Eye,
 } from 'lucide-react-native';
 
 import { supabase } from '../../../src/supabase/client';
@@ -52,6 +53,7 @@ export default function EventAnalyticsScreen() {
   const [totalSold, setTotalSold] = useState(0);
   const [totalCapacity, setTotalCapacity] = useState(0);
   const [checkedInCount, setCheckedInCount] = useState(0);
+  const [pageViewsCount, setPageViewsCount] = useState(0);
   const [tierStats, setTierStats] = useState<TierStat[]>([]);
   const [promos, setPromos] = useState<PromoStat[]>([]);
 
@@ -117,7 +119,15 @@ export default function EventAnalyticsScreen() {
 
       setCheckedInCount(checkInCount || 0);
 
-      // 4. Fetch Promos
+      // 4. Fetch Page Views count
+      const { count: viewsCount } = await supabase
+        .from('event_page_views')
+        .select('id', { count: 'exact', head: true })
+        .eq('event_id', id);
+
+      setPageViewsCount(viewsCount || 0);
+
+      // 5. Fetch Promos
       const { data: promosData } = await supabase
         .from('promo_codes')
         .select('code, times_used, discount_type, discount_value')
@@ -219,6 +229,26 @@ export default function EventAnalyticsScreen() {
             </Text>
             <Text style={styles.gridLabel}>Avg. Ticket Value</Text>
           </View>
+
+          <View style={styles.gridCard}>
+            <View style={styles.gridIconBox}>
+              <Eye size={18} color={colors.accent} />
+            </View>
+            <Text style={styles.gridValue}>{pageViewsCount.toLocaleString()}</Text>
+            <Text style={styles.gridLabel}>Page Views</Text>
+          </View>
+
+          <View style={styles.gridCard}>
+            <View style={styles.gridIconBox}>
+              <Percent size={18} color={colors.success} />
+            </View>
+            <Text style={styles.gridValue}>
+              {pageViewsCount > 0
+                ? `${Math.min(100, Math.round((totalSold / pageViewsCount) * 100))}%`
+                : '0%'}
+            </Text>
+            <Text style={styles.gridLabel}>Page Conversion</Text>
+          </View>
         </View>
 
         {/* Ticket Tier Breakdown */}
@@ -294,6 +324,26 @@ export default function EventAnalyticsScreen() {
                 </View>
               ))
             )}
+          </View>
+        </View>
+
+        {/* Promoters & Affiliates Summary & Link */}
+        <View style={styles.section}>
+          <View style={styles.sectionTitleRow}>
+            <Text style={styles.sectionTitle}>Promoters & Affiliates</Text>
+            <TouchableOpacity
+              style={styles.managePromosLink}
+              onPress={() => router.push(`/events/${id}/promoters` as any)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.managePromosText}>Manage Promoters</Text>
+              <ChevronRight size={14} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.card}>
+            <Text style={styles.emptyText}>
+              Track sales attribution, influencer revenue, and active referral links.
+            </Text>
           </View>
         </View>
       </ScrollView>

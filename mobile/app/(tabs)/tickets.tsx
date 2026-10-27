@@ -244,10 +244,18 @@ export default function TicketsTabScreen() {
               </Text>
             </View>
 
-            <View style={styles.qrIconBtn}>
+            <TouchableOpacity
+              style={styles.qrIconBtn}
+              onPress={() =>
+                router.push({
+                  pathname: '/ticket/[ticketCode]' as any,
+                  params: { ticketCode: item.ticket_code },
+                })
+              }
+            >
               <QrCode size={18} color={colors.primary} />
               <Text style={styles.qrIconText}>View QR</Text>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
       </TouchableOpacity>

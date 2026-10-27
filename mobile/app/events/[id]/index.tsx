@@ -279,6 +279,23 @@ export default function EventManagementHubScreen() {
 
             <TouchableOpacity
               style={styles.menuItem}
+              onPress={() => router.push(`/events/${id}/promoters` as any)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.menuIcon, { backgroundColor: `${colors.accent}22` }]}>
+                <Users size={18} color={colors.accent} />
+              </View>
+              <View style={styles.menuTextContainer}>
+                <Text style={styles.menuTitle}>Promoters & Affiliates</Text>
+                <Text style={styles.menuSubtitle}>Generate trackable referral links and monitor sales</Text>
+              </View>
+              <ChevronRight size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+
+            <TouchableOpacity
+              style={styles.menuItem}
               onPress={() => router.push(`/e/${event.slug}` as any)}
               activeOpacity={0.7}
             >

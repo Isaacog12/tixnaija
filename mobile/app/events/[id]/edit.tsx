@@ -63,6 +63,7 @@ export default function EditEventScreen() {
   const [startDateTime, setStartDateTime] = useState('');
   const [endDateTime, setEndDateTime] = useState('');
   const [status, setStatus] = useState<'draft' | 'published' | 'completed' | 'cancelled'>('published');
+  const [customQuestions, setCustomQuestions] = useState<any[]>([]);
 
   // Load Event
   useEffect(() => {
@@ -90,6 +91,15 @@ export default function EditEventScreen() {
           setEndDateTime(new Date(data.end_datetime).toISOString().slice(0, 16));
           setStatus(data.status);
         }
+
+        // Fetch custom questions
+        const { data: qData } = await supabase
+          .from('checkout_questions')
+          .select('*')
+          .eq('event_id', id)
+          .order('position', { ascending: true });
+
+        if (qData) setCustomQuestions(qData);
       } catch (err: any) {
         Alert.alert('Load Error', err.message || 'Could not load event details.');
         router.back();
@@ -175,6 +185,20 @@ export default function EditEventScreen() {
         .eq('id', id);
 
       if (error) throw error;
+
+      // Update checkout questions
+      await supabase.from('checkout_questions').delete().eq('event_id', id);
+      const validQuestions = customQuestions.filter((q) => q.question_text?.trim());
+      if (validQuestions.length > 0) {
+        const questionsToInsert = validQuestions.map((q, idx) => ({
+          event_id: id,
+          question_text: q.question_text.trim(),
+          type: q.type || 'text',
+          required: Boolean(q.required),
+          position: idx,
+        }));
+        await supabase.from('checkout_questions').insert(questionsToInsert as any);
+      }
 
       Alert.alert('Saved', 'Event updated successfully!', [
         { text: 'OK', onPress: () => router.back() },
