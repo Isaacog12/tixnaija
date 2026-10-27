@@ -8,4 +8,8 @@ npm-debug.*
 *.key
 *.mobileprovision
 *.orig.*
+.env
+.env.*
 .env.local
+*.apk
+*.aab
