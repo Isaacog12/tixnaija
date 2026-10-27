@@ -42,13 +42,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="tickets"
         options={{
-          title: isOrganizer ? 'My Events' : 'My Tickets',
-          tabBarIcon: ({ color, size }) =>
-            isOrganizer ? (
-              <Calendar size={size} color={color} />
-            ) : (
-              <Ticket size={size} color={color} />
-            ),
+          title: 'Tickets',
+          tabBarIcon: ({ color, size }) => <Ticket size={size} color={color} />,
         }}
       />
       <Tabs.Screen

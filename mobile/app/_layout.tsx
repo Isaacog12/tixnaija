@@ -57,10 +57,14 @@ export default function RootLayout() {
                 <Stack.Screen name="order/[orderId]" options={{ headerShown: false }} />
                 <Stack.Screen name="ticket/[ticketCode]" options={{ headerShown: false }} />
                 <Stack.Screen name="box-office/[slug]" options={{ headerShown: false }} />
+                <Stack.Screen name="events/index" options={{ headerShown: false }} />
                 <Stack.Screen name="events/create" options={{ headerShown: false }} />
+                <Stack.Screen name="events/[id]/index" options={{ headerShown: false }} />
                 <Stack.Screen name="events/[id]/edit" options={{ headerShown: false }} />
                 <Stack.Screen name="events/[id]/broadcast" options={{ headerShown: false }} />
                 <Stack.Screen name="events/[id]/attendees" options={{ headerShown: false }} />
+                <Stack.Screen name="events/[id]/analytics" options={{ headerShown: false }} />
+                <Stack.Screen name="events/[id]/promos" options={{ headerShown: false }} />
               </Stack>
             </AuthNavigationGuard>
           </AuthProvider>

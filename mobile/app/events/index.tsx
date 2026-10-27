@@ -284,7 +284,11 @@ export default function OrganizerDashboardScreen() {
 
             return (
               <View style={styles.eventCard}>
-                <View style={styles.cardHeader}>
+                <TouchableOpacity
+                  style={styles.cardHeader}
+                  onPress={() => router.push(`/events/${item.id}` as any)}
+                  activeOpacity={0.7}
+                >
                   <Image
                     source={
                       item.cover_image_url
@@ -329,7 +333,7 @@ export default function OrganizerDashboardScreen() {
                       </View>
                     )}
                   </View>
-                </View>
+                </TouchableOpacity>
 
                 {/* Ticket Progress */}
                 <View style={styles.progressSection}>
