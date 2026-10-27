@@ -31,6 +31,7 @@ import {
   AlertCircle,
   HelpCircle,
   ExternalLink,
+  Headphones,
 } from 'lucide-react-native';
 
 import { useAuth } from '../../src/context/AuthContext';
@@ -49,7 +50,7 @@ interface NotificationPrefs {
 
 export default function MoreScreen() {
   const router = useRouter();
-  const { user, profile, isOrganizer, isAdmin, signOut, refreshProfile } = useAuth();
+  const { user, profile, isOrganizer, isAdmin, isCustomerCare, isStaff, signOut, refreshProfile } = useAuth();
 
   // Profile Edit State
   const [fullName, setFullName] = useState(profile?.full_name ?? '');
@@ -434,12 +435,17 @@ export default function MoreScreen() {
                   <Text style={styles.roleBadgeText}>ADMIN</Text>
                 </View>
               )}
+              {isCustomerCare && (
+                <View style={[styles.roleBadge, { backgroundColor: 'rgba(56, 189, 248, 0.2)' }]}>
+                  <Text style={[styles.roleBadgeText, { color: '#38bdf8' }]}>CARE STAFF</Text>
+                </View>
+              )}
               {isOrganizer && (
                 <View style={[styles.roleBadge, styles.organizerBadge]}>
                   <Text style={styles.roleBadgeText}>ORGANIZER</Text>
                 </View>
               )}
-              {!isOrganizer && !isAdmin && (
+              {!isOrganizer && !isAdmin && !isCustomerCare && (
                 <View style={[styles.roleBadge, styles.attendeeBadge]}>
                   <Text style={styles.roleBadgeText}>ATTENDEE</Text>
                 </View>
@@ -449,7 +455,7 @@ export default function MoreScreen() {
         </View>
 
         {/* Quick Role Navigation Actions */}
-        {(isOrganizer || isAdmin) && (
+        {(isOrganizer || isAdmin || isStaff) && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Portals & Tools</Text>
             <View style={styles.card}>
@@ -482,6 +488,23 @@ export default function MoreScreen() {
                   <View style={styles.menuTextContainer}>
                     <Text style={styles.menuTitle}>Admin Hub</Text>
                     <Text style={styles.menuSubtitle}>Applications, payouts & approvals</Text>
+                  </View>
+                  <ChevronRight size={18} color={colors.textMuted} />
+                </TouchableOpacity>
+              )}
+
+              {isStaff && (
+                <TouchableOpacity
+                  style={[styles.menuItem, (isOrganizer || isAdmin) && styles.menuItemBorder]}
+                  onPress={() => router.push('/support/lookup')}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.menuIconContainer}>
+                    <Headphones size={18} color="#38bdf8" />
+                  </View>
+                  <View style={styles.menuTextContainer}>
+                    <Text style={styles.menuTitle}>Customer Care Portal</Text>
+                    <Text style={styles.menuSubtitle}>Universal order lookup & ticket resends</Text>
                   </View>
                   <ChevronRight size={18} color={colors.textMuted} />
                 </TouchableOpacity>

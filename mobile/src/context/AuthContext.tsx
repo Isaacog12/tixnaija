@@ -11,6 +11,9 @@ interface AuthContextValue {
   profile: Profile | null;
   isOrganizer: boolean;
   isAdmin: boolean;
+  isCustomerCare: boolean;
+  isStaff: boolean;
+  roles: string[];
   isLoading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -23,6 +26,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isCustomerCare, setIsCustomerCare] = useState(false);
+  const [roles, setRoles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchProfileAndRole = useCallback(async (userId: string) => {
@@ -36,15 +41,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         supabase
           .from('user_roles')
           .select('role')
-          .eq('user_id', userId)
-          .eq('role', 'admin')
-          .maybeSingle(),
+          .eq('user_id', userId),
       ]);
 
       if (profileRes.data) {
         setProfile(profileRes.data);
       }
-      setIsAdmin(Boolean(rolesRes.data));
+      const fetchedRoles = (rolesRes.data ?? []).map((r: any) => r.role);
+      setRoles(fetchedRoles);
+      setIsAdmin(fetchedRoles.includes('admin'));
+      setIsCustomerCare(fetchedRoles.includes('customer_care'));
     } catch (err) {
       console.warn('[AuthContext] Failed to load user profile or role:', err);
     }
@@ -77,6 +83,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setProfile(null);
         setIsAdmin(false);
+        setIsCustomerCare(false);
+        setRoles([]);
       }
       setIsLoading(false);
     });
@@ -95,6 +103,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setProfile(null);
       setIsAdmin(false);
+      setIsCustomerCare(false);
+      setRoles([]);
     } finally {
       setIsLoading(false);
     }
@@ -106,7 +116,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const isOrganizer = Boolean(profile?.is_organizer);
+  const isOrganizer = Boolean(profile?.is_organizer || roles.includes('organizer'));
+  const isStaff = Boolean(isAdmin || isCustomerCare);
 
   const value: AuthContextValue = {
     session,
@@ -114,6 +125,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     profile,
     isOrganizer,
     isAdmin,
+    isCustomerCare,
+    isStaff,
+    roles,
     isLoading,
     signOut,
     refreshProfile,

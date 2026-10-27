@@ -66,6 +66,11 @@ export default function RootLayout() {
                 <Stack.Screen name="events/[id]/analytics" options={{ headerShown: false }} />
                 <Stack.Screen name="events/[id]/promos" options={{ headerShown: false }} />
                 <Stack.Screen name="events/[id]/promoters" options={{ headerShown: false }} />
+                <Stack.Screen name="admin/index" options={{ headerShown: false }} />
+                <Stack.Screen name="admin/applications" options={{ headerShown: false }} />
+                <Stack.Screen name="admin/banners" options={{ headerShown: false }} />
+                <Stack.Screen name="admin/users" options={{ headerShown: false }} />
+                <Stack.Screen name="support/lookup" options={{ headerShown: false }} />
               </Stack>
             </AuthNavigationGuard>
           </AuthProvider>
