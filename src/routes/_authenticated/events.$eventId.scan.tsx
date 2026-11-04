@@ -81,6 +81,7 @@ function ScannerPage() {
     try {
       const { data: result, error: rpcError } = await supabase.rpc("check_in_ticket", {
         p_ticket_code: text,
+        p_event_id: eventId,
       });
 
       if (rpcError) throw rpcError;

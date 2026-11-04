@@ -858,6 +858,14 @@ export type Database = {
         Returns: undefined
       }
       cancel_ticket: { Args: { p_ticket_id: string }; Returns: undefined }
+      bulk_sync_offline_checkins: {
+        Args: { p_event_id: string; p_scans: Json }
+        Returns: Json
+      }
+      check_in_ticket: {
+        Args: { p_event_id: string; p_ticket_code: string }
+        Returns: Json
+      }
       claim_guest_messages: { Args: never; Returns: undefined }
       get_guest_order_full: {
         Args: { p_email: string; p_order_id: string }

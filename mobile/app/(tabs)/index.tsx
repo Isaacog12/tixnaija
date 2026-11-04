@@ -12,6 +12,7 @@ import {
   Dimensions,
   SafeAreaView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';

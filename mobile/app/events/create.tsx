@@ -43,6 +43,13 @@ const CATEGORIES = [
   'other',
 ] as const;
 
+function toLocalDateTimeInput(date: Date) {
+  const twoDigits = (value: number) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${twoDigits(date.getMonth() + 1)}-${twoDigits(
+    date.getDate()
+  )}T${twoDigits(date.getHours())}:${twoDigits(date.getMinutes())}`;
+}
+
 interface TicketTierInput {
   id: string;
   name: string;
@@ -83,8 +90,8 @@ export default function CreateEventScreen() {
   const tomorrowEnd = new Date(tomorrow);
   tomorrowEnd.setHours(22, 0, 0, 0);
 
-  const [startDateTime, setStartDateTime] = useState(tomorrow.toISOString().slice(0, 16));
-  const [endDateTime, setEndDateTime] = useState(tomorrowEnd.toISOString().slice(0, 16));
+  const [startDateTime, setStartDateTime] = useState(toLocalDateTimeInput(tomorrow));
+  const [endDateTime, setEndDateTime] = useState(toLocalDateTimeInput(tomorrowEnd));
 
   // Ticket Tiers
   const [tiers, setTiers] = useState<TicketTierInput[]>([
@@ -268,8 +275,8 @@ export default function CreateEventScreen() {
           event_id: eventData.id,
           name: t.name.trim(),
           price_kobo: Math.round(priceNairaNum * 100),
-          capacity: capacityNum,
-          remaining: capacityNum,
+          quantity_available: capacityNum,
+          quantity_sold: 0,
         };
       });
 

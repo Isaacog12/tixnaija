@@ -6,6 +6,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import QRCode from "https://esm.sh/qrcode@1.5.3";
 import { sendEmail } from "../_shared/zeptomail.ts";
 import { isNotificationOptedIn } from "../_shared/notification-preferences.ts";
+import { escapeHtml } from "../_shared/html.ts";
 
 const allowedOrigins = [
   "https://www.tixnaija.name.ng",
@@ -168,9 +169,14 @@ serve(async (req: Request) => {
       ? `You received a gift for ${eventTitle} 🎁 (Ref: ${orderRef})`
       : `Your tickets for ${eventTitle} are ready 🎟️ (Ref: ${orderRef})`;
 
-    const accessParam = order.access_code ? `&code=${encodeURIComponent(order.access_code)}` : (order.payment_reference ? `&code=${encodeURIComponent(order.payment_reference)}` : '');
-    const ticketUrl = `https://tixnaija.name.ng/orders/${order.id}/tickets?email=${encodeURIComponent(recipientEmail)}${accessParam}`;
-    const downloadUrl = `${ticketUrl}&download=true`;
+    const accessParam = order.access_code
+      ? `&code=${encodeURIComponent(order.access_code)}`
+      : order.payment_reference
+        ? `&code=${encodeURIComponent(order.payment_reference)}`
+        : "";
+    const guestFragment = `#email=${encodeURIComponent(recipientEmail)}${accessParam}`;
+    const ticketUrl = `https://tixnaija.name.ng/orders/${order.id}/tickets${guestFragment}`;
+    const downloadUrl = `https://tixnaija.name.ng/orders/${order.id}/tickets?download=true${guestFragment}`;
 
     const ticketTypes = order.order_items?.map((item: any) => item.ticket_types?.name).filter(Boolean).join(', ') || 'General Admission';
     const totalQuantity = order.order_items?.reduce((acc: number, item: any) => acc + item.quantity, 0) || 1;
@@ -178,8 +184,8 @@ serve(async (req: Request) => {
     const venue = [order.events?.venue_name, order.events?.address].filter(Boolean).join(', ') || 'Online';
 
     // 1. Send Master Receipt to Buyer
-    const eventImageHtml = order.events?.cover_image_url 
-      ? `<img src="${order.events.cover_image_url}" alt="${eventTitle}" style="width: 100%; border-radius: 12px; margin-bottom: 32px; object-fit: cover;" />` 
+    const eventImageHtml = order.events?.cover_image_url
+      ? `<img src="${escapeHtml(order.events.cover_image_url)}" alt="${escapeHtml(eventTitle)}" style="width: 100%; border-radius: 12px; margin-bottom: 32px; object-fit: cover;" />`
       : '';
 
     let masterHtmlBody = `
@@ -195,14 +201,14 @@ serve(async (req: Request) => {
         <h1 style="font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 8px; color: #FFFFFF;">
           Tickets Confirmed.
         </h1>
-        <p style="margin: 0 0 40px; color: #A1A1A6; font-size: 17px; line-height: 1.4;">Hello ${recipientName}, your order is complete.</p>
+        <p style="margin: 0 0 40px; color: #A1A1A6; font-size: 17px; line-height: 1.4;">Hello ${escapeHtml(recipientName)}, your order is complete.</p>
     `;
 
     if (isGift) {
       masterHtmlBody += `
         <div style="border-left: 2px solid #FF5A1F; padding-left: 16px; margin-bottom: 40px;">
-          <p style="margin: 0; font-size: 15px; color: #FFFFFF;">Gifted by <strong>${order.buyer_name}</strong></p>
-          ${order.gift_message ? `<p style="margin: 8px 0 0; color: #A1A1A6; font-style: italic;">"${order.gift_message}"</p>` : ''}
+          <p style="margin: 0; font-size: 15px; color: #FFFFFF;">Gifted by <strong>${escapeHtml(order.buyer_name)}</strong></p>
+          ${order.gift_message ? `<p style="margin: 8px 0 0; color: #A1A1A6; font-style: italic;">"${escapeHtml(order.gift_message)}"</p>` : ''}
         </div>
       `;
     }
@@ -211,7 +217,7 @@ serve(async (req: Request) => {
       masterHtmlBody += `
         <div style="background-color: #1C1C1E; border-radius: 12px; padding: 24px; margin-bottom: 40px;">
           <h3 style="margin: 0 0 12px; font-size: 13px; font-weight: 500; color: #86868B; text-transform: uppercase; letter-spacing: 0.05em;">Message from Organizer</h3>
-          <p style="margin: 0; font-size: 15px; color: #E5E5EA; line-height: 1.5; white-space: pre-wrap;">${order.events.custom_order_confirmation}</p>
+          <p style="margin: 0; font-size: 15px; color: #E5E5EA; line-height: 1.5; white-space: pre-wrap;">${escapeHtml(order.events.custom_order_confirmation)}</p>
         </div>
       `;
     }
@@ -220,37 +226,37 @@ serve(async (req: Request) => {
         <div style="margin-bottom: 48px;">
           <div style="border-bottom: 1px solid #333336; padding: 16px 0;">
             <span style="display: block; font-size: 13px; color: #86868B; margin-bottom: 4px;">Event</span>
-            <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${eventTitle}</span>
+            <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${escapeHtml(eventTitle)}</span>
           </div>
           <div style="border-bottom: 1px solid #333336; padding: 16px 0;">
             <span style="display: block; font-size: 13px; color: #86868B; margin-bottom: 4px;">Date & Time</span>
-            <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${date}</span>
+            <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${escapeHtml(date)}</span>
           </div>
           <div style="border-bottom: 1px solid #333336; padding: 16px 0;">
             <span style="display: block; font-size: 13px; color: #86868B; margin-bottom: 4px;">Venue</span>
-            <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${venue}</span>
+            <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${escapeHtml(venue)}</span>
           </div>
           <div style="border-bottom: 1px solid #333336; padding: 16px 0; display: flex; justify-content: space-between;">
             <div>
               <span style="display: block; font-size: 13px; color: #86868B; margin-bottom: 4px;">Ticket</span>
-              <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${ticketTypes} (x${totalQuantity})</span>
+              <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${escapeHtml(ticketTypes)} (x${totalQuantity})</span>
             </div>
             <div style="text-align: right;">
               <span style="display: block; font-size: 13px; color: #86868B; margin-bottom: 4px;">Total</span>
-              <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${amountPaid}</span>
+              <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${escapeHtml(amountPaid)}</span>
             </div>
           </div>
         </div>
         
-        <a href="${ticketUrl}" style="display: block; width: 100%; text-align: center; background-color: #FFFFFF; color: #000000; text-decoration: none; padding: 16px 0; border-radius: 12px; font-weight: 500; font-size: 17px; margin-bottom: 12px;">View Tickets</a>
-        <a href="${downloadUrl}" style="display: block; width: 100%; text-align: center; background-color: transparent; border: 1px solid #333336; color: #FFFFFF; text-decoration: none; padding: 16px 0; border-radius: 12px; font-weight: 500; font-size: 17px;">Download PDF Receipt</a>
+        <a href="${escapeHtml(ticketUrl)}" style="display: block; width: 100%; text-align: center; background-color: #FFFFFF; color: #000000; text-decoration: none; padding: 16px 0; border-radius: 12px; font-weight: 500; font-size: 17px; margin-bottom: 12px;">View Tickets</a>
+        <a href="${escapeHtml(downloadUrl)}" style="display: block; width: 100%; text-align: center; background-color: transparent; border: 1px solid #333336; color: #FFFFFF; text-decoration: none; padding: 16px 0; border-radius: 12px; font-weight: 500; font-size: 17px;">Download PDF Receipt</a>
 
         <div style="margin-top: 60px; padding-top: 24px; border-top: 1px solid #1C1C1E; text-align: center;">
           <p style="margin: 0 0 6px; font-size: 12px; color: #86868B;">
             You received this transactional receipt because an order was placed on TixNaija with this email address.
           </p>
           <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">
-            Order Ref: ${orderRef} · <a href="https://tixnaija.name.ng/refunds" style="color: #ea580c; text-decoration: underline;">Refund Policy</a> · <a href="https://tixnaija.name.ng/privacy" style="color: #ea580c; text-decoration: underline;">Privacy Policy</a>
+            Order Ref: ${escapeHtml(orderRef)} · <a href="https://tixnaija.name.ng/refunds" style="color: #ea580c; text-decoration: underline;">Refund Policy</a> · <a href="https://tixnaija.name.ng/privacy" style="color: #ea580c; text-decoration: underline;">Privacy Policy</a>
           </p>
           <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">
             Manage notifications: <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a>
@@ -327,14 +333,14 @@ serve(async (req: Request) => {
           <h1 style="font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 8px; color: #FFFFFF;">
             Your Ticket.
           </h1>
-          <p style="margin: 0 0 40px; color: #A1A1A6; font-size: 17px; line-height: 1.4;">Hi ${attendeeName}, <strong>${order.buyer_name}</strong> sent you a ticket for <strong>${eventTitle}</strong>.</p>
+          <p style="margin: 0 0 40px; color: #A1A1A6; font-size: 17px; line-height: 1.4;">Hi ${escapeHtml(attendeeName)}, <strong>${escapeHtml(order.buyer_name)}</strong> sent you a ticket for <strong>${escapeHtml(eventTitle)}</strong>.</p>
       `;
 
       if (order.events?.custom_order_confirmation) {
         attHtmlBody += `
           <div style="background-color: #1C1C1E; border-radius: 12px; padding: 24px; margin-bottom: 40px;">
             <h3 style="margin: 0 0 12px; font-size: 13px; font-weight: 500; color: #86868B; text-transform: uppercase; letter-spacing: 0.05em;">Message from Organizer</h3>
-            <p style="margin: 0; font-size: 15px; color: #E5E5EA; line-height: 1.5; white-space: pre-wrap;">${order.events.custom_order_confirmation}</p>
+            <p style="margin: 0; font-size: 15px; color: #E5E5EA; line-height: 1.5; white-space: pre-wrap;">${escapeHtml(order.events.custom_order_confirmation)}</p>
           </div>
         `;
       }
@@ -343,31 +349,31 @@ serve(async (req: Request) => {
           <div style="margin-bottom: 40px;">
             <div style="border-bottom: 1px solid #333336; padding: 16px 0;">
               <span style="display: block; font-size: 13px; color: #86868B; margin-bottom: 4px;">Date & Time</span>
-              <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${date}</span>
+              <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${escapeHtml(date)}</span>
             </div>
             <div style="border-bottom: 1px solid #333336; padding: 16px 0;">
               <span style="display: block; font-size: 13px; color: #86868B; margin-bottom: 4px;">Venue</span>
-              <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${venue}</span>
+              <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${escapeHtml(venue)}</span>
             </div>
           </div>
       `;
 
       for (const t of tickets) {
-        const singleUrl = `https://tixnaija.name.ng/t/${t.ticket_code}`;
+        const singleUrl = `https://tixnaija.name.ng/t/${encodeURIComponent(t.ticket_code)}`;
         const singlePdfUrl = `${singleUrl}?download=true`;
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(t.ticket_code)}&margin=1`;
         
         attHtmlBody += `
           <div style="background-color: #1C1C1E; border-radius: 16px; padding: 32px; margin-bottom: 24px; text-align: center; border: 1px solid #333336;">
-            <p style="margin: 0 0 4px; font-weight: 600; font-size: 20px; color: #FFFFFF;">${t.ticketTypeName}</p>
-            <p style="margin: 0 0 24px; font-size: 14px; color: #86868B; letter-spacing: 0.05em;">CODE: ${t.ticket_code.split('-')[0].toUpperCase()}</p>
+            <p style="margin: 0 0 4px; font-weight: 600; font-size: 20px; color: #FFFFFF;">${escapeHtml(t.ticketTypeName)}</p>
+            <p style="margin: 0 0 24px; font-size: 14px; color: #86868B; letter-spacing: 0.05em;">CODE: ${escapeHtml(t.ticket_code.split('-')[0].toUpperCase())}</p>
             
             <div style="background: #FFFFFF; padding: 16px; border-radius: 16px; display: inline-block; margin-bottom: 32px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);">
-              <img src="${qrUrl}" alt="Ticket QR Code" style="display: block; width: 160px; height: 160px; margin: 0 auto;" />
+              <img src="${escapeHtml(qrUrl)}" alt="Ticket QR Code" style="display: block; width: 160px; height: 160px; margin: 0 auto;" />
             </div>
             
-            <a href="${singlePdfUrl}" style="display: block; width: 100%; text-align: center; background-color: #FFFFFF; color: #000000; text-decoration: none; padding: 16px 0; border-radius: 12px; font-weight: 500; font-size: 17px; margin-bottom: 12px;">Download PDF Ticket</a>
-            <a href="${singleUrl}" style="display: block; width: 100%; text-align: center; background-color: transparent; border: 1px solid #48484A; color: #FFFFFF; text-decoration: none; padding: 16px 0; border-radius: 12px; font-weight: 500; font-size: 17px;">View in Browser</a>
+            <a href="${escapeHtml(singlePdfUrl)}" style="display: block; width: 100%; text-align: center; background-color: #FFFFFF; color: #000000; text-decoration: none; padding: 16px 0; border-radius: 12px; font-weight: 500; font-size: 17px; margin-bottom: 12px;">Download PDF Ticket</a>
+            <a href="${escapeHtml(singleUrl)}" style="display: block; width: 100%; text-align: center; background-color: transparent; border: 1px solid #48484A; color: #FFFFFF; text-decoration: none; padding: 16px 0; border-radius: 12px; font-weight: 500; font-size: 17px;">View in Browser</a>
           </div>
         `;
       }

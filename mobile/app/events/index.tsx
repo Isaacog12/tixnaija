@@ -77,7 +77,7 @@ export default function OrganizerDashboardScreen() {
           venue_name,
           city,
           status,
-          ticket_types (id, capacity, remaining, price_kobo)
+          ticket_types (id, quantity_available, quantity_sold, price_kobo)
         `)
         .order('start_datetime', { ascending: false });
 
@@ -97,9 +97,8 @@ export default function OrganizerDashboardScreen() {
         let eventGross = 0;
 
         (e.ticket_types || []).forEach((tt: any) => {
-          const cap = tt.capacity || 0;
-          const rem = tt.remaining !== null && tt.remaining !== undefined ? tt.remaining : cap;
-          const sold = Math.max(0, cap - rem);
+          const cap = tt.quantity_available || 0;
+          const sold = tt.quantity_sold || 0;
           const price = tt.price_kobo || 0;
 
           eventCapacity += cap;

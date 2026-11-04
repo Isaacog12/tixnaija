@@ -38,6 +38,8 @@ interface GuestOrder {
   event_start: string;
 }
 
+const GUEST_TICKET_CREDENTIALS_PREFIX = "tixnaija:guest-ticket-credentials:";
+
 function GuestTicketsPage() {
   const [email, setEmail] = useState("");
   const [accessCode, setAccessCode] = useState("");
@@ -227,7 +229,15 @@ function GuestTicketsPage() {
                           <Link
                             to="/orders/$orderId/tickets"
                             params={{ orderId: order.id }}
-                            search={{ email: submitted.email, code: submitted.accessCode }}
+                            onClick={() => {
+                              sessionStorage.setItem(
+                                `${GUEST_TICKET_CREDENTIALS_PREFIX}${order.id}`,
+                                JSON.stringify({
+                                  email: submitted.email,
+                                  code: submitted.accessCode,
+                                }),
+                              );
+                            }}
                           >
                             <QrCode className="mr-2 h-4 w-4" />
                             View Tickets

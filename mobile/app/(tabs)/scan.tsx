@@ -197,19 +197,31 @@ export default function GateScannerScreen() {
 
       const { data, error } = await supabase.rpc('bulk_sync_offline_checkins', {
         p_scans: payload,
+        p_event_id: selectedEvent.id,
       });
 
       if (error) throw error;
 
       const res = data as any;
+      const failedScans: OfflineScanItem[] = Array.isArray(res.failed_scans)
+        ? res.failed_scans
+        : res.failed_count > 0
+          ? offlineScans
+          : [];
       Alert.alert(
         'Offline Sync Complete',
-        `Synced: ${res.synced_count ?? 0}\nAlready checked or invalid: ${res.failed_count ?? 0}`
+        `Synced: ${res.synced_count ?? 0}\nStill pending: ${failedScans.length}`
       );
 
-      // Clear local offline scans queue
-      await AsyncStorage.removeItem(`@offline_scans_${selectedEvent.id}`);
-      setOfflineScans([]);
+      if (failedScans.length > 0) {
+        await AsyncStorage.setItem(
+          `@offline_scans_${selectedEvent.id}`,
+          JSON.stringify(failedScans)
+        );
+      } else {
+        await AsyncStorage.removeItem(`@offline_scans_${selectedEvent.id}`);
+      }
+      setOfflineScans(failedScans);
     } catch (err: any) {
       Alert.alert('Sync Error', err.message || 'Failed to sync offline scans to server.');
     } finally {
@@ -278,8 +290,12 @@ export default function GateScannerScreen() {
           });
         } else {
           // Online Validation via RPC check_in_ticket
+          if (!selectedEvent) {
+            throw new Error('Please select an event before scanning.');
+          }
           const { data, error } = await supabase.rpc('check_in_ticket', {
             p_ticket_code: trimmedCode,
+            p_event_id: selectedEvent.id,
           });
 
           if (error) throw error;

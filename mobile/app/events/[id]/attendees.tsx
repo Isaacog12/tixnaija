@@ -142,6 +142,7 @@ export default function EventAttendeesScreen() {
     try {
       const { data, error } = await supabase.rpc('check_in_ticket', {
         p_ticket_code: ticket.ticket_code,
+        p_event_id: id,
       });
 
       if (error) throw error;

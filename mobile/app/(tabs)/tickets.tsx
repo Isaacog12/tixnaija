@@ -35,7 +35,7 @@ import { Input } from '../../src/components/Input';
 import { colors } from '../../src/theme/colors';
 import { formatEventDate, formatEventTime } from '../../src/utils/date';
 
-const CACHE_KEY = '@my_tickets_cache';
+const CACHE_KEY_PREFIX = '@my_tickets_cache:';
 
 interface ExtractedTicket {
   id: string;
@@ -61,12 +61,8 @@ export default function TicketsTabScreen() {
 
   // Fetch tickets for authenticated user
   const fetchMyTickets = async () => {
-    if (!user) {
-      // If offline, check cache
-      const cached = await AsyncStorage.getItem(CACHE_KEY);
-      if (cached) return JSON.parse(cached);
-      return [];
-    }
+    if (!user) return [];
+    const cacheKey = `${CACHE_KEY_PREFIX}${user.id}`;
 
     try {
       const { data, error } = await supabase
@@ -115,10 +111,10 @@ export default function TicketsTabScreen() {
       });
 
       // Cache for offline access
-      await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(ticketsList));
+      await AsyncStorage.setItem(cacheKey, JSON.stringify(ticketsList));
       return ticketsList;
     } catch (err) {
-      const cached = await AsyncStorage.getItem(CACHE_KEY);
+      const cached = await AsyncStorage.getItem(cacheKey);
       if (cached) return JSON.parse(cached);
       throw err;
     }

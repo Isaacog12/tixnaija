@@ -180,7 +180,6 @@ async function fetchEventBySlug(slug: string) {
       id, title, slug, description, category, tags, cover_image_url, venue_name, city, state, 
       start_datetime, end_datetime, status, postponed_at, organizer_note, theme_color,
       checkout_questions(id, question_text, type, options, required, position),
-      profiles!events_organizer_id_fkey(full_name, organizer_slug, avatar_url),
       ticket_types(id, name, description, price_kobo, quantity_available, quantity_sold, max_per_order, sales_start_at, sales_end_at)
     `,
     )
@@ -192,6 +191,12 @@ async function fetchEventBySlug(slug: string) {
   const ev = _ev as any;
   const types = ev.ticket_types || [];
   const questions = ev.checkout_questions || [];
+  const { data: organizer } = await (supabase
+    .from("public_organizer_profiles" as any)
+    .select("full_name, organizer_slug, avatar_url")
+    .eq("id", ev.organizer_id)
+    .maybeSingle() as any);
+  ev.profiles = organizer;
   delete ev.ticket_types; // keep structure identical for rest of code
   delete ev.checkout_questions;
 

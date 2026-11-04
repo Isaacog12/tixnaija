@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Modal,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { WebView } from 'react-native-webview';
 import { Tag, Gift, Check, ShieldCheck, X } from 'lucide-react-native';
@@ -90,6 +91,7 @@ export default function CheckoutScreen() {
   const [appliedPromo, setAppliedPromo] = useState<{
     id: string;
     code: string;
+    discount_type: 'percent' | 'fixed';
     discount_value: number;
   } | null>(null);
   const [applyingPromo, setApplyingPromo] = useState(false);
@@ -114,7 +116,10 @@ export default function CheckoutScreen() {
   // Recalculate total with promo discount
   const finalTotalKobo = useMemo(() => {
     if (!appliedPromo) return initialTotalKobo;
-    const discount = Math.round((initialTotalKobo * appliedPromo.discount_value) / 100);
+    const discount =
+      appliedPromo.discount_type === 'percent'
+        ? Math.round((initialTotalKobo * appliedPromo.discount_value) / 100)
+        : appliedPromo.discount_value;
     return Math.max(0, initialTotalKobo - discount);
   }, [initialTotalKobo, appliedPromo]);
 
@@ -124,34 +129,33 @@ export default function CheckoutScreen() {
     setApplyingPromo(true);
 
     try {
-      const { data, error } = await supabase
-        .from('promo_codes')
-        .select('id, code, discount_value, expires_at, max_uses, uses_count')
-        .eq('event_id', eventId)
-        .ilike('code', promoCodeInput.trim())
-        .maybeSingle();
+      const { data, error } = await supabase.rpc('validate_promo_code', {
+        p_event_id: eventId,
+        p_code: promoCodeInput.trim(),
+      });
 
-      if (error || !data) {
-        throw new Error('Invalid promo code.');
-      }
-
-      if (data.expires_at && new Date(data.expires_at).getTime() < Date.now()) {
-        throw new Error('This promo code has expired.');
-      }
-
-      if (data.max_uses && data.uses_count >= data.max_uses) {
-        throw new Error('This promo code has reached its usage limit.');
-      }
+      if (error || !data) throw error || new Error('Invalid promo code.');
+      const promo = data as {
+        id: string;
+        code: string;
+        discount_type: 'percent' | 'fixed';
+        discount_value: number;
+      };
 
       setAppliedPromo({
-        id: data.id,
-        code: data.code,
-        discount_value: data.discount_value,
+        id: promo.id,
+        code: promo.code,
+        discount_type: promo.discount_type,
+        discount_value: promo.discount_value,
       });
 
       Alert.alert(
         'Promo Applied',
-        `Promo code "${data.code}" applied! You get ${data.discount_value}% discount.`
+        `Promo code "${promo.code}" applied! You get ${
+          promo.discount_type === 'percent'
+            ? `${promo.discount_value}%`
+            : formatNaira(promo.discount_value)
+        } off.`
       );
     } catch (err: any) {
       Alert.alert('Promo Code Error', err.message || 'Could not validate promo code.');
@@ -196,9 +200,13 @@ export default function CheckoutScreen() {
         'Payment Verification',
         err.message ||
           'Payment verification could not be completed. If you were debited, your tickets will appear under My Tickets shortly.',
-        [{ text: 'View Tickets', onPress: () => router.replace('/(tabs)/tickets') }]
+        [
+          { text: 'Retry', onPress: () => verifyPaymentAndFinish(reference) },
+          { text: 'View Tickets', onPress: () => router.replace('/(tabs)/tickets') },
+        ]
       );
     } finally {
+      verifyLock.current = false;
       setIsVerifying(false);
       setIsProcessing(false);
     }
@@ -230,7 +238,10 @@ export default function CheckoutScreen() {
     for (const q of checkoutQuestions) {
       if (q.required) {
         const ans = answers[q.id];
-        if (ans === undefined || ans === null || String(ans).trim() === '') {
+        const missingAnswer = q.type === 'checkbox'
+          ? ans !== true
+          : ans === undefined || ans === null || String(ans).trim() === '';
+        if (missingAnswer) {
           Alert.alert('Required Question', `Please answer: "${q.question_text}"`);
           return;
         }
@@ -296,6 +307,7 @@ export default function CheckoutScreen() {
         email: buyerEmail.trim().toLowerCase(),
         amount: finalTotalKobo / 100, // Edge function multiplies by 100 for kobo
         metadata: {
+          buyerEmail: buyerEmail.trim().toLowerCase(),
           eventId,
           tickets: enrichedTickets,
           promoCodeId: appliedPromo ? appliedPromo.id : null,
@@ -370,7 +382,13 @@ export default function CheckoutScreen() {
 
             {appliedPromo ? (
               <View style={styles.summaryRow}>
-                <Text style={styles.discountLabel}>Discount ({appliedPromo.discount_value}%)</Text>
+                <Text style={styles.discountLabel}>
+                  Discount (
+                  {appliedPromo.discount_type === 'percent'
+                    ? `${appliedPromo.discount_value}%`
+                    : formatNaira(appliedPromo.discount_value)}
+                  )
+                </Text>
                 <Text style={styles.discountValue}>
                   -{formatNaira(initialTotalKobo - finalTotalKobo)}
                 </Text>

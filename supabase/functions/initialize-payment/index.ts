@@ -44,6 +44,45 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const supabase = createClient(supabaseUrl, supabaseKey);
+    const userId = metadata?.userId;
+
+    if (userId) {
+      const token = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "").trim();
+      const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+      if (!token || !anonKey) {
+        return new Response(JSON.stringify({ error: "Authentication required" }), {
+          status: 401,
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+        });
+      }
+
+      const authClient = createClient(supabaseUrl, anonKey, {
+        auth: { persistSession: false },
+      });
+      const {
+        data: { user: authenticatedUser },
+        error: authError,
+      } = await authClient.auth.getUser(token);
+      if (authError || !authenticatedUser || authenticatedUser.id !== userId) {
+        return new Response(JSON.stringify({ error: "Authentication required" }), {
+          status: 401,
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: userProfile } = await supabase
+        .from("profiles")
+        .select("suspended")
+        .eq("id", userId)
+        .maybeSingle();
+      if (userProfile?.suspended) {
+        return new Response(JSON.stringify({ error: "This account is suspended and cannot make purchases." }), {
+          status: 403,
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+        });
+      }
+    }
+
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
 
     await supabase.from("rate_limit_log").insert({ ip_address: ip, endpoint: "initialize_payment" });

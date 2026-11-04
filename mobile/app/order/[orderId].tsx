@@ -8,6 +8,7 @@ import {
   Share,
   Alert,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';

@@ -1,9 +1,21 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { sendEmail } from "../_shared/zeptomail.ts";
+import { escapeHtml } from "../_shared/html.ts";
 import { filterOptedInEmails } from "../_shared/notification-preferences.ts";
+import { authorizeCronOrRoles } from "../_shared/cron-auth.ts";
 
 serve(async (req) => {
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405 });
+  }
+  const authorization = await authorizeCronOrRoles(req);
+  if (!authorization.ok) {
+    return new Response(JSON.stringify({ error: authorization.error }), {
+      status: authorization.status,
+    });
+  }
+
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -114,7 +126,7 @@ serve(async (req) => {
         });
         const subject = `${win.subjectPrefix}${event.title}${win.subjectSuffix}`;
         const location = [event.venue_name, event.address, event.city, event.state].filter(Boolean).join(", ") || "Online";
-        const eventUrl = `https://tixnaija.name.ng/e/${event.slug || ""}`;
+        const eventUrl = `https://tixnaija.name.ng/e/${encodeURIComponent(event.slug || "")}`;
 
         for (const email of candidateEmails) {
           // Check opt-out
@@ -141,21 +153,21 @@ serve(async (req) => {
                 </div>
                 
                 <h2 style="font-size: 22px; font-weight: 700; margin: 0 0 14px; color: #ffffff; letter-spacing: -0.3px;">
-                  ${win.headline}
+                  ${escapeHtml(win.headline)}
                 </h2>
-                <p style="margin: 0 0 20px; color: #a1a1aa; font-size: 15px; line-height: 1.6;">Hi ${name},</p>
+                <p style="margin: 0 0 20px; color: #a1a1aa; font-size: 15px; line-height: 1.6;">Hi ${escapeHtml(name)},</p>
                 
                 <p style="margin: 0 0 24px; color: #d4d4d8; font-size: 15px; line-height: 1.6;">
-                  This is a quick reminder that <strong>${event.title}</strong> ${win.timeNotice}.
+                  This is a quick reminder that <strong>${escapeHtml(event.title)}</strong> ${escapeHtml(win.timeNotice)}.
                 </p>
                 
                 <div style="background-color: #27272a; border-left: 4px solid #ea580c; padding: 18px; margin-bottom: 28px; border-radius: 0 12px 12px 0;">
-                  <p style="margin: 0 0 8px; color: #d4d4d8; font-size: 14px;"><strong style="color: #ffffff;">Time:</strong> ${dateStr}</p>
-                  <p style="margin: 0; color: #d4d4d8; font-size: 14px;"><strong style="color: #ffffff;">Location:</strong> ${location}</p>
+                  <p style="margin: 0 0 8px; color: #d4d4d8; font-size: 14px;"><strong style="color: #ffffff;">Time:</strong> ${escapeHtml(dateStr)}</p>
+                  <p style="margin: 0; color: #d4d4d8; font-size: 14px;"><strong style="color: #ffffff;">Location:</strong> ${escapeHtml(location)}</p>
                 </div>
                 
                 <div style="margin-bottom: 32px; text-align: center;">
-                  <a href="${eventUrl}" style="display: inline-block; background-color: #ea580c; color: #ffffff; font-weight: 600; font-size: 15px; padding: 14px 28px; border-radius: 9999px; text-decoration: none;">
+                  <a href="${escapeHtml(eventUrl)}" style="display: inline-block; background-color: #ea580c; color: #ffffff; font-weight: 600; font-size: 15px; padding: 14px 28px; border-radius: 9999px; text-decoration: none;">
                     View Event & Tickets
                   </a>
                 </div>

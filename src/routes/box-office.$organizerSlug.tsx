@@ -15,7 +15,7 @@ export const Route = createFileRoute("/box-office/$organizerSlug")({
     // Check if it's a UUID
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawParam);
 
-    let query = supabase.from("profiles").select("*");
+    let query = (supabase.from("public_organizer_profiles" as any).select("*") as any);
     if (isUuid) {
       query = query.or(`organizer_slug.eq.${lowerParam},id.eq.${rawParam}`);
     } else {

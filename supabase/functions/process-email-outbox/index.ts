@@ -3,6 +3,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // @ts-ignore
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { sendEmail } from "../_shared/zeptomail.ts";
+import { authorizeCronOrRoles } from "../_shared/cron-auth.ts";
+import { escapeHtml } from "../_shared/html.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,6 +15,20 @@ const corsHeaders = {
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const authorization = await authorizeCronOrRoles(req, ["admin", "customer_care"]);
+  if (!authorization.ok) {
+    return new Response(JSON.stringify({ error: authorization.error }), {
+      status: authorization.status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   // @ts-ignore
@@ -57,7 +73,7 @@ serve(async (req: Request) => {
         let htmlBody = "";
 
         if (item.template === "case_reply") {
-          const caseSubject = item.payload?.subject || "Your Support Case";
+          const caseSubject = String(item.payload?.subject || "Your Support Case").replace(/[\r\n]+/g, " ");
           subject = `[TixNaija Support] Re: ${caseSubject}`;
           htmlBody = `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1a1a1a; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;">
@@ -65,8 +81,8 @@ serve(async (req: Request) => {
                 <h1 style="font-size: 20px; font-weight: bold; margin: 0; color: #111827;">TixNaija Customer Support</h1>
               </div>
               <p style="font-size: 15px; line-height: 1.6; margin-bottom: 16px;">Hello,</p>
-              <p style="font-size: 15px; line-height: 1.6; margin-bottom: 20px;">A member of our support team has replied to your request regarding <strong>${caseSubject}</strong>:</p>
-              <div style="background: #f9fafb; border-left: 4px solid #10b981; padding: 16px; margin-bottom: 24px; border-radius: 4px; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${item.payload?.reply || ""}</div>
+              <p style="font-size: 15px; line-height: 1.6; margin-bottom: 20px;">A member of our support team has replied to your request regarding <strong>${escapeHtml(caseSubject)}</strong>:</p>
+              <div style="background: #f9fafb; border-left: 4px solid #10b981; padding: 16px; margin-bottom: 24px; border-radius: 4px; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${escapeHtml(item.payload?.reply || "")}</div>
               <p style="font-size: 14px; color: #6b7280; line-height: 1.5; margin-top: 24px;">
                 You can reply directly in your customer account on TixNaija or view your active tickets at any time.
               </p>
@@ -88,7 +104,7 @@ serve(async (req: Request) => {
                 This is an important security notification. The recipient email address for your ticket order has been officially updated to:
               </p>
               <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 12px 16px; border-radius: 8px; font-family: monospace; font-size: 14px; color: #991b1b; margin-bottom: 20px;">
-                ${item.payload?.new_email}
+                ${escapeHtml(item.payload?.new_email || "")}
               </div>
               <p style="font-size: 14px; line-height: 1.6; color: #4b5563; margin-bottom: 16px;">
                 The previous ticket codes have been invalidated and reissued to the new recipient.
@@ -106,6 +122,7 @@ serve(async (req: Request) => {
           // Re-trigger confirmation or dispatch notice
           subject = `Your TixNaija Tickets (Order Confirmed)`;
           const orderId = item.order_id || item.payload?.order_id;
+          const safeOrderId = encodeURIComponent(String(orderId || ""));
           htmlBody = `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1a1a1a; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;">
               <div style="margin-bottom: 24px; border-bottom: 2px solid #10b981; padding-bottom: 12px;">
@@ -113,10 +130,10 @@ serve(async (req: Request) => {
               </div>
               <p style="font-size: 15px; line-height: 1.6; margin-bottom: 16px;">Hello,</p>
               <p style="font-size: 15px; line-height: 1.6; margin-bottom: 16px;">
-                Your tickets for order <strong>${orderId}</strong> are available.
+                Your tickets for order <strong>${escapeHtml(orderId || "")}</strong> are available.
               </p>
               <div style="text-align: center; margin: 28px 0;">
-                <a href="https://www.tixnaija.name.ng/orders/${orderId}/tickets" style="background: #10b981; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 15px; display: inline-block;">
+                <a href="https://www.tixnaija.name.ng/orders/${safeOrderId}/tickets" style="background: #10b981; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 15px; display: inline-block;">
                   View & Download Tickets
                 </a>
               </div>
@@ -133,7 +150,7 @@ serve(async (req: Request) => {
           subject = `[TixNaija] Update regarding your order`;
           htmlBody = `
             <div style="font-family: sans-serif; padding: 20px;">
-              <p>${item.payload?.message || "You have an update regarding your TixNaija account."}</p>
+              <p>${escapeHtml(item.payload?.message || "You have an update regarding your TixNaija account.")}</p>
             </div>
           `;
         }

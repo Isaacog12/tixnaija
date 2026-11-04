@@ -52,21 +52,17 @@ export default function EventDetailScreen() {
 
     const { data: event, error: eventErr } = await supabase
       .from('events')
-      .select(`
-        *,
-        profiles:organizer_id (
-          id,
-          full_name,
-          avatar_url,
-          bio,
-          organizer_slug,
-          is_verified_organizer
-        )
-      `)
+      .select('*')
       .eq('slug', slug)
       .single();
 
     if (eventErr || !event) throw eventErr || new Error('Event not found.');
+
+    const { data: organizer } = await (supabase
+      .from('public_organizer_profiles' as any)
+      .select('id, full_name, avatar_url, bio, organizer_slug, is_verified_organizer')
+      .eq('id', event.organizer_id)
+      .maybeSingle() as any);
 
     const { data: ticketTypes, error: typesErr } = await supabase
       .from('ticket_types')
@@ -98,7 +94,7 @@ export default function EventDetailScreen() {
 
     return {
       event,
-      organizer: event.profiles as any,
+      organizer,
       ticketTypes: ticketTypes || [],
       questions: questions || [],
       attendees,

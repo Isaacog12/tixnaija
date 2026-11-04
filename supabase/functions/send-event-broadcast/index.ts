@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { sendEmail } from "../_shared/zeptomail.ts";
 import { filterOptedInEmails } from "../_shared/notification-preferences.ts";
 import { generateUnsubscribeToken } from "../_shared/unsubscribe.ts";
+import { escapeHtml } from "../_shared/html.ts";
 
 const allowedOrigins = [
   "https://tixnaija.vercel.app",
@@ -142,21 +143,26 @@ serve(async (req: Request) => {
 
       const unsubToken = await generateUnsubscribeToken(email, "organizer_updates");
       const unsubUrl = `https://tixnaija.name.ng/unsubscribe?email=${encodeURIComponent(email)}&type=organizer_updates&token=${unsubToken}`;
+      const eventTitle = escapeHtml(broadcast.events?.title || "Event Announcement");
+      const safeName = escapeHtml(name);
+      const safeMessage = escapeHtml(broadcast.message);
+      const safeEventLink = escapeHtml(eventLink);
+      const safeUnsubUrl = escapeHtml(unsubUrl);
 
       const htmlBody = `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1a1a1a; padding: 20px;">
-          <h2 style="color: #ea580c; font-size: 20px; font-weight: 700; margin-bottom: 12px;">Update: ${broadcast.events?.title || "Event Announcement"}</h2>
-          <p style="font-size: 15px; color: #333333; line-height: 1.5;">Hi ${name},</p>
-          <div style="background-color: #f4f4f5; padding: 20px; border-radius: 12px; margin: 20px 0; white-space: pre-wrap; font-size: 15px; line-height: 1.6; border: 1px solid #e4e4e7;">${broadcast.message}</div>
-          <p style="font-size: 15px; color: #333333; line-height: 1.5;">Best regards,<br><strong>The ${broadcast.events?.title || "Event"} Team</strong></p>
+          <h2 style="color: #ea580c; font-size: 20px; font-weight: 700; margin-bottom: 12px;">Update: ${eventTitle}</h2>
+          <p style="font-size: 15px; color: #333333; line-height: 1.5;">Hi ${safeName},</p>
+          <div style="background-color: #f4f4f5; padding: 20px; border-radius: 12px; margin: 20px 0; white-space: pre-wrap; font-size: 15px; line-height: 1.6; border: 1px solid #e4e4e7;">${safeMessage}</div>
+          <p style="font-size: 15px; color: #333333; line-height: 1.5;">Best regards,<br><strong>The ${eventTitle} Team</strong></p>
           <hr style="border: 0; border-top: 1px solid #e4e4e7; margin: 32px 0 20px;" />
           <div style="text-align: center;">
             <p style="font-size: 12px; color: #71717a; margin-bottom: 8px;">
               You received this update because you bought a ticket to this event on TixNaija.<br>
-              <a href="${eventLink}" style="color: #ea580c; text-decoration: underline;">View Event Page</a>
+              <a href="${safeEventLink}" style="color: #ea580c; text-decoration: underline;">View Event Page</a>
             </p>
             <p style="font-size: 12px; color: #71717a; margin-bottom: 12px;">
-              <a href="${unsubUrl}" style="color: #ea580c; text-decoration: underline;">Unsubscribe from event updates</a> · <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a> · <a href="https://tixnaija.name.ng/privacy" style="color: #ea580c; text-decoration: underline;">Privacy Policy</a>
+              <a href="${safeUnsubUrl}" style="color: #ea580c; text-decoration: underline;">Unsubscribe from event updates</a> · <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a> · <a href="https://tixnaija.name.ng/privacy" style="color: #ea580c; text-decoration: underline;">Privacy Policy</a>
             </p>
             <p style="font-size: 11px; color: #a1a1aa; margin: 0;">
               TixNaija · Independent Nigerian Ticketing Platform

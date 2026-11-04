@@ -36,3 +36,23 @@ entrypoint = "./functions/notify-waitlist/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/verify-payment/index.ts"
+
+[functions.process-email-outbox]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/process-email-outbox/index.ts"
+
+[functions.send-event-reminders]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/send-event-reminders/index.ts"
+
+[functions.send-abandoned-reminders]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/send-abandoned-reminders/index.ts"
+
+[functions.unsubscribe]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/unsubscribe/index.ts"

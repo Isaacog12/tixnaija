@@ -2,10 +2,22 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { sendEmail } from "../_shared/zeptomail.ts";
+import { escapeHtml } from "../_shared/html.ts";
 import { isNotificationOptedIn } from "../_shared/notification-preferences.ts";
 import { generateUnsubscribeToken } from "../_shared/unsubscribe.ts";
+import { authorizeCronOrRoles } from "../_shared/cron-auth.ts";
 
 serve(async (req) => {
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405 });
+  }
+  const authorization = await authorizeCronOrRoles(req);
+  if (!authorization.ok) {
+    return new Response(JSON.stringify({ error: authorization.error }), {
+      status: authorization.status,
+    });
+  }
+
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -49,7 +61,7 @@ serve(async (req) => {
       const unsubToken = await generateUnsubscribeToken(order.buyer_email, "marketing_emails");
       const unsubUrl = `https://tixnaija.name.ng/unsubscribe?email=${encodeURIComponent(order.buyer_email)}&category=marketing_emails&token=${unsubToken}`;
       
-      const eventTitle = order.events?.title || "your event";
+      const eventTitle = String(order.events?.title || "your event");
       const subject = `Complete your purchase for ${eventTitle}`;
       const htmlBody = `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f9fafb; padding: 40px 20px; text-align: center;">
@@ -62,11 +74,11 @@ serve(async (req) => {
             <h2 style="font-size: 20px; font-weight: 600; margin: 0 0 16px; color: #111827;">
               Did you forget something?
             </h2>
-            <p style="margin: 0 0 24px; color: #4b5563; font-size: 16px; line-height: 1.6;">Hi ${order.buyer_name || 'there'},</p>
+            <p style="margin: 0 0 24px; color: #4b5563; font-size: 16px; line-height: 1.6;">Hi ${escapeHtml(order.buyer_name || 'there')},</p>
             
             <div style="background-color: #f3f4f6; border-left: 4px solid #ea580c; padding: 16px; margin-bottom: 24px; border-radius: 0 4px 4px 0;">
               <p style="margin: 0 0 4px; color: #6b7280; font-size: 14px;">You left tickets for:</p>
-              <p style="margin: 0; color: #111827; font-size: 16px; font-weight: 600;">${eventTitle}</p>
+              <p style="margin: 0; color: #111827; font-size: 16px; font-weight: 600;">${escapeHtml(eventTitle)}</p>
             </div>
             
             <p style="margin: 0 0 32px; color: #4b5563; font-size: 16px; line-height: 1.6;">
@@ -80,7 +92,7 @@ serve(async (req) => {
             <div style="text-align: center; color: #6b7280; font-size: 12px; line-height: 1.5;">
               <p style="margin: 0 0 6px;">You received this reminder because you initiated a checkout on TixNaija while signed into your account.</p>
               <p style="margin: 0 0 12px;">
-                <a href="${unsubUrl}" style="color: #ea580c; text-decoration: underline;">Click here to unsubscribe instantly</a> · <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a> · <a href="https://tixnaija.name.ng/privacy" style="color: #ea580c; text-decoration: underline;">Privacy Policy</a>
+                <a href="${escapeHtml(unsubUrl)}" style="color: #ea580c; text-decoration: underline;">Click here to unsubscribe instantly</a> · <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a> · <a href="https://tixnaija.name.ng/privacy" style="color: #ea580c; text-decoration: underline;">Privacy Policy</a>
               </p>
               <p style="margin: 0; font-size: 11px; color: #9ca3af;">
                 TixNaija · Independent Nigerian Ticketing Platform

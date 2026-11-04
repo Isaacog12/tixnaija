@@ -16,15 +16,18 @@ import { toast } from "sonner";
 import { BUSINESS_DETAILS } from "@/lib/business";
 import type { Tables } from "@/lib/database.types";
 
-// This route is intentionally NOT under _authenticated —
-// This route is intentionally NOT under _authenticated —
-// guests can reach it from /my-tickets with ?email=... query param.
+// This route is intentionally NOT under _authenticated.
+const GUEST_TICKET_CREDENTIALS_PREFIX = "tixnaija:guest-ticket-credentials:";
+
 export const Route = createFileRoute("/orders/$orderId/tickets")({
   ssr: false,
   component: OrderTicketsPage,
-  validateSearch: (search: Record<string, unknown>): { email?: string; code?: string; download?: boolean } => ({
-    email: typeof search.email === "string" ? search.email : undefined,
-    code: typeof search.code === "string" ? search.code : (typeof search.accessCode === "string" ? search.accessCode : undefined),
+  head: () => ({
+    meta: [
+      { name: "robots", content: "noindex, nofollow, noarchive" },
+    ],
+  }),
+  validateSearch: (search: Record<string, unknown>): { download?: boolean } => ({
     download: search.download === "true" || search.download === true,
   }),
   errorComponent: ({ error }) => (
@@ -83,11 +86,6 @@ async function fetchOrderTickets(orderId: string, guestEmail?: string, accessCod
   const { data: order, error: orderErr } = await query.single();
 
   if (orderErr || !order) {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session && typeof window !== "undefined") {
-      window.location.href = `/auth?mode=login&returnTo=/orders/${orderId}/tickets`;
-      return null;
-    }
     return null;
   }
 
@@ -121,11 +119,43 @@ import { useEffect, useState } from "react";
 
 function OrderTicketsPage() {
   const { orderId } = Route.useParams();
-  const { email: searchEmail, code: searchCode, download: shouldDownload } = useSearch({ from: "/orders/$orderId/tickets" });
+  const { download: shouldDownload } = useSearch({ from: "/orders/$orderId/tickets" });
+  const [guestCredentials, setGuestCredentials] = useState<{ email: string; code: string } | null>(null);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+    const legacyEmail = url.searchParams.get("email");
+    const legacyCode = url.searchParams.get("code") || url.searchParams.get("accessCode");
+    const email = hashParams.get("email") || legacyEmail;
+    const code = hashParams.get("code") || legacyCode;
+    const credentialsKey = `${GUEST_TICKET_CREDENTIALS_PREFIX}${orderId}`;
+
+    if (email && code) {
+      sessionStorage.setItem(credentialsKey, JSON.stringify({ email, code }));
+    }
+
+    try {
+      const stored = sessionStorage.getItem(credentialsKey);
+      setGuestCredentials(stored ? JSON.parse(stored) : null);
+    } catch {
+      sessionStorage.removeItem(credentialsKey);
+      setGuestCredentials(null);
+    }
+
+    if (email || code || legacyEmail || legacyCode) {
+      url.searchParams.delete("email");
+      url.searchParams.delete("code");
+      url.searchParams.delete("accessCode");
+      url.hash = "";
+      window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}`);
+    }
+  }, [orderId]);
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["order-tickets", orderId, searchEmail, searchCode],
-    queryFn: () => fetchOrderTickets(orderId, searchEmail, searchCode),
+    queryKey: ["order-tickets", orderId, guestCredentials?.email, guestCredentials?.code],
+    queryFn: () =>
+      fetchOrderTickets(orderId, guestCredentials?.email, guestCredentials?.code),
   });
 
   const [editingTicket, setEditingTicket] = useState<GuestOrderFull["tickets"][number] | null>(null);
@@ -186,7 +216,7 @@ function OrderTicketsPage() {
       <section className="bg-card border-b border-border shadow-sm mb-10 pt-8 pb-8 relative overflow-hidden">
         <div className="absolute inset-0 z-0 bg-gradient-to-r from-primary/5 to-transparent opacity-50" />
         <div className="mx-auto max-w-4xl px-4 relative z-10">
-          {searchEmail && (
+          {guestCredentials && (
             <Button asChild variant="ghost" size="sm" className="-ml-2 mb-4">
               <Link to="/my-tickets">
                 <ArrowLeft className="mr-1 h-4 w-4" /> Back to My Tickets

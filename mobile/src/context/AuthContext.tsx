@@ -1,7 +1,16 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { Session, User } from '@supabase/supabase-js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../supabase/client';
 import type { Database } from '../supabase/types';
+
+const TICKET_CACHE_PREFIX = '@my_tickets_cache:';
+
+async function clearTicketCaches() {
+  const keys = await AsyncStorage.getAllKeys();
+  const ticketCacheKeys = keys.filter((key) => key.startsWith(TICKET_CACHE_PREFIX));
+  await AsyncStorage.multiRemove(['@my_tickets_cache', ...ticketCacheKeys]);
+}
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -98,6 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     setIsLoading(true);
     try {
+      await clearTicketCaches();
       await supabase.auth.signOut();
       setSession(null);
       setUser(null);

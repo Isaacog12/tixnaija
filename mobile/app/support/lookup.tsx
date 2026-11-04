@@ -9,9 +9,9 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
-  Clipboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import {
   Search,
@@ -122,7 +122,7 @@ export default function SupportLookupScreen() {
   };
 
   const handleCopy = (text: string, label: string) => {
-    Clipboard.setString(text);
+    Clipboard.setStringAsync(text);
     Alert.alert('Copied', `${label} copied to clipboard.`);
   };
 
