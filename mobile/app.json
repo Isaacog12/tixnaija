@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "TixNaija",
-    "slug": "tixnaija-mobile",
+    "slug": "mobile",
     "scheme": "tixnaija",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -48,8 +48,6 @@
           "photosPermission": "Allow TixNaija to access your photo library to select event cover flyers."
         }
       ],
-      "expo-sharing",
-      "expo-web-browser",
       "@react-native-community/datetimepicker"
     ],
     "updates": {
