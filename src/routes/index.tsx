@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Calendar, MapPin, ChevronRight, ArrowRight, QrCode, CreditCard, Ticket, Zap, Flame, Compass } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { filterActiveEvents } from "@/lib/events";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
@@ -19,23 +20,17 @@ export const Route = createFileRoute("/")({
 });
 
 async function fetchUpcoming() {
+  const now = new Date();
   const { data, error } = await supabase
     .from("events")
     .select("id, title, slug, city, venue_name, start_datetime, end_datetime, cover_image_url, status")
-    .in("status", ["published", "cancelled", "completed"])
-    .gte("start_datetime", new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString())
+    .eq("status", "published")
+    .gte("end_datetime", now.toISOString())
     .order("start_datetime", { ascending: true })
     .limit(20);
   if (error) throw error;
 
-  const now = new Date();
-  const validEvents = ((data as any[]) ?? []).filter((ev: any) => {
-    const start = new Date(ev.start_datetime);
-    const end = ev.end_datetime ? new Date(ev.end_datetime) : start;
-    return end >= now;
-  });
-
-  return validEvents.slice(0, 3);
+  return filterActiveEvents(data, now).slice(0, 3);
 }
 
 async function fetchBanners() {

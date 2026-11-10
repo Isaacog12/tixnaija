@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { isEventEnded } from "@/lib/events";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -104,11 +105,11 @@ function BoxOfficePage() {
           {events && events.length > 0 ? (
             <div className="space-y-16">
               {/* Upcoming Events */}
-              {events.filter((ev: any) => new Date(ev.start_datetime) >= new Date()).length > 0 && (
+              {events.filter((ev: any) => !isEventEnded(ev)).length > 0 && (
                 <div>
                   <h2 className="text-2xl font-bold mb-6">Upcoming Events</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {events.filter((ev: any) => new Date(ev.start_datetime) >= new Date()).map((ev: any) => {
+                    {events.filter((ev: any) => !isEventEnded(ev)).map((ev: any) => {
                       const minPrice = ev.ticket_types?.length ? Math.min(...ev.ticket_types.map((t: any) => t.price_kobo)) : 0;
                       return (
                         <Link
@@ -151,11 +152,11 @@ function BoxOfficePage() {
               )}
 
               {/* Past Events */}
-              {events.filter((ev: any) => new Date(ev.start_datetime) < new Date()).length > 0 && (
+              {events.filter((ev: any) => isEventEnded(ev)).length > 0 && (
                 <div>
                   <h2 className="text-2xl font-bold mb-6 text-muted-foreground">Past Events</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 opacity-70 grayscale-[30%] hover:grayscale-0 transition-all duration-500">
-                    {events.filter((ev: any) => new Date(ev.start_datetime) < new Date()).map((ev: any) => {
+                    {events.filter((ev: any) => isEventEnded(ev)).map((ev: any) => {
                       const minPrice = ev.ticket_types?.length ? Math.min(...ev.ticket_types.map((t: any) => t.price_kobo)) : 0;
                       return (
                         <Link

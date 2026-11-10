@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 import { BackButton } from "@/components/back-button";
 import { formatNaira } from "@/lib/currency";
+import { filterActiveEvents } from "@/lib/events";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -285,14 +286,18 @@ function EventDetailPage() {
     queryKey: ["similar-events", data?.event?.category],
     queryFn: async () => {
       if (!data?.event?.category) return [];
+      const now = new Date();
+      const nowIso = now.toISOString();
       const { data: evs } = await supabase
         .from("events")
-        .select("id, title, slug, cover_image_url, start_datetime, city, venue_name, status")
-        .in("status", ["published", "cancelled", "completed"])
+        .select("id, title, slug, cover_image_url, start_datetime, end_datetime, city, venue_name, status")
+        .eq("status", "published")
         .eq("category", data.event.category)
         .neq("id", data.event.id)
-        .limit(4);
-      return evs || [];
+        .gte("end_datetime", nowIso)
+        .order("start_datetime", { ascending: true })
+        .limit(8);
+      return filterActiveEvents(evs, now).slice(0, 4);
     },
     enabled: !!data?.event,
     staleTime: 1000 * 60 * 5, // 5 minutes

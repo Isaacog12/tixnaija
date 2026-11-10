@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Search, Calendar, MapPin, Compass, Flame, Frown, Grid, List, Tag, CalendarDays, ChevronDown } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { filterActiveEvents } from "@/lib/events";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { BackButton } from "@/components/back-button";
@@ -37,7 +38,8 @@ async function fetchEvents(q: string, category: string, dateFilter: string) {
   let query = supabase
     .from("events")
     .select("id, title, slug, city, venue_name, start_datetime, end_datetime, cover_image_url, description, status, category, tags, ticket_types(price_kobo)")
-    .in("status", ["published", "cancelled", "completed"])
+    .eq("status", "published")
+    .gte("end_datetime", now.toISOString())
     .order("start_datetime", { ascending: true })
     .limit(100);
 
@@ -81,12 +83,7 @@ async function fetchEvents(q: string, category: string, dateFilter: string) {
   const { data, error } = await query;
   if (error) throw error;
 
-  const validEvents: any[] = (data ?? []).filter((ev: any) => {
-    if (ev.status === "completed" || ev.status === "cancelled") return false;
-    const start = new Date(ev.start_datetime);
-    const end = ev.end_datetime ? new Date(ev.end_datetime) : start;
-    return end >= now;
-  });
+  const validEvents: any[] = filterActiveEvents(data, now);
 
   let minPrice: Record<string, number> = {};
   for (const ev of validEvents) {

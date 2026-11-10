@@ -66,6 +66,7 @@ export default function HomeScreen() {
           )
         `)
         .eq('status', 'published')
+        .gte('end_datetime', new Date().toISOString())
         .order('start_datetime', { ascending: true })
         .range(0, PAGE_SIZE - 1);
 
@@ -127,6 +128,7 @@ export default function HomeScreen() {
           )
         `)
         .eq('status', 'published')
+        .gte('end_datetime', new Date().toISOString())
         .order('start_datetime', { ascending: true })
         .range(from, to);
 
@@ -151,6 +153,11 @@ export default function HomeScreen() {
   const filteredEvents = useMemo(() => {
     if (!displayedEvents) return [];
     return displayedEvents.filter((e) => {
+      if (e.status !== 'published') return false;
+      const start = new Date(e.start_datetime);
+      const end = e.end_datetime ? new Date(e.end_datetime) : start;
+      if (end < new Date()) return false;
+
       const matchesCategory =
         selectedCategory === 'All' ||
         e.category?.toLowerCase() === selectedCategory.toLowerCase();

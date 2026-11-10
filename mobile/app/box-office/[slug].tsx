@@ -78,12 +78,14 @@ export default function BoxOfficeScreen() {
             state,
             venue_name,
             start_datetime,
+            end_datetime,
             cover_image_url,
             category,
             ticket_types (price_kobo)
           `)
           .eq('organizer_id', prof.id)
           .eq('status', 'published')
+          .gte('end_datetime', new Date().toISOString())
           .order('start_datetime', { ascending: true });
 
         if (evErr) throw evErr;
