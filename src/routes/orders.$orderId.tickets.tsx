@@ -17,6 +17,7 @@ import { BUSINESS_DETAILS } from "@/lib/business";
 import type { Tables } from "@/lib/database.types";
 
 // This route is intentionally NOT under _authenticated.
+// Guests unlock an order with the link we email them: order id + their email.
 const GUEST_TICKET_CREDENTIALS_PREFIX = "tixnaija:guest-ticket-credentials:";
 
 export const Route = createFileRoute("/orders/$orderId/tickets")({
@@ -59,13 +60,12 @@ interface GuestOrderFull {
   })[];
 }
 
-async function fetchOrderTickets(orderId: string, guestEmail?: string, accessCode?: string) {
-  // If guest mode: require both email and access code to unlock
-  if (guestEmail && accessCode) {
+async function fetchOrderTickets(orderId: string, guestEmail?: string) {
+  // Guest mode: the order id plus the buyer/recipient email unlock the order.
+  if (guestEmail) {
     const { data, error } = await supabase.rpc("get_guest_order_full" as any, {
       p_order_id: orderId,
       p_email: guestEmail.trim().toLowerCase(),
-      p_access_code: accessCode.trim(),
     });
     
     if (error || !data) {
@@ -120,19 +120,17 @@ import { useEffect, useState } from "react";
 function OrderTicketsPage() {
   const { orderId } = Route.useParams();
   const { download: shouldDownload } = useSearch({ from: "/orders/$orderId/tickets" });
-  const [guestCredentials, setGuestCredentials] = useState<{ email: string; code: string } | null>(null);
+  const [guestCredentials, setGuestCredentials] = useState<{ email: string } | null>(null);
 
   useEffect(() => {
     const url = new URL(window.location.href);
     const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
     const legacyEmail = url.searchParams.get("email");
-    const legacyCode = url.searchParams.get("code") || url.searchParams.get("accessCode");
     const email = hashParams.get("email") || legacyEmail;
-    const code = hashParams.get("code") || legacyCode;
     const credentialsKey = `${GUEST_TICKET_CREDENTIALS_PREFIX}${orderId}`;
 
-    if (email && code) {
-      sessionStorage.setItem(credentialsKey, JSON.stringify({ email, code }));
+    if (email) {
+      sessionStorage.setItem(credentialsKey, JSON.stringify({ email }));
     }
 
     try {
@@ -143,7 +141,7 @@ function OrderTicketsPage() {
       setGuestCredentials(null);
     }
 
-    if (email || code || legacyEmail || legacyCode) {
+    if (email || legacyEmail || url.searchParams.has("code") || url.searchParams.has("accessCode")) {
       url.searchParams.delete("email");
       url.searchParams.delete("code");
       url.searchParams.delete("accessCode");
@@ -153,9 +151,8 @@ function OrderTicketsPage() {
   }, [orderId]);
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["order-tickets", orderId, guestCredentials?.email, guestCredentials?.code],
-    queryFn: () =>
-      fetchOrderTickets(orderId, guestCredentials?.email, guestCredentials?.code),
+    queryKey: ["order-tickets", orderId, guestCredentials?.email],
+    queryFn: () => fetchOrderTickets(orderId, guestCredentials?.email),
   });
 
   const [editingTicket, setEditingTicket] = useState<GuestOrderFull["tickets"][number] | null>(null);
@@ -182,14 +179,21 @@ function OrderTicketsPage() {
 
       if (error) throw error;
       
-      toast.success("Ticket updated! An email with the ticket has been sent to the new address.");
+      toast.success(
+        data?.isGuest
+          ? "Ticket updated! It's live on your ticket link right away."
+          : "Ticket updated! An email with the ticket has been sent to the new address.",
+      );
       setEditingTicket(null);
       refetch();
 
-      // Trigger the edge function to re-send the specific ticket to the new email
-      await supabase.functions.invoke("send-ticket-confirmation", {
-        body: { orderId: data?.order?.id, ticketId: editingTicket.id, accessCode: searchCode || undefined },
-      });
+      // Trigger the edge function to re-send the specific ticket to the new email.
+      // Guests have no session, so their order link keeps working either way.
+      if (!data?.isGuest) {
+        await supabase.functions.invoke("send-ticket-confirmation", {
+          body: { orderId: data?.order?.id, ticketId: editingTicket.id },
+        });
+      }
 
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to update ticket.");
@@ -219,7 +223,7 @@ function OrderTicketsPage() {
           {guestCredentials && (
             <Button asChild variant="ghost" size="sm" className="-ml-2 mb-4">
               <Link to="/my-tickets">
-                <ArrowLeft className="mr-1 h-4 w-4" /> Back to My Tickets
+                <ArrowLeft className="mr-1 h-4 w-4" /> Email my tickets again
               </Link>
             </Button>
           )}
@@ -268,14 +272,15 @@ function OrderTicketsPage() {
             </div>
             <h2 className="font-display text-xl sm:text-2xl font-semibold text-foreground">Tickets Unavailable</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              We couldn't retrieve these tickets. If this was a guest checkout, please provide your email and Order Access Code.
+              We couldn't retrieve these tickets. If you checked out as a guest, open the ticket link
+              from your confirmation email or have it sent again.
             </p>
             <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
               <Button asChild variant="outline" className="rounded-xl active:scale-[0.98]">
                 <Link to="/tickets">My Account</Link>
               </Button>
               <Button asChild className="gradient-sunset text-white shadow-glow rounded-xl active:scale-[0.98]">
-                <Link to="/my-tickets">Enter Access Code</Link>
+                <Link to="/my-tickets">Email My Tickets</Link>
               </Button>
             </div>
           </div>

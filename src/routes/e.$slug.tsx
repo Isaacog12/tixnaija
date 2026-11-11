@@ -45,13 +45,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 const GUEST_TICKET_CREDENTIALS_PREFIX = "tixnaija:guest-ticket-credentials:";
 const GUEST_CHECKOUT_PENDING_KEY = "tixnaija:guest-checkout-pending";
 
-/** High-entropy nonce used as a guest buyer's ticket access code. */
-function createGuestAccessCode() {
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-}
-
 export const Route = createFileRoute("/e/$slug")({
   component: EventDetailPage,
   validateSearch: z.object({
@@ -530,10 +523,6 @@ function EventDetailPage() {
       }));
 
       if (totalKobo === 0) {
-        // Guests claim free tiers without an account, but they need an access
-        // code so they can reopen the order later (it is emailed to them too).
-        const guestAccessCode = userId ? null : createGuestAccessCode();
-
         const { data: orderId, error: checkoutError } = await supabase.rpc("process_free_checkout", {
           p_event_id: data!.event.id,
           p_user_id: (userId || null) as string,
@@ -546,7 +535,6 @@ function EventDetailPage() {
           p_recipient_name: values.isGift ? values.recipientName : null,
           p_recipient_email: values.isGift ? values.recipientEmail : null,
           p_gift_message: values.isGift ? values.giftMessage : null,
-          p_access_code: guestAccessCode ?? undefined,
           p_promoter_link_id: appliedPromoterLink?.link_id ?? undefined,
           p_checkout_answers: values.answers || {},
         } as any);
@@ -556,27 +544,34 @@ function EventDetailPage() {
         }
 
         try {
-          await supabase.functions.invoke("send-ticket-confirmation", {
-            body: { orderId, accessCode: guestAccessCode ?? undefined },
-          });
+          if (userId) {
+            await supabase.functions.invoke("send-ticket-confirmation", {
+              body: { orderId },
+            });
+          } else {
+            // Guests have no session, so the confirmation is sent through the
+            // resend helper, which authorizes on order id + email.
+            await supabase.functions.invoke("resend-ticket-links", {
+              body: { email: values.buyerEmail, orderId },
+            });
+          }
         } catch (emailErr) {
           console.error("Failed to send free ticket email", emailErr);
         }
 
-        if (!userId && guestAccessCode) {
-          sessionStorage.setItem(
-            `${GUEST_TICKET_CREDENTIALS_PREFIX}${orderId}`,
-            JSON.stringify({ email: values.buyerEmail, code: guestAccessCode }),
-          );
-          toast.success("Ticket claimed! Check your email for your ticket and access code.", {
-            duration: 6000,
-          });
+        if (!userId) {
+          // No account and no codes: the emailed link is the key, and we can
+          // also open the tickets right away because we know the order.
+          try {
+            sessionStorage.setItem(
+              `${GUEST_TICKET_CREDENTIALS_PREFIX}${orderId}`,
+              JSON.stringify({ email: values.buyerEmail }),
+            );
+          } catch {
+            // Storage blocked — the emailed link still works.
+          }
+          toast.success("Ticket claimed! We've emailed your tickets.", { duration: 6000 });
           navigate({ to: "/orders/$orderId/tickets", params: { orderId: orderId as string } });
-        } else if (!userId) {
-          toast.success("Free ticket claimed! View your ticket using the email you provided.", {
-            duration: 6000,
-          });
-          navigate({ to: "/my-tickets" });
         } else {
           toast.success("Free ticket claimed successfully!");
           navigate({ to: "/notifications" });
@@ -614,13 +609,13 @@ function EventDetailPage() {
       if (initData?.error) throw new Error(initData.error);
       if (!initData?.authorization_url) throw new Error("Could not start payment.");
 
-      // Guests: remember the email + payment reference across the Paystack
+      // Guests: remember the email they bought with across the Paystack
       // redirect so /checkout/verify can hand them straight back to the tickets.
-      if (!userId && initData.reference) {
+      if (!userId) {
         try {
           sessionStorage.setItem(
             GUEST_CHECKOUT_PENDING_KEY,
-            JSON.stringify({ email: values.buyerEmail, reference: String(initData.reference) }),
+            JSON.stringify({ email: values.buyerEmail }),
           );
         } catch {
           // Storage blocked (private mode) — the confirmation email still works.
@@ -1484,7 +1479,7 @@ function EventBody({
             <p className="mt-3 text-xs text-muted-foreground text-center">
               {isAuthenticated
                 ? "Your tickets will be saved to your account."
-                : "No account needed — we'll email your tickets and an access code."}
+                : "No account needed — we'll email your tickets, no codes to keep."}
             </p>
             <Button
               disabled={!totalCount || isPastEvent || event.status === "cancelled"}

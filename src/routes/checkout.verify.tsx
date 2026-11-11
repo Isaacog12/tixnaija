@@ -19,7 +19,6 @@ const GUEST_CHECKOUT_PENDING_KEY = "tixnaija:guest-checkout-pending";
 
 interface PendingGuestCheckout {
   email: string;
-  reference: string;
 }
 
 export const Route = createFileRoute("/checkout/verify")({
@@ -82,7 +81,7 @@ function VerifyCheckoutPage() {
           try {
             sessionStorage.setItem(
               `${GUEST_TICKET_CREDENTIALS_PREFIX}${verifiedOrderId}`,
-              JSON.stringify({ email: pendingGuest.email, code: pendingGuest.reference }),
+              JSON.stringify({ email: pendingGuest.email }),
             );
             sessionStorage.removeItem(GUEST_CHECKOUT_PENDING_KEY);
           } catch {
@@ -150,22 +149,26 @@ function VerifyCheckoutPage() {
             <p className="mt-3 text-sm sm:text-base text-muted-foreground max-w-md">
               {isGuest
                 ? guestEmail
-                  ? `Your tickets have been generated and sent to ${guestEmail}. No account needed — you can reopen and download them any time.`
-                  : "Your tickets have been generated and sent to your email. No account needed — you can reopen and download them any time."
+                  ? `Your tickets have been generated and emailed to ${guestEmail}.`
+                  : "Your tickets have been generated and emailed to you."
                 : "Your tickets have been generated and sent to your email. You can also view and download them right now in your account."}
             </p>
 
-            {isGuest && reference && (
+            {isGuest && (
               <div className="mt-5 w-full rounded-xl border border-primary/25 bg-primary/5 px-4 py-3 text-left">
-                <p className="text-xs font-semibold text-foreground">Save your order reference</p>
+                <p className="text-xs font-semibold text-foreground">Your tickets are in your inbox</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Use this with your email at{" "}
-                  <Link to="/my-tickets" className="text-primary hover:underline">
-                    My Tickets
-                  </Link>{" "}
-                  to reopen your tickets — now or at the gate.
+                  {guestEmail
+                    ? `We emailed your tickets to ${guestEmail}. `
+                    : "We emailed your tickets. "}
+                  Open that email on any device to view or download them — no account or code needed.
                 </p>
-                <p className="mt-2 break-all font-mono text-sm text-foreground">{reference}</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Lost the email?{" "}
+                  <Link to="/my-tickets" className="text-primary hover:underline">
+                    Resend my tickets
+                  </Link>
+                </p>
               </div>
             )}
 
@@ -179,7 +182,7 @@ function VerifyCheckoutPage() {
                   </Button>
                 ) : (
                   <Button asChild className="flex-1 gradient-sunset text-primary-foreground font-semibold press-sm shadow-md" size="lg">
-                    <Link to="/my-tickets">Find My Tickets</Link>
+                    <Link to="/my-tickets">Resend My Tickets</Link>
                   </Button>
                 )
               ) : (

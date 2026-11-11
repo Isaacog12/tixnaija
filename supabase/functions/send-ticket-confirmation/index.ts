@@ -169,12 +169,8 @@ serve(async (req: Request) => {
       ? `You received a gift for ${eventTitle} 🎁 (Ref: ${orderRef})`
       : `Your tickets for ${eventTitle} are ready 🎟️ (Ref: ${orderRef})`;
 
-    const accessParam = order.access_code
-      ? `&code=${encodeURIComponent(order.access_code)}`
-      : order.payment_reference
-        ? `&code=${encodeURIComponent(order.payment_reference)}`
-        : "";
-    const guestFragment = `#email=${encodeURIComponent(recipientEmail)}${accessParam}`;
+    // Guests unlock their order with the emailed link alone: order id + email.
+    const guestFragment = `#email=${encodeURIComponent(recipientEmail)}`;
     const ticketUrl = `https://tixnaija.name.ng/orders/${order.id}/tickets${guestFragment}`;
     const downloadUrl = `https://tixnaija.name.ng/orders/${order.id}/tickets?download=true${guestFragment}`;
 

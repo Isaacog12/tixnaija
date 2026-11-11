@@ -1,10 +1,11 @@
 -- ============================================================
 -- Migration: 20261111120000_enable_guest_checkout.sql
--- Description: Enable guest checkout.
---   1. 100% free tiers can be claimed without an account, provided the guest
---      supplies a high-entropy access code so the order can be retrieved later
---      (email + access code, or email + payment reference).
---   2. Anonymous claims are throttled per IP to curb free-stock draining.
+-- Description: Enable guest checkout with email-only ticket access.
+--   1. 100% free tiers can be claimed without an account (email + per-IP
+--      throttle only, no access codes).
+--   2. Guest tickets are reopened from the emailed ticket link: the link
+--      carries the order UUID plus the buyer/recipient email, and
+--      get_guest_order_full unlocks on those two values alone.
 --   Paid orders already flow through Paystack -> process_checkout with a null
 --   user_id, so nothing changes for them.
 -- ============================================================
@@ -48,16 +49,11 @@ BEGIN
   v_actual_user_id := auth.uid();
   v_is_guest := v_actual_user_id IS NULL;
 
-  -- 2. Guest guard rails: the access code is the guest's only way back into
-  --    the order, so require an email and a high-entropy code (the client
-  --    sends a 32-char hex nonce), then throttle per IP.
+  -- 2. Guest guard rails: an email is required (it is how the buyer receives
+  --    and re-opens their tickets) and anonymous claims are throttled per IP.
   IF v_is_guest THEN
     IF p_buyer_email IS NULL OR trim(p_buyer_email) = '' THEN
       RAISE EXCEPTION 'An email address is required to claim free tickets.';
-    END IF;
-
-    IF p_access_code IS NULL OR length(trim(p_access_code)) < 16 THEN
-      RAISE EXCEPTION 'A valid guest access code is required to claim free tickets.';
     END IF;
 
     BEGIN
@@ -165,3 +161,115 @@ $$;
 -- Guests (anon) may claim free tiers; paid tiers remain gateway-only.
 REVOKE EXECUTE ON FUNCTION public.process_free_checkout FROM public;
 GRANT EXECUTE ON FUNCTION public.process_free_checkout TO anon, authenticated, service_role;
+
+
+-- ============================================================
+-- Guest ticket retrieval without access codes.
+-- The emailed ticket link carries the order UUID plus the buyer/recipient
+-- email, so possession of the link is what unlocks the order. The UUID is an
+-- unguessable 122-bit value and the email check keeps cross-account leaks out.
+-- ============================================================
+DROP FUNCTION IF EXISTS public.get_guest_order_full(uuid, text, text);
+DROP FUNCTION IF EXISTS public.get_guest_order_full(uuid, text);
+
+CREATE OR REPLACE FUNCTION public.get_guest_order_full(
+  p_order_id uuid,
+  p_email text
+) returns jsonb
+language plpgsql security definer
+set search_path = public
+as $$
+declare
+  v_ip_address text;
+  v_attempt_count integer;
+  v_headers json;
+  v_result jsonb;
+begin
+  if p_email is null or trim(p_email) = '' then
+    raise exception 'An email address is required to view this order.';
+  end if;
+
+  -- Extract IP address
+  begin
+    v_headers := current_setting('request.headers', true)::json;
+    v_ip_address := v_headers->>'x-forwarded-for';
+  exception when others then
+    v_ip_address := 'unknown';
+  end;
+
+  if v_ip_address is null then
+    v_ip_address := 'unknown';
+  end if;
+  v_ip_address := split_part(v_ip_address, ',', 1);
+
+  -- Log attempt
+  insert into public.rate_limit_log (ip_address, endpoint)
+  values (v_ip_address, 'get_guest_order_full');
+
+  -- Rate limit check: ticket pages get refreshed, so the window is generous.
+  select count(*) into v_attempt_count
+  from public.rate_limit_log
+  where ip_address = v_ip_address
+    and endpoint = 'get_guest_order_full'
+    and created_at > now() - interval '10 minutes';
+
+  if v_attempt_count > 30 then
+    raise exception 'Too many ticket lookup attempts. Please wait 10 minutes.';
+  end if;
+
+  select jsonb_build_object(
+    'order', (
+      select jsonb_build_object(
+        'id', o.id,
+        'event_id', o.event_id,
+        'user_id', o.user_id,
+        'buyer_name', o.buyer_name,
+        'buyer_email', o.buyer_email,
+        'buyer_phone', o.buyer_phone,
+        'subtotal_kobo', o.subtotal_kobo,
+        'discount_kobo', o.discount_kobo,
+        'total_kobo', o.total_kobo,
+        'promo_code_id', o.promo_code_id,
+        'status', o.status,
+        'payment_reference', o.payment_reference,
+        'access_code', o.access_code,
+        'created_at', o.created_at,
+        'updated_at', o.updated_at,
+        'events', (select row_to_json(e) from events e where e.id = o.event_id)
+      )
+    ),
+    'tickets', coalesce((
+      select jsonb_agg(
+        jsonb_build_object(
+          'id', t.id,
+          'ticket_code', t.ticket_code,
+          'attendee_name', t.attendee_name,
+          'status', t.status,
+          'order_items', jsonb_build_object(
+            'order_id', oi.order_id,
+            'ticket_types', (select row_to_json(tt) from ticket_types tt where tt.id = oi.ticket_type_id)
+          )
+        )
+      )
+      from tickets t
+      join order_items oi on oi.id = t.order_item_id
+      where oi.order_id = p_order_id
+    ), '[]'::jsonb)
+  ) into v_result
+  from orders o
+  where o.id = p_order_id
+    and (
+      lower(o.buyer_email) = lower(trim(p_email))
+      or lower(coalesce(o.recipient_email, '')) = lower(trim(p_email))
+    )
+    and o.status in ('paid', 'comp');
+
+  if v_result is null then
+    raise exception 'Order not found for this email address.';
+  end if;
+
+  return v_result;
+end;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_guest_order_full(uuid, text) TO anon, authenticated, service_role;
