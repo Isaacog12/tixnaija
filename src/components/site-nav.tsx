@@ -191,6 +191,22 @@ export function SiteNav() {
                 )}
               </Link>
             ))}
+
+            {/* Guests can still retrieve tickets bought without an account */}
+            {!loading && !user && (
+              <Link
+                to="/my-tickets"
+                className={cn(
+                  "relative flex items-center gap-2 px-3.5 py-2 text-sm font-medium z-10",
+                  "text-muted-foreground hover:text-foreground",
+                  "transition-colors duration-[var(--duration-micro)]",
+                )}
+                activeProps={{ className: "text-foreground font-semibold" }}
+              >
+                <TicketIcon className="w-4 h-4 opacity-70 shrink-0" />
+                <span className="relative z-10">My Tickets</span>
+              </Link>
+            )}
           </nav>
         </div>
 
@@ -293,6 +309,12 @@ export function SiteNav() {
                             </Button>
                             <Button asChild variant="outline" className="w-full rounded-xl border-[var(--glass-border)]">
                               <Link to="/auth" onClick={() => setMenuOpen(false)}>Log in</Link>
+                            </Button>
+                            <Button asChild variant="ghost" className="w-full rounded-xl justify-center font-medium text-muted-foreground">
+                              <Link to="/my-tickets" onClick={() => setMenuOpen(false)}>
+                                <TicketIcon className="mr-2 h-4 w-4" />
+                                Find my tickets
+                              </Link>
                             </Button>
                           </div>
                         )}

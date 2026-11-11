@@ -42,6 +42,16 @@ import {
 } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 
+const GUEST_TICKET_CREDENTIALS_PREFIX = "tixnaija:guest-ticket-credentials:";
+const GUEST_CHECKOUT_PENDING_KEY = "tixnaija:guest-checkout-pending";
+
+/** High-entropy nonce used as a guest buyer's ticket access code. */
+function createGuestAccessCode() {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 export const Route = createFileRoute("/e/$slug")({
   component: EventDetailPage,
   validateSearch: z.object({
@@ -464,10 +474,6 @@ function EventDetailPage() {
 
   function onCheckout() {
     if (!totalCount) return;
-    if (!sessionUser) {
-      navigate({ to: "/auth", search: { mode: "signup", redirect: `/e/${slug}` } });
-      return;
-    }
     setCheckoutOpen(true);
   }
 
@@ -524,7 +530,10 @@ function EventDetailPage() {
       }));
 
       if (totalKobo === 0) {
-        // Handle free tickets locally
+        // Guests claim free tiers without an account, but they need an access
+        // code so they can reopen the order later (it is emailed to them too).
+        const guestAccessCode = userId ? null : createGuestAccessCode();
+
         const { data: orderId, error: checkoutError } = await supabase.rpc("process_free_checkout", {
           p_event_id: data!.event.id,
           p_user_id: (userId || null) as string,
@@ -537,6 +546,7 @@ function EventDetailPage() {
           p_recipient_name: values.isGift ? values.recipientName : null,
           p_recipient_email: values.isGift ? values.recipientEmail : null,
           p_gift_message: values.isGift ? values.giftMessage : null,
+          p_access_code: guestAccessCode ?? undefined,
           p_promoter_link_id: appliedPromoterLink?.link_id ?? undefined,
           p_checkout_answers: values.answers || {},
         } as any);
@@ -547,13 +557,22 @@ function EventDetailPage() {
 
         try {
           await supabase.functions.invoke("send-ticket-confirmation", {
-            body: { orderId },
+            body: { orderId, accessCode: guestAccessCode ?? undefined },
           });
         } catch (emailErr) {
           console.error("Failed to send free ticket email", emailErr);
         }
 
-        if (!userId) {
+        if (!userId && guestAccessCode) {
+          sessionStorage.setItem(
+            `${GUEST_TICKET_CREDENTIALS_PREFIX}${orderId}`,
+            JSON.stringify({ email: values.buyerEmail, code: guestAccessCode }),
+          );
+          toast.success("Ticket claimed! Check your email for your ticket and access code.", {
+            duration: 6000,
+          });
+          navigate({ to: "/orders/$orderId/tickets", params: { orderId: orderId as string } });
+        } else if (!userId) {
           toast.success("Free ticket claimed! View your ticket using the email you provided.", {
             duration: 6000,
           });
@@ -594,6 +613,19 @@ function EventDetailPage() {
       if (initErr) throw initErr;
       if (initData?.error) throw new Error(initData.error);
       if (!initData?.authorization_url) throw new Error("Could not start payment.");
+
+      // Guests: remember the email + payment reference across the Paystack
+      // redirect so /checkout/verify can hand them straight back to the tickets.
+      if (!userId && initData.reference) {
+        try {
+          sessionStorage.setItem(
+            GUEST_CHECKOUT_PENDING_KEY,
+            JSON.stringify({ email: values.buyerEmail, reference: String(initData.reference) }),
+          );
+        } catch {
+          // Storage blocked (private mode) — the confirmation email still works.
+        }
+      }
 
       window.location.href = initData.authorization_url;
     } catch (err: any) {
@@ -651,11 +683,11 @@ function EventDetailPage() {
                   <p className="truncate font-display text-xl leading-none">
                     {totalKobo ? formatNaira(totalKobo) : "Pick a tier"}
                   </p>
-                  {!sessionUser && (
-                    <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                      Account needed · Tickets tied to account
-                    </p>
-                  )}
+                  <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                    {sessionUser
+                      ? "Tickets saved to your account"
+                      : "No account needed · Sent by email"}
+                  </p>
                 </div>
                 <Button
                   onClick={onCheckout}
@@ -663,7 +695,7 @@ function EventDetailPage() {
                   size="lg"
                   className="gradient-sunset text-primary-foreground shadow-glow hover:opacity-90 disabled:opacity-40 shrink-0"
                 >
-                  {!sessionUser ? "Sign in to buy" : "Buy tickets"}
+                  {totalCount > 0 && totalKobo === 0 ? "Get free tickets" : "Buy tickets"}
                 </Button>
               </div>
             </div>
@@ -1449,11 +1481,11 @@ function EventBody({
                 {totalKobo ? formatNaira(totalKobo) : "—"}
               </span>
             </div>
-            {!isAuthenticated && (
-              <p className="mt-3 text-xs text-muted-foreground text-center">
-                An account is needed to buy tickets. Your tickets will be securely tied to it.
-              </p>
-            )}
+            <p className="mt-3 text-xs text-muted-foreground text-center">
+              {isAuthenticated
+                ? "Your tickets will be saved to your account."
+                : "No account needed — we'll email your tickets and an access code."}
+            </p>
             <Button
               disabled={!totalCount || isPastEvent || event.status === "cancelled"}
               onClick={onCheckout}
@@ -1464,8 +1496,8 @@ function EventBody({
                 ? "Event ended"
                 : event.status === "cancelled"
                   ? "Sales closed"
-                  : !isAuthenticated
-                    ? "Sign in to buy"
+                  : totalCount > 0 && totalKobo === 0
+                    ? "Get free tickets"
                     : "Buy tickets"}
             </Button>
           </div>

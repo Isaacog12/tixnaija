@@ -14,6 +14,14 @@ const verifySearchSchema = z.object({
   trxref: z.string().optional(),
 });
 
+const GUEST_TICKET_CREDENTIALS_PREFIX = "tixnaija:guest-ticket-credentials:";
+const GUEST_CHECKOUT_PENDING_KEY = "tixnaija:guest-checkout-pending";
+
+interface PendingGuestCheckout {
+  email: string;
+  reference: string;
+}
+
 export const Route = createFileRoute("/checkout/verify")({
   validateSearch: verifySearchSchema,
   head: () => ({
@@ -29,6 +37,9 @@ function VerifyCheckoutPage() {
   const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying");
   const [errorMsg, setErrorMsg] = useState("");
   const [copied, setCopied] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
+  const [guestEmail, setGuestEmail] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!reference) {
@@ -37,14 +48,47 @@ function VerifyCheckoutPage() {
       return;
     }
 
+    // A guest checkout stores its email + reference right before the Paystack
+    // redirect. If it is missing (new tab, shared link), we fall back to the
+    // reference alone — it doubles as the ticket access code.
+    let pendingGuest: PendingGuestCheckout | null = null;
+    try {
+      const raw = sessionStorage.getItem(GUEST_CHECKOUT_PENDING_KEY);
+      pendingGuest = raw ? (JSON.parse(raw) as PendingGuestCheckout) : null;
+    } catch {
+      pendingGuest = null;
+    }
+
     async function verify() {
       try {
+        const { data: authData } = await supabase.auth.getUser();
+        const guest = Boolean(pendingGuest) || !authData?.user;
+        setIsGuest(guest);
+        if (pendingGuest?.email) setGuestEmail(pendingGuest.email);
+
         const { data, error } = await supabase.functions.invoke("verify-payment", {
           body: { reference }
         });
 
         if (error) throw error;
         if (data?.error) throw new Error(data.error);
+
+        const verifiedOrderId = (data?.order_id as string | undefined) ?? null;
+        if (verifiedOrderId) setOrderId(verifiedOrderId);
+
+        // Hand the guest straight into their tickets: the ticket page reads
+        // these credentials from sessionStorage.
+        if (guest && pendingGuest && verifiedOrderId) {
+          try {
+            sessionStorage.setItem(
+              `${GUEST_TICKET_CREDENTIALS_PREFIX}${verifiedOrderId}`,
+              JSON.stringify({ email: pendingGuest.email, code: pendingGuest.reference }),
+            );
+            sessionStorage.removeItem(GUEST_CHECKOUT_PENDING_KEY);
+          } catch {
+            // Storage blocked — the emailed link still unlocks the order.
+          }
+        }
 
         setStatus("success");
       } catch (err: any) {
@@ -104,16 +148,50 @@ function VerifyCheckoutPage() {
             <h1 className="font-display text-3xl sm:text-4xl">Payment Successful!</h1>
             
             <p className="mt-3 text-sm sm:text-base text-muted-foreground max-w-md">
-              Your tickets have been generated and sent to your email. You can also view and download them right now in your account.
+              {isGuest
+                ? guestEmail
+                  ? `Your tickets have been generated and sent to ${guestEmail}. No account needed — you can reopen and download them any time.`
+                  : "Your tickets have been generated and sent to your email. No account needed — you can reopen and download them any time."
+                : "Your tickets have been generated and sent to your email. You can also view and download them right now in your account."}
             </p>
 
+            {isGuest && reference && (
+              <div className="mt-5 w-full rounded-xl border border-primary/25 bg-primary/5 px-4 py-3 text-left">
+                <p className="text-xs font-semibold text-foreground">Save your order reference</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Use this with your email at{" "}
+                  <Link to="/my-tickets" className="text-primary hover:underline">
+                    My Tickets
+                  </Link>{" "}
+                  to reopen your tickets — now or at the gate.
+                </p>
+                <p className="mt-2 break-all font-mono text-sm text-foreground">{reference}</p>
+              </div>
+            )}
+
             <div className="mt-6 flex flex-col sm:flex-row gap-3 w-full">
-              <Button asChild className="flex-1 gradient-sunset text-primary-foreground font-semibold press-sm shadow-md" size="lg">
-                <Link to="/my-tickets">View My Tickets</Link>
-              </Button>
-              <Button asChild variant="outline" className="flex-1 font-medium" size="lg">
-                <Link to="/notifications">Notifications</Link>
-              </Button>
+              {isGuest ? (
+                orderId ? (
+                  <Button asChild className="flex-1 gradient-sunset text-primary-foreground font-semibold press-sm shadow-md" size="lg">
+                    <Link to="/orders/$orderId/tickets" params={{ orderId }}>
+                      View My Tickets
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button asChild className="flex-1 gradient-sunset text-primary-foreground font-semibold press-sm shadow-md" size="lg">
+                    <Link to="/my-tickets">Find My Tickets</Link>
+                  </Button>
+                )
+              ) : (
+                <>
+                  <Button asChild className="flex-1 gradient-sunset text-primary-foreground font-semibold press-sm shadow-md" size="lg">
+                    <Link to="/my-tickets">View My Tickets</Link>
+                  </Button>
+                  <Button asChild variant="outline" className="flex-1 font-medium" size="lg">
+                    <Link to="/notifications">Notifications</Link>
+                  </Button>
+                </>
+              )}
             </div>
 
             {/* Support Assistance Card for Missing Emails */}
