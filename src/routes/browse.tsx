@@ -35,6 +35,8 @@ export const Route = createFileRoute("/browse")({
 });
 
 async function fetchEvents(q: string, category: string, dateFilter: string) {
+  const now = new Date();
+
   let query = supabase
     .from("events")
     .select("id, title, slug, city, venue_name, start_datetime, end_datetime, cover_image_url, description, status, category, tags, ticket_types(price_kobo)")
@@ -54,7 +56,6 @@ async function fetchEvents(q: string, category: string, dateFilter: string) {
     }
   }
 
-  const now = new Date();
   if (dateFilter === "today") {
     const endOfDay = new Date(now);
     endOfDay.setHours(23, 59, 59, 999);

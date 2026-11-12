@@ -32,7 +32,17 @@ function GuestTicketsPage() {
       const { data, error } = await supabase.functions.invoke("resend-ticket-links", {
         body: { email: emailValue },
       });
-      if (error) throw error;
+      if (error) {
+        // Map the transport failures we can act on; anything else is surfaced as-is.
+        const status = (error as any)?.context?.status;
+        if (status === 404) {
+          throw new Error("Ticket email service is unavailable right now. Please contact support.");
+        }
+        if (status === 429) {
+          throw new Error("Too many requests. Please wait a few minutes and try again.");
+        }
+        throw error;
+      }
       if (data?.error) throw new Error(data.error);
       return data as { ok: boolean; sent?: number };
     },
@@ -118,7 +128,7 @@ function GuestTicketsPage() {
         </form>
 
         {/* Result */}
-        {submittedEmail && (
+        {(send.isError || submittedEmail) && (
           <div className="mt-8">
             {send.isError ? (
               <div className="rounded-2xl border border-destructive/30 bg-destructive/5 py-10 px-6 text-center">

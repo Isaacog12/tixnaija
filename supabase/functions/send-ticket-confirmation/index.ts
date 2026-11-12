@@ -5,7 +5,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 // @ts-ignore
 import QRCode from "https://esm.sh/qrcode@1.5.3";
 import { sendEmail } from "../_shared/zeptomail.ts";
-import { isNotificationOptedIn } from "../_shared/notification-preferences.ts";
 import { escapeHtml } from "../_shared/html.ts";
 
 const allowedOrigins = [
@@ -265,23 +264,22 @@ serve(async (req: Request) => {
     </div>
     `;
 
-    // 1. Send Master Receipt to Buyer (Only if not a single ticket resend and not opted out)
-    if (!ticketId) {
-      const buyerOptedIn = await isNotificationOptedIn(
-        supabase,
-        { email: recipientEmail, userId: order.user_id },
-        "ticket_confirmations"
-      );
+    // 1. Send Master Receipt to Buyer.
+    //
+    // Ticket delivery is transactional: the email IS how the buyer receives
+    // what they paid for, so it must never be gated behind notification
+    // preferences. Those preferences only govern marketing and reminders.
+    // Silently skipping this was why buyers (and guests sharing the same
+    // address) received a "success" response with no email at all.
+    let emailsSent = 0;
 
-      if (buyerOptedIn) {
-        await sendEmail({
-          to: { address: recipientEmail, name: recipientName },
-          subject,
-          htmlBody: masterHtmlBody,
-        });
-      } else {
-        console.log(`[OPT-OUT] Skipping master ticket confirmation for ${recipientEmail} (user opted out of ticket_confirmations)`);
-      }
+    if (!ticketId) {
+      await sendEmail({
+        to: { address: recipientEmail, name: recipientName },
+        subject,
+        htmlBody: masterHtmlBody,
+      });
+      emailsSent += 1;
     }
 
     // 2. Send Individual Tickets to Attendees
@@ -393,25 +391,17 @@ serve(async (req: Request) => {
       </div>
       `;
 
-      const attendeeOptedIn = await isNotificationOptedIn(
-        supabase,
-        { email },
-        "ticket_confirmations"
-      );
-
-      if (!attendeeOptedIn) {
-        console.log(`[OPT-OUT] Skipping ticket email for attendee ${email} (user opted out of ticket_confirmations)`);
-        continue;
-      }
-
+      // Individual tickets are transactional too: each attendee must receive
+      // the ticket that gets them through the door.
       await sendEmail({
         to: { address: email, name: attendeeName },
         subject: attSubject,
         htmlBody: attHtmlBody,
       });
+      emailsSent += 1;
     }
 
-    return new Response(JSON.stringify({ success: true }), { headers: getCorsHeaders(req), status: 200 });
+    return new Response(JSON.stringify({ success: true, sent: emailsSent }), { headers: getCorsHeaders(req), status: 200 });
   } catch (error: any) {
     return new Response(JSON.stringify({ error: error.message }), { headers: getCorsHeaders(req), status: 400 });
   }

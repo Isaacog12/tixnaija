@@ -56,3 +56,16 @@ entrypoint = "./functions/send-abandoned-reminders/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/unsubscribe/index.ts"
+
+# Ticket delivery is transactional. Both functions are called directly from the
+# browser (signed-in buyers, and guests with no session), so the JWT gate stays
+# off and authorization is enforced inside the function instead.
+[functions.send-ticket-confirmation]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/send-ticket-confirmation/index.ts"
+
+[functions.resend-ticket-links]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/resend-ticket-links/index.ts"

@@ -543,20 +543,30 @@ function EventDetailPage() {
           throw new Error(`Database error: ${checkoutError.message}`);
         }
 
-        try {
-          if (userId) {
-            await supabase.functions.invoke("send-ticket-confirmation", {
-              body: { orderId },
-            });
-          } else {
-            // Guests have no session, so the confirmation is sent through the
-            // resend helper, which authorizes on order id + email.
-            await supabase.functions.invoke("resend-ticket-links", {
-              body: { email: values.buyerEmail, orderId },
-            });
+        // Email delivery is transactional, but a failure here must never block
+        // ticket access. functions.invoke() resolves with { error } on non-2xx
+        // instead of throwing, so it has to be checked explicitly — relying on
+        // try/catch alone is what made these failures invisible.
+        let emailFailed = false;
+
+        if (userId) {
+          const { error: emailError } = await supabase.functions.invoke("send-ticket-confirmation", {
+            body: { orderId },
+          });
+          if (emailError) {
+            console.error("Failed to send ticket confirmation", emailError);
+            emailFailed = true;
           }
-        } catch (emailErr) {
-          console.error("Failed to send free ticket email", emailErr);
+        } else {
+          // Guests have no session, so the confirmation is sent through the
+          // resend helper, which authorizes on order id + email.
+          const { error: emailError } = await supabase.functions.invoke("resend-ticket-links", {
+            body: { email: values.buyerEmail, orderId },
+          });
+          if (emailError) {
+            console.error("Failed to send ticket confirmation", emailError);
+            emailFailed = true;
+          }
         }
 
         if (!userId) {
@@ -570,10 +580,19 @@ function EventDetailPage() {
           } catch {
             // Storage blocked — the emailed link still works.
           }
-          toast.success("Ticket claimed! We've emailed your tickets.", { duration: 6000 });
+          toast.success(
+            emailFailed
+              ? "Ticket claimed! We couldn't email your confirmation — your tickets are available below."
+              : "Ticket claimed! We've emailed your tickets.",
+            { duration: 6000 },
+          );
           navigate({ to: "/orders/$orderId/tickets", params: { orderId: orderId as string } });
         } else {
-          toast.success("Free ticket claimed successfully!");
+          toast.success(
+            emailFailed
+              ? "Free ticket claimed, but we couldn't send the confirmation email. Resend it from My Tickets."
+              : "Free ticket claimed successfully!",
+          );
           navigate({ to: "/notifications" });
         }
         return;

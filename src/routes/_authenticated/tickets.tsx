@@ -449,13 +449,14 @@ function ReassignTicketModal({ open, onClose, ticket, onSuccess }: ReassignModal
 
       toast.success("Ticket reassigned! Attendee details updated successfully.");
       
-      // Resend confirmation to new email
-      try {
-        await supabase.functions.invoke("send-ticket-confirmation", {
-          body: { orderId: ticket.order?.id, ticketId: ticket.id },
-        });
-      } catch {
-        // Silently continue if email fails
+      // Resend confirmation to new email. functions.invoke() resolves with
+      // { error } on non-2xx, so it must be checked explicitly.
+      const { error: emailError } = await supabase.functions.invoke("send-ticket-confirmation", {
+        body: { orderId: ticket.order?.id, ticketId: ticket.id },
+      });
+      if (emailError) {
+        console.error("Failed to email the reassigned ticket", emailError);
+        toast.error("Ticket reassigned, but the confirmation email could not be sent.");
       }
 
       onSuccess();

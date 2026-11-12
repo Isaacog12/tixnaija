@@ -130,12 +130,22 @@ serve(async (req) => {
       ),
     );
 
-    const failed = results.filter((result) => result.status === "rejected").length;
-    if (failed > 0) {
-      console.error(`Ticket email failed for ${failed} of ${orderIds.length} orders`);
+    // invoke() resolves with { error } on non-2xx instead of rejecting, so
+    // failed sends have to be detected from the resolved value too. Counting
+    // rejections alone reported 400/403 responses as successful sends.
+    const failures = results.filter(
+      (result) =>
+        result.status === "rejected" ||
+        Boolean((result as PromiseFulfilledResult<any>).value?.error),
+    );
+    if (failures.length > 0) {
+      console.error(
+        `Ticket email failed for ${failures.length} of ${orderIds.length} orders`,
+        failures,
+      );
     }
 
-    return jsonResponse(req, { ok: true, sent: orderIds.length - failed });
+    return jsonResponse(req, { ok: true, sent: orderIds.length - failures.length });
   } catch (error: any) {
     console.error("Resend ticket links error:", error);
     return jsonResponse(req, { error: error?.message || "Unknown error" }, 400);

@@ -190,9 +190,13 @@ function OrderTicketsPage() {
       // Trigger the edge function to re-send the specific ticket to the new email.
       // Guests have no session, so their order link keeps working either way.
       if (!data?.isGuest) {
-        await supabase.functions.invoke("send-ticket-confirmation", {
+        const { error: emailError } = await supabase.functions.invoke("send-ticket-confirmation", {
           body: { orderId: data?.order?.id, ticketId: editingTicket.id },
         });
+        if (emailError) {
+          console.error("Failed to email the updated ticket", emailError);
+          toast.error("Ticket updated, but we couldn't email it. Try resending from your tickets list.");
+        }
       }
 
     } catch (err: unknown) {

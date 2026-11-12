@@ -134,10 +134,17 @@ async function processVerifiedPayment(
     throw new Error(`Database error: ${checkoutError.message}`);
   }
 
-  // Send ticket confirmation email (fire-and-forget)
+  // Send ticket confirmation email (fire-and-forget).
+  //
+  // functions.invoke() resolves with { error } for non-2xx responses instead of
+  // rejecting, so a .catch() alone never fires — every failure has to be
+  // inspected or it is lost silently.
   supabase.functions
     .invoke("send-ticket-confirmation", { body: { orderId } })
-    .catch((e: any) => console.error("Email send failed:", e));
+    .then(({ error }: any) => {
+      if (error) console.error("Ticket confirmation email failed:", error);
+    })
+    .catch((e: any) => console.error("Ticket confirmation email failed:", e));
 
   return { order_id: orderId, already_existed: false };
 }

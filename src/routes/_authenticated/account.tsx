@@ -1146,7 +1146,9 @@ function NotificationsTab({ userId, profile }: { userId: string; profile: any })
         const saved = typeof profile.notification_preferences === "string" 
           ? JSON.parse(profile.notification_preferences) 
           : profile.notification_preferences;
-        setPrefs((prev) => ({ ...prev, ...saved }));
+        // Ticket delivery is transactional and cannot be disabled, so a legacy
+        // "false" stored on this row is normalised on load.
+        setPrefs((prev) => ({ ...prev, ...saved, ticket_confirmations: true }));
       } catch { /* use defaults */ }
     } else {
       // Try localStorage fallback
@@ -1164,7 +1166,7 @@ function NotificationsTab({ userId, profile }: { userId: string; profile: any })
       const { error } = await supabase
         .from("profiles")
         // @ts-ignore — notification_preferences may not be typed yet
-        .update({ notification_preferences: prefs } as any)
+        .update({ notification_preferences: { ...prefs, ticket_confirmations: true } } as any)
         .eq("id", userId);
       
       // Always save to localStorage as backup
@@ -1190,7 +1192,7 @@ function NotificationsTab({ userId, profile }: { userId: string; profile: any })
       key: "ticket_confirmations" as const,
       icon: Mail,
       label: "Ticket Confirmations",
-      description: "Receive email confirmations when you purchase or receive a ticket.",
+      description: "Purchase receipts and your tickets are always emailed — this can't be turned off.",
       color: "text-primary",
       bgColor: "bg-primary/10",
     },
@@ -1256,11 +1258,18 @@ function NotificationsTab({ userId, profile }: { userId: string; profile: any })
                   <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">{opt.description}</p>
                 </div>
               </div>
-              <Switch
-                checked={prefs[opt.key]}
-                onCheckedChange={(checked) => setPrefs((prev) => ({ ...prev, [opt.key]: checked }))}
-                className="shrink-0"
-              />
+              {opt.key === "ticket_confirmations" ? (
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Always on</span>
+                  <Switch checked disabled aria-label="Ticket confirmations are always on" />
+                </div>
+              ) : (
+                <Switch
+                  checked={prefs[opt.key]}
+                  onCheckedChange={(checked) => setPrefs((prev) => ({ ...prev, [opt.key]: checked }))}
+                  className="shrink-0"
+                />
+              )}
             </motion.div>
           ))}
         </div>

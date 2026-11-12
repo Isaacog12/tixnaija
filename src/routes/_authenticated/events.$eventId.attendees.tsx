@@ -132,12 +132,18 @@ function AttendeesPage() {
       });
       if (error) throw error;
       
-      // We also trigger the edge function to re-send to the new email
+      // We also trigger the edge function to re-send to the new email.
+      // functions.invoke() resolves with { error } on non-2xx instead of
+      // throwing, so the result has to be inspected explicitly.
       const ticket = filteredTickets?.find((t: any) => t.id === ticketId);
       if (ticket) {
-        await supabase.functions.invoke("send-ticket-confirmation", {
+        const { error: emailError } = await supabase.functions.invoke("send-ticket-confirmation", {
           body: { orderId: ticket.order_items.orders.id, ticketId },
         });
+        if (emailError) {
+          console.error("Failed to email the updated ticket", emailError);
+          toast.error("Ticket updated, but the confirmation email could not be sent.");
+        }
       }
     },
     onSuccess: () => {
