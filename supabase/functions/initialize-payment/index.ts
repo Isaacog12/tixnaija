@@ -42,13 +42,13 @@ serve(async (req) => {
 
     // Rate Limiting Check
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const supabaseKey = (Deno.env.get("APP_SECRET_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) ?? "";
     const supabase = createClient(supabaseUrl, supabaseKey);
     const userId = metadata?.userId;
 
     if (userId) {
       const token = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "").trim();
-      const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+      const anonKey = (Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")) ?? "";
       if (!token || !anonKey) {
         return new Response(JSON.stringify({ error: "Authentication required" }), {
           status: 401,

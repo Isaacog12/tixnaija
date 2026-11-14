@@ -69,7 +69,7 @@ async function processVerifiedPayment(
   metadata: any,
 ) {
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-  const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const supabaseKey = (Deno.env.get("APP_SECRET_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) ?? "";
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   // Block past / cancelled events
@@ -206,7 +206,7 @@ serve(async (req) => {
       }
 
       const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+      const supabaseKey = (Deno.env.get("APP_SECRET_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) ?? "";
       const supabase = createClient(supabaseUrl, supabaseKey);
 
       // Record charge event into payment_events
@@ -299,7 +299,7 @@ serve(async (req) => {
 
     if (metadata.userId) {
       const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
-      const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+      const anonKey = (Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")) ?? "";
 
       if (!token || !anonKey) {
         return new Response(JSON.stringify({ error: "Authentication required" }), {
@@ -334,7 +334,7 @@ serve(async (req) => {
       const ipAddress = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
       const limitClient = createClient(
         modeBSupabaseUrl,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+        (Deno.env.get("APP_SECRET_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) ?? "",
       );
 
       // Fail closed: if the counter cannot be written, do not serve the request.

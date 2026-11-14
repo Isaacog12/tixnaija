@@ -35,8 +35,8 @@ export async function authorizeCronOrRoles(
 
   const token = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "").trim();
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const anonKey = (Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")) ?? "";
+  const serviceRoleKey = (Deno.env.get("APP_SECRET_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) ?? "";
 
   if (!token || !supabaseUrl || !anonKey || !serviceRoleKey) {
     return { ok: false, status: 401, error: "Unauthorized" };

@@ -13,7 +13,7 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const serviceKey = (Deno.env.get("APP_SECRET_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) ?? "";
 
     // 1. Authorize: Must be service_role or authenticated admin
     const authHeader = req.headers.get("Authorization");
@@ -27,7 +27,7 @@ serve(async (req) => {
     const token = authHeader.replace(/^Bearer\s+/i, "");
     const isServiceRole = token === serviceKey;
     if (!isServiceRole) {
-      const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || serviceKey;
+      const anonKey = (Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")) || serviceKey;
       const authClient = createClient(supabaseUrl, anonKey, {
         auth: { persistSession: false },
       });

@@ -34,7 +34,7 @@ serve(async (req: Request) => {
   // @ts-ignore
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   // @ts-ignore
-  const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const supabaseKey = (Deno.env.get("APP_SECRET_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) ?? "";
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
