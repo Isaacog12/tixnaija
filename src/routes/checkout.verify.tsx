@@ -33,7 +33,7 @@ function VerifyCheckoutPage() {
   const searchParams = Route.useSearch();
   const reference = searchParams.reference || searchParams.trxref;
   
-  const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying");
+  const [status, setStatus] = useState<"verifying" | "success" | "elsewhere" | "error">("verifying");
   const [errorMsg, setErrorMsg] = useState("");
   const [copied, setCopied] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
@@ -92,6 +92,21 @@ function VerifyCheckoutPage() {
         setStatus("success");
       } catch (err: any) {
         console.error("Verification error:", err);
+
+        // verify-payment rejects a caller who does not own the order (401 when no
+        // session is attached, 403 when a different account is signed in). That is
+        // the normal "opened the link on another device" case: the payment is fine,
+        // so point the buyer at their tickets instead of showing a failure.
+        const httpStatus =
+          err?.context?.status ??
+          err?.context?.statusCode ??
+          (typeof err?.status === "number" ? err.status : undefined);
+
+        if (httpStatus === 401 || httpStatus === 403) {
+          setStatus("elsewhere");
+          return;
+        }
+
         setStatus("error");
         setErrorMsg(err.message || "Payment verification failed. If you were charged, please contact support.");
       }
@@ -258,6 +273,58 @@ function VerifyCheckoutPage() {
                 </div>
               </div>
             </div>
+          </>
+        )}
+
+        {status === "elsewhere" && (
+          <>
+            <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Mail className="h-8 w-8" />
+            </div>
+            <h1 className="font-display text-3xl sm:text-4xl">Your tickets are in your account</h1>
+            <p className="mt-3 text-sm sm:text-base text-muted-foreground max-w-md">
+              This payment belongs to an account that isn't signed in on this device, so we can't
+              confirm it here. Your order is already recorded — open My Tickets on the device where
+              you're signed in to view or download it.
+            </p>
+
+            {reference && (
+              <div className="mt-5 flex w-full items-center justify-between gap-2 rounded-lg bg-muted/60 px-3 py-2 border border-border/40">
+                <span className="text-xs text-muted-foreground truncate">
+                  Ref: <span className="font-mono font-medium text-foreground">{reference}</span>
+                </span>
+                <button
+                  onClick={handleCopyReference}
+                  type="button"
+                  aria-label="Copy payment reference"
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors shrink-0"
+                >
+                  {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copied ? "Copied" : "Copy Ref"}
+                </button>
+              </div>
+            )}
+
+            <div className="mt-6 flex flex-col sm:flex-row gap-3 w-full">
+              <Button asChild className="flex-1 gradient-sunset text-primary-foreground font-semibold press-sm shadow-md" size="lg">
+                <Link to="/my-tickets">Open My Tickets</Link>
+              </Button>
+              <Button asChild variant="outline" className="flex-1 font-medium" size="lg">
+                <Link to="/">Back to Home</Link>
+              </Button>
+            </div>
+
+            <p className="mt-5 text-xs text-muted-foreground">
+              Still stuck?{" "}
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                Contact support
+              </a>
+            </p>
           </>
         )}
 

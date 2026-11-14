@@ -286,6 +286,103 @@ serve(async (req) => {
       throw new Error("Missing order metadata in payment");
     }
 
+    // -----------------------------------------------------------------------
+    // Authorization for Mode B. A reference alone must not be enough to trigger
+    // fulfilment, because this path runs with the service role:
+    //   • Signed-in orders (metadata.userId) require a valid Supabase JWT that
+    //     belongs to exactly that user.
+    //   • Guest orders have no session to prove (guest checkout is anonymous), so
+    //     they are accepted only once Paystack has confirmed the charge above,
+    //     and are throttled per IP to make reference guessing impractical.
+    // -----------------------------------------------------------------------
+    const modeBSupabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+
+    if (metadata.userId) {
+      const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
+      const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+
+      if (!token || !anonKey) {
+        return new Response(JSON.stringify({ error: "Authentication required" }), {
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+          status: 401,
+        });
+      }
+
+      const authClient = createClient(modeBSupabaseUrl, anonKey, {
+        auth: { persistSession: false },
+      });
+      const {
+        data: { user },
+        error: authError,
+      } = await authClient.auth.getUser(token);
+
+      if (authError || !user || user.id !== metadata.userId) {
+        console.error("Verify payment rejected: caller does not own this order", {
+          reference,
+          expected: metadata.userId,
+          actual: user?.id ?? null,
+        });
+        return new Response(
+          JSON.stringify({ error: "You are not authorized to verify this payment" }),
+          {
+            headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+            status: 403,
+          },
+        );
+      }
+    } else {
+      const ipAddress = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+      const limitClient = createClient(
+        modeBSupabaseUrl,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      );
+
+      // Fail closed: if the counter cannot be written, do not serve the request.
+      const { error: logError } = await limitClient
+        .from("rate_limit_log")
+        .insert({ ip_address: ipAddress, endpoint: "verify_payment_guest" });
+
+      if (logError) {
+        console.error("Guest verify rate-limit write failed:", logError);
+        return new Response(
+          JSON.stringify({ error: "Could not verify this payment right now. Please try again." }),
+          {
+            headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+            status: 503,
+          },
+        );
+      }
+
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      const { count, error: countError } = await limitClient
+        .from("rate_limit_log")
+        .select("*", { count: "exact", head: true })
+        .eq("ip_address", ipAddress)
+        .eq("endpoint", "verify_payment_guest")
+        .gte("created_at", tenMinutesAgo);
+
+      if (countError) {
+        console.error("Guest verify rate-limit read failed:", countError);
+        return new Response(
+          JSON.stringify({ error: "Could not verify this payment right now. Please try again." }),
+          {
+            headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+            status: 503,
+          },
+        );
+      }
+
+      if (typeof count === "number" && count > 20) {
+        return new Response(
+          JSON.stringify({ error: "Too many verification attempts. Please try again later." }),
+          {
+            headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+            status: 429,
+          },
+        );
+      }
+    }
+
     const result = await processVerifiedPayment(
       reference,
       verifyData.data.amount,

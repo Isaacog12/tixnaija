@@ -10,9 +10,11 @@ import path from "path";
 
 export default defineConfig({
   vite: {
-    esbuild: {
-      drop: process.env.NODE_ENV === "production" ? ["console", "debugger"] : [],
-    },
+    // Console/debugger stripping is deliberately NOT configured here. Vite 8 runs
+    // transforms through Oxc and ignores `esbuild` options outright (the build
+    // logs "Both esbuild and oxc options were set. oxc options will be used and
+    // esbuild options will be ignored."), so an `esbuild.drop` entry only failed
+    // the type check while doing nothing at all.
     resolve: {
       alias: {
         "node:async_hooks": path.resolve("./src/lib/empty-mock.ts"),

@@ -72,12 +72,23 @@ serve(async (req) => {
       ["resend_ticket_links_ip", ip],
       ["resend_ticket_links_email", normalizedEmail],
     ]) {
-      const { count } = await supabase
+      const { count, error: countError } = await supabase
         .from("rate_limit_log")
         .select("*", { count: "exact", head: true })
         .eq("ip_address", bucketKey)
         .eq("endpoint", endpoint)
         .gte("created_at", tenMinutesAgo);
+
+      // Fail closed: an unreadable counter must not silently remove the throttle
+      // from an endpoint that mails real ticket links to anyone who asks.
+      if (countError) {
+        console.error("Rate limit read failed:", countError);
+        return jsonResponse(
+          req,
+          { error: "Could not process this request right now. Please try again." },
+          503,
+        );
+      }
 
       if (typeof count === "number" && count >= MAX_REQUESTS) {
         return jsonResponse(
@@ -87,7 +98,18 @@ serve(async (req) => {
         );
       }
 
-      await supabase.from("rate_limit_log").insert({ ip_address: bucketKey, endpoint });
+      const { error: logError } = await supabase
+        .from("rate_limit_log")
+        .insert({ ip_address: bucketKey, endpoint });
+
+      if (logError) {
+        console.error("Rate limit write failed:", logError);
+        return jsonResponse(
+          req,
+          { error: "Could not process this request right now. Please try again." },
+          503,
+        );
+      }
     }
 
     const pattern = escapeLike(normalizedEmail);

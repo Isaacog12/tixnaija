@@ -57,6 +57,29 @@ enabled = true
 verify_jwt = false
 entrypoint = "./functions/unsubscribe/index.ts"
 
+# Anonymous by design (guests have no account/session). Each of these does its
+# own authorization internally, so the gateway must not demand a user JWT.
+# redeploy after changing: npx supabase functions deploy <name>
+
+# Guest checkout: userId is optional in the payload; self-authorizes with a JWT
+# when metadata.userId is present, and is IP rate limited otherwise.
+[functions.initialize-payment]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/initialize-payment/index.ts"
+
+# "I lost my email" recovery for guests: rate limited per IP and per email.
+[functions.resend-ticket-links]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/resend-ticket-links/index.ts"
+
+# Cron only: authenticates with CRON_SECRET / x-cron-secret, no user session.
+[functions.purge-kyc-files]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/purge-kyc-files/index.ts"
+
 # Ticket delivery is transactional. Both functions are called directly from the
 # browser (signed-in buyers, and guests with no session), so the JWT gate stays
 # off and authorization is enforced inside the function instead.
@@ -64,8 +87,3 @@ entrypoint = "./functions/unsubscribe/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/send-ticket-confirmation/index.ts"
-
-[functions.resend-ticket-links]
-enabled = true
-verify_jwt = false
-entrypoint = "./functions/resend-ticket-links/index.ts"
