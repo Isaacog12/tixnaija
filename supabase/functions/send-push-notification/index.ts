@@ -27,7 +27,7 @@ serve(async (req) => {
     const token = authHeader.replace(/^Bearer\s+/i, "");
     const isServiceRole = token === serviceKey;
     if (!isServiceRole) {
-      const anonKey = (Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")) || serviceKey;
+      const anonKey = (Deno.env.get("APP_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")) || serviceKey;
       const authClient = createClient(supabaseUrl, anonKey, {
         auth: { persistSession: false },
       });

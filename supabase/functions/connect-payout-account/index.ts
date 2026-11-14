@@ -83,7 +83,7 @@ serve(async (req) => {
         });
       }
 
-      const anonKey = (Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")) ?? "";
+      const anonKey = (Deno.env.get("APP_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")) ?? "";
       const supabaseAuth = createClient(supabaseUrl, anonKey, {
         auth: { persistSession: false },
         global: { headers: { Authorization: authHeader } },

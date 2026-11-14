@@ -44,7 +44,7 @@ serve(async (req: Request) => {
     // @ts-ignore
     const supabaseKey = (Deno.env.get("APP_SECRET_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) ?? "";
     // @ts-ignore
-    const supabaseAnonKey = (Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")) || supabaseKey;
+    const supabaseAnonKey = (Deno.env.get("APP_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")) || supabaseKey;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const { data: order, error: orderError } = await supabase
