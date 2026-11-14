@@ -146,6 +146,35 @@ serve(async (req: Request) => {
               </p>
             </div>
           `;
+        } else if (item.template === "support_escalation") {
+          const caseNumber = String(item.payload?.case_number || "unassigned").replace(/[\r\n]+/g, " ");
+          const customerEmail = String(item.payload?.customer_email || "not provided").replace(/[\r\n]+/g, " ");
+          const intent = String(item.payload?.intent || "unknown").replace(/[\r\n]+/g, " ");
+          subject = `[TixNaija] Urgent support question — ${caseNumber}`;
+          htmlBody = `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1a1a1a; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;">
+              <div style="margin-bottom: 24px; border-bottom: 2px solid #dc2626; padding-bottom: 12px;">
+                <h1 style="font-size: 20px; font-weight: bold; margin: 0; color: #111827;">Customer question needs a human</h1>
+              </div>
+              <p style="font-size: 15px; line-height: 1.6; margin-bottom: 16px;">
+                The TixNaija assistant could not answer a customer question and escalated it.
+              </p>
+              <table style="width: 100%; font-size: 14px; line-height: 1.6; margin-bottom: 20px; border-collapse: collapse;">
+                <tr><td style="padding: 6px 0; color: #6b7280; width: 130px;">Case</td><td style="padding: 6px 0; font-weight: 600;">${escapeHtml(caseNumber)}</td></tr>
+                <tr><td style="padding: 6px 0; color: #6b7280;">Customer email</td><td style="padding: 6px 0;">${escapeHtml(customerEmail)}</td></tr>
+                <tr><td style="padding: 6px 0; color: #6b7280;">Detected topic</td><td style="padding: 6px 0;">${escapeHtml(intent)}</td></tr>
+              </table>
+              <p style="font-size: 14px; color: #6b7280; margin-bottom: 8px;">What the customer asked:</p>
+              <div style="background: #f9fafb; border-left: 4px solid #dc2626; padding: 16px; margin-bottom: 24px; border-radius: 4px; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${escapeHtml(item.payload?.message || "")}</div>
+              <p style="font-size: 14px; line-height: 1.6;">
+                Open the case in the support dashboard to reply, or email the customer directly.
+              </p>
+              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+              <p style="font-size: 12px; color: #9ca3af; text-align: center;">
+                TixNaija · Independent Nigerian Ticketing Platform
+              </p>
+            </div>
+          `;
         } else {
           subject = `[TixNaija] Update regarding your order`;
           htmlBody = `

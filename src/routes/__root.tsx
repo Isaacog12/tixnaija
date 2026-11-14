@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 
 import { Toaster } from "@/components/ui/sonner";
 import { CookieBanner } from "@/components/cookie-banner";
+import { SupportChat } from "@/components/support-chat";
 import { GlobalLoader } from "@/components/global-loader";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -372,6 +373,7 @@ function RootComponent() {
       </AppErrorBoundary>
       <Toaster position="bottom-center" />
       <CookieBanner />
+      <SupportChat />
     </QueryClientProvider>
   );
 }

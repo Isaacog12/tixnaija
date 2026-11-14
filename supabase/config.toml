@@ -87,3 +87,11 @@ entrypoint = "./functions/purge-kyc-files/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/send-ticket-confirmation/index.ts"
+
+# Public by design: the site-wide assistant answers guests as well as signed-in
+# users, so the gateway must not demand a JWT. Rate limiting and escalation
+# caps are enforced inside the function.
+[functions.support-bot]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/support-bot/index.ts"
