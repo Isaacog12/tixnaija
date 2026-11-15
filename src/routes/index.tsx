@@ -9,13 +9,27 @@ import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
+import { optimizeImage, imageSrcSet } from "@/lib/image";
 import Autoplay from "embla-carousel-autoplay";
 
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    links: [{ rel: "canonical", href: "https://tixnaija.name.ng/" }],
-  }),
+  /**
+   * Runs on the server so the initial HTML already contains the events and
+   * banners. Previously this page fetched client-side only, which meant
+   * crawlers and slow connections saw an empty shell.
+   *
+   * Each query is failure-tolerant on its own — the landing page must still
+   * render if one of them misbehaves.
+   */
+  loader: async () => {
+    const [upcoming, banners] = await Promise.all([
+      fetchUpcoming().catch(() => []),
+      fetchBanners().catch(() => []),
+    ]);
+    return { upcoming, banners };
+  },
+  // The canonical URL is emitted by the root route for every page.
   component: LandingPage,
 });
 
@@ -71,8 +85,20 @@ const VALUE_PROPS = [
 function LandingPage() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
-  const upcoming = useQuery({ queryKey: ["home-upcoming"], queryFn: fetchUpcoming });
-  const banners = useQuery({ queryKey: ["home-banners"], queryFn: fetchBanners });
+  const loaderData = Route.useLoaderData();
+
+  // `initialData` seeds the cache from the SSR loader so the client does not
+  // immediately re-request what the server just fetched.
+  const upcoming = useQuery({
+    queryKey: ["home-upcoming"],
+    queryFn: fetchUpcoming,
+    initialData: loaderData.upcoming,
+  });
+  const banners = useQuery({
+    queryKey: ["home-banners"],
+    queryFn: fetchBanners,
+    initialData: loaderData.banners,
+  });
 
   const handleBannerClick = async (banner: any) => {
     supabase.rpc("increment_banner_click" as any, { banner_id: banner.id } as any).then();
@@ -103,18 +129,34 @@ function LandingPage() {
               className="w-full"
             >
               <CarouselContent className="-ml-2">
-                {banners.data.map((banner: any) => (
+                {banners.data.map((banner: any, index: number) => (
                   <CarouselItem 
                     key={banner.id} 
                     className="pl-2 basis-[90%]"
                   >
                     <div 
                       onClick={() => handleBannerClick(banner)}
-                      className={`relative h-48 sm:h-64 w-full shrink-0 rounded-[2rem] overflow-hidden group shadow-xl border border-border/50 ${banner.link_url ? "cursor-pointer" : ""}`}
+                      onKeyDown={(e) => {
+                        if (banner.link_url && (e.key === "Enter" || e.key === " ")) {
+                          e.preventDefault();
+                          handleBannerClick(banner);
+                        }
+                      }}
+                      role={banner.link_url ? "link" : undefined}
+                      tabIndex={banner.link_url ? 0 : undefined}
+                      aria-label={banner.link_url ? banner.title || "Sponsored banner" : undefined}
+                      className={`relative h-48 sm:h-64 w-full shrink-0 rounded-[2rem] overflow-hidden group shadow-xl border border-border/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${banner.link_url ? "cursor-pointer" : ""}`}
                     >
                       <img 
-                        src={banner.image_url} 
-                        alt={banner.title} 
+                        src={optimizeImage(banner.image_url, 800)}
+                        srcSet={imageSrcSet(banner.image_url, [400, 800])}
+                        sizes="(max-width: 640px) 95vw, 640px"
+                        alt={banner.title || ""}
+                        width={800}
+                        height={450}
+                        loading={index === 0 ? "eager" : "lazy"}
+                        decoding="async"
+                        fetchPriority={index === 0 ? "high" : "auto"}
                         className="w-full h-full object-cover object-[center_15%] transition-transform duration-700 group-hover:scale-105"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -193,18 +235,34 @@ function LandingPage() {
               className="w-full"
             >
               <CarouselContent className="-ml-4">
-                {banners.data.map((banner: any) => (
+                {banners.data.map((banner: any, index: number) => (
                   <CarouselItem 
                     key={banner.id} 
                     className="pl-4 basis-full"
                   >
                     <div 
                       onClick={() => handleBannerClick(banner)}
-                      className={`relative aspect-[21/9] lg:aspect-[2.5/1] w-full max-h-[500px] shrink-0 rounded-[3rem] overflow-hidden group shadow-2xl border border-border/50 ${banner.link_url ? "cursor-pointer" : ""}`}
+                      onKeyDown={(e) => {
+                        if (banner.link_url && (e.key === "Enter" || e.key === " ")) {
+                          e.preventDefault();
+                          handleBannerClick(banner);
+                        }
+                      }}
+                      role={banner.link_url ? "link" : undefined}
+                      tabIndex={banner.link_url ? 0 : undefined}
+                      aria-label={banner.link_url ? banner.title || "Sponsored banner" : undefined}
+                      className={`relative aspect-[21/9] lg:aspect-[2.5/1] w-full max-h-[500px] shrink-0 rounded-[3rem] overflow-hidden group shadow-2xl border border-border/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${banner.link_url ? "cursor-pointer" : ""}`}
                     >
                       <img 
-                        src={banner.image_url} 
-                        alt={banner.title} 
+                        src={optimizeImage(banner.image_url, 1600)}
+                        srcSet={imageSrcSet(banner.image_url, [800, 1200, 1600])}
+                        sizes="(max-width: 1024px) 100vw, 1152px"
+                        alt={banner.title || ""}
+                        width={1600}
+                        height={686}
+                        loading={index === 0 ? "eager" : "lazy"}
+                        decoding="async"
+                        fetchPriority={index === 0 ? "high" : "auto"}
                         className="w-full h-full object-cover object-[center_15%] transition-transform duration-700 group-hover:scale-105"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -365,8 +423,12 @@ function LandingPage() {
                     <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary/50">
                       {ev.cover_image_url ? (
                         <img
-                          src={ev.cover_image_url}
+                          src={optimizeImage(ev.cover_image_url, 600)}
+                          srcSet={imageSrcSet(ev.cover_image_url, [400, 600, 800])}
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                           alt={ev.title}
+                          width={600}
+                          height={450}
                           loading="lazy"
                           decoding="async"
                           className={`h-full w-full object-cover transition-transform duration-700 ${!isCancelled ? "group-hover:scale-110" : "opacity-75 grayscale"}`}

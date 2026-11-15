@@ -8,14 +8,18 @@ import {
   Scripts,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode, Component } from "react";
+import { lazy, Suspense, useEffect, useState, type ReactNode, Component } from "react";
 import appCss from "../styles.css?url";
 
 import { Toaster } from "@/components/ui/sonner";
 import { CookieBanner } from "@/components/cookie-banner";
-import { SupportChat } from "@/components/support-chat";
 import { GlobalLoader } from "@/components/global-loader";
 import { supabase } from "@/integrations/supabase/client";
+
+// The support assistant is a floating widget no visitor needs on first paint.
+// Kept out of the root chunk and warmed during idle time instead.
+const loadSupportChat = () => import("@/components/support-chat");
+const SupportChat = lazy(() => loadSupportChat().then((m) => ({ default: m.SupportChat })));
 
 // ── Render-phase crash boundary ────────────────────────────────────────────────
 // Catches any JS error thrown during React render (e.g. a failed dynamic import
@@ -233,9 +237,37 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   );
 }
 
+const SITE_ORIGIN = "https://tixnaija.name.ng";
+
+/**
+ * Signed-in app screens. They hold private, per-user data, so they are marked
+ * noindex and get no canonical URL.
+ */
+const PRIVATE_APP_PATHS = [
+  "/account",
+  "/admin",
+  "/dashboard",
+  "/events",
+  "/notifications",
+  "/support",
+  "/tickets",
+];
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => {
-    const canonicalUrl = `https://tixnaija.name.ng`;
+  head: ({ matches }) => {
+    /**
+     * The deepest match is the route actually being rendered. Deriving the
+     * canonical from it replaces a hardcoded domain root that made every page
+     * on the site declare itself a duplicate of the home page.
+     *
+     * Search params are intentionally dropped so filtered variants such as
+     * /browse?c=Concerts all resolve to a single canonical URL.
+     */
+    const leafMatch = matches?.[matches.length - 1];
+    const pathname = leafMatch?.pathname ?? "/";
+    const isPrivateAppPath = PRIVATE_APP_PATHS.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    );
 
     return {
       meta: [
@@ -264,16 +296,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: "TixNaija — Nigerian event tickets, sold fast" },
         { name: "twitter:description", content: "Discover concerts, comedy shows, conferences and parties across Nigeria. Buy tickets and get an instant QR code from TixNaija." },
-        { property: "og:image", content: "/preview.jpg" },
-        { name: "twitter:image", content: "/preview.jpg" },
+        // Social crawlers ignore relative og:image URLs — these must be absolute
+        // or WhatsApp/Twitter/Facebook share no preview at all.
+        { property: "og:image", content: `${SITE_ORIGIN}/preview.jpg` },
+        { name: "twitter:image", content: `${SITE_ORIGIN}/preview.jpg` },
+        ...(isPrivateAppPath ? [{ name: "robots", content: "noindex, nofollow" }] : []),
       ],
       links: [
-        { rel: "canonical", href: canonicalUrl },
+        ...(isPrivateAppPath ? [] : [{ rel: "canonical", href: `${SITE_ORIGIN}${pathname}` }]),
         { rel: "manifest", href: "/manifest.json" },
         { rel: "stylesheet", href: appCss },
         { rel: "icon", href: "/icon-192.png", type: "image/png" },
         { rel: "apple-touch-icon", href: "/icon-192.png" },
-        { rel: "preload", as: "image", href: "/hero-concert.jpg" },
       ],
     };
   },
@@ -320,6 +354,35 @@ function RootComponent() {
 
   const router = useRouter();
 
+  // Client-only widgets are gated on mount so SSR never renders them (avoids a
+  // hydration mismatch) and their chunks load after the page is interactive.
+  const [mounted, setMounted] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+
+    const warmSupportChat = () => {
+      loadSupportChat().catch(() => {
+        // Non-critical: the chunk is fetched again on the next render attempt.
+      });
+    };
+    // Probed through a loosely-typed alias on purpose: `requestIdleCallback` is
+    // declared non-optional in TS's DOM lib, so testing it directly on `window`
+    // narrows the fallback branch to `never`.
+    const scheduler = window as unknown as {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+    };
+    const supportsIdleCallback = typeof scheduler.requestIdleCallback === "function";
+
+    if (supportsIdleCallback) {
+      const idle = window.requestIdleCallback(warmSupportChat, { timeout: 4000 });
+      return () => window.cancelIdleCallback(idle);
+    }
+    const timer = window.setTimeout(warmSupportChat, 1500);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       const errorMsg = event.reason?.message || event.reason?.toString() || "";
@@ -336,6 +399,7 @@ function RootComponent() {
     window.addEventListener("unhandledrejection", handleUnhandledRejection);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setIsAuthenticated(Boolean(session));
       if (event === "SIGNED_IN" && session) {
         const { error } = await supabase.rpc("claim_guest_messages" as any);
         if (error) console.error("Failed to claim guest messages:", error);
@@ -344,7 +408,25 @@ function RootComponent() {
       router.invalidate();
     });
 
-    // Global realtime sync: when any core table changes, invalidate React Query cache
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
+    };
+  }, [router]);
+
+  /**
+   * Realtime cache sync — signed-in users only.
+   *
+   * This channel listens to *every* change in the `public` schema and drops the
+   * whole React Query cache when anything moves. That is what keeps organiser
+   * dashboards live during a sale, but it is wasteful for anonymous visitors:
+   * they hold no session-scoped data, and Supabase still fans every write out
+   * to each of their sockets. Public pages stay correct through their own
+   * `staleTime`, so the subscription is simply not opened for them.
+   */
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
     const channel = supabase
       .channel('global-sync')
       .on(
@@ -357,11 +439,9 @@ function RootComponent() {
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
-      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
       supabase.removeChannel(channel);
     };
-  }, [router]);
+  }, [isAuthenticated, queryClient]);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -373,7 +453,11 @@ function RootComponent() {
       </AppErrorBoundary>
       <Toaster position="bottom-center" />
       <CookieBanner />
-      <SupportChat />
+      {mounted && (
+        <Suspense fallback={null}>
+          <SupportChat />
+        </Suspense>
+      )}
     </QueryClientProvider>
   );
 }

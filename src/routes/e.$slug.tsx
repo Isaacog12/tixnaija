@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { BackButton } from "@/components/back-button";
 import { formatNaira } from "@/lib/currency";
 import { filterActiveEvents } from "@/lib/events";
+import { optimizeImage, imageSrcSet } from "@/lib/image";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -150,18 +151,6 @@ export const Route = createFileRoute("/e/$slug")({
   },
 });
 
-// Helper for Supabase image transformations
-function optimizeImage(url: string | null | undefined, width: number): string | undefined {
-  if (!url) return undefined;
-  if (url.includes("/storage/v1/object/public/")) {
-    return (
-      url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/") +
-      `?width=${width}&format=webp`
-    );
-  }
-  return url;
-}
-
 type TicketType = {
   id: string;
   name: string;
@@ -279,10 +268,20 @@ function EventDetailPage() {
   const { slug } = Route.useParams();
   const navigate = useNavigate();
 
+  const loaderData = Route.useLoaderData();
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ["event", slug],
     queryFn: () => fetchEventBySlug(slug),
     staleTime: 1000 * 60 * 5, // 5 minutes
+    /**
+     * The route loader already fetched this exact event (on SSR and on every
+     * navigation), so seeding the cache with it removes a second round trip to
+     * Supabase on the highest-traffic page in the app. A `null` loader result
+     * means the event genuinely does not exist, and is seeded as-is so the
+     * missing-event state renders without another request.
+     */
+    initialData: loaderData,
   });
 
   const { data: similarEvents } = useQuery({
@@ -1203,7 +1202,11 @@ function EventBody({
             {event.cover_image_url ? (
               <img
                 src={optimizeImage(event.cover_image_url, 1200)}
+                srcSet={imageSrcSet(event.cover_image_url, [640, 900, 1200])}
+                sizes="(max-width: 768px) 100vw, 58vw"
                 alt={event.title}
+                width={1200}
+                height={750}
                 fetchPriority="high"
                 decoding="async"
                 className="aspect-[16/10] w-full object-cover"
@@ -1587,7 +1590,11 @@ function SimilarEvents({ events }: { events: any[] }) {
               {ev.cover_image_url && (
                 <img
                   src={optimizeImage(ev.cover_image_url, 400)}
+                  srcSet={imageSrcSet(ev.cover_image_url, [300, 400, 600])}
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                   alt={ev.title}
+                  width={400}
+                  height={300}
                   loading="lazy"
                   decoding="async"
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"

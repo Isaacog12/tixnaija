@@ -66,12 +66,26 @@ serve(async (req) => {
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
     const MAX_REQUESTS = 3;
 
+    // A trusted server-to-server caller (the support assistant) is throttled per
+    // IP and per session on its own side, and its x-forwarded-for can be rewritten
+    // by the gateway. Keeping it in the IP bucket would collapse every caller into
+    // one shared counter and stop real resends after three, so only the per-email
+    // bucket applies to it.
+    const serviceKey =
+      (Deno.env.get("APP_SECRET_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) ?? "";
+    const authorization = req.headers.get("authorization") ?? "";
+    const isServiceCall = Boolean(serviceKey) && authorization === `Bearer ${serviceKey}`;
+
     // Per-IP and per-email throttle. The ip_address column is used as the
     // bucket key in both cases, which keeps a single counter table in play.
-    for (const [endpoint, bucketKey] of [
-      ["resend_ticket_links_ip", ip],
-      ["resend_ticket_links_email", normalizedEmail],
-    ]) {
+    const buckets: [string, string][] = isServiceCall
+      ? [["resend_ticket_links_email", normalizedEmail]]
+      : [
+          ["resend_ticket_links_ip", ip],
+          ["resend_ticket_links_email", normalizedEmail],
+        ];
+
+    for (const [endpoint, bucketKey] of buckets) {
       const { count, error: countError } = await supabase
         .from("rate_limit_log")
         .select("*", { count: "exact", head: true })

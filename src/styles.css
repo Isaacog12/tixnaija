@@ -340,6 +340,29 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
+   PERFORMANCE — DECORATIVE BLUR ON SMALL SCREENS
+   ══════════════════════════════════════════════════════════════════════════ */
+/*
+ * The ambient glow layers use very large blur radii (80–130px) on elements up
+ * to 60vw across. Blur cost scales with the filtered area, so on a phone these
+ * decorative divs are the main source of dropped frames — and most traffic
+ * arrives on low-end Android hardware.
+ *
+ * Below the md breakpoint the radius is cut to roughly a third. These elements
+ * are already fully out of focus, so the visual result is near-identical while
+ * the GPU does far less work per frame.
+ *
+ * Overriding `--tw-blur` (rather than `filter`) keeps Tailwind's filter chain
+ * intact for any element that also uses brightness/grayscale/etc. This block
+ * sits outside every @layer so it wins over Tailwind's layered utilities.
+ */
+@media (max-width: 767px) {
+  .blur-\[80px\]  { --tw-blur: blur(32px); }
+  .blur-\[120px\] { --tw-blur: blur(44px); }
+  .blur-\[130px\] { --tw-blur: blur(48px); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
    UTILITY CLASSES
    ══════════════════════════════════════════════════════════════════════════ */
 

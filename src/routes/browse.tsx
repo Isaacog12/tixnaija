@@ -11,6 +11,7 @@ import { BackButton } from "@/components/back-button";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { formatNaira } from "@/lib/currency";
+import { optimizeImage, imageSrcSet } from "@/lib/image";
 
 const searchSchema = z.object({
   q: z.string().optional(),
@@ -22,6 +23,18 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/browse")({
   validateSearch: searchSchema,
+  /**
+   * Server-renders the unfiltered listing only.
+   *
+   * Deliberately NOT keyed on the search params: if it were, every filter
+   * change would block the navigation until the server answered, and the
+   * category pills would feel broken. Filters stay client-driven and instant.
+   * Crawlers land on /browse with no params, so this is what gets indexed.
+   */
+  loader: async () => ({
+    deps: { q: "", c: "All", date: "all" },
+    result: await fetchEvents("", "All", "all"),
+  }),
   component: BrowsePage,
   head: () => ({
     meta: [
@@ -30,7 +43,9 @@ export const Route = createFileRoute("/browse")({
       { property: "og:title", content: "Discover Events — TixNaija" },
       { property: "og:description", content: "Discover concerts, comedy shows, conferences and more happening across Nigeria." },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://tixnaija.name.ng/browse" },
     ],
+    // The canonical URL is emitted by the root route for every page.
   }),
 });
 
@@ -99,15 +114,6 @@ async function fetchEvents(q: string, category: string, dateFilter: string) {
   return { events: validEvents, minPrice };
 }
 
-// Helper for Supabase image transformations
-function optimizeImage(url: string | null | undefined, width: number): string | undefined {
-  if (!url) return undefined;
-  if (url.includes("/storage/v1/object/public/")) {
-    return url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/") + `?width=${width}&format=webp`;
-  }
-  return url;
-}
-
 const CATEGORIES = ["All", "Concerts", "Comedy", "Conferences", "Parties", "Church", "Campus", "Tech"];
 
 function BrowsePage() {
@@ -128,10 +134,23 @@ function BrowsePage() {
     setActiveView(view ?? "grid");
   }, [q, c, date, price, view]);
 
+  const loaderData = Route.useLoaderData();
+
+  /**
+   * The loader only ever fetched the unfiltered listing, so it may seed the
+   * cache solely when no filters are active. With filters applied the query
+   * fetches on the client exactly as before, keeping filter changes instant.
+   */
+  const loaderMatchesSearch =
+    loaderData.deps.q === (q ?? "") &&
+    loaderData.deps.c === (c ?? "All") &&
+    loaderData.deps.date === (date ?? "all");
+
   const query = useQuery({
     queryKey: ["browse", q ?? "", c ?? "All", date ?? "all"],
     queryFn: () => fetchEvents(q ?? "", c ?? "All", date ?? "all"),
     staleTime: 1000 * 60 * 5, // 5 minutes
+    initialData: loaderMatchesSearch ? loaderData.result : undefined,
   });
 
   const updateSearch = (updates: Partial<typeof searchSchema._type>) => {
@@ -349,9 +368,12 @@ function BrowsePage() {
               ? "flex flex-col gap-5" 
               : "grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"}
           >
-            {filteredEvents.map((ev) => {
+            {filteredEvents.map((ev, index) => {
               const min = query.data?.minPrice[ev.id];
               const isCancelled = ev.status === 'cancelled';
+              // The first row sits at or above the fold, so lazy-loading it
+              // would delay LCP instead of helping.
+              const isAboveFold = index < 4;
 
               const CardInner = (
                 <div className={`flex h-full w-full ${activeView === "list" ? "flex-col sm:flex-row sm:h-56" : "flex-col"}`}>
@@ -360,9 +382,21 @@ function BrowsePage() {
                     {ev.cover_image_url ? (
                       <img
                         src={optimizeImage(ev.cover_image_url, activeView === "list" ? 400 : 600)}
+                        srcSet={imageSrcSet(
+                          ev.cover_image_url,
+                          activeView === "list" ? [300, 400, 600] : [400, 600, 800],
+                        )}
+                        sizes={
+                          activeView === "list"
+                            ? "(max-width: 640px) 100vw, 40vw"
+                            : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                        }
                         alt={ev.title}
-                        loading="lazy"
+                        width={activeView === "list" ? 400 : 600}
+                        height={activeView === "list" ? 300 : 450}
+                        loading={isAboveFold ? "eager" : "lazy"}
                         decoding="async"
+                        fetchPriority={index === 0 ? "high" : "auto"}
                         className={`h-full w-full object-cover transition-transform duration-700 ${!isCancelled ? "group-hover:scale-110 group-hover:-rotate-1" : "opacity-75 grayscale"}`}
                       />
                     ) : (

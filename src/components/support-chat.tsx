@@ -34,6 +34,7 @@ export function SupportChat() {
   const [email, setEmail] = useState("");
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [context, setContext] = useState<string>("");
 
   const sessionIdRef = useRef<string>("");
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -69,6 +70,7 @@ export function SupportChat() {
           message,
           sessionId: sessionIdRef.current,
           email: emailOverride || undefined,
+          context: context || undefined,
         },
       });
 
@@ -76,7 +78,13 @@ export function SupportChat() {
         throw invokeError;
       }
 
-      const payload = data as { reply?: string; needsEmail?: boolean; error?: string } | null;
+      const payload = data as
+        | { reply?: string; needsEmail?: boolean; error?: string; context?: string }
+        | null;
+
+      if (payload?.context) {
+        setContext(payload.context);
+      }
 
       if (payload?.needsEmail) {
         setNeedsEmail(true);
