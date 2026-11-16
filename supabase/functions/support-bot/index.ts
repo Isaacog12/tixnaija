@@ -197,6 +197,7 @@ type Intent =
   | "venue"
   | "schedule"
   | "listing"
+  | "past_event"
   | "how_to_buy"
   | "organizer"
   | "payment"
@@ -309,6 +310,26 @@ const INTENT_RULES: Rule[] = [
     ],
   },
   {
+    // A question about an event that is already over: "can I buy a ticket for an
+    // event that has already ended?". The word "event" used to match `listing`
+    // (40), extractSearchTerm reduced the message to "already ended", the event
+    // lookup missed, and the listing fallback dumped a wall of upcoming events at
+    // someone who had asked a yes/no policy question. Weighted above how_to_buy
+    // (64) so "can I still buy a ticket for an event that ended" resolves here
+    // instead of to generic purchase steps, but below refund/transfer/order so a
+    // real money problem on a past event still wins.
+    intent: "past_event",
+    weight: 67,
+    phrases: [
+      "ended", "already ended", "has ended", "have ended", "event ended",
+      "ended already", "already over", "already happened", "has happened",
+      "already passed", "has passed", "event passed", "past event", "event is past",
+      "already finished", "has finished", "event that ended", "old event",
+      "ended event", "event don end", "e don end", "e don finish",
+      "event finish already", "don end already",
+    ],
+  },
+  {
     // Someone who wants to host, not attend. Nothing in the rule set covered
     // this, and "event" is a stopword, so "how do i create an event" reduced to
     // the search term "create", matched nothing, and escalated to a human as an
@@ -395,10 +416,19 @@ const INTENT_RULES: Rule[] = [
   {
     intent: "listing",
     weight: 40,
+    // Bare singular nouns ("event", "show", "party", "concert") are deliberately
+    // NOT triggers. A singular "event" appears in almost every question —
+    // "the event ended", "my event was cancelled", "an event that..." — so letting
+    // it fire on its own made the assistant dump a wall of upcoming events at
+    // people who had asked something else entirely (the classic keyword-bot bug).
+    // Plurals and explicit discovery phrases still signal a genuine "what can I
+    // go to?" browse; a lone generic noun now falls through to the search/clarify
+    // path instead of a confident wrong answer.
     phrases: [
-      "events", "event", "shows", "show", "parties", "party", "concert", "concerts",
-      "what's happening", "whats happening", "upcoming", "wetin dey happen",
-      "what is happening", "this weekend", "this week", "tonight", "today",
+      "events", "shows", "parties", "concerts",
+      "what's happening", "whats happening", "what is happening", "what's on",
+      "whats on", "any events", "show events", "upcoming", "upcoming events",
+      "wetin dey happen", "this weekend", "this week", "tonight", "today",
     ],
   },
   {
@@ -732,6 +762,7 @@ function categoryFor(intent: Intent): string {
     case "venue":
     case "availability":
     case "cancelled":
+    case "past_event":
       return "event_inquiry";
     case "payment":
     case "promo":
@@ -1146,6 +1177,17 @@ serve(async (req: Request) => {
       return reply({
         reply:
           "You can list an event on TixNaija yourself — there's no approval queue. Create an account at /auth, then open /dashboard to publish the event, set your ticket types and prices, and watch sales come in.\n\nTicket money settles to your own bank account through Paystack, and you can track and request payouts from the same dashboard.\n\nWant a hand setting it up? Say \"talk to a person\" and I'll pass you to the team.",
+        escalated: false,
+        context: contextSlug || undefined,
+      });
+    }
+
+    // Answered directly, before the event-search results below can hijack a
+    // yes/no policy question with a listing of upcoming events.
+    if (intent === "past_event") {
+      return reply({
+        reply:
+          "No — once an event has ended, its tickets come off sale and can't be bought any more. Tickets are only on sale for events that are still upcoming; you can see everything currently live at /browse.\n\nIf you already bought a ticket for an event that's now over and something went wrong with it, or you were charged for an event that got cancelled rather than simply ending, say \"talk to a person\" and I'll pass it to the support team.",
         escalated: false,
         context: contextSlug || undefined,
       });
