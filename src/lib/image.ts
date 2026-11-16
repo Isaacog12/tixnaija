@@ -14,6 +14,15 @@
 const STORAGE_OBJECT = "/storage/v1/object/public/";
 const STORAGE_RENDER = "/storage/v1/render/image/public/";
 
+/**
+ * Image transformations are a paid Supabase add-on. This project's tenant
+ * answers the render endpoint with 403 FeatureNotEnabled, which surfaced as
+ * broken event posters. While that is the case every helper below returns the
+ * original public object URL, which serves fine. Flip this to true only after
+ * transformations are enabled in the Supabase dashboard.
+ */
+const IMAGE_TRANSFORMS_ENABLED = false;
+
 export type ImageFormat = "webp" | "avif" | "origin";
 
 function isSupabaseStorageUrl(url: string): boolean {
@@ -31,6 +40,7 @@ export function optimizeImage(
   format: ImageFormat = "webp",
 ): string | undefined {
   if (!url) return undefined;
+  if (!IMAGE_TRANSFORMS_ENABLED) return url;
   if (!isSupabaseStorageUrl(url)) return url;
 
   const base = url.replace(STORAGE_OBJECT, STORAGE_RENDER);
@@ -46,6 +56,7 @@ export function imageSrcSet(
   widths: number[],
   format: ImageFormat = "webp",
 ): string | undefined {
+  if (!IMAGE_TRANSFORMS_ENABLED) return undefined;
   if (!url || !isSupabaseStorageUrl(url)) return undefined;
 
   return widths

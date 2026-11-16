@@ -253,6 +253,12 @@ const PRIVATE_APP_PATHS = [
   "/tickets",
 ];
 
+/**
+ * Tables the signed-out pages actually read. Kept narrow on purpose — see the
+ * realtime effect in RootComponent.
+ */
+const PUBLIC_REALTIME_TABLES = ["events", "ticket_types", "sponsored_banners"];
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: ({ matches }) => {
     /**
@@ -415,28 +421,34 @@ function RootComponent() {
   }, [router]);
 
   /**
-   * Realtime cache sync — signed-in users only.
+   * Realtime cache sync.
    *
-   * This channel listens to *every* change in the `public` schema and drops the
-   * whole React Query cache when anything moves. That is what keeps organiser
-   * dashboards live during a sale, but it is wasteful for anonymous visitors:
-   * they hold no session-scoped data, and Supabase still fans every write out
-   * to each of their sockets. Public pages stay correct through their own
-   * `staleTime`, so the subscription is simply not opened for them.
+   * Signed-in users keep the whole-schema subscription: organiser dashboards and
+   * the admin screens read orders, tickets, messages and audit logs, and those
+   * have to move live during a sale.
+   *
+   * Anonymous visitors are restricted to the tables the public pages read.
+   * Previously every socket received every write in the schema — orders,
+   * tickets, support messages, audit logs — only to invalidate a cache holding
+   * two or three public queries. Ticket availability on event pages still
+   * updates live, which is the part visitors actually notice.
    */
   useEffect(() => {
-    if (!isAuthenticated) return;
+    const invalidateCache = () => {
+      queryClient.invalidateQueries();
+    };
 
-    const channel = supabase
-      .channel('global-sync')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public' },
-        () => {
-          queryClient.invalidateQueries();
-        }
-      )
-      .subscribe();
+    const channel = supabase.channel(isAuthenticated ? "global-sync" : "public-sync");
+
+    if (isAuthenticated) {
+      channel.on("postgres_changes", { event: "*", schema: "public" }, invalidateCache);
+    } else {
+      for (const table of PUBLIC_REALTIME_TABLES) {
+        channel.on("postgres_changes", { event: "*", schema: "public", table }, invalidateCache);
+      }
+    }
+
+    channel.subscribe();
 
     return () => {
       supabase.removeChannel(channel);

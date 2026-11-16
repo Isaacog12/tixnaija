@@ -143,6 +143,8 @@ type Intent =
   | "promo"
   | "waitlist"
   | "cancelled"
+  | "about"
+  | "capabilities"
   | "account"
   | "app"
   | "contact"
@@ -267,6 +269,26 @@ const INTENT_RULES: Rule[] = [
     intent: "waitlist",
     weight: 58,
     phrases: ["waitlist", "wait list", "notify me", "join queue", "sold out notify"],
+  },
+  {
+    intent: "capabilities",
+    weight: 59,
+    phrases: [
+      "help", "what can you do", "what do you do", "what can i ask", "how can you help",
+      "how do you work", "what are you", "menu", "options", "commands", "features",
+      "what should i ask", "wetin you fit do", "how you go help me", "what else can you do",
+    ],
+  },
+  {
+    intent: "about",
+    weight: 57,
+    phrases: [
+      "who created", "who made", "who built", "who owns", "who owns tixnaija",
+      "who founded", "founder", "ceo", "who is behind", "who runs", "owner",
+      "tix africa", "tixafrica", "tix-africa", "is this tix africa",
+      "are you tix africa", "same as tix africa", "about tixnaija", "about you",
+      "who are you", "what is tixnaija",
+    ],
   },
   {
     intent: "account",
@@ -1024,6 +1046,34 @@ serve(async (req: Request) => {
     }
 
     // ---- 6. Static, policy-safe guidance ----
+    if (intent === "capabilities") {
+      return reply({
+        reply: [
+          "Here's what I can do:",
+          "",
+          "- Find an event and give you the date, time and venue — try \"when is <event name>\"",
+          "- Show ticket prices and how many are left — \"how much is <event name>\"",
+          "- Tell you what's coming up — \"what events are happening\"",
+          "- Resend your ticket links — \"I didn't get my ticket\"",
+          "- Explain refunds, payments, promo codes, waitlists and accounts",
+          "- Answer who runs the platform",
+          "",
+          "If I can't answer something, I'll pass it to a person who can.",
+        ].join("\n"),
+        escalated: false,
+        context: contextSlug || undefined,
+      });
+    }
+
+    if (intent === "about") {
+      return reply({
+        reply:
+          "TixNaija was created by Isaac Ogbomo.\n\nIt's an independent Nigerian ticketing platform. TixNaija is not connected to Tix Africa in any way — separate company, separate team, separate platform.",
+        escalated: false,
+        context: contextSlug || undefined,
+      });
+    }
+
     if (intent === "how_to_buy") {
       return reply({
         reply:
