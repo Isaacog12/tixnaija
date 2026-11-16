@@ -110,7 +110,7 @@ serve(async (req: Request) => {
                 The previous ticket codes have been invalidated and reissued to the new recipient.
               </p>
               <p style="font-size: 14px; line-height: 1.6; color: #dc2626; font-weight: 500;">
-                If you did not authorize or request this change, please contact support@tixnaija.name.ng immediately.
+                If you did not authorize or request this change, please contact support.tixnaija@gmail.com immediately.
               </p>
               <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
               <p style="font-size: 12px; color: #9ca3af; text-align: center;">
@@ -168,6 +168,39 @@ serve(async (req: Request) => {
               <div style="background: #f9fafb; border-left: 4px solid #dc2626; padding: 16px; margin-bottom: 24px; border-radius: 4px; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${escapeHtml(item.payload?.message || "")}</div>
               <p style="font-size: 14px; line-height: 1.6;">
                 Open the case in the support dashboard to reply, or email the customer directly.
+              </p>
+              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+              <p style="font-size: 12px; color: #9ca3af; text-align: center;">
+                TixNaija · Independent Nigerian Ticketing Platform
+              </p>
+            </div>
+          `;
+        } else if (item.template === "support_acknowledgement") {
+          // Customer-facing receipt for a question the assistant escalated.
+          // Before this template existed, both support_escalation recipients were
+          // staff inboxes, so the customer who asked the question received no
+          // email at all despite being told a human would follow up.
+          const ackCaseNumber = String(item.payload?.case_number || "unassigned").replace(/[\r\n]+/g, " ");
+          const ackSubject = String(item.payload?.subject || "your question").replace(/[\r\n]+/g, " ");
+          subject = `[TixNaija Support] We received your question — ${ackCaseNumber}`;
+          htmlBody = `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1a1a1a; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;">
+              <div style="margin-bottom: 24px; border-bottom: 2px solid #111827; padding-bottom: 12px;">
+                <h1 style="font-size: 20px; font-weight: bold; margin: 0; color: #111827;">We have your question</h1>
+              </div>
+              <p style="font-size: 15px; line-height: 1.6; margin-bottom: 16px;">
+                The TixNaija assistant couldn't answer this one, so it has been passed to our support team.
+              </p>
+              <div style="background: #f9fafb; border-left: 4px solid #111827; padding: 16px; margin-bottom: 20px; border-radius: 4px; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${escapeHtml(ackSubject)}</div>
+              <table style="width: 100%; font-size: 14px; line-height: 1.6; margin-bottom: 20px; border-collapse: collapse;">
+                <tr><td style="padding: 6px 0; color: #6b7280; width: 150px;">Your case number</td><td style="padding: 6px 0; font-weight: 600;">${escapeHtml(ackCaseNumber)}</td></tr>
+              </table>
+              <p style="font-size: 14px; line-height: 1.6; margin-bottom: 16px;">
+                We review requests within 3 business days and will reply to this email address. Keep the case number handy &mdash; quoting it gets your answer faster.
+              </p>
+              <p style="font-size: 14px; line-height: 1.6;">
+                If your question is about a missing ticket, you can resend the links yourself right now at
+                <a href="https://tixnaija.name.ng/my-tickets" style="color: #111827; text-decoration: underline;">tixnaija.name.ng/my-tickets</a>.
               </p>
               <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
               <p style="font-size: 12px; color: #9ca3af; text-align: center;">

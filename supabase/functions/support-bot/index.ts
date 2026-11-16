@@ -8,8 +8,31 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 // ---------------------------------------------------------------------------
 
 // Server-side only. Never accepted from the client.
-const ESCALATION_RECIPIENT = "isaacnerds@gmail.com";
-const PUBLIC_SUPPORT_ADDRESS = "support@tixnaija.name.ng";
+const PUBLIC_SUPPORT_ADDRESS = "support.tixnaija@gmail.com";
+
+function readEnvVar(name: string): string {
+  // @ts-ignore Deno is provided by the Edge runtime, not by the app tsconfig.
+  return Deno.env.get(name) ?? "";
+}
+
+/**
+ * Staff inboxes notified when the assistant escalates.
+ *
+ * Read from SUPPORT_ESCALATION_EMAILS (comma-separated) so an address can be
+ * retired without a code change. That matters because escalation emails carry
+ * the customer's address, IP and full question — a recipient list baked into
+ * source keeps forwarding personal data to a mailbox after nobody is watching
+ * it. The default preserves current behaviour.
+ */
+function escalationRecipients(): string[] {
+  const configured = readEnvVar("SUPPORT_ESCALATION_EMAILS")
+    .split(",")
+    .map((entry) => entry.trim().toLowerCase())
+    .filter((entry) => isValidEmail(entry));
+
+  const fallback = ["isaacnerds@gmail.com", PUBLIC_SUPPORT_ADDRESS];
+  return Array.from(new Set(configured.length > 0 ? configured : fallback));
+}
 
 // Quoted from /refunds — policy only, never a promise about one customer.
 const REFUND_POLICY =
@@ -32,6 +55,11 @@ const ESCALATION_WINDOW_MS = 60 * 60 * 1000;
 const IP_MAX_ESCALATIONS = 3;
 const EMAIL_MAX_ESCALATIONS = 2;
 
+// Ticket resends mail a real inbox, so they get their own per-address budget.
+const RESEND_WINDOW_MS = 60 * 60 * 1000;
+const RESEND_MAX_PER_EMAIL = 3;
+const RESEND_DOWNSTREAM_TIMEOUT_MS = 8000;
+
 const GENERIC_ERROR = "Something went wrong on our side. Please try again.";
 const GENERIC_RATE_LIMIT = "Too many messages. Please wait a few minutes and try again.";
 
@@ -42,6 +70,16 @@ const allowedOrigins = [
   "http://localhost:8080",
   "http://localhost:5173",
 ];
+
+/**
+ * Vercel preview deployments for this project only.
+ *
+ * The previous check was `origin.endsWith(".vercel.app")`, which allowed any
+ * Vercel tenant on earth to call this function from a browser. Preview URLs are
+ * `<project>-<hash>-<scope>.vercel.app`, so anchoring on the project name keeps
+ * previews working without opening the door to `anything.vercel.app`.
+ */
+const VERCEL_PREVIEW_ORIGIN = /^https:\/\/tixnaija[a-z0-9-]*\.vercel\.app$/;
 
 const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -55,11 +93,32 @@ function getCorsHeaders(req: Request) {
   // 127.0.0.1:8080 in another, and both must be treated as the dev origin.
   const isLoopback = /^http:\/\/(localhost|127\.0\.0\.1|\[::1\]):\d+$/.test(origin);
   const isAllowed =
-    allowedOrigins.includes(origin) || origin.endsWith(".vercel.app") || isLoopback;
-  return {
-    ...corsHeaders,
-    "Access-Control-Allow-Origin": isAllowed ? origin : "https://tixnaija.vercel.app",
-  };
+    allowedOrigins.includes(origin) || VERCEL_PREVIEW_ORIGIN.test(origin) || isLoopback;
+
+  // A rejected origin gets no Access-Control-Allow-Origin at all. Naming a
+  // fixed origin the request did not come from describes a permission that was
+  // not granted, and misleads anyone reading the response.
+  return isAllowed
+    ? { ...corsHeaders, "Access-Control-Allow-Origin": origin }
+    : { ...corsHeaders };
+}
+
+/**
+ * Last entry of x-forwarded-for, not the first.
+ *
+ * A caller can send its own x-forwarded-for, and the gateway appends the address
+ * it actually observed — so the first value is attacker-chosen and the last is
+ * not. Every IP-keyed cap in this function (20 messages per 10 minutes, 3
+ * escalations per hour) was bypassable by rotating that header while it read the
+ * first value.
+ */
+function clientIp(req: Request): string {
+  const header = req.headers.get("x-forwarded-for") ?? "";
+  const entries = header
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  return entries[entries.length - 1] || "unknown";
 }
 
 // ---------------------------------------------------------------------------
@@ -139,6 +198,7 @@ type Intent =
   | "schedule"
   | "listing"
   | "how_to_buy"
+  | "organizer"
   | "payment"
   | "promo"
   | "waitlist"
@@ -246,6 +306,24 @@ const INTENT_RULES: Rule[] = [
     phrases: [
       "how do i buy", "how to buy", "how can i buy", "how to purchase", "where to buy",
       "how do i get a ticket", "how i go buy", "buy ticket", "purchase", "checkout",
+    ],
+  },
+  {
+    // Someone who wants to host, not attend. Nothing in the rule set covered
+    // this, and "event" is a stopword, so "how do i create an event" reduced to
+    // the search term "create", matched nothing, and escalated to a human as an
+    // unanswerable question. Weighted just above how_to_buy and below every
+    // specific customer intent, so "my event was cancelled" (66) and "what time
+    // does my event start" (68) still resolve to the customer's actual problem.
+    intent: "organizer",
+    weight: 65,
+    phrases: [
+      "organizer", "organiser", "event organizer", "event organiser",
+      "host an event", "host my event", "hosting an event", "list my event",
+      "list an event", "how do i list", "create an event", "create event",
+      "sell tickets", "selling tickets", "promote my event", "my own event",
+      "i have an event", "planning an event", "become an organizer",
+      "sign up as an organizer", "box office", "payout", "payouts", "my payout",
     ],
   },
   {
@@ -413,7 +491,11 @@ const SENSITIVE_PATTERNS: RegExp[] = [
   // Starting at 15 keeps a 13-digit international phone number out of the net.
   /\b(?:\d[ -]?){15,19}\b/,
   // A payment credential supplied as a value: "cvv 123", "pin: 1234", "bvn 12345678901".
-  /\b(cvv|cvc|card pin|pin code|pin|otp|one time password|bvn)\b\s*(?:is|are|:|=|-)?\s*\d{3,11}\b/i,
+  // NIN and national id are included because an 11-digit NIN is personal data
+  // under the same class as a BVN. A bare 11-digit run is deliberately NOT
+  // matched: a Nigerian mobile number is also 11 digits, and refusing those
+  // would block legitimate messages.
+  /\b(cvv|cvc|card pin|pin code|pin|otp|one time password|bvn|nin|national id)\b\s*(?:is|are|:|=|-)?\s*\d{3,11}\b/i,
   // A password supplied as a value. The digit requirement keeps "my password is
   // not working" on the account path instead of refusing it.
   /\b(password|passcode)\b\s*(?:is|:|=)\s*\S*\d\S*/i,
@@ -428,7 +510,7 @@ function containsSensitiveData(message: string): boolean {
 }
 
 const SENSITIVE_REFUSAL =
-  "Please don't send that here — I can't accept card numbers, CVV codes, PINs, passwords, OTPs or bank details, and this chat doesn't store them.\n\nIf a payment has an issue, tell me what happened without the card details and I'll pass it to the support team, or use /my-tickets to resend your links.";
+  "Please don't send that here — I can't accept card numbers, CVV codes, PINs, passwords, OTPs, NIN, BVN or bank details, and this chat doesn't store them.\n\nIf a payment has an issue, tell me what happened without the card details and I'll pass it to the support team, or use /my-tickets to resend your links.";
 
 /**
  * Cheap gibberish gate. Stops "asdf" from burning an escalation (and its
@@ -513,6 +595,33 @@ function describeEvent(event: PublicEvent): string {
   if (place) lines.push(place);
   lines.push(`Details: /e/${event.slug}`);
   return lines.join("\n");
+}
+
+/**
+ * Structured event reference sent alongside the text reply.
+ *
+ * The chat panel renders reply text as plain text, so a path like `/e/slug`
+ * arrived as inert characters the customer had to retype on a phone. Cards give
+ * the client something tappable to render. Purely additive — the `reply` string
+ * still carries the full answer for any client that ignores them.
+ */
+interface EventCard {
+  title: string;
+  slug: string;
+  when: string;
+  place: string | null;
+  url: string;
+}
+
+function toCard(event: PublicEvent): EventCard {
+  const place = [event.venue_name, event.city].filter(Boolean).join(", ");
+  return {
+    title: event.title,
+    slug: event.slug,
+    when: formatWhen(event.start_datetime, event.end_datetime),
+    place: place || null,
+    url: `/e/${event.slug}`,
+  };
 }
 
 function describeTickets(types: TicketType[]): string {
@@ -614,21 +723,50 @@ function categoryFor(intent: Intent): string {
     case "order":
     case "transfer":
       return "missing_ticket";
+    // A price question is about an event's ticket tiers, not about a payment
+    // that went wrong. Grouping it under "payment" made payment look like the
+    // dominant support issue when much of it was pre-sale browsing.
     case "price":
-    case "payment":
-    case "promo":
-      return "payment";
     case "listing":
     case "schedule":
     case "venue":
     case "availability":
     case "cancelled":
       return "event_inquiry";
+    case "payment":
+    case "promo":
+      return "payment";
     case "account":
       return "account";
     default:
       return "other";
   }
+}
+
+/**
+ * Priority reflects what the customer stands to lose, not how confidently the
+ * intent matched. Every escalation used to be written as "high", so a refund
+ * request and a message the assistant simply did not understand arrived
+ * identically and the field stopped carrying any triage information.
+ */
+function priorityFor(intent: Intent): "high" | "medium" {
+  switch (intent) {
+    // Money has already moved, or a paid ticket has not arrived.
+    case "refund":
+    case "order":
+    case "transfer":
+    case "payment":
+      return "high";
+    default:
+      return "medium";
+  }
+}
+
+interface EscalateResult {
+  ok: boolean;
+  caseNumber: string | null;
+  /** False when the case was created but its notifications could not be queued. */
+  notified: boolean;
 }
 
 async function escalate(
@@ -642,9 +780,10 @@ async function escalate(
     guestEmail: string | null;
     lastEvent: string | null;
   },
-): Promise<{ ok: boolean }> {
+): Promise<EscalateResult> {
   const { message, intent, sessionId, ip, caller, guestEmail, lastEvent } = params;
   const contactEmail = caller.email ?? guestEmail;
+  const requestedAt = new Date().toISOString();
 
   const { data: created, error: caseError } = await supabase
     .from("support_cases")
@@ -652,11 +791,18 @@ async function escalate(
       customer_id: caller.userId,
       guest_email: caller.userId ? null : guestEmail,
       subject: message.slice(0, 150),
+      // The untruncated question. A guest has no auth.users row, so nothing can
+      // be inserted into support_case_messages on their behalf (sender_id is NOT
+      // NULL and foreign-keyed to auth.users). support_view_case presents this
+      // column as the opening thread message instead. Without it the customer's
+      // words past character 150 were discarded and the portal showed an empty
+      // timeline.
+      guest_message: caller.userId ? null : message,
       category: categoryFor(intent),
       status: "open",
-      priority: "high",
+      priority: priorityFor(intent),
       is_escalated: true,
-      escalated_at: new Date().toISOString(),
+      escalated_at: requestedAt,
       escalated_reason: "Automated assistant could not resolve this question",
     })
     .select("id, case_number")
@@ -664,41 +810,76 @@ async function escalate(
 
   if (caseError || !created) {
     console.error("support-bot: case insert failed", caseError);
-    return { ok: false };
+    return { ok: false, caseNumber: null, notified: false };
   }
 
-  // The internal inbox and the public support address both get a copy, so a
-  // customer replying to support@tixnaija.name.ng isn't talking to nobody.
-  const recipients = Array.from(
-    new Set([ESCALATION_RECIPIENT, PUBLIC_SUPPORT_ADDRESS].filter(Boolean)),
-  );
-
-  const { error: outboxError } = await supabase.from("email_outbox").insert(
-    recipients.map((recipient) => ({
+  // A signed-in customer does have an auth.users row, so their question goes
+  // into the real thread table and lands beside the staff replies.
+  if (caller.userId) {
+    const { error: threadError } = await supabase.from("support_case_messages").insert({
       case_id: created.id,
-      recipient_email: recipient,
-      template: "support_escalation",
-      status: "pending",
-      payload: {
-        case_number: created.case_number,
-        customer_email: contactEmail,
-        customer_id: caller.userId,
-        message,
-        intent,
-        last_event: lastEvent,
-        session_id: sessionId,
-        ip_address: ip,
-        requested_at: new Date().toISOString(),
-      },
-    })),
-  );
+      sender_id: caller.userId,
+      is_internal: false,
+      content: message,
+    });
+    if (threadError) {
+      // The subject still carries the first 150 characters, so the case is
+      // usable. Logged rather than swallowed.
+      console.error("support-bot: thread insert failed", threadError);
+    }
+  }
+
+  const staffRows = escalationRecipients().map((recipient) => ({
+    case_id: created.id,
+    recipient_email: recipient,
+    template: "support_escalation",
+    status: "pending",
+    payload: {
+      case_number: created.case_number,
+      customer_email: contactEmail,
+      customer_id: caller.userId,
+      message,
+      intent,
+      last_event: lastEvent,
+      session_id: sessionId,
+      ip_address: ip,
+      requested_at: requestedAt,
+    },
+  }));
+
+  // The customer gets a receipt carrying the case number. Every recipient used
+  // to be a staff inbox, so the person who asked received no email at all while
+  // the reply text promised a human would follow up by email.
+  const acknowledgementRows = contactEmail
+    ? [
+        {
+          case_id: created.id,
+          recipient_email: contactEmail,
+          template: "support_acknowledgement",
+          status: "pending",
+          payload: {
+            case_number: created.case_number,
+            subject: message.slice(0, 300),
+            intent,
+            requested_at: requestedAt,
+          },
+        },
+      ]
+    : [];
+
+  const { error: outboxError } = await supabase
+    .from("email_outbox")
+    .insert([...staffRows, ...acknowledgementRows]);
 
   if (outboxError) {
+    // The case exists and is visible in the support portal, so reporting failure
+    // here would hand the customer a 503 that invites a retry and a duplicate
+    // case. Told the truth instead: it was passed on, notification is degraded.
     console.error("support-bot: outbox insert failed", outboxError);
-    return { ok: false };
+    return { ok: true, caseNumber: created.case_number, notified: false };
   }
 
-  return { ok: true };
+  return { ok: true, caseNumber: created.case_number, notified: true };
 }
 
 // ---------------------------------------------------------------------------
@@ -718,15 +899,12 @@ serve(async (req: Request) => {
     });
   }
 
-  // @ts-ignore Deno is provided by the Edge runtime, not by the app tsconfig.
-  const readEnv = (name: string): string => Deno.env.get(name) ?? "";
-
-  const supabaseUrl = readEnv("SUPABASE_URL");
-  const serviceKey = readEnv("APP_SECRET_KEY") || readEnv("SUPABASE_SERVICE_ROLE_KEY");
+  const supabaseUrl = readEnvVar("SUPABASE_URL");
+  const serviceKey = readEnvVar("APP_SECRET_KEY") || readEnvVar("SUPABASE_SERVICE_ROLE_KEY");
   const anonKey =
-    readEnv("APP_PUBLISHABLE_KEY") ||
-    readEnv("SUPABASE_PUBLISHABLE_KEY") ||
-    readEnv("SUPABASE_ANON_KEY");
+    readEnvVar("APP_PUBLISHABLE_KEY") ||
+    readEnvVar("SUPABASE_PUBLISHABLE_KEY") ||
+    readEnvVar("SUPABASE_ANON_KEY");
 
   if (!supabaseUrl || !serviceKey) {
     console.error("support-bot: missing service credentials");
@@ -785,7 +963,7 @@ serve(async (req: Request) => {
     // Last event shown in this chat, so follow-ups like "how much?" resolve.
     const contextSlug = typeof body?.context === "string" ? body.context.trim().slice(0, 120) : "";
 
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const ip = clientIp(req);
 
     const ipLimit = await consumeLimit(
       supabase, ip, "support_bot_message", IP_WINDOW_MS, IP_MAX_MESSAGES, true,
@@ -839,13 +1017,27 @@ serve(async (req: Request) => {
     const findEvents = async (term: string): Promise<PublicEvent[]> => {
       if (term.length < 2) return [];
 
-      const byTitle = await supabase
-        .from("events")
-        .select(eventFields)
-        .eq("status", "published")
-        .ilike("title", `%${escapeLike(term)}%`)
-        .order("start_datetime", { ascending: true })
-        .limit(5);
+      // Title and city run together. Both are common shapes ("burna boy",
+      // "events in lagos") and they were previously awaited one after another,
+      // so every lookup that missed on the title paid two round trips before the
+      // third fallback even started.
+      const [byTitle, byCity] = await Promise.all([
+        supabase
+          .from("events")
+          .select(eventFields)
+          .eq("status", "published")
+          .ilike("title", `%${escapeLike(term)}%`)
+          .order("start_datetime", { ascending: true })
+          .limit(5),
+        supabase
+          .from("events")
+          .select(eventFields)
+          .eq("status", "published")
+          .ilike("city", `%${escapeLike(term)}%`)
+          .order("start_datetime", { ascending: true })
+          .limit(5),
+      ]);
+
       if (byTitle.error) {
         console.error("support-bot: event lookup failed", byTitle.error);
         return [];
@@ -853,6 +1045,7 @@ serve(async (req: Request) => {
       if (byTitle.data && byTitle.data.length > 0) return byTitle.data as PublicEvent[];
 
       // Retry with the longest word alone: catches "lagos party vibes 2026".
+      // Precedence is unchanged — a word match still beats a city match.
       const longest = term
         .split(" ")
         .filter((word) => word.length >= 4)
@@ -869,13 +1062,6 @@ serve(async (req: Request) => {
       }
 
       // A place rather than a title: "events in lagos".
-      const byCity = await supabase
-        .from("events")
-        .select(eventFields)
-        .eq("status", "published")
-        .ilike("city", `%${escapeLike(term)}%`)
-        .order("start_datetime", { ascending: true })
-        .limit(5);
       if (byCity.error) return [];
       return (byCity.data ?? []) as PublicEvent[];
     };
@@ -956,11 +1142,21 @@ serve(async (req: Request) => {
       });
     }
 
+    if (intent === "organizer") {
+      return reply({
+        reply:
+          "You can list an event on TixNaija yourself — there's no approval queue. Create an account at /auth, then open /dashboard to publish the event, set your ticket types and prices, and watch sales come in.\n\nTicket money settles to your own bank account through Paystack, and you can track and request payouts from the same dashboard.\n\nWant a hand setting it up? Say \"talk to a person\" and I'll pass you to the team.",
+        escalated: false,
+        context: contextSlug || undefined,
+      });
+    }
+
     // ---- 2. Events we found ----
     if (events.length > 1) {
       const header = `I found ${events.length} events that match. Which one do you mean?`;
       return reply({
         reply: `${header}\n\n${events.map(describeEvent).join("\n\n")}`,
+        cards: events.map(toCard),
         escalated: false,
         context: contextSlug || undefined,
       });
@@ -972,6 +1168,7 @@ serve(async (req: Request) => {
         const types = await findTickets(referencedEvent.id);
         return reply({
           reply: `${describeEvent(referencedEvent)}\n\n${describeTickets(types)}`,
+          cards: [toCard(referencedEvent)],
           escalated: false,
           context: referencedEvent.slug,
         });
@@ -990,6 +1187,7 @@ serve(async (req: Request) => {
           (upcoming.length > 0
             ? `\n\nComing up soon:\n\n${upcoming.map(describeEvent).join("\n\n")}`
             : ""),
+        cards: upcoming.map(toCard),
         escalated: false,
         context: contextSlug || undefined,
       });
@@ -999,6 +1197,7 @@ serve(async (req: Request) => {
     if (referencedEvent && ["schedule", "venue", "cancelled"].includes(intent)) {
       return reply({
         reply: await withTickets(referencedEvent, false),
+        cards: [toCard(referencedEvent)],
         escalated: false,
         context: referencedEvent.slug,
       });
@@ -1040,6 +1239,7 @@ serve(async (req: Request) => {
       }
       return reply({
         reply: `Here's what's coming up:\n\n${upcoming.map(describeEvent).join("\n\n")}\n\nSee everything at /browse.`,
+        cards: upcoming.map(toCard),
         escalated: false,
         context: contextSlug || undefined,
       });
@@ -1056,6 +1256,7 @@ serve(async (req: Request) => {
           "- Tell you what's coming up — \"what events are happening\"",
           "- Resend your ticket links — \"I didn't get my ticket\"",
           "- Explain refunds, payments, promo codes, waitlists and accounts",
+          "- Show you how to list and sell tickets for your own event",
           "- Answer who runs the platform",
           "",
           "If I can't answer something, I'll pass it to a person who can.",
@@ -1146,6 +1347,37 @@ serve(async (req: Request) => {
         });
       }
 
+      /**
+       * Per-address cap on triggering a resend, independent of the caller's IP.
+       *
+       * What matters here is how often one inbox can be mailed, not how often one
+       * caller can ask. resend-ticket-links caps 3 per address per 10 minutes but
+       * exempts service-role callers from its IP bucket, so this path was bounded
+       * only by the bot's per-caller IP limit. Without a bucket of its own the
+       * assistant could be walked down a list of addresses to harass.
+       */
+      const resendLimit = await consumeLimit(
+        supabase, orderEmail, "support_bot_resend_trigger", RESEND_WINDOW_MS, RESEND_MAX_PER_EMAIL, true,
+      );
+
+      if (resendLimit.unavailable) {
+        return new Response(JSON.stringify({ error: GENERIC_ERROR }), {
+          status: 503,
+          headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
+      if (!resendLimit.allowed) {
+        // Wording stays neutral: a capped reply must not reveal whether the
+        // address has any orders either.
+        return reply({
+          reply:
+            "I've already sent a resend for that address recently, so give it a few minutes and check the inbox and spam folder. Still nothing? Say \"talk to a person\" and I'll pass it on.",
+          escalated: false,
+          context: contextSlug || undefined,
+        });
+      }
+
       // Deliberately neutral: this must not reveal whether the address has orders.
       await triggerTicketResend(supabaseUrl, serviceKey, ip, orderEmail);
 
@@ -1168,7 +1400,7 @@ serve(async (req: Request) => {
 
     // ---- 7. Everything that needs a human ----
     const runEscalation = async (lead: string, successText?: string) => {
-      const status = await maybeEscalate({
+      const { status, caseNumber } = await maybeEscalate({
         supabase, message, intent, sessionId, ip, caller, guestEmail,
         lastEvent: referencedEvent?.slug ?? (contextSlug || null),
       });
@@ -1182,11 +1414,15 @@ serve(async (req: Request) => {
       }
 
       if (status === "capped") {
+        // Deliberately does not claim the new question was captured. The old
+        // wording said "they have it, there's no need to send it again", which
+        // was untrue for a second, different problem — so the customer stopped
+        // chasing something nobody had ever seen.
         return reply({
           reply:
-            "I've already passed your earlier message to the support team, so they have it — there's no need to send it again. For anything urgent you can also email " +
+            "I've already passed a message from you to the support team recently, so someone is looking into it. To keep the queue moving I can't open a second case just yet.\n\nIf this is a different problem, please try again in about an hour, or email " +
             PUBLIC_SUPPORT_ADDRESS +
-            ".",
+            " and they'll pick it up straight away.",
           escalated: false,
           context: contextSlug || undefined,
         });
@@ -1199,13 +1435,21 @@ serve(async (req: Request) => {
         });
       }
 
+      const confirmation =
+        successText ??
+        "I've passed this to the support team and they'll follow up by email. For anything urgent you can also reach them at " +
+          PUBLIC_SUPPORT_ADDRESS +
+          ".";
+
+      // The case number was fetched and discarded before, so the customer had no
+      // reference. Returning later meant starting from zero with nothing to
+      // connect the two conversations.
       return reply({
-        reply:
-          successText ??
-          "I've passed this to the support team and they'll follow up by email. For anything urgent you can also reach them at " +
-            PUBLIC_SUPPORT_ADDRESS +
-            ".",
+        reply: caseNumber
+          ? `${confirmation}\n\nYour case number is ${caseNumber}. Keep it — quoting it gets you a faster answer.`
+          : confirmation,
         escalated: true,
+        caseNumber: caseNumber ?? undefined,
         context: contextSlug || undefined,
       });
     };
@@ -1226,6 +1470,7 @@ serve(async (req: Request) => {
     if (referencedEvent) {
       return reply({
         reply: `${await withTickets(referencedEvent, true)}\n\nIf that doesn't answer it, say "talk to a person" and I'll pass it on.`,
+        cards: [toCard(referencedEvent)],
         escalated: false,
         context: referencedEvent.slug,
       });
@@ -1276,6 +1521,9 @@ async function triggerTicketResend(
         "x-forwarded-for": ip,
       },
       body: JSON.stringify({ email }),
+      // Bounded so a hung downstream cannot hold this invocation until the
+      // platform kills it. The customer's reply never depends on the result.
+      signal: AbortSignal.timeout(RESEND_DOWNSTREAM_TIMEOUT_MS),
     });
     if (!response.ok) {
       console.error("support-bot: resend-ticket-links returned", response.status);
@@ -1291,6 +1539,11 @@ async function triggerTicketResend(
 
 type EscalationStatus = "escalated" | "needs_email" | "capped" | "failed";
 
+interface EscalationOutcome {
+  status: EscalationStatus;
+  caseNumber: string | null;
+}
+
 async function maybeEscalate(params: {
   supabase: any;
   message: string;
@@ -1300,30 +1553,46 @@ async function maybeEscalate(params: {
   caller: Caller;
   guestEmail: string | null;
   lastEvent: string | null;
-}): Promise<EscalationStatus> {
+}): Promise<EscalationOutcome> {
   const { supabase, ip, caller, guestEmail } = params;
   const contactEmail = caller.email ?? guestEmail;
 
   // Guests must leave an address before a case is opened.
-  if (!contactEmail) return "needs_email";
+  if (!contactEmail) return { status: "needs_email", caseNumber: null };
 
   const ipCap = await consumeLimit(
     supabase, ip, "support_bot_escalation", ESCALATION_WINDOW_MS, IP_MAX_ESCALATIONS, true,
   );
-  if (ipCap.unavailable) return "failed";
-  if (!ipCap.allowed) return "capped";
+  if (ipCap.unavailable) return { status: "failed", caseNumber: null };
+  if (!ipCap.allowed) return { status: "capped", caseNumber: null };
 
-  const since = new Date(Date.now() - ESCALATION_WINDOW_MS).toISOString();
-  const { count, error } = await supabase
-    .from("email_outbox")
-    .select("*", { count: "exact", head: true })
-    .eq("template", "support_escalation")
-    .filter("payload->>customer_email", "eq", contactEmail)
-    .gte("created_at", since);
-
-  if (error || count === null) return "failed";
-  if (count >= EMAIL_MAX_ESCALATIONS) return "capped";
+  /**
+   * Per-address escalation cap.
+   *
+   * This used to count email_outbox rows with template = 'support_escalation'.
+   * escalate() writes one row per staff recipient — two by default — so a single
+   * escalation produced a count of 2 against EMAIL_MAX_ESCALATIONS = 2. The real
+   * limit was one per hour, not two, and the second reply told the customer
+   * their earlier message already covered it. It also filtered an unindexed
+   * jsonb path on a table that had no purge job.
+   *
+   * Keyed on the address in the ip_address column instead: the same
+   * single-counter-table approach resend-ticket-links uses, and the one the
+   * (ip_address, endpoint, created_at) index actually serves.
+   */
+  const emailCap = await consumeLimit(
+    supabase,
+    contactEmail,
+    "support_bot_escalation_email",
+    ESCALATION_WINDOW_MS,
+    EMAIL_MAX_ESCALATIONS,
+    true,
+  );
+  if (emailCap.unavailable) return { status: "failed", caseNumber: null };
+  if (!emailCap.allowed) return { status: "capped", caseNumber: null };
 
   const result = await escalate(supabase, params);
-  return result.ok ? "escalated" : "failed";
+  return result.ok
+    ? { status: "escalated", caseNumber: result.caseNumber }
+    : { status: "failed", caseNumber: null };
 }

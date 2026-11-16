@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { MessageCircle, Send, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,10 +8,37 @@ import { Input } from "@/components/ui/input";
 const GREETING = "Hi, I'm TixNaija. Ask me about events, tickets or orders.";
 const MAX_MESSAGE_LENGTH = 500;
 const SESSION_KEY = "tixnaija-support-session";
+const TRANSCRIPT_KEY = "tixnaija-support-transcript";
+const CASE_KEY = "tixnaija-support-case";
+
+/** Long enough to be useful after a refresh, short enough to stay out of the way. */
+const MAX_TRANSCRIPT_MESSAGES = 40;
+
+const UNREACHABLE = "I couldn't reach support just now. Please try again in a moment.";
+
+interface EventCard {
+  title: string;
+  slug: string;
+  when: string;
+  place: string | null;
+  url: string;
+}
 
 interface ChatMessage {
   role: "assistant" | "user";
   text: string;
+  cards?: EventCard[];
+  /** Kept out of storage. Used for the address a guest types to escalate. */
+  ephemeral?: boolean;
+}
+
+interface BotReply {
+  reply?: string;
+  needsEmail?: boolean;
+  error?: string;
+  context?: string;
+  cards?: EventCard[];
+  caseNumber?: string;
 }
 
 function getSessionId(): string {
@@ -25,9 +53,67 @@ function getSessionId(): string {
   }
 }
 
+/**
+ * Reads the server's own message off a failed invocation.
+ *
+ * `functions.invoke()` resolves with `{ data: null, error }` on a non-2xx
+ * response rather than rejecting, so the wording the Edge Function chose —
+ * "Too many messages. Please wait a few minutes" on 429, "Please keep your
+ * message under 500 characters" on 400 — never reached the screen. Everything
+ * collapsed into one generic line telling a rate-limited user to retry at once,
+ * which extended the rate limit.
+ */
+async function readServerMessage(context: unknown): Promise<string | null> {
+  const response = context as { json?: () => Promise<unknown> } | null | undefined;
+  if (!response || typeof response.json !== "function") return null;
+  try {
+    const body = (await response.json()) as { error?: unknown } | null;
+    return typeof body?.error === "string" && body.error.trim().length > 0 ? body.error : null;
+  } catch {
+    return null;
+  }
+}
+
+function readStoredMessages(): ChatMessage[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = sessionStorage.getItem(TRANSCRIPT_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.slice(-MAX_TRANSCRIPT_MESSAGES) as ChatMessage[];
+  } catch {
+    return [];
+  }
+}
+
+function readStoredCase(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return sessionStorage.getItem(CASE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function storeCase(caseNumber: string): void {
+  try {
+    sessionStorage.setItem(CASE_KEY, caseNumber);
+  } catch {
+    // A missing reference number is an inconvenience, not a failure worth
+    // interrupting the conversation for.
+  }
+}
+
 export function SupportChat() {
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([{ role: "assistant", text: GREETING }]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    // The transcript lived only in React state, so a refresh mid-conversation
+    // lost everything — including the case number the customer had just been
+    // told to keep. Restored from sessionStorage instead.
+    const stored = readStoredMessages();
+    return stored.length > 0 ? stored : [{ role: "assistant", text: GREETING }];
+  });
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [needsEmail, setNeedsEmail] = useState(false);
@@ -35,6 +121,7 @@ export function SupportChat() {
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [context, setContext] = useState<string>("");
+  const [caseNumber, setCaseNumber] = useState<string | null>(() => readStoredCase());
 
   const sessionIdRef = useRef<string>("");
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -61,11 +148,23 @@ export function SupportChat() {
 
   const push = (message: ChatMessage) => setMessages((prev) => [...prev, message]);
 
+  useEffect(() => {
+    try {
+      const storable = messages
+        .filter((message) => !message.ephemeral)
+        .slice(-MAX_TRANSCRIPT_MESSAGES);
+      sessionStorage.setItem(TRANSCRIPT_KEY, JSON.stringify(storable));
+    } catch {
+      // Storage may be blocked or full. Losing history silently is acceptable;
+      // interrupting a working conversation over it is not.
+    }
+  }, [messages]);
+
   async function ask(message: string, emailOverride?: string) {
     setSending(true);
     setError(null);
     try {
-      const { data, error: invokeError } = await supabase.functions.invoke("support-bot", {
+      const result = await supabase.functions.invoke("support-bot", {
         body: {
           message,
           sessionId: sessionIdRef.current,
@@ -74,16 +173,24 @@ export function SupportChat() {
         },
       });
 
-      if (invokeError) {
-        throw invokeError;
+      // invoke() resolves rather than rejects on a non-2xx, so this branch — not
+      // the catch below — is where a 429 or 400 lands. The server's own wording
+      // is on the response body and is the one worth showing.
+      if (result.error) {
+        const serverMessage = await readServerMessage(result.error.context);
+        setError(serverMessage ?? UNREACHABLE);
+        return;
       }
 
-      const payload = data as
-        | { reply?: string; needsEmail?: boolean; error?: string; context?: string }
-        | null;
+      const payload = result.data as BotReply | null;
 
       if (payload?.context) {
         setContext(payload.context);
+      }
+
+      if (payload?.caseNumber) {
+        setCaseNumber(payload.caseNumber);
+        storeCase(payload.caseNumber);
       }
 
       if (payload?.needsEmail) {
@@ -95,12 +202,16 @@ export function SupportChat() {
       }
 
       if (payload?.reply) {
-        push({ role: "assistant", text: payload.reply });
+        push({ role: "assistant", text: payload.reply, cards: payload.cards });
       } else if (payload?.error) {
         setError(payload.error);
+      } else {
+        // A 200 carrying neither a reply nor an error breaks the contract.
+        // Saying so beats the previous behaviour of ending the turn in silence.
+        setError(UNREACHABLE);
       }
     } catch {
-      setError("I couldn't reach support just now. Please try again in a moment.");
+      setError(UNREACHABLE);
     } finally {
       setSending(false);
     }
@@ -121,7 +232,8 @@ export function SupportChat() {
     const original = pendingMessage;
     if (!original) return;
     setEmail("");
-    push({ role: "user", text: value });
+    // Marked ephemeral so the address a guest typed is never written to storage.
+    push({ role: "user", text: value, ephemeral: true });
     setNeedsEmail(false);
     void ask(original, value);
   }
@@ -140,7 +252,9 @@ export function SupportChat() {
               <p className="font-display text-base font-semibold leading-tight tracking-tight text-foreground">
                 TixNaija
               </p>
-              <p className="text-xs text-muted-foreground">Automated assistant</p>
+              <p className="text-xs text-muted-foreground">
+                {caseNumber ? `Automated assistant · ${caseNumber}` : "Automated assistant"}
+              </p>
             </div>
             <button
               type="button"
@@ -167,6 +281,36 @@ export function SupportChat() {
                 }
               >
                 {message.text}
+                {/*
+                  Replies used to carry paths as literal text — "/e/lagos-fest"
+                  rendered as inert characters inside a plain div, so the customer
+                  had to retype them into the address bar on a phone. Cards are
+                  the structured form the Edge Function now sends alongside.
+                */}
+                {message.cards && message.cards.length > 0 && (
+                  <div className="mt-2 flex flex-col gap-1.5">
+                    {message.cards.map((card, cardIndex) => (
+                      <Link
+                        key={`${card.slug}-${cardIndex}`}
+                        to="/e/$slug"
+                        params={{ slug: card.slug }}
+                        className="block rounded-xl border border-border bg-background px-3 py-2 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <span className="block text-xs font-semibold leading-tight text-foreground">
+                          {card.title}
+                        </span>
+                        <span className="block text-[11px] leading-tight text-muted-foreground">
+                          {card.when}
+                        </span>
+                        {card.place && (
+                          <span className="block text-[11px] leading-tight text-muted-foreground">
+                            {card.place}
+                          </span>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
 

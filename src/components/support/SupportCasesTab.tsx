@@ -736,6 +736,13 @@ export function SupportCasesTab({
                         <span className="font-mono text-foreground">
                           {activeCase.customer_email || "N/A"}
                         </span>
+                        {/* A guest case has no account and no user id to look up
+                            order history from — replies reach them by email only. */}
+                        {activeCase.is_guest && (
+                          <Badge variant="outline" className="ml-2 text-[9px] uppercase font-bold">
+                            Guest
+                          </Badge>
+                        )}
                       </div>
                       <div>
                         <span className="text-muted-foreground">Opened: </span>
