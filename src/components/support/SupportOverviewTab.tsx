@@ -18,7 +18,6 @@ import { formatNaira } from "@/lib/currency";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -47,7 +46,6 @@ export function SupportOverviewTab({ onNavigateTab }: SupportOverviewTabProps) {
   const [flagModalOpen, setFlagModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [flagNote, setFlagNote] = useState("");
-  const [quickSearch, setQuickSearch] = useState("");
 
   // Fetch overview stats
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -112,13 +110,6 @@ export function SupportOverviewTab({ onNavigateTab }: SupportOverviewTabProps) {
     },
   });
 
-  const handleQuickSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (quickSearch.trim()) {
-      onNavigateTab("lookup", quickSearch.trim());
-    }
-  };
-
   return (
     <div className="space-y-8">
       {/* Search Header Banner */}
@@ -135,21 +126,18 @@ export function SupportOverviewTab({ onNavigateTab }: SupportOverviewTabProps) {
             Assist ticket buyers, inspect masked transactions, manage support inquiries, and escalate complex issues to administrators with full audit logging.
           </p>
 
-          <form onSubmit={handleQuickSearchSubmit} className="pt-2 flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-400/60" />
-              <Input
-                type="text"
-                placeholder="Quick lookup by buyer email, phone, ticket code, or reference..."
-                value={quickSearch}
-                onChange={(e) => setQuickSearch(e.target.value)}
-                className="pl-9 bg-black/40 border-emerald-500/30 text-white placeholder:text-zinc-500 focus-visible:ring-emerald-500/40 rounded-xl"
-              />
-            </div>
-            <Button type="submit" className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-5">
-              Lookup
+          {/* Search lives in one place — the Universal Lookup tab. This is a
+              shortcut to it, not a second search box that could drift from the
+              real one. */}
+          <div className="pt-2">
+            <Button
+              onClick={() => onNavigateTab("lookup")}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-5 gap-2"
+            >
+              <Search className="h-4 w-4" />
+              Open Universal Lookup
             </Button>
-          </form>
+          </div>
         </div>
       </div>
 

@@ -11,12 +11,9 @@ import {
   ShieldCheck,
   Menu,
   ChevronRight,
-  LogOut,
-  ExternalLink,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SupportOverviewTab } from "@/components/support/SupportOverviewTab";
 import { SupportLookupTab } from "@/components/support/SupportLookupTab";
@@ -57,6 +54,45 @@ const NAV_ITEMS: { key: TabKey; label: string; icon: any; description: string }[
   { key: "events", label: "Events Directory", icon: Calendar, description: "Read-only event index" },
   { key: "macros", label: "Canned Macros", icon: BookOpen, description: "Standardized templates" },
 ];
+
+/**
+ * The tab list, rendered once and shared by the desktop sidebar and the mobile
+ * sheet. Both used to carry an identical copy of this markup, so a label or
+ * style change had to be made in two places and could drift.
+ */
+function SupportNavList({
+  activeTab,
+  onSelect,
+}: {
+  activeTab: TabKey;
+  onSelect: (tab: TabKey) => void;
+}) {
+  return (
+    <nav className="space-y-1">
+      {NAV_ITEMS.map((item) => {
+        const Icon = item.icon;
+        const isActive = activeTab === item.key;
+        return (
+          <button
+            key={item.key}
+            onClick={() => onSelect(item.key)}
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
+              isActive
+                ? "bg-emerald-600/15 text-emerald-400 font-semibold border border-emerald-500/20"
+                : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <Icon className={`h-4 w-4 ${isActive ? "text-emerald-400" : "text-muted-foreground"}`} />
+              <span>{item.label}</span>
+            </div>
+            {isActive && <ChevronRight className="h-3.5 w-3.5 text-emerald-400" />}
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
 
 function SupportPortal() {
   const navigate = useNavigate();
@@ -144,29 +180,7 @@ function SupportPortal() {
           </div>
 
           {/* Navigation Links */}
-          <nav className="space-y-1">
-            {NAV_ITEMS.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.key;
-              return (
-                <button
-                  key={item.key}
-                  onClick={() => handleSelectTab(item.key)}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
-                    isActive
-                      ? "bg-emerald-600/15 text-emerald-400 font-semibold border border-emerald-500/20"
-                      : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Icon className={`h-4 w-4 ${isActive ? "text-emerald-400" : "text-muted-foreground"}`} />
-                    <span>{item.label}</span>
-                  </div>
-                  {isActive && <ChevronRight className="h-3.5 w-3.5 text-emerald-400" />}
-                </button>
-              );
-            })}
-          </nav>
+          <SupportNavList activeTab={activeTab} onSelect={handleSelectTab} />
         </div>
 
         {/* Sidebar Footer */}
@@ -224,29 +238,7 @@ function SupportPortal() {
                 </div>
               </div>
 
-              <nav className="space-y-1">
-                {NAV_ITEMS.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeTab === item.key;
-                  return (
-                    <button
-                      key={item.key}
-                      onClick={() => handleSelectTab(item.key)}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
-                        isActive
-                          ? "bg-emerald-600/15 text-emerald-400 font-semibold border border-emerald-500/20"
-                          : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <Icon className={`h-4 w-4 ${isActive ? "text-emerald-400" : "text-muted-foreground"}`} />
-                        <span>{item.label}</span>
-                      </div>
-                      {isActive && <ChevronRight className="h-3.5 w-3.5 text-emerald-400" />}
-                    </button>
-                  );
-                })}
-              </nav>
+              <SupportNavList activeTab={activeTab} onSelect={handleSelectTab} />
             </div>
 
             <Button
