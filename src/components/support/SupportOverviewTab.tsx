@@ -11,7 +11,6 @@ import {
   Flag,
   DollarSign,
   Clock,
-  ShieldCheck,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/currency";
@@ -112,32 +111,38 @@ export function SupportOverviewTab({ onNavigateTab }: SupportOverviewTabProps) {
 
   return (
     <div className="space-y-8">
-      {/* Search Header Banner */}
-      <div className="rounded-2xl bg-gradient-to-r from-emerald-950/80 via-emerald-900/60 to-zinc-900 border border-emerald-500/20 p-6 md:p-8 shadow-xl">
-        <div className="max-w-2xl space-y-3">
-          <div className="flex items-center gap-2 text-emerald-400 text-sm font-medium">
-            <ShieldCheck className="h-4 w-4" />
-            <span>Customer Care Operations Hub</span>
-          </div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
-            Support Overview & Queues
-          </h1>
-          <p className="text-emerald-100/70 text-sm leading-relaxed">
-            Assist ticket buyers, inspect masked transactions, manage support inquiries, and escalate complex issues to administrators with full audit logging.
+      {/*
+        Flat page header. The console used to open with a dark gradient banner
+        taking a third of the screen before a single number was visible — it read
+        like a marketing hero on the one screen that is pure work surface.
+      */}
+      <div className="flex flex-col gap-4 border-b border-border/50 pb-6 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-1">
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">Overview</h2>
+          <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
+            Today's queues at a glance. Payment exceptions come first: a customer who was
+            charged with no matching order is the only item here that costs money while it waits.
           </p>
+        </div>
 
-          {/* Search lives in one place — the Universal Lookup tab. This is a
-              shortcut to it, not a second search box that could drift from the
-              real one. */}
-          <div className="pt-2">
-            <Button
-              onClick={() => onNavigateTab("lookup")}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-5 gap-2"
-            >
-              <Search className="h-4 w-4" />
-              Open Universal Lookup
-            </Button>
-          </div>
+        {/* Search lives in one place — the Universal Lookup tab. These are
+            shortcuts to it, not a second search box that could drift. */}
+        <div className="flex flex-wrap gap-2">
+          <Button
+            onClick={() => onNavigateTab("lookup")}
+            className="gap-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-500"
+          >
+            <Search className="h-4 w-4" />
+            Look up a customer
+          </Button>
+          <Button variant="outline" onClick={() => onNavigateTab("cases")} className="gap-2 rounded-xl">
+            <Inbox className="h-4 w-4" />
+            Cases
+          </Button>
+          <Button variant="outline" onClick={() => onNavigateTab("refunds")} className="gap-2 rounded-xl">
+            <RotateCcw className="h-4 w-4" />
+            Refunds
+          </Button>
         </div>
       </div>
 
