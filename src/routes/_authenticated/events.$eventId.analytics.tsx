@@ -23,7 +23,8 @@ async function fetchEventAnalytics(eventId: string) {
   if (!event) throw new Error("Event not found");
 
   // 2. Fetch page views
-  const { count: pageViews } = await supabase
+  // Present in the database, missing from the stale generated `types.ts`.
+  const { count: pageViews } = await (supabase as any)
     .from("event_page_views")
     .select("*", { count: "exact", head: true })
     .eq("event_id", eventId);

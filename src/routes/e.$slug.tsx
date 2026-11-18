@@ -346,7 +346,10 @@ function EventDetailPage() {
 
   useEffect(() => {
     if (!data?.event?.id) return;
-    supabase
+    // `event_page_views` exists in the database but is missing from the
+    // generated `types.ts`, which is stale. Cast this one call rather than
+    // editing the generated file.
+    (supabase as any)
       .from("event_page_views")
       .insert({ event_id: data.event.id })
       .then();
@@ -522,7 +525,9 @@ function EventDetailPage() {
       }));
 
       if (totalKobo === 0) {
-        const { data: orderId, error: checkoutError } = await supabase.rpc("process_free_checkout", {
+        // `process_free_checkout` is deployed but absent from the stale
+        // generated types, hence the same cast the other RPC calls use.
+        const { data: orderId, error: checkoutError } = await (supabase.rpc as any)("process_free_checkout", {
           p_event_id: data!.event.id,
           p_user_id: (userId || null) as string,
           p_buyer_name: values.buyerName,
