@@ -52,7 +52,7 @@ export const Route = createFileRoute("/browse")({
 async function fetchEvents(q: string, category: string, dateFilter: string) {
   const now = new Date();
 
-  let query = supabase
+  let query = (supabase as any)
     .from("events")
     .select("id, title, slug, city, venue_name, start_datetime, end_datetime, cover_image_url, description, status, category, tags, ticket_types(price_kobo)")
     .eq("status", "published")

@@ -138,7 +138,7 @@ function AttendeesPage() {
       const ticket = filteredTickets?.find((t: any) => t.id === ticketId);
       if (ticket) {
         const { error: emailError } = await supabase.functions.invoke("send-ticket-confirmation", {
-          body: { orderId: ticket.order_items.orders.id, ticketId },
+          body: { orderId: (ticket.order_items.orders as any).id, ticketId },
         });
         if (emailError) {
           console.error("Failed to email the updated ticket", emailError);
@@ -440,7 +440,7 @@ function MassEmailDialog({ eventId }: { eventId: string }) {
       const { data: userData } = await supabase.auth.getUser();
       
       // 1. Create broadcast record
-      const { data: broadcast, error: insertErr } = await supabase
+      const { data: broadcast, error: insertErr } = await (supabase as any)
         .from("event_broadcasts")
         .insert({
           event_id: eventId,

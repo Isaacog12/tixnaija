@@ -60,7 +60,7 @@ async function fetchEvent(eventId: string) {
     .order("created_at", { ascending: false });
   if (e3) throw e3;
 
-  const { data: waitlists, error: e4 } = await supabase
+  const { data: waitlists, error: e4 } = await (supabase as any)
     .from("waitlist_entries")
     .select("*, ticket_types(name)")
     .eq("event_id", eventId)
@@ -138,7 +138,7 @@ function EditEventPage() {
 
   useEffect(() => {
     if (data?.event) {
-      const ev = data.event;
+      const ev: any = data.event;
       setForm({
         title: ev.title ?? "",
         description: ev.description ?? "",
@@ -168,7 +168,7 @@ function EditEventPage() {
     }
 
     setSaving(true);
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("events")
       .update({
         title: form.title,
