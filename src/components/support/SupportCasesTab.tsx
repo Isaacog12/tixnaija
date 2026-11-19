@@ -64,6 +64,15 @@ export function SupportCasesTab({
 }: SupportCasesTabProps) {
   const qc = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [assigneeFilter, setAssigneeFilter] = useState<"all" | "mine" | "unassigned">("all");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth
+      .getUser()
+      .then(({ data }) => setCurrentUserId(data.user?.id ?? null))
+      .catch(() => setCurrentUserId(null));
+  }, []);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(initialCaseId);
 
@@ -95,7 +104,7 @@ export function SupportCasesTab({
 
   // Fetch Cases list
   const { data: casesList, isLoading: listLoading, refetch: refetchCases } = useQuery({
-    queryKey: ["support-cases-list", statusFilter, categoryFilter],
+    queryKey: ["support-cases-list", statusFilter, categoryFilter, assigneeFilter, currentUserId],
     queryFn: async () => {
       let query = (supabase.from("support_cases" as any) as any)
         .select(`
@@ -111,15 +120,25 @@ export function SupportCasesTab({
           is_escalated,
           escalated_reason,
           created_at,
-          updated_at
+          updated_at,
+          due_at,
+          first_response_at,
+          csat_rating
         `)
-        .order("created_at", { ascending: false });
+        // Soonest deadline first: the queue should sort by urgency, not arrival.
+        .order("due_at", { ascending: true, nullsFirst: false });
 
       if (statusFilter !== "all") {
         query = query.eq("status", statusFilter);
       }
       if (categoryFilter !== "all") {
         query = query.eq("category", categoryFilter);
+      }
+      if (assigneeFilter === "mine" && currentUserId) {
+        query = query.eq("assigned_to", currentUserId);
+      }
+      if (assigneeFilter === "unassigned") {
+        query = query.is("assigned_to", null);
       }
 
       const { data, error } = await query.limit(50);
@@ -357,6 +376,20 @@ export function SupportCasesTab({
                 </SelectContent>
               </Select>
 
+              <Select
+                value={assigneeFilter}
+                onValueChange={(v) => setAssigneeFilter(v as "all" | "mine" | "unassigned")}
+              >
+                <SelectTrigger className="w-[135px] rounded-xl text-xs h-9">
+                  <SelectValue placeholder="Assignee" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All agents</SelectItem>
+                  <SelectItem value="mine">Assigned to me</SelectItem>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                </SelectContent>
+              </Select>
+
               <Button
                 variant="outline"
                 size="sm"
@@ -403,6 +436,7 @@ export function SupportCasesTab({
                       <TableHead>Priority</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Created</TableHead>
+                      <TableHead>SLA</TableHead>
                       <TableHead className="text-right">Action</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -458,9 +492,42 @@ export function SupportCasesTab({
                           >
                             {c.status}
                           </Badge>
+                          {typeof c.csat_rating === "number" && (
+                            <Badge
+                              variant="outline"
+                              className="ml-1.5 border-emerald-500/30 text-emerald-400 text-[10px]"
+                              title="Customer satisfaction rating"
+                            >
+                              {c.csat_rating}/5
+                            </Badge>
+                          )}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {new Date(c.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          {(() => {
+                            if (!c.due_at || c.status === "resolved" || c.status === "closed") {
+                              return <span className="text-xs text-muted-foreground">—</span>;
+                            }
+                            const hours = (new Date(c.due_at).getTime() - Date.now()) / 3_600_000;
+                            const overdue = hours < 0;
+                            const label = `${Math.abs(hours) < 1 ? "<1" : Math.round(Math.abs(hours))}h`;
+                            return (
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] whitespace-nowrap ${
+                                  overdue
+                                    ? "border-rose-500/40 text-rose-400"
+                                    : hours < 2
+                                      ? "border-amber-500/40 text-amber-400"
+                                      : "border-border/60 text-muted-foreground"
+                                }`}
+                              >
+                                {overdue ? `Overdue ${label}` : `Due in ${label}`}
+                              </Badge>
+                            );
+                          })()}
                         </TableCell>
                         <TableCell className="text-right">
                           <Button

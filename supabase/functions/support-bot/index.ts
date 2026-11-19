@@ -800,6 +800,31 @@ interface EscalateResult {
   notified: boolean;
 }
 
+/**
+ * Record what the assistant was asked and whether it had to escalate. Used to
+ * extend the rules from real traffic instead of guessing which phrasings fail.
+ */
+async function logBotQuery(
+  supabase: any,
+  params: {
+    sessionId: string;
+    message: string;
+    intent: string;
+    escalated: boolean;
+  },
+): Promise<void> {
+  try {
+    await supabase.from("support_bot_queries").insert({
+      session_id: params.sessionId,
+      message: params.message.slice(0, 500),
+      matched_intent: params.intent,
+      escalated: params.escalated,
+    });
+  } catch (err) {
+    console.error("support-bot: query log failed", err);
+  }
+}
+
 async function escalate(
   supabase: any,
   params: {
@@ -1026,11 +1051,23 @@ serve(async (req: Request) => {
     const { intent, matched } = detectIntent(message);
     const searchTerm = extractSearchTerm(message, matched);
 
-    const reply = (payload: Record<string, unknown>) =>
-      new Response(JSON.stringify(payload), {
+    const reply = (payload: Record<string, unknown>) => {
+      // Bot gap analytics. Deliberately not awaited: measuring the assistant must
+      // never add latency to, or fail, a customer's reply. Nothing that looked
+      // like a card number, PIN or password is ever written here.
+      if (!containsSensitiveData(message)) {
+        void logBotQuery(supabase, {
+          sessionId,
+          message,
+          intent,
+          escalated: payload.escalated === true,
+        });
+      }
+      return new Response(JSON.stringify(payload), {
         status: 200,
         headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" },
       });
+    };
 
     // Card numbers, PINs, OTPs and passwords are refused before anything else:
     // they are never stored in a case, an email or a log.

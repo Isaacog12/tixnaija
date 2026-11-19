@@ -86,6 +86,25 @@ export function SupportOverviewTab({ onNavigateTab }: SupportOverviewTabProps) {
     refetchInterval: 30000,
   });
 
+  // Cases already past their response deadline. Counted directly rather than
+  // added to support_get_overview_stats so the RPC's contract stays unchanged.
+  const { data: slaBreaches } = useQuery({
+    queryKey: ["support-sla-breaches"],
+    queryFn: async () => {
+      const { count, error } = await (supabase as any)
+        .from("support_cases")
+        .select("id", { count: "exact", head: true })
+        .in("status", ["open", "pending"])
+        .lt("due_at", new Date().toISOString());
+      if (error) {
+        console.warn("support_sla_breaches:", error.message);
+        return 0;
+      }
+      return count ?? 0;
+    },
+    refetchInterval: 30000,
+  });
+
   // Flag payment mutation
   const flagMutation = useMutation({
     mutationFn: async ({ paymentId, note }: { paymentId: string; note: string }) => {
@@ -234,6 +253,20 @@ export function SupportOverviewTab({ onNavigateTab }: SupportOverviewTabProps) {
           </CardContent>
         </Card>
       </div>
+
+      {typeof slaBreaches === "number" && slaBreaches > 0 && (
+        <button
+          type="button"
+          onClick={() => onNavigateTab("cases")}
+          className="flex w-full items-center gap-3 rounded-xl border border-rose-500/30 bg-rose-500/5 px-4 py-3 text-left transition-colors hover:bg-rose-500/10"
+        >
+          <AlertTriangle className="h-4 w-4 shrink-0 text-rose-400" />
+          <span className="text-xs font-medium text-foreground">
+            {slaBreaches} {slaBreaches === 1 ? "case is" : "cases are"} past the response deadline
+          </span>
+          <span className="ml-auto text-[11px] text-muted-foreground">Open cases</span>
+        </button>
+      )}
 
       {/* Unmatched Payments Reconciliation Queue */}
       <Card className="border-border/60 bg-card/50 backdrop-blur shadow-sm">

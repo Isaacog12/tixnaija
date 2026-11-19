@@ -95,3 +95,9 @@ entrypoint = "./functions/send-ticket-confirmation/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/support-bot/index.ts"
+
+[functions.inbound-support-email]
+enabled = true
+verify_jwt = false
+# Shared secret required in the x-inbound-secret header (INBOUND_EMAIL_SECRET).
+entrypoint = "./functions/inbound-support-email/index.ts"

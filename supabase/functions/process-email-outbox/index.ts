@@ -146,6 +146,33 @@ serve(async (req: Request) => {
               </p>
             </div>
           `;
+        } else if (item.template === "support_csat") {
+          const caseNumber = escapeHtml(String(item.payload?.case_number || "your case"));
+          const token = String(item.payload?.csat_token || "");
+          const rateUrl = `https://tixnaija.name.ng/csat/${token}`;
+          subject = `[TixNaija Support] How did we do with ${caseNumber}?`;
+          htmlBody = `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1a1a1a; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;">
+              <div style="margin-bottom: 24px; border-bottom: 2px solid #10b981; padding-bottom: 12px;">
+                <h1 style="font-size: 20px; font-weight: bold; margin: 0; color: #111827;">TixNaija Customer Support</h1>
+              </div>
+              <p style="font-size: 15px; line-height: 1.6; margin-bottom: 16px;">Hello,</p>
+              <p style="font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
+                Your support request <strong>${caseNumber}</strong> has been marked resolved.
+                One question: how did we do?
+              </p>
+              <p style="margin-bottom: 24px;">
+                <a href="${rateUrl}" style="background: #10b981; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 15px; display: inline-block;">Rate this support request</a>
+              </p>
+              <p style="font-size: 13px; color: #6b7280; line-height: 1.5;">
+                It takes about ten seconds, and it tells us which parts of support to fix first.
+              </p>
+              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+              <p style="font-size: 12px; color: #9ca3af; text-align: center;">
+                TixNaija · Independent Nigerian Ticketing Platform
+              </p>
+            </div>
+          `;
         } else if (item.template === "support_escalation") {
           const caseNumber = String(item.payload?.case_number || "unassigned").replace(/[\r\n]+/g, " ");
           const customerEmail = String(item.payload?.customer_email || "not provided").replace(/[\r\n]+/g, " ");

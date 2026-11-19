@@ -37,6 +37,7 @@ import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticate
 import { Route as BoxOfficeOrganizerSlugRouteImport } from './routes/box-office.$organizerSlug'
 import { Route as CareersApplyRouteImport } from './routes/careers_.apply'
 import { Route as CheckoutVerifyRouteImport } from './routes/checkout.verify'
+import { Route as CsatTokenRouteImport } from './routes/csat.$token'
 import { Route as ESlugRouteImport } from './routes/e.$slug'
 import { Route as TTicketCodeRouteImport } from './routes/t.$ticketCode'
 import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authenticated/admin_.audit-logs'
@@ -193,6 +194,11 @@ const CheckoutVerifyRoute = CheckoutVerifyRouteImport.update({
   path: '/checkout/verify',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CsatTokenRoute = CsatTokenRouteImport.update({
+  id: '/csat/$token',
+  path: '/csat/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ESlugRoute = ESlugRouteImport.update({
   id: '/e/$slug',
   path: '/e/$slug',
@@ -307,6 +313,7 @@ export interface FileRoutesByFullPath {
   '/box-office/$organizerSlug': typeof BoxOfficeOrganizerSlugRoute
   '/careers/apply': typeof CareersApplyRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
+  '/csat/$token': typeof CsatTokenRoute
   '/e/$slug': typeof ESlugRoute
   '/t/$ticketCode': typeof TTicketCodeRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
@@ -351,6 +358,7 @@ export interface FileRoutesByTo {
   '/box-office/$organizerSlug': typeof BoxOfficeOrganizerSlugRoute
   '/careers/apply': typeof CareersApplyRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
+  '/csat/$token': typeof CsatTokenRoute
   '/e/$slug': typeof ESlugRoute
   '/t/$ticketCode': typeof TTicketCodeRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
@@ -397,6 +405,7 @@ export interface FileRoutesById {
   '/box-office/$organizerSlug': typeof BoxOfficeOrganizerSlugRoute
   '/careers_/apply': typeof CareersApplyRoute
   '/checkout/verify': typeof CheckoutVerifyRoute
+  '/csat/$token': typeof CsatTokenRoute
   '/e/$slug': typeof ESlugRoute
   '/t/$ticketCode': typeof TTicketCodeRoute
   '/_authenticated/admin_/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
@@ -443,6 +452,7 @@ export interface FileRouteTypes {
     | '/box-office/$organizerSlug'
     | '/careers/apply'
     | '/checkout/verify'
+    | '/csat/$token'
     | '/e/$slug'
     | '/t/$ticketCode'
     | '/admin/audit-logs'
@@ -487,6 +497,7 @@ export interface FileRouteTypes {
     | '/box-office/$organizerSlug'
     | '/careers/apply'
     | '/checkout/verify'
+    | '/csat/$token'
     | '/e/$slug'
     | '/t/$ticketCode'
     | '/admin/audit-logs'
@@ -532,6 +543,7 @@ export interface FileRouteTypes {
     | '/box-office/$organizerSlug'
     | '/careers_/apply'
     | '/checkout/verify'
+    | '/csat/$token'
     | '/e/$slug'
     | '/t/$ticketCode'
     | '/_authenticated/admin_/audit-logs'
@@ -572,6 +584,7 @@ export interface RootRouteChildren {
   BoxOfficeOrganizerSlugRoute: typeof BoxOfficeOrganizerSlugRoute
   CareersApplyRoute: typeof CareersApplyRoute
   CheckoutVerifyRoute: typeof CheckoutVerifyRoute
+  CsatTokenRoute: typeof CsatTokenRoute
   ESlugRoute: typeof ESlugRoute
   TTicketCodeRoute: typeof TTicketCodeRoute
   ApiSitemapXmlRoute: typeof ApiSitemapXmlRoute
@@ -776,6 +789,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutVerifyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/csat/$token': {
+      id: '/csat/$token'
+      path: '/csat/$token'
+      fullPath: '/csat/$token'
+      preLoaderRoute: typeof CsatTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/e/$slug': {
       id: '/e/$slug'
       path: '/e/$slug'
@@ -954,6 +974,7 @@ const rootRouteChildren: RootRouteChildren = {
   BoxOfficeOrganizerSlugRoute: BoxOfficeOrganizerSlugRoute,
   CareersApplyRoute: CareersApplyRoute,
   CheckoutVerifyRoute: CheckoutVerifyRoute,
+  CsatTokenRoute: CsatTokenRoute,
   ESlugRoute: ESlugRoute,
   TTicketCodeRoute: TTicketCodeRoute,
   ApiSitemapXmlRoute: ApiSitemapXmlRoute,
