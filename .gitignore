@@ -46,3 +46,11 @@ dist-ssr
 stats.html
 .delta/
 brag-output-*/
+*.tsbuildinfo
+tsc-out.txt
+audit-*.txt
+gen.tmp.*
+scratch-*
+
+# Supabase CLI local state
+supabase/.temp/
