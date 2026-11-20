@@ -138,7 +138,11 @@ function AdminDashboard() {
   const [revokeReason, setRevokeReason] = useState("");
   const [revokeEmail, setRevokeEmail] = useState("");
   const [revokeEmailReason, setRevokeEmailReason] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    title: string;
+    purgeOnly?: boolean;
+  } | null>(null);
   const [eventSearch, setEventSearch] = useState("");
 
   const { data: stats } = useQuery({ queryKey: ["admin-stats"], queryFn: fetchAdminStats });
@@ -460,7 +464,16 @@ function AdminDashboard() {
                   </Link>
                 </Button>
               )}
-              {ev.deleted_at ? null : ev.status !== "cancelled" ? (
+              {ev.deleted_at ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 rounded-lg text-xs font-semibold text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={() => setDeleteTarget({ id: ev.id, title: ev.title, purgeOnly: true })}
+                >
+                  <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Clear permanently
+                </Button>
+              ) : ev.status !== "cancelled" ? (
                 <Button
                   variant="outline"
                   size="sm"
@@ -509,8 +522,8 @@ function AdminDashboard() {
     <div className="mx-auto max-w-7xl px-4 py-8 min-h-dvh">
       <EventDeleteDialog
         event={deleteTarget}
+        purgeOnly={deleteTarget?.purgeOnly}
         onClose={() => setDeleteTarget(null)}
-        onDeleted={() => qc.invalidateQueries({ queryKey: ["admin-events"] })}
       />
 
       <AlertDialog open={!!takedownEvent} onOpenChange={() => setTakedownEvent(null)}>
