@@ -26,6 +26,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { CheckoutQuestionsManager } from "@/components/checkout-questions-manager";
+import { EventDeleteDialog } from "@/components/admin/event-delete-dialog";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated/events/$eventId/edit")({
   component: EditEventPage,
@@ -121,6 +123,21 @@ function EditEventPage() {
     queryFn: () => fetchEvent(eventId),
   });
 
+  const { user } = useAuth();
+  const { data: isAdmin = false } = useQuery({
+    queryKey: ["is-admin", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data: adminRole } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user!.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      return !!adminRole;
+    },
+  });
+
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -135,6 +152,7 @@ function EditEventPage() {
     tags: "",
   });
   const [saving, setSaving] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   useEffect(() => {
     if (data?.event) {
@@ -157,12 +175,14 @@ function EditEventPage() {
     }
   }, [data]);
 
-  const isAdminCancelled = (data?.event as any)?.admin_cancelled === true;
+  const adminCancelled = (data?.event as any)?.admin_cancelled === true;
+  // Admins override the lock; only the organizer is blocked from editing.
+  const isAdminCancelled = adminCancelled && !isAdmin;
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     if (isAdminCancelled) return;
-    if (form.status === "published" && !data?.hasPayoutAccount) {
+    if (!isAdmin && form.status === "published" && !data?.hasPayoutAccount) {
       toast.error("Please connect your payout account in Settings to publish events.");
       return;
     }
@@ -244,6 +264,19 @@ function EditEventPage() {
       </div>
       <p className="text-muted-foreground">Manage details, tickets, and status.</p>
 
+      {adminCancelled && isAdmin && (
+        <div className="mt-6 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-5 flex items-start gap-4">
+          <ShieldAlert className="h-6 w-6 text-amber-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-amber-500">Admin override active</p>
+            <p className="text-sm text-amber-500/80 mt-1">
+              This event was taken down by a platform admin. As an admin you can still edit,
+              republish or delete it.
+            </p>
+          </div>
+        </div>
+      )}
+
       {isAdminCancelled && (
         <div className="mt-6 rounded-2xl border border-destructive/40 bg-destructive/10 p-5 flex items-start gap-4">
           <ShieldAlert className="h-6 w-6 text-destructive shrink-0 mt-0.5" />
@@ -315,14 +348,14 @@ function EditEventPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="draft">Draft (hidden)</SelectItem>
-                    <SelectItem value="published" disabled={!data?.hasPayoutAccount}>
+                    <SelectItem value="published" disabled={!isAdmin && !data?.hasPayoutAccount}>
                       Published {!data?.hasPayoutAccount && "(Requires Payout Account)"}
                     </SelectItem>
                     <SelectItem value="cancelled">Cancelled</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
                   </SelectContent>
                 </Select>
-                {!data?.hasPayoutAccount && form.status !== "published" && (
+                {!isAdmin && !data?.hasPayoutAccount && form.status !== "published" && (
                   <p className="mt-1 text-xs text-destructive">
                     ⚠️ Connect payout account in settings to publish.
                   </p>
@@ -335,7 +368,7 @@ function EditEventPage() {
             <Button
               type="button"
               variant="outline"
-              onClick={deleteEvent}
+              onClick={() => (isAdmin ? setDeleteOpen(true) : void deleteEvent())}
               disabled={isAdminCancelled}
               className="text-destructive hover:text-destructive"
             >
@@ -480,6 +513,12 @@ function EditEventPage() {
 
       {/* Waitlist */}
       <WaitlistsSection waitlists={data.waitlists} />
+
+      <EventDeleteDialog
+        event={deleteOpen ? { id: eventId, title: data.event.title } : null}
+        onClose={() => setDeleteOpen(false)}
+        onDeleted={() => navigate({ to: "/admin" })}
+      />
     </div>
   );
 }

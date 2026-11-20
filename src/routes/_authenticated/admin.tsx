@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import {
   Users, Calendar, BarChart3, Search, MoreVertical,
   Ban, CheckCircle, ClipboardList, ExternalLink, ShieldOff, ShieldCheck, Trash2, Image as ImageIcon, RefreshCcw, Briefcase,
-  ShieldAlert, Mail,
+  ShieldAlert, Mail, Pencil,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/lib/toast";
 import { BackButton } from "@/components/back-button";
+import { EventDeleteDialog } from "@/components/admin/event-delete-dialog";
 import {
   useReactTable,
   getCoreRowModel,
@@ -121,9 +122,9 @@ async function fetchAdminUsers() {
 async function fetchAdminEvents() {
   const { data, error } = await supabase
     .from("events")
-    .select("id, title, status, admin_cancelled, created_at, organizer_id, start_datetime, end_datetime, profiles!events_organizer_id_fkey(full_name)")
+    .select("id, title, status, admin_cancelled, deleted_at, created_at, organizer_id, start_datetime, end_datetime, profiles!events_organizer_id_fkey(full_name)")
     .order("created_at", { ascending: false })
-    .limit(30);
+    .limit(1000);
   if (error) throw error;
   return data ?? [];
 }
@@ -137,6 +138,8 @@ function AdminDashboard() {
   const [revokeReason, setRevokeReason] = useState("");
   const [revokeEmail, setRevokeEmail] = useState("");
   const [revokeEmailReason, setRevokeEmailReason] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [eventSearch, setEventSearch] = useState("");
 
   const { data: stats } = useQuery({ queryKey: ["admin-stats"], queryFn: fetchAdminStats });
   const { data: users, isLoading: usersLoading } = useQuery({ queryKey: ["admin-users"], queryFn: fetchAdminUsers });
@@ -263,6 +266,17 @@ function AdminDashboard() {
       return !q || u.full_name.toLowerCase().includes(q);
     });
   }, [users, userSearch]);
+
+  const filteredEvents = useMemo(() => {
+    const q = eventSearch.trim().toLowerCase();
+    return (events ?? []).filter((ev: any) => {
+      if (!q) return true;
+      return (
+        (ev.title ?? "").toLowerCase().includes(q) ||
+        (ev.profiles?.full_name ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [events, eventSearch]);
 
   const userColumnHelper = createColumnHelper<any>();
   const userColumns = useMemo(
@@ -415,7 +429,11 @@ function AdminDashboard() {
           const ev = info.row.original;
           return (
             <div>
-              {ev.status === "cancelled" ? (
+              {ev.deleted_at ? (
+                <Badge variant="secondary" className="uppercase tracking-wider text-[10px] font-bold border-border/50">
+                  Deleted
+                </Badge>
+              ) : ev.status === "cancelled" ? (
                 <Badge variant="destructive" className="uppercase tracking-wider text-[10px] font-bold">Cancelled</Badge>
               ) : new Date(ev.end_datetime || ev.start_datetime) < new Date() ? (
                 <Badge variant="secondary" className="uppercase tracking-wider text-[10px] font-bold border-border/50">Ended</Badge>
@@ -434,8 +452,15 @@ function AdminDashboard() {
         cell: (info) => {
           const ev = info.row.original;
           return (
-            <div className="text-right">
-              {ev.status !== "cancelled" ? (
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {!ev.deleted_at && (
+                <Button asChild variant="outline" size="sm" className="h-8 rounded-lg text-xs font-semibold">
+                  <Link to="/events/$eventId/edit" params={{ eventId: ev.id }}>
+                    <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit
+                  </Link>
+                </Button>
+              )}
+              {ev.deleted_at ? null : ev.status !== "cancelled" ? (
                 <Button
                   variant="outline"
                   size="sm"
@@ -456,6 +481,16 @@ function AdminDashboard() {
               ) : (
                 <span className="text-xs text-muted-foreground/40 font-medium">Org Cancelled</span>
               )}
+              {!ev.deleted_at && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 rounded-lg text-xs font-semibold text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={() => setDeleteTarget({ id: ev.id, title: ev.title })}
+                >
+                  <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
+                </Button>
+              )}
             </div>
           );
         },
@@ -465,13 +500,19 @@ function AdminDashboard() {
   );
 
   const eventTable = useReactTable({
-    data: events ?? [],
+    data: filteredEvents,
     columns: eventColumns,
     getCoreRowModel: getCoreRowModel(),
   });
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 min-h-dvh">
+      <EventDeleteDialog
+        event={deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onDeleted={() => qc.invalidateQueries({ queryKey: ["admin-events"] })}
+      />
+
       <AlertDialog open={!!takedownEvent} onOpenChange={() => setTakedownEvent(null)}>
         <AlertDialogContent className="rounded-3xl border-destructive/20 shadow-2xl">
           <AlertDialogHeader>
@@ -716,6 +757,15 @@ function AdminDashboard() {
         <section className="flex flex-col rounded-3xl border border-border/60 bg-card shadow-sm overflow-hidden h-[600px]">
           <div className="flex items-center justify-between p-6 border-b border-border/40 bg-card/50 backdrop-blur-sm z-10">
             <h2 className="font-display text-2xl">Event Moderation</h2>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search events…"
+                value={eventSearch}
+                onChange={(e) => setEventSearch(e.target.value)}
+                className="h-10 w-full sm:w-56 pl-9 rounded-xl border-border/60 bg-background/50 focus-visible:ring-primary/20 transition-all"
+              />
+            </div>
           </div>
           <div className="overflow-x-auto overflow-y-auto flex-1">
             <Table>
