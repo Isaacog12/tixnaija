@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Mail, Loader2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";

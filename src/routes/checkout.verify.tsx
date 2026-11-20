@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { SiteNav } from "@/components/site-nav";
 import { BackButton } from "@/components/back-button";
 import { BUSINESS_DETAILS } from "@/lib/business";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { z } from "zod";
 
 const verifySearchSchema = z.object({

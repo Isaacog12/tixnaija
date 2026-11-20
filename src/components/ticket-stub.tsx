@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { QRCodeCanvas } from "qrcode.react";
 import { MapPin, Calendar, Download, CalendarPlus } from "lucide-react";
 import { Button } from "./ui/button";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 interface TicketStubProps {
   ticket: any;

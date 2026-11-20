@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { SiteNav } from "@/components/site-nav";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";

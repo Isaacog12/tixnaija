@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/back-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow, differenceInDays, format } from "date-fns";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 export const Route = createFileRoute("/_authenticated/notifications")({
   component: NotificationsPage,

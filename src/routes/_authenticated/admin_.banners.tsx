@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { BackButton } from "@/components/back-button";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import type { Tables } from "@/lib/database.types";
 
 export const Route = createFileRoute("/_authenticated/admin_/banners")({

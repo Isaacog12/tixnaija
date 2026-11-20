@@ -11,7 +11,7 @@ import {
 import { lazy, Suspense, useEffect, useState, type ReactNode, Component } from "react";
 import appCss from "../styles.css?url";
 
-import { Toaster } from "@/components/ui/sonner";
+import { DynamicIsland } from "@/components/ui/dynamic-island";
 import { CookieBanner } from "@/components/cookie-banner";
 import { GlobalLoader } from "@/components/global-loader";
 import { supabase } from "@/integrations/supabase/client";
@@ -463,7 +463,7 @@ function RootComponent() {
           <Outlet />
         </main>
       </AppErrorBoundary>
-      <Toaster position="bottom-center" />
+      <DynamicIsland />
       <CookieBanner />
       {mounted && (
         <Suspense fallback={null}>

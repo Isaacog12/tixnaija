@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, Copy, MapPin, Plus, QrCode, Ticket, Zap, Users, BarChart2, Clock, XCircle, ArrowRight, FileEdit } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -382,7 +382,7 @@ function Dashboard() {
                               onClick={() => {
                                 const url = `${window.location.origin}/e/${ev.slug}`;
                                 navigator.clipboard.writeText(url);
-                                toast.success("Link copied", { icon: <Copy className="h-4 w-4" /> });
+                                toast.success("Link copied");
                               }}
                             >
                               <Copy className="h-4 w-4" />

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { getAuthErrorMessage } from "@/utils/auth-errors";
 
 export function useHashErrorHandler() {

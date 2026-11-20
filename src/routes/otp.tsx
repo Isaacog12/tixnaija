@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { KeyRound, ShieldCheck, Loader2, Check, Mail, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { z } from "zod";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { supabase } from "@/integrations/supabase/client";
 
 import { SuccessCheckmark } from "@/components/demo/success-checkmark";

@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GlobalLoader } from "@/components/global-loader";
 import { BackButton } from "@/components/back-button";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { BUSINESS_DETAILS } from "@/lib/business";
 import type { Tables } from "@/lib/database.types";
 
