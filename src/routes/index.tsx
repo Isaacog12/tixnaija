@@ -57,7 +57,7 @@ async function fetchBanners() {
   if (error) throw error;
   
   const now = new Date();
-  return (data as any[] ?? []).filter((b: any) => {
+  return (data ?? []).filter((b) => {
     if (b.starts_at && new Date(b.starts_at) > now) return false;
     if (b.ends_at && new Date(b.ends_at) < now) return false;
     return true;
@@ -100,8 +100,8 @@ function LandingPage() {
     initialData: loaderData.banners,
   });
 
-  const handleBannerClick = async (banner: any) => {
-    supabase.rpc("increment_banner_click", { banner_id: banner.id } as any).then();
+  const handleBannerClick = async (banner: Banner) => {
+    void supabase.rpc("increment_banner_click", { banner_id: banner.id });
     if (banner.link_url) {
       if (banner.link_url.startsWith("http")) {
         window.open(banner.link_url, "_blank", "noopener,noreferrer");
