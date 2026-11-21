@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
-import { BackButton } from "@/components/back-button";
+import { LegalHeader } from "@/components/legal-header";
 import { BUSINESS_DETAILS } from "@/lib/business";
 
 export const Route = createFileRoute("/privacy")({
@@ -41,27 +41,14 @@ function PrivacyPage() {
     <div className="min-h-dvh flex flex-col bg-background text-foreground">
       <SiteNav />
 
-      {/* Hero header */}
-      <div className="border-b border-border/60 pb-10 pt-6">
-        <div className="mx-auto max-w-6xl px-4 w-full mb-6">
-          <BackButton />
-        </div>
-        <div className="mx-auto max-w-6xl px-4">
-          <h1 className="font-display text-4xl md:text-6xl font-bold tracking-tight">
-            Privacy Policy
-          </h1>
-          <p className="text-muted-foreground text-sm mt-3">
-            Last updated: <span className="text-foreground font-medium">{LAST_UPDATED}</span>
-          </p>
-        </div>
-      </div>
+      <LegalHeader eyebrow="TixNaija / Privacy" title="Privacy Policy" updated={LAST_UPDATED} />
 
       {/* Body: sidebar + content */}
       <div className="mx-auto max-w-6xl px-4 py-12 grid grid-cols-1 md:grid-cols-[220px_1fr] gap-12 flex-1 w-full">
         {/* Sticky sidebar TOC */}
         <aside className="hidden md:block">
-          <div className="sticky top-8">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-4 font-semibold">
+          <div className="sticky top-24">
+            <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
               Contents
             </p>
             <nav className="flex flex-col gap-1">
@@ -69,7 +56,7 @@ function PrivacyPage() {
                 <a
                   key={s.id}
                   href={`#${s.id}`}
-                  className="flex items-center gap-2 rounded px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/40 transition"
+                  className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-[12px] text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
                 >
                   <span className="font-mono text-[10px] text-muted-foreground/60 w-4 shrink-0">
                     {String(i + 1).padStart(2, "0")}
@@ -127,25 +114,25 @@ function PrivacyPage() {
               Under the principle of data minimisation, we collect only information that is adequate, relevant, and strictly necessary:
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-border bg-card p-4 space-y-1">
+              <div className="rounded-2xl border border-border/60 bg-secondary/20 p-4 space-y-1">
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">Ticket Buyers & Attendees</p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   Full name, email address, optional contact phone number, and optional recipient details for gift purchases. Used to deliver QR-coded tickets and issue event updates.
                 </p>
               </div>
-              <div className="rounded-xl border border-border bg-card p-4 space-y-1">
+              <div className="rounded-2xl border border-border/60 bg-secondary/20 p-4 space-y-1">
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">Event Organizers</p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   Full name, email address, phone number, Nigerian settlement bank account details (for automated Paystack payouts), and an identity verification document/selfie stored in a private vault.
                 </p>
               </div>
-              <div className="rounded-xl border border-border bg-card p-4 space-y-1">
+              <div className="rounded-2xl border border-border/60 bg-secondary/20 p-4 space-y-1">
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">Careers & Contact Inquiries</p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   Name, email address, optional phone number, resume/CV attachments, and message content submitted for customer support or job applications.
                 </p>
               </div>
-              <div className="rounded-xl border border-border bg-card p-4 space-y-1">
+              <div className="rounded-2xl border border-border/60 bg-secondary/20 p-4 space-y-1">
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">System & Device Data</p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   IP addresses (anonymized for analytics), device browser user-agents, and session authentication tokens required for cybersecurity and rate limiting.
@@ -157,7 +144,7 @@ function PrivacyPage() {
           {/* Section 4 — Children's Data */}
           <section id="children" className="scroll-mt-8 space-y-3">
             <SectionHeading number="04" title="Children's Data (Under 18 Years)" />
-            <div className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground leading-relaxed space-y-2">
+            <div className="rounded-2xl border border-border/60 bg-secondary/20 p-4 text-sm text-muted-foreground leading-relaxed space-y-2">
               <p>
                 In compliance with <strong className="text-foreground">Section 31 of the Nigeria Data Protection Act 2023</strong>, TixNaija does not knowingly solicit or collect personal data directly from children under 18 years of age without prior parental or legal guardian consent.
               </p>
@@ -227,7 +214,7 @@ function PrivacyPage() {
           {/* Section 9 — Data Retention */}
           <section id="retention" className="scroll-mt-8 space-y-3">
             <SectionHeading number="09" title="Data Retention & Erasure" />
-            <div className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground space-y-2 leading-relaxed">
+            <div className="rounded-2xl border border-border/60 bg-secondary/20 p-4 text-sm text-muted-foreground space-y-2 leading-relaxed">
               <p>
                 We retain personal data only as long as necessary to provide ticketing services or satisfy statutory legal requirements:
               </p>
@@ -289,7 +276,7 @@ function PrivacyPage() {
             <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
               If you have concerns about how your data has been handled and we have not resolved your concern satisfactorily, you have the statutory right under the NDPA to lodge a formal complaint with the:
             </p>
-            <div className="rounded-xl border border-border bg-card p-4 text-xs md:text-sm text-muted-foreground space-y-1">
+            <div className="rounded-2xl border border-border/60 bg-secondary/20 p-4 text-xs md:text-sm text-muted-foreground space-y-1">
               <p><strong className="text-foreground">Regulatory Authority:</strong> Nigeria Data Protection Commission (NDPC)</p>
               <p><strong className="text-foreground">Official Website:</strong> <a href="https://ndpc.gov.ng" target="_blank" rel="noopener noreferrer" className="text-foreground underline hover:text-primary">ndpc.gov.ng</a></p>
               <p><strong className="text-foreground">Complaints Portal:</strong> info@ndpc.gov.ng</p>
@@ -302,7 +289,7 @@ function PrivacyPage() {
             <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
               To exercise your statutory privacy rights, update your profile, or submit a data inquiry, contact our team:
             </p>
-            <div className="rounded-xl border border-border bg-card p-4 text-xs md:text-sm space-y-1 text-muted-foreground">
+            <div className="rounded-2xl border border-border/60 bg-secondary/20 p-4 text-xs md:text-sm space-y-1 text-muted-foreground">
               <p><strong className="text-foreground">Platform:</strong> {BUSINESS_DETAILS.platformName}</p>
               <p><strong className="text-foreground">Email:</strong> <a href={`mailto:${BUSINESS_DETAILS.supportEmail}`} className="text-foreground underline">{BUSINESS_DETAILS.supportEmail}</a></p>
               <p><strong className="text-foreground">Phone:</strong> {BUSINESS_DETAILS.supportPhone}</p>
@@ -319,9 +306,11 @@ function PrivacyPage() {
 function SectionHeading({ number, title }: { number: string; title: string }) {
   return (
     <div className="flex items-baseline gap-3">
-      <span className="font-mono text-xs font-bold text-primary shrink-0">{number}</span>
+      <span className="shrink-0 font-mono text-[11px] font-medium text-muted-foreground">{number}</span>
       <div className="flex flex-1 items-baseline gap-3">
-        <h2 className="text-xl md:text-2xl font-bold tracking-tight">{title}</h2>
+        <h2 className="font-display text-[22px] leading-tight tracking-[-0.01em] text-foreground md:text-[24px]">
+          {title}
+        </h2>
         <span className="h-px flex-1 bg-border/60 hidden sm:block" />
       </div>
     </div>

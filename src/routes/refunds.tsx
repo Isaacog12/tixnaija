@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
-import { BackButton } from "@/components/back-button";
+import { LegalHeader } from "@/components/legal-header";
 import { BUSINESS_DETAILS } from "@/lib/business";
 
 export const Route = createFileRoute("/refunds")({
@@ -25,24 +25,17 @@ function RefundsPage() {
     <div className="min-h-dvh flex flex-col bg-background text-foreground">
       <SiteNav />
 
-      {/* Header */}
-      <div className="border-b border-border/60 pb-8 pt-6">
-        <div className="mx-auto max-w-5xl px-4 w-full">
-          <BackButton />
-          <h1 className="mt-4 font-display text-3xl md:text-5xl font-bold tracking-tight">
-            Refund & Cancellation Policy
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Effective Date: <span className="text-foreground font-medium">{LAST_UPDATED}</span>
-          </p>
-        </div>
-      </div>
+      <LegalHeader
+        eyebrow="TixNaija / Legal"
+        title="Refund & Cancellation Policy"
+        updated={LAST_UPDATED}
+      />
 
       {/* Content */}
-      <main className="mx-auto max-w-5xl px-4 py-10 flex-1 w-full space-y-10">
+      <main className="mx-auto w-full max-w-5xl flex-1 space-y-10 px-4 py-12 sm:px-6 md:py-16 lg:px-8">
         {/* Section 1 */}
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold tracking-tight">1. Platform Role & Foundation</h2>
+          <h2 className="font-display text-[22px] leading-tight tracking-[-0.01em] text-foreground md:text-[24px]">1. Platform Role & Foundation</h2>
           <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
             <strong className="text-foreground">TixNaija</strong> provides ticketing software and booking infrastructure connecting event organizers with ticket buyers across Nigeria. TixNaija is not the producer, venue owner, or promoter of events listed on the marketplace.
           </p>
@@ -53,8 +46,8 @@ function RefundsPage() {
 
         {/* Section 2 */}
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold tracking-tight">2. Event Cancellations</h2>
-          <div className="rounded-xl border border-border bg-card p-5 space-y-3 text-sm md:text-base text-muted-foreground leading-relaxed">
+          <h2 className="font-display text-[22px] leading-tight tracking-[-0.01em] text-foreground md:text-[24px]">2. Event Cancellations</h2>
+          <div className="rounded-2xl border border-border/60 bg-secondary/20 p-5 space-y-3 text-sm md:text-base text-muted-foreground leading-relaxed">
             <p>
               If an event is cancelled by the organizer prior to its commencement:
             </p>
@@ -74,7 +67,7 @@ function RefundsPage() {
 
         {/* Section 3 */}
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold tracking-tight">3. Event Postponements & Venue Relocations</h2>
+          <h2 className="font-display text-[22px] leading-tight tracking-[-0.01em] text-foreground md:text-[24px]">3. Event Postponements & Venue Relocations</h2>
           <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
             If an organizer reschedules an event date or significantly alters the venue location:
           </p>
@@ -90,11 +83,11 @@ function RefundsPage() {
 
         {/* Section 4 */}
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold tracking-tight">4. Change of Mind & Non-Attendance</h2>
+          <h2 className="font-display text-[22px] leading-tight tracking-[-0.01em] text-foreground md:text-[24px]">4. Change of Mind & Non-Attendance</h2>
           <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
             Except where an event is cancelled, postponed, or materially misrepresented:
           </p>
-          <div className="rounded-xl border border-border bg-card p-5 text-sm md:text-base text-muted-foreground space-y-2">
+          <div className="rounded-2xl border border-border/60 bg-secondary/20 p-5 text-sm md:text-base text-muted-foreground space-y-2">
             <p>
               <strong className="text-foreground">All ticket sales are final.</strong> Refunds are not guaranteed for personal scheduling conflicts, failure to attend, or simple change of mind unless the individual organizer explicitly specifies a flexible return policy in their event description.
             </p>
@@ -106,22 +99,22 @@ function RefundsPage() {
 
         {/* Section 5 */}
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold tracking-tight">5. How to Request a Refund</h2>
+          <h2 className="font-display text-[22px] leading-tight tracking-[-0.01em] text-foreground md:text-[24px]">5. How to Request a Refund</h2>
           <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
             To submit a refund request for an eligible event, follow these steps:
           </p>
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-border bg-card p-4 space-y-1.5">
+            <div className="rounded-2xl border border-border/60 bg-secondary/20 p-4 space-y-1.5">
               <span className="text-xs font-bold uppercase tracking-wider text-primary">Step 1</span>
               <p className="font-semibold text-foreground text-sm">Gather Details</p>
               <p className="text-xs text-muted-foreground">Locate your Order Reference (e.g. ORD-1234) and the email address used during purchase.</p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4 space-y-1.5">
+            <div className="rounded-2xl border border-border/60 bg-secondary/20 p-4 space-y-1.5">
               <span className="text-xs font-bold uppercase tracking-wider text-primary">Step 2</span>
               <p className="font-semibold text-foreground text-sm">Send Email</p>
               <p className="text-xs text-muted-foreground">Email support at <a href={`mailto:${BUSINESS_DETAILS.supportEmail}`} className="text-foreground font-medium underline">{BUSINESS_DETAILS.supportEmail}</a> with subject: "Refund Request - [Order Reference]".</p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4 space-y-1.5">
+            <div className="rounded-2xl border border-border/60 bg-secondary/20 p-4 space-y-1.5">
               <span className="text-xs font-bold uppercase tracking-wider text-primary">Step 3</span>
               <p className="font-semibold text-foreground text-sm">Settlement</p>
               <p className="text-xs text-muted-foreground">Requests are reviewed within 3 business days. Approved refunds credit your bank card/account in 3–7 business days via Paystack.</p>
@@ -131,7 +124,7 @@ function RefundsPage() {
 
         {/* Section 6 */}
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold tracking-tight">6. Consumer Protection & Escalation</h2>
+          <h2 className="font-display text-[22px] leading-tight tracking-[-0.01em] text-foreground md:text-[24px]">6. Consumer Protection & Escalation</h2>
           <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
             We are dedicated to fair trading and transparent resolution of disputes. If you believe an organizer has acted fraudulently or failed to honor a mandated cancellation refund:
           </p>
@@ -147,8 +140,8 @@ function RefundsPage() {
 
         {/* Contact details */}
         <section className="space-y-4 border-t border-border/40 pt-8">
-          <h2 className="text-xl font-semibold tracking-tight">7. Contact Information</h2>
-          <div className="rounded-xl border border-border bg-card p-4 text-xs md:text-sm space-y-1 text-muted-foreground">
+          <h2 className="font-display text-[22px] leading-tight tracking-[-0.01em] text-foreground md:text-[24px]">7. Contact Information</h2>
+          <div className="rounded-2xl border border-border/60 bg-secondary/20 p-4 text-xs md:text-sm space-y-1 text-muted-foreground">
             <p><strong className="text-foreground">Platform:</strong> {BUSINESS_DETAILS.platformName}</p>
             <p><strong className="text-foreground">Email:</strong> <a href={`mailto:${BUSINESS_DETAILS.supportEmail}`} className="text-foreground underline">{BUSINESS_DETAILS.supportEmail}</a></p>
             <p><strong className="text-foreground">Phone:</strong> {BUSINESS_DETAILS.supportPhone}</p>

@@ -3,7 +3,7 @@ import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { BackButton } from "@/components/back-button";
 import { useState } from "react";
-import { ChevronDown, LifeBuoy, Ticket, CreditCard, Calendar, MessageCircle, AlertCircle } from "lucide-react";
+import { ChevronDown, Ticket, CreditCard, Calendar, MessageCircle, AlertCircle } from "lucide-react";
 
 export const Route = createFileRoute("/faq")({
   component: FAQPage,
@@ -148,7 +148,7 @@ function AccordionItem({ item, isOpen, onToggle }: { item: FAQItem; isOpen: bool
     <div className="border-b border-border/60 last:border-0">
       <button
         onClick={onToggle}
-        className="flex w-full items-start justify-between gap-4 py-5 text-left text-sm font-medium transition-colors hover:text-primary"
+        className="flex w-full items-start justify-between gap-4 py-5 text-left text-[15px] font-medium transition-colors hover:text-primary"
         aria-expanded={isOpen}
       >
         <span className="leading-relaxed">{item.q}</span>
@@ -163,7 +163,7 @@ function AccordionItem({ item, isOpen, onToggle }: { item: FAQItem; isOpen: bool
           isOpen ? "max-h-96 pb-5" : "max-h-0"
         }`}
       >
-        <p className="text-sm text-muted-foreground leading-relaxed">{item.a}</p>
+        <p className="text-[14px] leading-relaxed text-muted-foreground">{item.a}</p>
       </div>
     </div>
   );
@@ -174,12 +174,12 @@ function FAQSection({ section }: { section: FAQSection }) {
   const Icon = section.icon;
 
   return (
-    <div className="rounded-2xl border border-border/40 bg-card/60 overflow-hidden shadow-sm">
-      <div className="flex items-center gap-3 border-b border-border/50 bg-card/60 px-6 py-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-sunset">
-          <Icon className="h-4 w-4 text-primary-foreground" />
+    <div className="overflow-hidden rounded-2xl border border-border/60 bg-card">
+      <div className="flex items-center gap-3 border-b border-border/60 px-6 py-4">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary/70 text-foreground">
+          <Icon className="h-4 w-4" aria-hidden />
         </div>
-        <h2 className="font-semibold">{section.title}</h2>
+        <h2 className="font-display text-[18px] leading-tight tracking-[-0.01em]">{section.title}</h2>
       </div>
       <div className="px-6">
         {section.items.map((item, i) => (
@@ -200,48 +200,46 @@ function FAQPage() {
     <div className="min-h-dvh bg-background">
       <SiteNav />
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-border/50 bg-card/20 pb-16 pt-6 md:pb-24">
-        <div className="mx-auto max-w-7xl px-4 w-full relative z-20 mb-8 md:mb-12">
+      <section className="border-b border-border/60">
+        <div className="mx-auto w-full max-w-6xl px-4 pb-12 pt-6 sm:px-6 md:pb-16 lg:px-8">
           <BackButton />
-        </div>
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.08),transparent_60%)]" />
-        <div className="relative mx-auto max-w-3xl px-4 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl gradient-sunset shadow-glow">
-            <LifeBuoy className="h-7 w-7 text-primary-foreground" />
+          <div className="mt-8 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+            <span className="h-px w-10 bg-border" aria-hidden />
+            Support
           </div>
-          <h1 className="type-heading-xl mt-6">
+          <h1 className="mt-5 font-display text-[clamp(2.25rem,5vw,3.5rem)] leading-[1.05] tracking-[-0.03em] text-foreground">
             Help &amp; FAQ
           </h1>
-          <p className="mt-4 text-base text-muted-foreground md:text-lg max-w-xl mx-auto">
+          <p className="mt-4 max-w-xl text-[16px] leading-relaxed text-muted-foreground">
             Quick answers to common questions about tickets, refunds, and events on TixNaija.
           </p>
         </div>
       </section>
 
       {/* FAQ Sections */}
-      <section className="mx-auto max-w-3xl px-4 py-12 md:py-16">
-        <div className="space-y-6">
+      <section className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6 md:py-16">
+        <div className="space-y-4">
           {FAQ_SECTIONS.map((section) => (
             <FAQSection key={section.title} section={section} />
           ))}
         </div>
 
         {/* CTA — still can't find your answer? */}
-        <div className="mt-12 rounded-2xl border border-primary/20 bg-primary/5 p-8 text-center">
-          <h3 className="font-display text-2xl">Still need help?</h3>
-          <p className="mt-2 text-sm text-muted-foreground">
+        <div className="mt-12 rounded-2xl border border-primary/20 bg-primary/[0.06] p-8 text-center">
+          <h3 className="font-display text-[26px] leading-tight tracking-[-0.02em]">Still need help?</h3>
+          <p className="mt-3 text-[14px] leading-relaxed text-muted-foreground">
             Our team typically responds within a few hours during working hours (Mon–Fri, 9am–6pm WAT).
           </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <div className="mt-6 flex flex-wrap justify-center gap-2.5">
             <Link
                to="/about"
-               className="inline-flex items-center justify-center rounded-full gradient-sunset px-6 py-3 text-sm font-semibold text-primary-foreground glow-primary press-sm transition-all duration-[120ms]"
+               className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-5 text-[14px] font-semibold text-primary-foreground transition-colors hover:bg-primary/90 press-sm"
              >
                Contact us
              </Link>
              <Link
                to="/browse"
-               className="inline-flex items-center justify-center rounded-full border border-border bg-background px-6 py-3 text-sm font-medium press-sm transition-all duration-[120ms] hover:bg-secondary hover:text-foreground"
+               className="inline-flex h-11 items-center justify-center rounded-xl border border-border/70 bg-card px-5 text-[14px] font-semibold text-foreground transition-colors hover:bg-secondary/50 press-sm"
              >
                Browse events
              </Link>

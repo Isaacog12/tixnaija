@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
-import { BackButton } from "@/components/back-button";
+import { LegalHeader } from "@/components/legal-header";
 import { BUSINESS_DETAILS } from "@/lib/business";
 
 export const Route = createFileRoute("/terms")({
@@ -41,27 +41,14 @@ function TermsPage() {
     <div className="min-h-dvh flex flex-col bg-background text-foreground">
       <SiteNav />
 
-      {/* Header */}
-      <div className="border-b border-border/60 pb-10 pt-6">
-        <div className="mx-auto max-w-6xl px-4 w-full mb-6">
-          <BackButton />
-        </div>
-        <div className="mx-auto max-w-6xl px-4">
-          <h1 className="font-display text-4xl md:text-6xl font-bold tracking-tight">
-            Terms of Service
-          </h1>
-          <p className="text-muted-foreground text-sm mt-3">
-            Last updated: <span className="text-foreground font-medium">{LAST_UPDATED}</span>
-          </p>
-        </div>
-      </div>
+      <LegalHeader eyebrow="TixNaija / Legal" title="Terms of Service" updated={LAST_UPDATED} />
 
       {/* Body: sidebar + content */}
       <div className="mx-auto max-w-6xl px-4 py-12 grid grid-cols-1 md:grid-cols-[220px_1fr] gap-12 flex-1 w-full">
         {/* Sticky sidebar TOC */}
         <aside className="hidden md:block">
-          <div className="sticky top-8">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-4 font-semibold">
+          <div className="sticky top-24">
+            <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
               Contents
             </p>
             <nav className="flex flex-col gap-1">
@@ -69,7 +56,7 @@ function TermsPage() {
                 <a
                   key={s.id}
                   href={`#${s.id}`}
-                  className="flex items-center gap-2 rounded px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/40 transition"
+                  className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-[12px] text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
                 >
                   <span className="font-mono text-[10px] text-muted-foreground/60 w-4 shrink-0">
                     {String(i + 1).padStart(2, "0")}
@@ -79,14 +66,14 @@ function TermsPage() {
               ))}
             </nav>
 
-            <div className="mt-8 pt-6 border-t border-border/50 flex flex-col gap-2">
-              <Link to="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition">
+            <div className="mt-8 flex flex-col gap-2 border-t border-border/60 pt-6">
+              <Link to="/privacy" className="text-[12px] text-muted-foreground transition-colors hover:text-foreground">
                 Privacy Policy →
               </Link>
-              <Link to="/refunds" className="text-xs text-muted-foreground hover:text-foreground transition">
+              <Link to="/refunds" className="text-[12px] text-muted-foreground transition-colors hover:text-foreground">
                 Refund Policy →
               </Link>
-              <Link to="/cookies" className="text-xs text-muted-foreground hover:text-foreground transition">
+              <Link to="/cookies" className="text-[12px] text-muted-foreground transition-colors hover:text-foreground">
                 Cookie Policy →
               </Link>
             </div>
@@ -113,7 +100,7 @@ function TermsPage() {
           {/* Section 2 — Age & Legal Capacity */}
           <section id="age" className="scroll-mt-8 space-y-3">
             <SectionHeading number="02" title="Age & Legal Capacity" />
-            <div className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground space-y-2 leading-relaxed">
+            <div className="rounded-2xl border border-border/60 bg-secondary/20 p-4 text-sm text-muted-foreground space-y-2 leading-relaxed">
               <p>
                 To use TixNaija, register an account, list an event, or purchase tickets, you must be at least <strong className="text-foreground">eighteen (18) years of age</strong> and have the legal capacity to enter into binding commercial contracts under Nigerian law.
               </p>
@@ -232,7 +219,7 @@ function TermsPage() {
           {/* Section 13 — Contact Details */}
           <section id="contact" className="scroll-mt-8 space-y-3 border-t border-border/40 pt-8">
             <SectionHeading number="13" title="Contact Information" />
-            <div className="rounded-xl border border-border bg-card p-4 text-xs md:text-sm space-y-1 text-muted-foreground">
+            <div className="rounded-2xl border border-border/60 bg-secondary/20 p-4 text-xs md:text-sm space-y-1 text-muted-foreground">
               <p><strong className="text-foreground">Platform:</strong> {BUSINESS_DETAILS.platformName}</p>
               <p><strong className="text-foreground">Email:</strong> <a href={`mailto:${BUSINESS_DETAILS.supportEmail}`} className="text-foreground underline">{BUSINESS_DETAILS.supportEmail}</a></p>
               <p><strong className="text-foreground">Phone:</strong> {BUSINESS_DETAILS.supportPhone}</p>
@@ -249,9 +236,11 @@ function TermsPage() {
 function SectionHeading({ number, title }: { number: string; title: string }) {
   return (
     <div className="flex items-baseline gap-3">
-      <span className="font-mono text-xs font-bold text-primary shrink-0">{number}</span>
+      <span className="shrink-0 font-mono text-[11px] font-medium text-muted-foreground">{number}</span>
       <div className="flex flex-1 items-baseline gap-3">
-        <h2 className="text-xl md:text-2xl font-bold tracking-tight">{title}</h2>
+        <h2 className="font-display text-[22px] leading-tight tracking-[-0.01em] text-foreground md:text-[24px]">
+          {title}
+        </h2>
         <span className="h-px flex-1 bg-border/60 hidden sm:block" />
       </div>
     </div>

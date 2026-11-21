@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
-import { BackButton } from "@/components/back-button";
+import { LegalHeader } from "@/components/legal-header";
 import { Button } from "@/components/ui/button";
 import { openCookieSettings } from "@/lib/cookie-consent";
 import { BUSINESS_DETAILS } from "@/lib/business";
@@ -95,23 +95,12 @@ function CookiePolicyPage() {
     <div className="min-h-dvh flex flex-col bg-background text-foreground">
       <SiteNav />
 
-      {/* Header */}
-      <div className="border-b border-border/60 pb-8 pt-6">
-        <div className="mx-auto max-w-5xl px-4 w-full">
-          <BackButton />
-          <h1 className="mt-4 font-display text-3xl md:text-5xl font-bold tracking-tight">
-            Cookie Policy
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Effective Date: <span className="text-foreground font-medium">{LAST_UPDATED}</span>
-          </p>
-        </div>
-      </div>
+      <LegalHeader eyebrow="TixNaija / Legal" title="Cookie Policy" updated={LAST_UPDATED} />
 
       {/* Main Content */}
-      <main className="mx-auto max-w-5xl px-4 py-10 flex-1 w-full space-y-10">
+      <main className="mx-auto w-full max-w-5xl flex-1 space-y-10 px-4 py-12 sm:px-6 md:py-16 lg:px-8">
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold tracking-tight">1. Overview</h2>
+          <h2 className="font-display text-[22px] leading-tight tracking-[-0.01em] text-foreground md:text-[24px]">1. Overview</h2>
           <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
             This Cookie Policy explains how <strong className="text-foreground">TixNaija</strong> uses cookies, local storage, and similar web technologies when you use our platform. This policy should be read alongside our{" "}
             <Link to="/privacy" className="text-foreground underline underline-offset-4 hover:text-primary">
@@ -140,10 +129,10 @@ function CookiePolicyPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold tracking-tight">2. Technologies We Use</h2>
-          <div className="overflow-x-auto rounded-xl border border-border bg-card">
+          <h2 className="font-display text-[22px] leading-tight tracking-[-0.01em] text-foreground md:text-[24px]">2. Technologies We Use</h2>
+          <div className="overflow-x-auto rounded-2xl border border-border/60 bg-card">
             <table className="w-full text-left text-xs md:text-sm">
-              <thead className="border-b border-border bg-muted/40 font-semibold text-foreground">
+              <thead className="border-b border-border/60 bg-secondary/30 font-semibold text-foreground">
                 <tr>
                   <th className="p-3">Identifier</th>
                   <th className="p-3">Provider</th>
@@ -180,21 +169,21 @@ function CookiePolicyPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold tracking-tight">3. Strictly Essential Cookies & Local Storage</h2>
+          <h2 className="font-display text-[22px] leading-tight tracking-[-0.01em] text-foreground md:text-[24px]">3. Strictly Essential Cookies & Local Storage</h2>
           <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
             Strictly essential identifiers are necessary for core functionality and cybersecurity. They enable you to log in, securely transact via Paystack, claim purchased tickets, and maintain selected interface preferences. These cannot be switched off through our banner as the service cannot function properly without them.
           </p>
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold tracking-tight">4. Performance & Analytical Cookies</h2>
+          <h2 className="font-display text-[22px] leading-tight tracking-[-0.01em] text-foreground md:text-[24px]">4. Performance & Analytical Cookies</h2>
           <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
             With your explicit consent, we load Google Analytics to understand aggregate platform activity (such as error occurrences, navigation bottlenecks, and device responsiveness). IP anonymization is enforced. You may toggle this permission off at any time using the "Cookie settings" button below or in the site footer.
           </p>
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold tracking-tight">5. How to Control Cookies in Your Browser</h2>
+          <h2 className="font-display text-[22px] leading-tight tracking-[-0.01em] text-foreground md:text-[24px]">5. How to Control Cookies in Your Browser</h2>
           <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
             In addition to our preference panel, modern browsers allow you to block or delete cookies through browser settings. Note that disabling local storage or essential authentication cookies will prevent you from signing in to your TixNaija account.
           </p>
@@ -206,11 +195,11 @@ function CookiePolicyPage() {
         </section>
 
         <section className="space-y-4 border-t border-border/40 pt-8">
-          <h2 className="text-xl font-semibold tracking-tight">6. Inquiries and Contact</h2>
+          <h2 className="font-display text-[22px] leading-tight tracking-[-0.01em] text-foreground md:text-[24px]">6. Inquiries and Contact</h2>
           <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
             For questions about this policy or our data handling practices, please contact our team:
           </p>
-          <div className="rounded-xl border border-border bg-card p-4 text-xs md:text-sm space-y-1 text-muted-foreground">
+          <div className="rounded-2xl border border-border/60 bg-secondary/20 p-4 text-xs md:text-sm space-y-1 text-muted-foreground">
             <p><strong className="text-foreground">Platform:</strong> {BUSINESS_DETAILS.platformName}</p>
             <p><strong className="text-foreground">Email:</strong> <a href={`mailto:${BUSINESS_DETAILS.supportEmail}`} className="text-foreground underline">{BUSINESS_DETAILS.supportEmail}</a></p>
             <p><strong className="text-foreground">Phone:</strong> {BUSINESS_DETAILS.supportPhone}</p>
