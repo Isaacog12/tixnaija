@@ -30,6 +30,10 @@ import {
   Info,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+
+type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
+type ProfileInsert = Database["public"]["Tables"]["profiles"]["Insert"];
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -292,12 +296,11 @@ function AccountPage() {
       toast.success("Payout account successfully connected!");
       await supabase
         .from("profiles")
-        // @ts-ignore
         .update({
           bank_name: form.bank_name,
           bank_account_number: form.bank_account_number,
           bank_account_name: form.bank_account_name,
-        } as any)
+        } as ProfileUpdate)
         .eq("id", data!.userId);
       qc.invalidateQueries({ queryKey: ["me"] });
     }
@@ -317,14 +320,13 @@ function AccountPage() {
     if (data.profile) {
       const { error: updateError } = await supabase
         .from("profiles")
-        // @ts-ignore
-        .update(parsed.data as any)
+        .update(parsed.data as ProfileUpdate)
         .eq("id", data.userId);
       error = updateError;
     } else {
       const { error: insertError } = await supabase
         .from("profiles")
-        .insert({ id: data.userId, ...parsed.data } as any);
+        .insert({ id: data.userId, ...parsed.data } as ProfileInsert);
       error = insertError;
     }
     setSaving(false);
@@ -334,12 +336,12 @@ function AccountPage() {
         
         // The previous update failed atomically. We re-save without the slug so other fields succeed.
         const fallbackData = { ...parsed.data };
-        delete (fallbackData as any).organizer_slug;
+        delete fallbackData.organizer_slug;
         
         if (data.profile) {
-          await supabase.from("profiles").update(fallbackData as any).eq("id", data.userId);
+          await supabase.from("profiles").update(fallbackData as ProfileUpdate).eq("id", data.userId);
         } else {
-          await supabase.from("profiles").insert({ id: data.userId, ...fallbackData } as any);
+          await supabase.from("profiles").insert({ id: data.userId, ...fallbackData } as ProfileInsert);
         }
         
         toast.success("Other profile fields saved");
@@ -387,7 +389,7 @@ function AccountPage() {
       await supabase
         .from("profiles")
         // @ts-ignore
-        .update({ avatar_url: pub.publicUrl } as any)
+        .update({ avatar_url: pub.publicUrl })
         .eq("id", data.userId);
 
       toast.success("Profile photo updated!");
