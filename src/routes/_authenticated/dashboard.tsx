@@ -98,39 +98,47 @@ function Dashboard() {
   const latestApp = data?.latestApp ?? null;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 md:py-12 min-h-dvh w-full max-w-[100vw] overflow-x-hidden">
-      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-border pb-6">
-        <div>
-          <h1 className="type-heading-lg tracking-tight mb-2">Dashboard</h1>
-          <p className="text-muted-foreground text-sm font-medium">
-            Welcome back, {data?.profile?.full_name || "User"}
-          </p>
+    <div className="mx-auto min-h-dvh w-full max-w-6xl px-4 py-10 sm:px-6 md:py-14 lg:px-8">
+      <header className="mb-10 border-b border-border/60 pb-8">
+        <div className="flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+          <span className="h-px w-10 bg-border" aria-hidden />
+          TixNaija / Workspace
         </div>
-        <div className="flex flex-wrap items-center gap-3 shrink-0">
+        <div className="mt-5 flex flex-col justify-between gap-6 md:flex-row md:items-end">
+          <div>
+            <h1 className="font-display text-[clamp(2rem,4.5vw,3rem)] leading-[1.05] tracking-[-0.025em] text-foreground">
+              Dashboard
+            </h1>
+            <p className="mt-2.5 text-[14px] text-muted-foreground">
+              Welcome back{data?.profile?.full_name ? `, ${data.profile.full_name}` : ""}.
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
           {(isCustomerCare || isAdmin) && (
-            <Button asChild variant="outline" className="h-11 md:h-9 px-4 rounded-md border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10">
-              <Link to="/support">Support Portal</Link>
+            <Button asChild variant="outline" className="h-10 rounded-xl border-border/70 px-4 text-[13px] font-medium text-foreground hover:bg-secondary/60">
+              <Link to="/support">Support portal</Link>
             </Button>
           )}
           {isAdmin && (
             <>
-              <Button asChild variant="outline" className="h-11 md:h-9 px-4 rounded-md border-border text-foreground hover:bg-secondary">
-                <Link to="/admin">Admin Panel</Link>
+              <Button asChild variant="outline" className="h-10 rounded-xl border-border/70 px-4 text-[13px] font-medium text-foreground hover:bg-secondary/60">
+                <Link to="/admin">Admin panel</Link>
               </Button>
-              <Button asChild variant="outline" className="h-11 md:h-9 px-4 rounded-md border-border text-foreground hover:bg-secondary">
-                <Link to="/admin/organizer-applications">Review Apps</Link>
+              <Button asChild variant="outline" className="h-10 rounded-xl border-border/70 px-4 text-[13px] font-medium text-foreground hover:bg-secondary/60">
+                <Link to="/admin/organizer-applications">Review apps</Link>
               </Button>
             </>
           )}
           {isOrganizer && (
-            <Button asChild className="h-11 md:h-9 px-5 rounded-full bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary/90 press-sm transition-transform duration-[120ms]">
+            <Button asChild className="h-10 rounded-xl bg-primary px-4 text-[13px] font-semibold text-primary-foreground press-sm hover:bg-primary/90">
               <Link to="/events/new">
-                <Plus className="mr-2 h-4 w-4" /> New Event
+                <Plus className="mr-1.5 h-4 w-4" /> New event
               </Link>
             </Button>
           )}
         </div>
-      </div>
+        </div>
+      </header>
 
       {isLoading && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-8">
@@ -162,12 +170,12 @@ function Dashboard() {
         <>
           {isOrganizer ? (
             <Tabs defaultValue="events" className="space-y-6 w-full max-w-full">
-              <TabsList className="bg-secondary/50 border border-border p-1 h-auto flex-wrap justify-start">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="events">Events</TabsTrigger>
-                <TabsTrigger value="promo-codes">Promo Codes</TabsTrigger>
-                <TabsTrigger value="promoters">Promoters</TabsTrigger>
-                <TabsTrigger value="payouts">Payouts</TabsTrigger>
+              <TabsList className="h-auto flex-wrap justify-start gap-1 rounded-xl border border-border/60 bg-secondary/30 p-1">
+                <TabsTrigger value="overview" className="rounded-lg px-4 text-[13px] font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm">Overview</TabsTrigger>
+                <TabsTrigger value="events" className="rounded-lg px-4 text-[13px] font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm">Events</TabsTrigger>
+                <TabsTrigger value="promo-codes" className="rounded-lg px-4 text-[13px] font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm">Promo codes</TabsTrigger>
+                <TabsTrigger value="promoters" className="rounded-lg px-4 text-[13px] font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm">Promoters</TabsTrigger>
+                <TabsTrigger value="payouts" className="rounded-lg px-4 text-[13px] font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm">Payouts</TabsTrigger>
               </TabsList>
               
               <TabsContent value="overview">
@@ -197,17 +205,16 @@ function Dashboard() {
   function renderOverview() {
     return (
       <div className="space-y-12 mt-2">
-        <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-8 md:p-12 shadow-sm">
-          <div className="relative grid gap-12 lg:grid-cols-2 lg:items-center">
+        <div className="rounded-3xl border border-border/60 bg-card p-7 md:p-10">
+          <div className="relative grid gap-10 lg:grid-cols-2 lg:items-center">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary mb-6 shadow-sm">
-                <Zap className="h-3.5 w-3.5" /> For creators
+              <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/[0.07] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
+                <Zap className="h-3 w-3" aria-hidden /> For creators
               </span>
-               <h2 className="type-heading-lg mb-6">
-                 Start selling<br />
-                 <span className="text-primary">in minutes.</span>
+               <h2 className="font-display text-[30px] leading-[1.08] tracking-[-0.02em] text-foreground md:text-[36px]">
+                 Start selling <span className="text-primary">in minutes.</span>
                </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-md">
+              <p className="mt-4 mb-7 max-w-md text-[15px] leading-relaxed text-muted-foreground">
                 Create your event, set ticket tiers, track sales in real-time, and scan attendees seamlessly at the door.
               </p>
               
@@ -228,22 +235,22 @@ function Dashboard() {
                     </Button>
                   </div>
                 ) : (
-                  <Button asChild size="lg" className="text-base px-8 gradient-sunset text-primary-foreground glow-primary press-sm transition-all duration-[120ms]">
-                     <Link to="/account">Become an Organizer</Link>
+                  <Button asChild className="h-11 rounded-xl bg-primary px-5 text-[14px] font-semibold text-primary-foreground press-sm hover:bg-primary/90">
+                     <Link to="/account">Become an organizer</Link>
                    </Button>
                 )}
-                <Button asChild size="lg" variant="outline" className="border-border/60 hover:bg-secondary text-base px-8 group">
+                <Button asChild variant="outline" className="group h-11 rounded-xl border-border/70 px-5 text-[14px] font-medium hover:bg-secondary/60">
                   <Link to="/browse">
-                    Explore events <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    Explore events <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden />
                   </Link>
                 </Button>
               </div>
             </div>
 
             <div className="relative mx-auto w-full max-w-sm lg:max-w-md">
-              <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-                <div className="h-40 w-full bg-secondary relative flex items-end p-6">
-                  <span className="relative font-display text-sm uppercase tracking-[0.4em] text-secondary-foreground drop-shadow-md">Admit One</span>
+              <div className="overflow-hidden rounded-2xl border border-border/60 bg-card">
+                <div className="relative flex h-36 w-full items-end bg-secondary/60 p-6">
+                  <span className="relative font-display text-[13px] uppercase tracking-[0.4em] text-secondary-foreground">Admit One</span>
                 </div>
                 <div className="p-5">
                   <div className="flex items-start justify-between mb-3">
@@ -263,24 +270,24 @@ function Dashboard() {
         </div>
 
         <div>
-          <div className="flex items-center gap-4 mb-8">
-            <h3 className="font-display text-2xl">Toolkit</h3>
-            <div className="h-px flex-1 bg-border/60" />
+          <div className="mb-6 flex items-center gap-4">
+            <h3 className="font-display text-xl tracking-[-0.01em]">Toolkit</h3>
+            <div className="h-px flex-1 bg-border/60" aria-hidden />
           </div>
           
-          <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {[
               { icon: Ticket, title: "Ticket Tiers", desc: "Create Early Bird, VIP, and GA tiers with custom pricing." },
               { icon: BarChart2, title: "Live Analytics", desc: "Track sales, revenue, and capacity in real-time." },
               { icon: QrCode, title: "QR Scanning", desc: "Check in attendees instantly with our built-in scanner." },
               { icon: Users, title: "Comp Tickets", desc: "Issue free tickets to guests, press, or VIPs easily." },
             ].map((f) => (
-              <div key={f.title} className="rounded-xl border border-border bg-card p-6 shadow-sm">
-                <div className="inline-flex rounded-lg bg-secondary p-3 mb-4">
-                  <f.icon className="h-5 w-5 text-primary" />
-                </div>
-                <h3 className="font-semibold text-base mb-1.5">{f.title}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">{f.desc}</p>
+              <div key={f.title} className="rounded-2xl border border-border/60 bg-card p-5 transition-colors hover:border-border">
+                <span className="mb-4 inline-grid h-9 w-9 place-items-center rounded-lg bg-secondary/70 text-foreground">
+                  <f.icon className="h-[18px] w-[18px]" aria-hidden />
+                </span>
+                <h3 className="text-[14px] font-semibold text-foreground">{f.title}</h3>
+                <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">{f.desc}</p>
               </div>
             ))}
           </div>
@@ -292,17 +299,15 @@ function Dashboard() {
   function renderEvents() {
     if (data?.events.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 bg-card/40 py-20 px-6 text-center shadow-sm max-w-4xl mx-auto mt-2">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary/50 mb-6 relative">
-            <Ticket className="h-8 w-8 text-muted-foreground/50" />
-          </div>
-          <h3 className="font-display text-3xl mb-3">Your stage is empty. Create your first event to get started.</h3>
-          <p className="max-w-md text-muted-foreground text-base mb-8 leading-relaxed">
-            Your dashboard is looking a little empty. Create your first event and start selling tickets globally.
+        <div className="mx-auto mt-2 flex max-w-xl flex-col items-center rounded-2xl border border-dashed border-border px-6 py-16 text-center">
+          <Ticket className="mb-5 h-7 w-7 text-muted-foreground/50" aria-hidden />
+          <h3 className="font-display text-2xl leading-snug text-foreground">Your stage is empty</h3>
+          <p className="mt-3 max-w-sm text-[14px] leading-relaxed text-muted-foreground">
+            Create your first event and start selling tickets.
           </p>
-          <Button asChild className="h-11 rounded-md px-6 text-sm font-semibold">
+          <Button asChild className="mt-6 h-11 rounded-xl bg-primary px-5 text-[14px] font-semibold text-primary-foreground press-sm hover:bg-primary/90">
             <Link to="/events/new">
-              <Plus className="mr-2 h-4 w-4" /> Create your first event
+              <Plus className="mr-1.5 h-4 w-4" /> Create your first event
             </Link>
           </Button>
         </div>
@@ -310,10 +315,10 @@ function Dashboard() {
     }
 
     return (
-      <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden mb-8 mt-2">
+      <div className="mb-8 mt-2 overflow-hidden rounded-2xl border border-border/60 bg-card">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm whitespace-nowrap">
-            <thead className="bg-secondary/30 text-muted-foreground">
+            <thead className="border-b border-border/60 bg-secondary/30 text-muted-foreground">
               <tr>
                 <th className="px-5 py-3 font-semibold w-12"></th>
                 <th className="px-5 py-3 font-semibold">Event</th>
@@ -329,7 +334,7 @@ function Dashboard() {
                 const stats = data.statsByEvent[ev.id] ?? { sold: 0, revenueKobo: 0 };
                 const evDate = new Date(ev.start_datetime);
                 return (
-                  <tr key={ev.id} className="hover:bg-muted/30 transition-colors group">
+                  <tr key={ev.id} className="group transition-colors hover:bg-secondary/30">
                     <td className="px-5 py-4">
                       <div className="h-10 w-10 shrink-0 rounded bg-secondary border border-border overflow-hidden">
                         {ev.cover_image_url ? (

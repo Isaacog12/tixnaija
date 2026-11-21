@@ -1,4 +1,5 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import type { LinkProps } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import {
@@ -6,6 +7,7 @@ import {
   Ban, CheckCircle, ClipboardList, ExternalLink, ShieldOff, ShieldCheck, Trash2, Image as ImageIcon, RefreshCcw, Briefcase,
   ShieldAlert, Mail, Pencil,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira } from "@/lib/currency";
@@ -616,24 +618,34 @@ function AdminDashboard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <motion.div 
-        initial={{ opacity: 0, y: 10 }}
+      <motion.header
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="mb-12 mt-12 md:mt-0"
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="mb-10 mt-10 border-b border-border/60 pb-8 md:mt-4"
       >
-        <div className="flex items-center gap-4 mb-3">
-          <BackButton />
-          <h1 className="text-3xl md:text-4xl font-display font-semibold tracking-tight text-foreground">Admin Portal</h1>
+        <div className="flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+          <span className="h-px w-10 bg-border" aria-hidden />
+          TixNaija / Admin
         </div>
-        <p className="text-muted-foreground text-base max-w-2xl">Platform overview and moderation control center.</p>
-      </motion.div>
+        <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="font-display text-[clamp(2rem,4.5vw,3rem)] leading-[1.05] tracking-[-0.025em] text-foreground">
+              Admin portal
+            </h1>
+            <p className="mt-2.5 max-w-xl text-[14px] text-muted-foreground">
+              Platform overview and moderation control.
+            </p>
+          </div>
+          <BackButton />
+        </div>
+      </motion.header>
 
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-        className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6 mb-12"
+        className="mb-10 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6"
       >
         <StatCard icon={Users} label="Total Users" value={stats?.users.toLocaleString() ?? "—"} />
         <StatCard icon={Calendar} label="Total Events" value={stats?.events.toLocaleString() ?? "—"} />
@@ -689,37 +701,37 @@ function AdminDashboard() {
         />
       </motion.div>
 
-      <div className="mb-12 rounded-3xl border border-destructive/20 bg-destructive/5 p-6">
-        <h3 className="font-display text-xl text-destructive mb-2 flex items-center gap-2"><ShieldOff className="h-5 w-5" /> Revoke Organizer by Email</h3>
-        <p className="text-sm text-foreground/80 mb-4">Quickly find a user by their email address and completely revoke their organizer access (forces them to reapply).</p>
-        <div className="flex flex-col sm:flex-row gap-3">
+      <div className="mb-10 rounded-2xl border border-destructive/25 bg-destructive/[0.04] p-6">
+        <h3 className="mb-2 flex items-center gap-2 text-[15px] font-semibold text-destructive"><ShieldOff className="h-4 w-4" aria-hidden /> Revoke organizer by email</h3>
+        <p className="mb-4 max-w-2xl text-[13px] leading-relaxed text-muted-foreground">Quickly find a user by their email address and completely revoke their organizer access (forces them to reapply).</p>
+        <div className="flex flex-col gap-2.5 sm:flex-row">
           <Input 
              placeholder="User Email (e.g. hello@example.com)" 
              value={revokeEmail} 
              onChange={(e) => setRevokeEmail(e.target.value)}
-             className="max-w-sm bg-background border-destructive/20 focus-visible:ring-destructive/20"
+             className="max-w-sm rounded-xl border-border/70 bg-background/60 focus-visible:ring-destructive/20"
           />
           <Input 
-             placeholder="Reason (Optional)" 
+             placeholder="Reason (optional)" 
              value={revokeEmailReason} 
              onChange={(e) => setRevokeEmailReason(e.target.value)}
-             className="max-w-sm bg-background border-destructive/20 focus-visible:ring-destructive/20"
+             className="max-w-sm rounded-xl border-border/70 bg-background/60 focus-visible:ring-destructive/20"
           />
           <Button 
              variant="destructive" 
              onClick={() => revokeByEmailMutation.mutate({ email: revokeEmail, reason: revokeEmailReason })}
              disabled={revokeByEmailMutation.isPending || !revokeEmail}
-             className="rounded-xl font-bold press-sm transition-transform duration-[120ms]"
+             className="h-10 rounded-xl px-5 text-[13px] font-semibold press-sm"
           >
             {revokeByEmailMutation.isPending ? "Revoking..." : "Revoke Access"}
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-2">
-        <section className="flex flex-col rounded-3xl border border-border/60 bg-card shadow-sm overflow-hidden h-[600px]">
-          <div className="flex items-center justify-between p-6 border-b border-border/40 bg-card/50 backdrop-blur-sm z-10">
-            <h2 className="font-display text-2xl">Recent Users</h2>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <section className="flex h-[600px] flex-col overflow-hidden rounded-2xl border border-border/60 bg-card">
+          <div className="z-10 flex items-center justify-between gap-4 border-b border-border/60 p-5">
+            <h2 className="font-display text-xl tracking-[-0.01em]">Recent users</h2>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -732,7 +744,7 @@ function AdminDashboard() {
           </div>
           <div className="overflow-x-auto overflow-y-auto flex-1">
             <Table>
-              <TableHeader className="bg-muted/80 backdrop-blur-md">
+              <TableHeader className="border-b border-border/60 bg-secondary/30">
                 {userTable.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => (
@@ -750,7 +762,7 @@ function AdminDashboard() {
                   </TableRow>
                 ) : userTable.getRowModel().rows.length ? (
                   userTable.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id} className={`hover:bg-muted/30 transition-colors ${row.original.suspended ? "opacity-50 grayscale" : ""}`}>
+                    <TableRow key={row.id} className={`transition-colors hover:bg-secondary/30 ${row.original.suspended ? "opacity-60 grayscale" : ""}`}>
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id} className="px-6 py-4">
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -768,9 +780,9 @@ function AdminDashboard() {
           </div>
         </section>
 
-        <section className="flex flex-col rounded-3xl border border-border/60 bg-card shadow-sm overflow-hidden h-[600px]">
-          <div className="flex items-center justify-between p-6 border-b border-border/40 bg-card/50 backdrop-blur-sm z-10">
-            <h2 className="font-display text-2xl">Event Moderation</h2>
+        <section className="flex h-[600px] flex-col overflow-hidden rounded-2xl border border-border/60 bg-card">
+          <div className="z-10 flex items-center justify-between gap-4 border-b border-border/60 p-5">
+            <h2 className="font-display text-xl tracking-[-0.01em]">Event moderation</h2>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -783,7 +795,7 @@ function AdminDashboard() {
           </div>
           <div className="overflow-x-auto overflow-y-auto flex-1">
             <Table>
-              <TableHeader className="bg-muted/80 backdrop-blur-md">
+              <TableHeader className="border-b border-border/60 bg-secondary/30">
                 {eventTable.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => (
@@ -801,7 +813,7 @@ function AdminDashboard() {
                   </TableRow>
                 ) : eventTable.getRowModel().rows.length ? (
                   eventTable.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id} className="hover:bg-muted/30 transition-colors">
+                    <TableRow key={row.id} className="transition-colors hover:bg-secondary/30">
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id} className="px-6 py-4">
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -829,21 +841,25 @@ function StatCard({
   value,
   className,
 }: {
-  icon: any;
+  icon: LucideIcon;
   label: string;
   value: string;
   className?: string;
 }) {
   return (
-    <div className={`rounded-2xl border border-border/60 bg-card p-5 flex flex-col justify-between shadow-sm transition-all hover:shadow-md h-full ${className || ""}`}>
-      <div className="flex items-start justify-between">
-        <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
-          <Icon className="h-5 w-5" />
-        </div>
-      </div>
-      <div className="mt-4">
-        <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">{label}</p>
-        <h3 className={`font-display text-3xl tracking-tight ${className?.includes('text-gradient') ? '' : 'text-foreground'}`}>{value}</h3>
+    <div className="flex h-full flex-col justify-between rounded-2xl border border-border/60 bg-card p-5 transition-colors hover:border-border">
+      <span className="inline-grid h-9 w-9 place-items-center rounded-lg bg-secondary/70 text-foreground">
+        <Icon className="h-[18px] w-[18px]" aria-hidden />
+      </span>
+      <div className="mt-5">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
+        <h3
+          className={`mt-1.5 font-display text-2xl tracking-[-0.02em] ${
+            className?.includes("text-gradient") ? className : "text-foreground"
+          }`}
+        >
+          {value}
+        </h3>
       </div>
     </div>
   );
@@ -857,36 +873,34 @@ function LinkCard({
   subtext,
   colorClass,
 }: {
-  to: string;
-  icon: any;
+  to: LinkProps["to"];
+  icon: LucideIcon;
   label: string;
   value: string | number;
   subtext: string;
   colorClass: "amber" | "blue" | "emerald" | "primary";
 }) {
-  const colorStyles = {
-    amber: "border-amber-500/30 text-amber-500 hover:border-amber-500/60 hover:shadow-amber-500/10 bg-amber-500/10 hover:bg-amber-500/20",
-    blue: "border-blue-500/30 text-blue-500 hover:border-blue-500/60 hover:shadow-blue-500/10 bg-blue-500/10 hover:bg-blue-500/20",
-    emerald: "border-emerald-500/30 text-emerald-500 hover:border-emerald-500/60 hover:shadow-emerald-500/10 bg-emerald-500/10 hover:bg-emerald-500/20",
-    primary: "border-primary/30 text-primary hover:border-primary/60 hover:shadow-primary/10 bg-primary/10 hover:bg-primary/20",
+  // One tinted icon per card. Colouring the whole tile made nine cards compete
+  // for attention; the count is the thing worth reading.
+  const tint = {
+    amber: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    blue: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+    emerald: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    primary: "bg-primary/10 text-primary",
   };
 
-  const style = colorStyles[colorClass];
-  const bgClass = style.split(" bg-")[0];
-  const hoverBgClass = "bg-" + style.split(" bg-")[1];
-
   return (
-    <Link to={to as any} className="group block cursor-pointer h-full">
-      <div className={`rounded-2xl border flex flex-col justify-between shadow-sm transition-all h-full p-5 bg-card ${bgClass}`}>
-        <div className="flex items-start justify-between">
-          <div className={`rounded-xl p-2.5 transition-colors ${hoverBgClass}`}>
-            <Icon className="h-5 w-5" />
-          </div>
-        </div>
-        <div className="mt-4">
-          <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">{label}</p>
-          <h3 className="font-display text-3xl tracking-tight mb-1">{value}</h3>
-          <p className="text-xs font-medium opacity-80 group-hover:opacity-100 transition-opacity">{subtext}</p>
+    <Link to={to} className="group block h-full cursor-pointer">
+      <div className="flex h-full flex-col justify-between rounded-2xl border border-border/60 bg-card p-5 transition-colors group-hover:border-border group-hover:bg-secondary/20">
+        <span className={`inline-grid h-9 w-9 place-items-center rounded-lg ${tint[colorClass]}`}>
+          <Icon className="h-[18px] w-[18px]" aria-hidden />
+        </span>
+        <div className="mt-5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
+          <h3 className="mt-1.5 font-display text-2xl tracking-[-0.02em] text-foreground">{value}</h3>
+          <p className="mt-1 text-[11px] font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+            {subtext}
+          </p>
         </div>
       </div>
     </Link>
