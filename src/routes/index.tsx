@@ -9,6 +9,7 @@ import {
   CreditCard,
   Ticket,
   CalendarDays,
+  ArrowUpRight,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { filterActiveEvents } from "@/lib/events";
@@ -91,6 +92,16 @@ const VALUE_PROPS = [
   },
 ];
 
+const CATEGORIES = ["Concerts", "Comedy", "Conferences", "Nightlife", "Festivals"];
+
+function formatEventDate(iso: string) {
+  const date = new Date(iso);
+  return {
+    day: date.toLocaleString("en-NG", { weekday: "short", day: "numeric", month: "short" }),
+    time: date.toLocaleString("en-NG", { hour: "numeric", minute: "2-digit" }),
+  };
+}
+
 function LandingPage() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
@@ -120,59 +131,153 @@ function LandingPage() {
     }
   };
 
+  // The soonest event becomes the hero feature; the rest fill the listing below.
+  const featured = upcoming.data?.[0];
+  const rest = upcoming.data?.slice(1) ?? [];
+
   return (
     <div className="min-h-dvh bg-background">
       <SiteNav />
 
-      {/* ── Hero ─────────────────────────────────────────────────────── */}
+      {/* ── Hero: copy + the next event, side by side ─────────────────── */}
       <section className="border-b border-border/60">
-        <div className="mx-auto w-full max-w-6xl px-4 pb-14 pt-10 sm:px-6 md:pb-20 md:pt-16 lg:px-8">
-          <div className="flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-            <span className="h-px w-10 bg-border" aria-hidden />
-            Ticketing for Nigeria
+        <div className="mx-auto grid w-full max-w-7xl gap-12 px-4 pb-14 pt-10 sm:px-6 md:pb-20 md:pt-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-16 lg:px-8">
+          <div className="min-w-0">
+            <div className="flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+              <span className="h-px w-10 bg-border" aria-hidden />
+              Ticketing for Nigeria
+            </div>
+
+            <h1 className="mt-5 font-display text-[clamp(2.5rem,6.5vw,4.75rem)] leading-[1.02] tracking-[-0.03em] text-foreground">
+              Buy tickets.
+              <br />
+              <span className="text-gradient-sunset">Turn up.</span>
+            </h1>
+
+            <p className="mt-6 max-w-lg text-[17px] leading-relaxed text-muted-foreground">
+              Concerts, comedy and premium events across Nigeria — booked in seconds, scanned at the
+              door.
+            </p>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                navigate({ to: "/browse", search: { q: query.trim() || undefined } });
+              }}
+              className="mt-8 flex w-full max-w-xl flex-col gap-2 rounded-2xl border border-border/70 bg-card p-2 transition-colors duration-[var(--duration-fast)] focus-within:border-border sm:flex-row sm:items-center"
+            >
+              <div className="flex flex-1 items-center gap-3 px-3">
+                <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                <Input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search events, artists, venues..."
+                  aria-label="Search events"
+                  className="h-11 border-0 bg-transparent px-0 text-[15px] shadow-none placeholder:text-muted-foreground focus-visible:ring-0"
+                />
+              </div>
+              <Button
+                type="submit"
+                className="h-11 shrink-0 rounded-xl px-6 text-[14px] font-semibold press-sm"
+              >
+                Find events
+              </Button>
+            </form>
+
+            <div className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              {CATEGORIES.map((category, i) => (
+                <span key={category} className="flex items-center gap-3">
+                  {i > 0 && <span className="h-3 w-px bg-border" aria-hidden />}
+                  <Link
+                    to="/browse"
+                    className="transition-colors hover:text-foreground"
+                  >
+                    {category}
+                  </Link>
+                </span>
+              ))}
+            </div>
           </div>
 
-          <h1 className="mt-5 max-w-4xl font-display text-[clamp(2.5rem,7vw,5rem)] leading-[1.02] tracking-[-0.03em] text-foreground">
-            Buy tickets.
-            <br />
-            <span className="text-gradient-sunset">Turn up.</span>
-          </h1>
+          {/* Featured: the soonest event */}
+          <div className="min-w-0">
+            {featured ? (
+              <Link
+                to="/e/$slug"
+                params={{ slug: featured.slug }}
+                className="group block overflow-hidden rounded-2xl border border-border/70 bg-card transition-[border-color,transform] duration-[var(--duration-fast)] hover:-translate-y-0.5 hover:border-border"
+              >
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary/50">
+                  {featured.cover_image_url ? (
+                    <img
+                      src={optimizeImage(featured.cover_image_url, 900)}
+                      srcSet={imageSrcSet(featured.cover_image_url, [500, 900])}
+                      sizes="(max-width: 1024px) 100vw, 520px"
+                      alt={featured.title}
+                      width={900}
+                      height={675}
+                      loading="eager"
+                      decoding="async"
+                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-secondary/60" />
+                  )}
+                  <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-background/85 px-2.5 py-1 text-[11px] font-semibold text-foreground backdrop-blur">
+                    <CalendarDays className="h-3 w-3" aria-hidden />
+                    Next up
+                  </span>
+                </div>
 
-          <p className="mt-6 max-w-xl text-[17px] leading-relaxed text-muted-foreground">
-            Discover concerts, comedy shows and premium events across Nigeria. Secure your spot in
-            seconds and enter with a scannable QR code.
-          </p>
-
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              navigate({ to: "/browse", search: { q: query.trim() || undefined } });
-            }}
-            className="mt-9 flex w-full max-w-2xl flex-col gap-2 rounded-2xl border border-border/70 bg-card p-2 transition-colors duration-[var(--duration-fast)] focus-within:border-border sm:flex-row sm:items-center"
-          >
-            <div className="flex flex-1 items-center gap-3 px-3">
-              <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search events, artists, venues..."
-                aria-label="Search events"
-                className="h-11 border-0 bg-transparent px-0 text-[15px] shadow-none placeholder:text-muted-foreground focus-visible:ring-0"
-              />
-            </div>
-            <Button
-              type="submit"
-              className="h-11 shrink-0 rounded-xl px-6 text-[14px] font-semibold press-sm"
-            >
-              Find events
-            </Button>
-          </form>
+                <div className="p-5 md:p-6">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    {formatEventDate(featured.start_datetime).day} ·{" "}
+                    {formatEventDate(featured.start_datetime).time}
+                  </p>
+                  <h2 className="mt-2 line-clamp-2 font-display text-[24px] leading-snug tracking-[-0.01em] text-foreground transition-colors group-hover:text-primary">
+                    {featured.title}
+                  </h2>
+                  <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/60 pt-4 text-[13px] text-muted-foreground">
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                      <span className="truncate">
+                        {featured.venue_name || featured.city || "Nigeria"}
+                      </span>
+                    </span>
+                    <span className="inline-flex shrink-0 items-center gap-1 font-semibold text-foreground">
+                      View <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ) : (
+              <div className="flex aspect-[4/3] flex-col justify-between rounded-2xl border border-dashed border-border/70 bg-card/40 p-6 md:p-8">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                  Next up
+                </span>
+                <div>
+                  <p className="font-display text-[26px] leading-tight tracking-[-0.02em] text-foreground">
+                    The calendar is open.
+                  </p>
+                  <p className="mt-2 max-w-[16rem] text-[14px] leading-relaxed text-muted-foreground">
+                    New events land here the moment organizers publish them.
+                  </p>
+                  <Link
+                    to="/browse"
+                    className="mt-5 inline-flex h-10 items-center gap-2 rounded-xl border border-border/70 bg-card px-4 text-[13px] font-semibold text-foreground transition-colors hover:bg-secondary/50"
+                  >
+                    Browse events <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
       {/* ── Sponsored banners ────────────────────────────────────────── */}
       {banners.data && banners.data.length > 0 && (
-        <section className="mx-auto w-full max-w-6xl px-4 pt-10 sm:px-6 lg:px-8">
+        <section className="mx-auto w-full max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
           <Carousel
             opts={{ align: "start", loop: true }}
             plugins={[Autoplay({ delay: 5000, stopOnInteraction: true })]}
@@ -192,17 +297,17 @@ function LandingPage() {
                     role={banner.link_url ? "link" : undefined}
                     tabIndex={banner.link_url ? 0 : undefined}
                     aria-label={banner.link_url ? banner.title || "Sponsored banner" : undefined}
-                    className={`group relative aspect-[16/7] w-full overflow-hidden rounded-2xl border border-border/60 bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                    className={`group relative aspect-[16/6] w-full overflow-hidden rounded-2xl border border-border/60 bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                       banner.link_url ? "cursor-pointer" : ""
                     }`}
                   >
                     <img
                       src={optimizeImage(banner.image_url, 1600)}
                       srcSet={imageSrcSet(banner.image_url, [800, 1200, 1600])}
-                      sizes="(max-width: 1024px) 100vw, 1152px"
+                      sizes="(max-width: 1024px) 100vw, 1200px"
                       alt={banner.title || ""}
                       width={1600}
-                      height={700}
+                      height={600}
                       loading={index === 0 ? "eager" : "lazy"}
                       decoding="async"
                       fetchPriority={index === 0 ? "high" : "auto"}
@@ -219,32 +324,26 @@ function LandingPage() {
         </section>
       )}
 
-      {/* ── Why TixNaija ─────────────────────────────────────────────── */}
-      <section className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 md:py-24 lg:px-8">
-        <div className="grid gap-6 border-b border-border/60 pb-8 md:grid-cols-[1fr_auto] md:items-end">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-              Why TixNaija
-            </p>
-            <h2 className="mt-4 max-w-xl font-display text-[clamp(1.9rem,3.5vw,2.6rem)] leading-tight tracking-[-0.02em] text-foreground">
-              Less friction, more turnout.
-            </h2>
-          </div>
+      {/* ── Why TixNaija: numbered rules, not cards ──────────────────── */}
+      <section className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 md:py-24 lg:px-8">
+        <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-end">
+          <h2 className="max-w-xl font-display text-[clamp(1.9rem,3.5vw,2.6rem)] leading-tight tracking-[-0.02em] text-foreground">
+            Less friction, more turnout.
+          </h2>
           <p className="max-w-sm text-[15px] leading-relaxed text-muted-foreground">
-            The most seamless way to discover and host events in Nigeria — from the first search to
-            the door scan.
+            The seams — discovery, payment, entry — are the parts we removed.
           </p>
         </div>
 
-        <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {VALUE_PROPS.map(({ icon: Icon, title, body }) => (
-            <div
-              key={title}
-              className="flex flex-col rounded-2xl border border-border/60 bg-card p-6 transition-colors hover:border-border"
-            >
-              <span className="grid h-11 w-11 place-items-center rounded-xl bg-secondary/70 text-foreground">
-                <Icon className="h-[18px] w-[18px]" aria-hidden />
-              </span>
+        <div className="mt-10 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+          {VALUE_PROPS.map(({ icon: Icon, title, body }, i) => (
+            <div key={title} className="border-t border-border/60 pt-6">
+              <div className="flex items-center justify-between">
+                <Icon className="h-[18px] w-[18px] text-muted-foreground" aria-hidden />
+                <span className="font-display text-sm text-muted-foreground/60">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+              </div>
               <h3 className="mt-6 text-[16px] font-semibold leading-snug text-foreground">{title}</h3>
               <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">{body}</p>
             </div>
@@ -254,14 +353,17 @@ function LandingPage() {
 
       {/* ── Organizer CTA ────────────────────────────────────────────── */}
       <section className="border-y border-border/60 bg-secondary/20">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-14 sm:px-6 md:flex-row md:items-end md:justify-between md:py-20 lg:px-8">
+        <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 py-14 sm:px-6 md:grid-cols-[1fr_auto] md:items-end md:py-20 lg:px-8">
           <div>
-            <h2 className="max-w-xl font-display text-[clamp(1.9rem,3.5vw,2.6rem)] leading-tight tracking-[-0.02em] text-foreground">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+              For organizers
+            </p>
+            <h2 className="mt-4 max-w-xl font-display text-[clamp(1.9rem,3.5vw,2.6rem)] leading-tight tracking-[-0.02em] text-foreground">
               Selling tickets? Start here.
             </h2>
             <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-muted-foreground">
-              Set up your event, publish instantly, and get paid directly to your Nigerian bank
-              account. Zero listing fees.
+              Publish in minutes, sell at checkout, scan at the door — and get paid straight to your
+              Nigerian bank account. Zero listing fees.
             </p>
           </div>
           <div className="flex flex-col gap-2.5 sm:flex-row md:shrink-0">
@@ -282,21 +384,16 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* ── Upcoming events ──────────────────────────────────────────── */}
-      <section className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 md:py-24 lg:px-8">
+      {/* ── Also on the calendar ─────────────────────────────────────── */}
+      <section className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 md:py-24 lg:px-8">
         <div className="flex flex-col gap-4 border-b border-border/60 pb-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-              On the calendar
+              Also on the calendar
             </p>
             <h2 className="mt-4 font-display text-[clamp(1.9rem,3.5vw,2.6rem)] leading-tight tracking-[-0.02em] text-foreground">
               Coming up next
             </h2>
-            <p className="mt-2 text-[15px] text-muted-foreground">
-              {upcoming.data && upcoming.data.length > 0
-                ? "Grab your tickets before they're gone."
-                : "Fresh events landing here soon."}
-            </p>
           </div>
           <Link
             to="/browse"
@@ -307,118 +404,77 @@ function LandingPage() {
         </div>
 
         {upcoming.isLoading && (
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
-            {[1, 2, 3].map((i) => (
+          <div className="mt-8 space-y-2">
+            {[1, 2].map((i) => (
               <div
                 key={i}
-                className="animate-pulse overflow-hidden rounded-2xl border border-border/60 bg-card"
-              >
-                <div className="aspect-[16/10] bg-secondary/60" />
-                <div className="space-y-3 p-5">
-                  <div className="h-4 w-2/3 rounded bg-secondary/80" />
-                  <div className="h-3 w-1/2 rounded bg-secondary/60" />
-                </div>
-              </div>
+                className="h-[92px] animate-pulse rounded-2xl border border-border/60 bg-card"
+              />
             ))}
           </div>
         )}
 
-        {upcoming.data && upcoming.data.length === 0 && (
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/70 bg-card/40 px-6 py-14 text-center"
-              >
-                <span className="font-display text-4xl text-muted-foreground/30">
-                  {String(i).padStart(2, "0")}
-                </span>
-                <p className="mt-4 max-w-[200px] text-[14px] text-muted-foreground">
-                  Be the first to list an event in this slot.
-                </p>
-              </div>
-            ))}
+        {!upcoming.isLoading && rest.length === 0 && (
+          <div className="mt-8 flex flex-col items-start justify-between gap-4 rounded-2xl border border-dashed border-border/70 bg-card/40 p-6 sm:flex-row sm:items-center">
+            <p className="max-w-md text-[14px] leading-relaxed text-muted-foreground">
+              {featured
+                ? "That's the only date on the calendar right now. More events land here as organizers publish them."
+                : "Nothing scheduled just yet. Events appear here the moment they're published."}
+            </p>
+            <Link
+              to="/browse"
+              className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Explore events <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+            </Link>
           </div>
         )}
 
-        {upcoming.data && upcoming.data.length > 0 && (
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {upcoming.data.map((ev) => {
+        {rest.length > 0 && (
+          <ul className="mt-8 divide-y divide-border/60 border-y border-border/60">
+            {rest.map((ev) => {
               const isCancelled = ev.status === "cancelled";
-              const startDate = new Date(ev.start_datetime);
-              const dateLabel = startDate.toLocaleString("en-NG", {
-                weekday: "short",
-                day: "numeric",
-                month: "short",
-              });
-              const timeLabel = startDate.toLocaleString("en-NG", {
-                hour: "numeric",
-                minute: "2-digit",
-              });
+              const { day, time } = formatEventDate(ev.start_datetime);
 
               return (
-                <Link
-                  key={ev.id}
-                  to="/e/$slug"
-                  params={{ slug: ev.slug }}
-                  className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-card transition-[border-color,transform] duration-[var(--duration-fast)] hover:-translate-y-0.5 hover:border-border"
-                >
-                  <div className="relative aspect-[16/10] w-full overflow-hidden bg-secondary/50">
-                    {ev.cover_image_url ? (
-                      <img
-                        src={optimizeImage(ev.cover_image_url, 600)}
-                        srcSet={imageSrcSet(ev.cover_image_url, [400, 600, 800])}
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        alt={ev.title}
-                        width={600}
-                        height={375}
-                        loading="lazy"
-                        decoding="async"
-                        className={`h-full w-full object-cover transition-transform duration-700 ${
-                          isCancelled ? "opacity-60 grayscale" : "group-hover:scale-[1.03]"
-                        }`}
-                      />
-                    ) : (
-                      <div className="absolute inset-0 bg-secondary/60" />
-                    )}
+                <li key={ev.id}>
+                  <Link
+                    to="/e/$slug"
+                    params={{ slug: ev.slug }}
+                    className="group flex flex-col gap-4 py-5 transition-colors hover:bg-secondary/30 sm:flex-row sm:items-center sm:gap-6 sm:px-2"
+                  >
+                    <div className="flex w-full shrink-0 items-baseline gap-3 sm:w-40 sm:flex-col sm:gap-1">
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+                        {day}
+                      </span>
+                      <span className="text-[12px] text-muted-foreground">{time}</span>
+                    </div>
 
-                    <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-background/85 px-2.5 py-1 text-[11px] font-semibold text-foreground backdrop-blur">
-                      <CalendarDays className="h-3 w-3" aria-hidden />
-                      {dateLabel}
-                    </span>
-
-                    {isCancelled && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-background/55 backdrop-blur-[2px]">
-                        <span className="rounded-full border border-destructive/30 bg-destructive/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-destructive">
-                          Cancelled
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-1 flex-col p-5">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      {timeLabel}
-                    </p>
-                    <h3 className="mt-2 line-clamp-2 font-display text-[20px] leading-snug tracking-[-0.01em] text-foreground transition-colors group-hover:text-primary">
-                      {ev.title}
-                    </h3>
-
-                    <div className="mt-auto flex items-center justify-between gap-3 border-t border-border/60 pt-4 text-[13px] text-muted-foreground">
-                      <span className="flex min-w-0 items-center gap-1.5">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="line-clamp-1 font-display text-[20px] leading-snug tracking-[-0.01em] text-foreground transition-colors group-hover:text-primary">
+                        {ev.title}
+                      </h3>
+                      <p className="mt-1 flex items-center gap-1.5 text-[13px] text-muted-foreground">
                         <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
                         <span className="truncate">{ev.venue_name || ev.city || "Nigeria"}</span>
-                      </span>
-                      <ArrowRight
-                        className="h-4 w-4 shrink-0 transition-transform duration-[var(--duration-fast)] group-hover:translate-x-0.5"
-                        aria-hidden
-                      />
+                      </p>
                     </div>
-                  </div>
-                </Link>
+
+                    {isCancelled ? (
+                      <span className="shrink-0 rounded-full border border-destructive/30 bg-destructive/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-destructive">
+                        Cancelled
+                      </span>
+                    ) : (
+                      <span className="inline-flex shrink-0 items-center gap-1.5 text-[13px] font-semibold text-foreground">
+                        Get tickets
+                        <ArrowRight className="h-4 w-4 transition-transform duration-[var(--duration-fast)] group-hover:translate-x-0.5" aria-hidden />
+                      </span>
+                    )}
+                  </Link>
+                </li>
               );
             })}
-          </div>
+          </ul>
         )}
       </section>
 

@@ -5,16 +5,13 @@ import {
   LayoutDashboard,
   User as UserIcon,
   Ticket as TicketIcon,
-  Menu,
   Bell,
-  Compass,
-  Search,
-  HelpCircle,
   Sun,
   Moon,
   Smartphone,
   Headset,
   ShieldCheck,
+  Search,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -75,12 +72,9 @@ export function SiteNav() {
   const isAdmin = userRoles.includes("admin");
   const isCustomerCare = userRoles.includes("customer_care");
 
-  // ── Nav pill hover tracking ─────────────────────────────────────────────────
-  const [hoveredPath, setHoveredPath] = useState<string | null>(null);
-
-  // ── Scroll-aware header border ──────────────────────────────────────────────
-  // Adds a subtle separator only when the user has scrolled away from the top,
-  // matching Apple's pattern of chrome that only appears when needed.
+  // ── Scroll-aware header rule ────────────────────────────────────────────────
+  // The hairline only appears once the page has scrolled, so the landing view
+  // stays edge-to-edge.
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 10);
@@ -94,13 +88,6 @@ export function SiteNav() {
     if (typeof document === "undefined") return true;
     return document.documentElement.classList.contains("dark");
   });
-
-  // ── Pointer-capability guard ────────────────────────────────────────────────
-  // Only activate the hover pill on fine-pointer devices (mouse, trackpad, pen).
-  // On touch-primary devices (phone, iPad) skip it — no sticky hover state.
-  const supportsHover =
-    typeof window !== "undefined" &&
-    window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
   function toggleTheme() {
     const next = !isDark;
@@ -117,8 +104,8 @@ export function SiteNav() {
   const links = [
     { name: "Browse", to: "/browse", icon: Search },
     ...(user ? [{ name: "Dashboard", to: "/dashboard", icon: LayoutDashboard }] : []),
-    { name: "About Us", to: "/about", icon: Compass },
-    { name: "How it works", to: "/how-it-works", icon: HelpCircle },
+    { name: "About Us", to: "/about", icon: UserIcon },
+    { name: "How it works", to: "/how-it-works", icon: TicketIcon },
     ...(isAdmin ? [{ name: "Download App", to: "/download", icon: Smartphone }] : []),
   ];
 
@@ -130,123 +117,103 @@ export function SiteNav() {
         // issues that can make elements below the header unclickable.
         "sticky top-0 z-50 w-full",
         "backdrop-blur-2xl backdrop-saturate-[180%] bg-background/80 dark:bg-background/75",
-        "transition-[border-color,box-shadow] duration-[350ms] ease-out",
-        scrolled
-          ? "border-b border-border/40 shadow-sm"
-          : "border-b border-transparent shadow-none",
+        "transition-[border-color] duration-[350ms] ease-out",
+        scrolled ? "border-b border-border/50" : "border-b border-transparent",
       )}
     >
-      <div className="mx-auto flex h-16 sm:h-20 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:h-20 sm:px-6 lg:px-8">
+        {/* ── Wordmark ──────────────────────────────────────────────────── */}
+        <Link
+          to="/"
+          aria-label="TixNaija home"
+          className="group flex shrink-0 items-baseline"
+        >
+          <span className="font-display text-[26px] leading-none tracking-[0.06em] text-foreground sm:text-[30px]">
+            TIX
+          </span>
+          <span className="font-display text-[26px] leading-none font-light tracking-[0.06em] text-gradient-sunset sm:text-[30px]">
+            NAIJA
+          </span>
+        </Link>
 
-        {/* ── Logo + Desktop Nav ─────────────────────────────────────────── */}
-        <div className="flex items-center gap-4 lg:gap-8">
-          <Link to="/" className="group relative flex items-baseline mr-2 shrink-0">
-            <span className="font-display text-3xl sm:text-4xl leading-none tracking-wider text-foreground">
-              TIX
-            </span>
-            <span className="font-display text-3xl sm:text-4xl leading-none tracking-wider font-light text-gradient-sunset">
-              NAIJA
-            </span>
-            {/* Underline: 8px → full width on hover, spring-eased */}
-            <span
-              aria-hidden
+        {/* ── Desktop navigation ────────────────────────────────────────── */}
+        <nav aria-label="Primary" className="hidden items-center gap-7 xl:flex">
+          {links.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
               className={cn(
-                "absolute -bottom-1 left-0 h-[2px] w-8 gradient-sunset rounded-full shadow-[0_0_8px_rgba(234,88,12,0.55)]",
-                "transition-[width] duration-[var(--duration-slow)] [transition-timing-function:var(--ease-snappy)]",
-                "group-hover:w-full",
+                "group relative inline-flex items-center py-2",
+                "text-[11px] font-semibold uppercase tracking-[0.14em]",
+                "text-muted-foreground transition-colors duration-[var(--duration-micro)] hover:text-foreground",
               )}
-            />
-          </Link>
+              activeProps={{ className: "text-foreground [&>span.rule]:w-full" }}
+            >
+              <span className="relative z-10">{link.name}</span>
+              <span
+                aria-hidden
+                className="rule absolute inset-x-0 -bottom-0.5 h-px w-0 rounded-full bg-primary transition-[width] duration-[var(--duration-slow)] [transition-timing-function:var(--ease-snappy)] group-hover:w-full"
+              />
+            </Link>
+          ))}
 
-          {/* Desktop navigation with Motion-powered sliding pill */}
-          <nav className="hidden xl:flex items-center gap-1.5 ml-4">
-            {links.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                onMouseEnter={() => supportsHover && setHoveredPath(link.to)}
-                onMouseLeave={() => supportsHover && setHoveredPath(null)}
-                className={cn(
-                  "relative flex items-center gap-2 px-3.5 py-2 text-sm font-medium z-10",
-                  "text-muted-foreground hover:text-foreground",
-                  "transition-colors duration-[var(--duration-micro)]",
-                )}
-                activeProps={{ className: "text-foreground font-semibold" }}
-              >
-                <link.icon className="w-4 h-4 opacity-70 shrink-0" />
-                <span className="relative z-10">{link.name}</span>
-
-                {/*
-                 * Motion shared-layout pill: when the user moves between links,
-                 * this element animates from the old link's position to the new
-                 * one via a critically-damped spring — no visible jump or stutter.
-                 * layoutId ties instances across conditional renders.
-                 */}
-                {hoveredPath === link.to && (
-                  <motion.div
-                    layoutId="nav-pill"
-                    transition={{ type: "spring", bounce: 0, duration: 0.35 }}
-                    className="absolute inset-0 rounded-full bg-secondary/80 dark:bg-secondary/60 -z-10"
-                  />
-                )}
-              </Link>
-            ))}
-
-            {/* Guests can still retrieve tickets bought without an account */}
-            {!loading && !user && (
-              <Link
-                to="/my-tickets"
-                className={cn(
-                  "relative flex items-center gap-2 px-3.5 py-2 text-sm font-medium z-10",
-                  "text-muted-foreground hover:text-foreground",
-                  "transition-colors duration-[var(--duration-micro)]",
-                )}
-                activeProps={{ className: "text-foreground font-semibold" }}
-              >
-                <TicketIcon className="w-4 h-4 opacity-70 shrink-0" />
-                <span className="relative z-10">My Tickets</span>
-              </Link>
-            )}
-          </nav>
-        </div>
+          {/* Guests can still retrieve tickets bought without an account */}
+          {!loading && !user && (
+            <Link
+              to="/my-tickets"
+              className={cn(
+                "group relative inline-flex items-center py-2",
+                "text-[11px] font-semibold uppercase tracking-[0.14em]",
+                "text-muted-foreground transition-colors duration-[var(--duration-micro)] hover:text-foreground",
+              )}
+              activeProps={{ className: "text-foreground [&>span.rule]:w-full" }}
+            >
+              <span className="relative z-10">My Tickets</span>
+              <span
+                aria-hidden
+                className="rule absolute inset-x-0 -bottom-0.5 h-px w-0 rounded-full bg-primary transition-[width] duration-[var(--duration-slow)] [transition-timing-function:var(--ease-snappy)] group-hover:w-full"
+              />
+            </Link>
+          )}
+        </nav>
 
         {/* ── Right-side Controls ────────────────────────────────────────── */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
-
+        <div className="flex items-center gap-1 sm:gap-1.5">
           {/* Dark / light toggle — always visible */}
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
             aria-label="Toggle theme"
-            className="rounded-full h-10 w-10 sm:h-11 sm:w-11 hover:bg-secondary/60 press-sm transition-colors duration-[var(--duration-micro)]"
+            className="h-9 w-9 rounded-full text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground press-sm sm:h-10 sm:w-10"
           >
             {isDark ? (
-              <Sun className="h-4 w-4 sm:h-[18px] sm:w-[18px] text-muted-foreground" />
+              <Sun className="h-[17px] w-[17px]" aria-hidden />
             ) : (
-              <Moon className="h-4 w-4 sm:h-[18px] sm:w-[18px] text-muted-foreground" />
+              <Moon className="h-[17px] w-[17px]" aria-hidden />
             )}
           </Button>
 
-          {/* Unified Auth & Menu Controls */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Hairline divider: utility controls vs. account */}
+          <span aria-hidden className="mx-1 hidden h-5 w-px bg-border/70 sm:block" />
+
+          <div className="flex items-center gap-1 sm:gap-1.5">
             {!loading && user && (
               <Button
                 asChild
                 variant="ghost"
                 size="icon"
                 aria-label="Notifications"
-                className="relative rounded-full h-10 w-10 sm:h-11 sm:w-11 hover:bg-secondary/60 press-sm transition-colors duration-[var(--duration-micro)]"
+                className="relative h-9 w-9 rounded-full text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground press-sm sm:h-10 sm:w-10"
               >
                 <Link to="/notifications">
-                  <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+                  <Bell className="h-[17px] w-[17px]" aria-hidden />
                   {unreadCount > 0 && (
                     <span
                       className={cn(
-                        "absolute right-1 top-1 flex h-[18px] w-[18px] sm:h-5 sm:w-5",
-                        "items-center justify-center rounded-full",
-                        "bg-primary text-[9px] sm:text-[10px] font-bold text-primary-foreground",
-                        "border-2 border-background shadow-sm",
+                        "absolute right-0.5 top-0.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full px-1",
+                        "bg-primary text-[9px] font-bold text-primary-foreground",
+                        "border-2 border-background",
                         "[animation:scale-in_var(--duration-fast)_var(--ease-spring)_forwards]",
                       )}
                     >
@@ -264,33 +231,33 @@ export function SiteNav() {
                     variant="ghost"
                     size="icon"
                     aria-label="Account menu"
-                    className="rounded-full h-10 w-10 sm:h-11 sm:w-11 press-sm border border-transparent hover:bg-secondary/60 hover:border-border/40 transition-all duration-[var(--duration-micro)] overflow-hidden"
+                    className="h-9 w-9 overflow-hidden rounded-full border border-border/60 bg-card/60 transition-colors hover:border-border hover:bg-secondary/60 press-sm sm:h-10 sm:w-10"
                   >
                     {user ? (
-                      <span className="grid h-full w-full place-items-center bg-primary/10 text-xs sm:text-sm font-bold text-primary shrink-0">
+                      <span className="grid h-full w-full place-items-center bg-primary/10 text-[11px] font-bold text-primary sm:text-xs">
                         {(user.email ?? "?").slice(0, 1).toUpperCase()}
                       </span>
                     ) : (
-                      <span className="grid h-full w-full place-items-center bg-secondary/50 text-muted-foreground shrink-0">
-                        <UserIcon className="h-5 w-5 sm:h-6 sm:w-6 opacity-70" />
+                      <span className="grid h-full w-full place-items-center text-muted-foreground">
+                        <UserIcon className="h-4 w-4" aria-hidden />
                       </span>
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                
+
                 <AnimatePresence>
                   {menuOpen && (
                     <DropdownMenuContent
                       forceMount
                       asChild
                       align="end"
-                      sideOffset={8}
-                      className="w-64 rounded-2xl shadow-xl border-border/50 bg-popover/95 backdrop-blur-xl p-2"
+                      sideOffset={10}
+                      className="w-64 rounded-xl border-border/60 bg-popover/95 p-1.5 shadow-xl backdrop-blur-xl"
                     >
                       <motion.div
-                        initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95 }}
-                        animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }}
-                        exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95 }}
+                        initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
+                        animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                        exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
                         transition={
                           prefersReducedMotion
                             ? { duration: 0.2 }
@@ -298,21 +265,42 @@ export function SiteNav() {
                         }
                       >
                         {user ? (
-                          <DropdownMenuLabel className="truncate font-normal px-3 py-2.5">
-                            <span className="block text-xs text-muted-foreground font-medium mb-1">Signed in as</span>
+                          <DropdownMenuLabel className="truncate px-3 py-2.5 font-normal">
+                            <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                              Signed in as
+                            </span>
                             <span className="block text-sm font-semibold">{user.email}</span>
                           </DropdownMenuLabel>
                         ) : (
-                          <div className="px-2 py-3 flex flex-col gap-2">
-                            <Button asChild className="w-full rounded-xl gradient-sunset font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/35 transition-all">
-                              <Link to="/auth" search={{ mode: "signup" }} onClick={() => setMenuOpen(false)}>Get started</Link>
+                          <div className="flex flex-col gap-2 px-2 py-3">
+                            <Button
+                              asChild
+                              className="w-full rounded-xl text-[14px] font-semibold"
+                            >
+                              <Link
+                                to="/auth"
+                                search={{ mode: "signup" }}
+                                onClick={() => setMenuOpen(false)}
+                              >
+                                Get started
+                              </Link>
                             </Button>
-                            <Button asChild variant="outline" className="w-full rounded-xl border-[var(--glass-border)]">
-                              <Link to="/auth" onClick={() => setMenuOpen(false)}>Log in</Link>
+                            <Button
+                              asChild
+                              variant="outline"
+                              className="w-full rounded-xl border-border/70 text-[14px]"
+                            >
+                              <Link to="/auth" onClick={() => setMenuOpen(false)}>
+                                Log in
+                              </Link>
                             </Button>
-                            <Button asChild variant="ghost" className="w-full rounded-xl justify-center font-medium text-muted-foreground">
+                            <Button
+                              asChild
+                              variant="ghost"
+                              className="w-full justify-center rounded-xl text-[13px] font-medium text-muted-foreground"
+                            >
                               <Link to="/my-tickets" onClick={() => setMenuOpen(false)}>
-                                <TicketIcon className="mr-2 h-4 w-4" />
+                                <TicketIcon className="mr-2 h-4 w-4" aria-hidden />
                                 Find my tickets
                               </Link>
                             </Button>
@@ -321,61 +309,103 @@ export function SiteNav() {
 
                         {/* Nav Links (hidden on desktop where they are visible in top bar) */}
                         <div className="xl:hidden">
-                          {user && <DropdownMenuSeparator className="mx-2" />}
-                          {links.filter(link => link.name !== "Dashboard").map((link) => (
-                            <DropdownMenuItem asChild key={link.to} className="cursor-pointer rounded-xl px-3 py-2.5 focus:bg-secondary">
-                              <Link to={link.to} onClick={() => setMenuOpen(false)}>
-                                <link.icon className="mr-3 h-4 w-4 text-muted-foreground shrink-0" />
-                                <span className="font-medium">{link.name}</span>
-                              </Link>
-                            </DropdownMenuItem>
-                          ))}
+                          {user && <DropdownMenuSeparator className="mx-2 bg-border/60" />}
+                          {links
+                            .filter((link) => link.name !== "Dashboard")
+                            .map((link) => (
+                              <DropdownMenuItem
+                                asChild
+                                key={link.to}
+                                className="cursor-pointer rounded-lg px-3 py-2.5 focus:bg-secondary"
+                              >
+                                <Link to={link.to} onClick={() => setMenuOpen(false)}>
+                                  <link.icon
+                                    className="mr-3 h-4 w-4 shrink-0 text-muted-foreground"
+                                    aria-hidden
+                                  />
+                                  <span className="text-[13px] font-medium">{link.name}</span>
+                                </Link>
+                              </DropdownMenuItem>
+                            ))}
                         </div>
 
                         {user && (
                           <>
-                            <DropdownMenuSeparator className="mx-2" />
-                            <DropdownMenuItem asChild className="cursor-pointer rounded-xl px-3 py-2.5 focus:bg-secondary">
+                            <DropdownMenuSeparator className="mx-2 bg-border/60" />
+                            <DropdownMenuItem
+                              asChild
+                              className="cursor-pointer rounded-lg px-3 py-2.5 focus:bg-secondary"
+                            >
                               <Link to="/tickets" onClick={() => setMenuOpen(false)}>
-                                <TicketIcon className="mr-3 h-4 w-4 text-muted-foreground shrink-0" />
-                                <span className="font-medium">My Tickets</span>
+                                <TicketIcon
+                                  className="mr-3 h-4 w-4 shrink-0 text-muted-foreground"
+                                  aria-hidden
+                                />
+                                <span className="text-[13px] font-medium">My Tickets</span>
                               </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem asChild className="cursor-pointer rounded-xl px-3 py-2.5 focus:bg-secondary">
+                            <DropdownMenuItem
+                              asChild
+                              className="cursor-pointer rounded-lg px-3 py-2.5 focus:bg-secondary"
+                            >
                               <Link to="/dashboard" onClick={() => setMenuOpen(false)}>
-                                <LayoutDashboard className="mr-3 h-4 w-4 text-muted-foreground shrink-0" />
-                                <span className="font-medium">Dashboard</span>
+                                <LayoutDashboard
+                                  className="mr-3 h-4 w-4 shrink-0 text-muted-foreground"
+                                  aria-hidden
+                                />
+                                <span className="text-[13px] font-medium">Dashboard</span>
                               </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem asChild className="cursor-pointer rounded-xl px-3 py-2.5 focus:bg-secondary">
+                            <DropdownMenuItem
+                              asChild
+                              className="cursor-pointer rounded-lg px-3 py-2.5 focus:bg-secondary"
+                            >
                               <Link to="/account" onClick={() => setMenuOpen(false)}>
-                                <UserIcon className="mr-3 h-4 w-4 text-muted-foreground shrink-0" />
-                                <span className="font-medium">Account Settings</span>
+                                <UserIcon
+                                  className="mr-3 h-4 w-4 shrink-0 text-muted-foreground"
+                                  aria-hidden
+                                />
+                                <span className="text-[13px] font-medium">Account Settings</span>
                               </Link>
                             </DropdownMenuItem>
                             {(isCustomerCare || isAdmin) && (
-                              <DropdownMenuItem asChild className="cursor-pointer rounded-xl px-3 py-2.5 focus:bg-secondary">
+                              <DropdownMenuItem
+                                asChild
+                                className="cursor-pointer rounded-lg px-3 py-2.5 focus:bg-secondary"
+                              >
                                 <Link to="/support" onClick={() => setMenuOpen(false)}>
-                                  <Headset className="mr-3 h-4 w-4 text-emerald-500 shrink-0" />
-                                  <span className="font-medium">Support Portal</span>
+                                  <Headset
+                                    className="mr-3 h-4 w-4 shrink-0 text-muted-foreground"
+                                    aria-hidden
+                                  />
+                                  <span className="text-[13px] font-medium">Support Portal</span>
                                 </Link>
                               </DropdownMenuItem>
                             )}
                             {isAdmin && (
-                              <DropdownMenuItem asChild className="cursor-pointer rounded-xl px-3 py-2.5 focus:bg-secondary">
+                              <DropdownMenuItem
+                                asChild
+                                className="cursor-pointer rounded-lg px-3 py-2.5 focus:bg-secondary"
+                              >
                                 <Link to="/admin" onClick={() => setMenuOpen(false)}>
-                                  <ShieldCheck className="mr-3 h-4 w-4 text-primary shrink-0" />
-                                  <span className="font-medium">Admin Panel</span>
+                                  <ShieldCheck
+                                    className="mr-3 h-4 w-4 shrink-0 text-muted-foreground"
+                                    aria-hidden
+                                  />
+                                  <span className="text-[13px] font-medium">Admin Panel</span>
                                 </Link>
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuSeparator className="mx-2" />
+                            <DropdownMenuSeparator className="mx-2 bg-border/60" />
                             <DropdownMenuItem
-                              onClick={() => { setMenuOpen(false); handleSignOut(); }}
-                              className="cursor-pointer rounded-xl px-3 py-2.5 text-destructive focus:text-destructive focus:bg-destructive/10"
+                              onClick={() => {
+                                setMenuOpen(false);
+                                handleSignOut();
+                              }}
+                              className="cursor-pointer rounded-lg px-3 py-2.5 text-destructive focus:bg-destructive/10 focus:text-destructive"
                             >
-                              <LogOut className="mr-3 h-4 w-4 shrink-0" />
-                              <span className="font-medium">Sign out</span>
+                              <LogOut className="mr-3 h-4 w-4 shrink-0" aria-hidden />
+                              <span className="text-[13px] font-medium">Sign out</span>
                             </DropdownMenuItem>
                           </>
                         )}
@@ -391,3 +421,4 @@ export function SiteNav() {
     </header>
   );
 }
+
