@@ -340,7 +340,7 @@ function RootShell({ children }: { children: ReactNode }) {
         />
         <HeadContent />
       </head>
-      <body className="overflow-x-hidden" suppressHydrationWarning>
+      <body className="overflow-x-clip" suppressHydrationWarning>
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2.5 focus:bg-background focus:text-foreground focus:border focus:border-primary focus:rounded-xl focus:shadow-2xl focus:font-semibold focus:outline-none focus:ring-2 focus:ring-primary"
