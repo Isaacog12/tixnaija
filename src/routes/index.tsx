@@ -64,6 +64,8 @@ async function fetchBanners() {
   });
 }
 
+type Banner = Awaited<ReturnType<typeof fetchBanners>>[number];
+
 
 const VALUE_PROPS = [
   {
