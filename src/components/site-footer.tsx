@@ -13,15 +13,15 @@ function FooterColumn({
 }) {
   return (
     <div>
-      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
         {title}
       </p>
-      <ul className="mt-4 space-y-2.5">
+      <ul className="mt-3 space-y-1.5">
         {links.map((link) => (
           <li key={link.label}>
             <Link
               to={link.to}
-              className="text-[14px] text-muted-foreground transition-colors hover:text-foreground"
+              className="text-[12.5px] text-muted-foreground transition-colors hover:text-foreground"
             >
               {link.label}
             </Link>
@@ -37,27 +37,27 @@ export function SiteFooter() {
     <footer className="border-t border-border/60 bg-background text-foreground">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* ── Wordmark, statement, link columns ──────────────────────── */}
-        <div className="grid gap-10 py-14 sm:grid-cols-2 md:py-20 lg:grid-cols-[1.5fr_1fr_1fr_1fr] lg:gap-12">
-          <div className="min-w-0">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-6 py-8 md:py-12 lg:grid-cols-[1.5fr_1fr_1fr_1fr] lg:gap-12">
+          <div className="col-span-2 min-w-0 lg:col-span-1">
             <Link
               to="/"
               aria-label="TixNaija home"
               className="inline-flex items-baseline transition-opacity hover:opacity-80"
             >
-              <span className="font-display text-[26px] leading-none tracking-[0.06em] text-foreground">
+              <span className="font-display text-[22px] leading-none tracking-[0.06em] text-foreground">
                 TIX
               </span>
-              <span className="font-display text-[26px] leading-none font-light tracking-[0.06em] text-gradient-sunset">
+              <span className="font-display text-[22px] leading-none font-light tracking-[0.06em] text-gradient-sunset">
                 NAIJA
               </span>
             </Link>
 
-            <p className="mt-5 max-w-xs text-[14px] leading-relaxed text-muted-foreground">
+            <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-muted-foreground">
               An independent Nigerian ticketing platform — discovery, checkout and door scanning in
               one place.
             </p>
 
-            <div className="mt-6 flex flex-col gap-2 text-[13px]">
+            <div className="mt-4 flex flex-col gap-1.5 text-[12.5px]">
               <a
                 href={`mailto:${BUSINESS_DETAILS.supportEmail}`}
                 className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
@@ -78,7 +78,7 @@ export function SiteFooter() {
               href="https://www.instagram.com/tixnaija/"
               target="_blank"
               rel="noreferrer"
-              className="mt-6 inline-flex items-center gap-1.5 text-[13px] font-semibold text-foreground transition-colors hover:text-primary"
+              className="mt-4 inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-foreground transition-colors hover:text-primary"
             >
               @tixnaija on Instagram
               <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
@@ -99,7 +99,6 @@ export function SiteFooter() {
             title="Company"
             links={[
               { label: "About us", to: "/about" },
-              { label: "Contact", to: "/about" },
               { label: "Careers", to: "/careers" },
               { label: "For organizers", to: "/dashboard" },
             ]}
@@ -117,7 +116,7 @@ export function SiteFooter() {
         </div>
 
         {/* ── Baseline ───────────────────────────────────────────────── */}
-        <div className="flex flex-col gap-4 border-t border-border/60 py-6 text-[12px] text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-t border-border/60 py-4 text-[11.5px] text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:py-5">
           <p>
             © {new Date().getFullYear()} {BUSINESS_DETAILS.platformName}. All rights reserved.
           </p>
