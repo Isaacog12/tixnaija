@@ -27,7 +27,7 @@ export function CheckoutQuestionsManager({ eventId }: { eventId: string }) {
   }, [eventId]);
 
   async function fetchQuestions() {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("checkout_questions")
       .select("*")
       .eq("event_id", eventId)
@@ -56,7 +56,7 @@ export function CheckoutQuestionsManager({ eventId }: { eventId: string }) {
        }
     }
 
-    const { data, error } = await (supabase as any).from("checkout_questions").insert({
+    const { data, error } = await supabase.from("checkout_questions").insert({
       event_id: eventId,
       question_text: newQuestion.question_text,
       type: newQuestion.type as any,
@@ -80,7 +80,7 @@ export function CheckoutQuestionsManager({ eventId }: { eventId: string }) {
   async function deleteQuestion(id: string) {
     if (!confirm("Are you sure?")) return;
     
-    const { error } = await (supabase as any).from("checkout_questions").delete().eq("id", id);
+    const { error } = await supabase.from("checkout_questions").delete().eq("id", id);
     if (error) {
       toast.error(error.message);
     } else {

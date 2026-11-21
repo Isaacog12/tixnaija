@@ -151,7 +151,7 @@ function AdminDashboard() {
 
   const takedownMutation = useMutation({
     mutationFn: async ({ id, note }: { id: string; note: string }) => {
-      const { error } = await (supabase.rpc as any)("admin_cancel_event", {
+      const { error } = await supabase.rpc("admin_cancel_event", {
         p_event_id: id,
         p_note: note,
       });
@@ -168,7 +168,7 @@ function AdminDashboard() {
 
   const undoTakedownMutation = useMutation({
     mutationFn: async ({ id }: { id: string }) => {
-      const { error } = await (supabase.rpc as any)("admin_undo_cancel_event", {
+      const { error } = await supabase.rpc("admin_undo_cancel_event", {
         p_event_id: id,
         p_note: "Platform admin has restored this event.",
       });
@@ -185,7 +185,7 @@ function AdminDashboard() {
 
   const suspendMutation = useMutation({
     mutationFn: async ({ userId, suspend }: { userId: string; suspend: boolean }) => {
-      const { error } = await (supabase.rpc as any)("admin_suspend_user", {
+      const { error } = await supabase.rpc("admin_suspend_user", {
         p_user_id: userId,
         p_suspended: suspend,
       });
@@ -200,7 +200,7 @@ function AdminDashboard() {
 
   const verifyMutation = useMutation({
     mutationFn: async ({ userId, verify }: { userId: string; verify: boolean }) => {
-      const { error } = await (supabase.rpc as any)("admin_verify_organizer", {
+      const { error } = await supabase.rpc("admin_verify_organizer", {
         p_user_id: userId,
         p_verified: verify,
       });
@@ -215,9 +215,10 @@ function AdminDashboard() {
 
   const revokeMutation = useMutation({
     mutationFn: async ({ userId, reason }: { userId: string; reason: string }) => {
-      const { error } = await (supabase.rpc as any)("admin_revoke_organizer", {
+      const { error } = await supabase.rpc("admin_revoke_organizer", {
         p_user_id: userId,
-        p_reason: reason || null,
+        // p_reason is declared `text` without a default, so it must be sent.
+        p_reason: (reason || null) as string,
       });
       if (error) throw error;
     },
@@ -232,9 +233,9 @@ function AdminDashboard() {
 
   const revokeByEmailMutation = useMutation({
     mutationFn: async ({ email, reason }: { email: string; reason: string }) => {
-      const { error } = await (supabase.rpc as any)("admin_revoke_organizer_by_email", {
+      const { error } = await supabase.rpc("admin_revoke_organizer_by_email", {
         p_email: email,
-        p_reason: reason || null,
+        p_reason: reason || undefined,
       });
       if (error) throw error;
     },
@@ -250,7 +251,7 @@ function AdminDashboard() {
 
   const customerCareRoleMutation = useMutation({
     mutationFn: async ({ userId, grant }: { userId: string; grant: boolean }) => {
-      const { error } = await (supabase.rpc as any)("admin_set_customer_care_role", {
+      const { error } = await supabase.rpc("admin_set_customer_care_role", {
         p_user_id: userId,
         p_grant: grant,
       });

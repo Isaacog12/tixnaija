@@ -265,7 +265,7 @@ function NewEventPage() {
       let seriesId = null;
       if (form.is_recurring && form.recurrence_count > 1) {
         const rrule = `FREQ=${form.recurrence_interval};INTERVAL=1;COUNT=${form.recurrence_count}`;
-        const { data: sId, error: sErr } = await supabase.rpc("create_event_series" as any, {
+        const { data: sId, error: sErr } = await supabase.rpc("create_event_series", {
           p_title: form.title,
           p_recurrence_rule: rrule,
         });

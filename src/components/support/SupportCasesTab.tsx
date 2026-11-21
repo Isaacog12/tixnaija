@@ -50,6 +50,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "@/lib/toast";
+import type {
+  SupportCaseCategory,
+  SupportCasePriority,
+  SupportCaseStatus,
+  SupportCaseView,
+  SupportMacro,
+} from "@/lib/support-rpc-types";
 
 interface SupportCasesTabProps {
   initialCaseId?: string | null;
@@ -63,7 +70,7 @@ export function SupportCasesTab({
   onClearInitialCase,
 }: SupportCasesTabProps) {
   const qc = useQueryClient();
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<SupportCaseStatus | "all">("all");
   const [assigneeFilter, setAssigneeFilter] = useState<"all" | "mine" | "unassigned">("all");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
@@ -73,7 +80,7 @@ export function SupportCasesTab({
       .then(({ data }) => setCurrentUserId(data.user?.id ?? null))
       .catch(() => setCurrentUserId(null));
   }, []);
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<SupportCaseCategory | "all">("all");
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(initialCaseId);
 
   // Reply Composer State
@@ -106,7 +113,7 @@ export function SupportCasesTab({
   const { data: casesList, isLoading: listLoading, refetch: refetchCases } = useQuery({
     queryKey: ["support-cases-list", statusFilter, categoryFilter, assigneeFilter, currentUserId],
     queryFn: async () => {
-      let query = (supabase.from("support_cases" as any) as any)
+      let query = supabase.from("support_cases")
         .select(`
           id,
           case_number,
@@ -154,9 +161,9 @@ export function SupportCasesTab({
   const { data: macros } = useQuery({
     queryKey: ["support-macros-list"],
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("support_get_macros");
+      const { data, error } = await supabase.rpc("support_get_macros");
       if (error) return [];
-      return (data as any[]) || [];
+      return (data as SupportMacro[] | null) || [];
     },
   });
 
@@ -169,11 +176,11 @@ export function SupportCasesTab({
     queryKey: ["support-case-view", selectedCaseId],
     queryFn: async () => {
       if (!selectedCaseId) return null;
-      const { data, error } = await (supabase.rpc as any)("support_view_case", {
+      const { data, error } = await supabase.rpc("support_view_case", {
         p_case_id: selectedCaseId,
       });
       if (error) throw error;
-      return data;
+      return data as SupportCaseView;
     },
     enabled: Boolean(selectedCaseId),
   });
@@ -189,7 +196,7 @@ export function SupportCasesTab({
       content: string;
       isInternal: boolean;
     }) => {
-      const { data, error } = await (supabase.rpc as any)("support_reply_case", {
+      const { data, error } = await supabase.rpc("support_reply_case", {
         p_case_id: caseId,
         p_content: content,
         p_is_internal: isInternal,
@@ -238,12 +245,12 @@ export function SupportCasesTab({
       priority: string;
       message: string;
     }) => {
-      const { data, error } = await (supabase.rpc as any)("support_create_case", {
-        p_customer_email: customerEmail.trim() || null,
+      const { data, error } = await supabase.rpc("support_create_case", {
+        p_customer_email: customerEmail.trim() || undefined,
         p_subject: subject.trim(),
-        p_category: category,
-        p_priority: priority,
-        p_initial_message: message.trim() || null,
+        p_category: category as SupportCaseCategory,
+        p_priority: priority as SupportCasePriority,
+        p_initial_message: message.trim() || undefined,
       });
       if (error) throw error;
       return data;
@@ -277,11 +284,13 @@ export function SupportCasesTab({
       priority: string;
       assignedTo?: string | null;
     }) => {
-      const { data, error } = await (supabase.rpc as any)("support_update_case", {
+      const { data, error } = await supabase.rpc("support_update_case", {
         p_case_id: caseId,
-        p_status: status,
-        p_priority: priority,
-        p_assigned_to: assignedTo || null,
+        p_status: status as SupportCaseStatus,
+        p_priority: priority as SupportCasePriority,
+        // The SQL takes a nullable UUID with no default, so null is the
+        // "leave unassigned" signal and must still be sent.
+        p_assigned_to: (assignedTo || null) as string,
       });
       if (error) throw error;
       return data;
@@ -299,7 +308,7 @@ export function SupportCasesTab({
   // Escalate Case Mutation
   const escalateMutation = useMutation({
     mutationFn: async ({ caseId, reason }: { caseId: string; reason: string }) => {
-      const { data, error } = await (supabase.rpc as any)("support_escalate_case", {
+      const { data, error } = await supabase.rpc("support_escalate_case", {
         p_case_id: caseId,
         p_reason: reason,
       });
@@ -348,7 +357,10 @@ export function SupportCasesTab({
                 />
               </div>
 
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select
+                value={statusFilter}
+                onValueChange={(val) => setStatusFilter(val as SupportCaseStatus | "all")}
+              >
                 <SelectTrigger className="w-[125px] rounded-xl text-xs h-9">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -361,7 +373,10 @@ export function SupportCasesTab({
                 </SelectContent>
               </Select>
 
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <Select
+                value={categoryFilter}
+                onValueChange={(val) => setCategoryFilter(val as SupportCaseCategory | "all")}
+              >
                 <SelectTrigger className="w-[130px] rounded-xl text-xs h-9">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
@@ -624,7 +639,7 @@ export function SupportCasesTab({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => onOpenOrder?.(activeCase.order_id)}
+                          onClick={() => activeCase.order_id && onOpenOrder?.(activeCase.order_id)}
                           className="h-6 px-2 font-mono text-xs text-blue-400 hover:text-blue-300 gap-1"
                         >
                           {activeCase.order_id.slice(0, 8)}…
@@ -637,7 +652,7 @@ export function SupportCasesTab({
 
                 {/* Messages Timeline */}
                 <div className="space-y-4">
-                  {messages.map((msg: any) => {
+                  {messages.map((msg) => {
                     const isInternal = msg.is_internal;
                     return (
                       <div
@@ -805,7 +820,7 @@ export function SupportCasesTab({
                         </span>
                         {/* A guest case has no account and no user id to look up
                             order history from — replies reach them by email only. */}
-                        {activeCase.is_guest && (
+                        {!activeCase.customer_id && (
                           <Badge variant="outline" className="ml-2 text-[9px] uppercase font-bold">
                             Guest
                           </Badge>

@@ -52,7 +52,7 @@ function AdminEscalatedCases() {
     queryKey: ["admin-escalated-cases"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("support_cases" as any)
+        .from("support_cases")
         .select(`
           id,
           case_number,

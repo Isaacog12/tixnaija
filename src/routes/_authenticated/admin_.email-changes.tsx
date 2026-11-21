@@ -73,7 +73,7 @@ function AdminEmailChangesQueue() {
     queryKey: ["admin-email-changes"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("support_email_change_requests" as any)
+        .from("support_email_change_requests")
         .select(`
           id,
           order_id,
@@ -114,7 +114,7 @@ function AdminEmailChangesQueue() {
       approve: boolean;
       orderId?: string;
     }) => {
-      const { data, error } = await (supabase.rpc as any)("admin_review_email_change", {
+      const { data, error } = await supabase.rpc("admin_review_email_change", {
         p_request_id: requestId,
         p_approve: approve,
       });

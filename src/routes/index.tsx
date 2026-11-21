@@ -101,7 +101,7 @@ function LandingPage() {
   });
 
   const handleBannerClick = async (banner: any) => {
-    supabase.rpc("increment_banner_click" as any, { banner_id: banner.id } as any).then();
+    supabase.rpc("increment_banner_click", { banner_id: banner.id } as any).then();
     if (banner.link_url) {
       if (banner.link_url.startsWith("http")) {
         window.open(banner.link_url, "_blank", "noopener,noreferrer");

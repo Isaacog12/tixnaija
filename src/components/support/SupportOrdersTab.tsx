@@ -47,6 +47,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "@/lib/toast";
+import type {
+  SupportOrderDetails,
+  SupportOrderStatus,
+  SupportOrderSummary,
+} from "@/lib/support-rpc-types";
 
 interface SupportOrdersTabProps {
   initialOrderId?: string | null;
@@ -58,7 +63,7 @@ export function SupportOrdersTab({
   onClearInitialOrder,
 }: SupportOrdersTabProps) {
   const qc = useQueryClient();
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<SupportOrderStatus | "all">("all");
   const [pageOffset, setPageOffset] = useState<number>(0);
   const pageSize = 20;
 
@@ -87,16 +92,16 @@ export function SupportOrdersTab({
   const { data: ordersList, isLoading: listLoading, refetch: refetchOrders } = useQuery({
     queryKey: ["support-orders-list", statusFilter, pageOffset],
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("support_get_orders_list", {
+      const { data, error } = await supabase.rpc("support_get_orders_list", {
         p_limit: pageSize,
         p_offset: pageOffset,
-        p_status: statusFilter === "all" ? null : statusFilter,
+        p_status: statusFilter === "all" ? undefined : statusFilter,
       });
       if (error) {
         console.warn("support_get_orders_list:", error.message);
         return [];
       }
-      return (data as any[]) || [];
+      return (data as SupportOrderSummary[] | null) || [];
     },
   });
 
@@ -109,11 +114,11 @@ export function SupportOrdersTab({
     queryKey: ["support-order-details", inspectOrderId],
     queryFn: async () => {
       if (!inspectOrderId) return null;
-      const { data, error } = await (supabase.rpc as any)("support_get_order_details", {
+      const { data, error } = await supabase.rpc("support_get_order_details", {
         p_order_id: inspectOrderId,
       });
       if (error) throw error;
-      return data;
+      return data as SupportOrderDetails;
     },
     enabled: Boolean(inspectOrderId),
   });
@@ -121,7 +126,7 @@ export function SupportOrdersTab({
   // Resend Ticket Email Mutation
   const resendMutation = useMutation({
     mutationFn: async (orderId: string) => {
-      const { data, error } = await (supabase.rpc as any)("support_resend_ticket_email", {
+      const { data, error } = await supabase.rpc("support_resend_ticket_email", {
         p_order_id: orderId,
       });
       if (error) throw error;
@@ -164,7 +169,7 @@ export function SupportOrdersTab({
       newEmail: string;
       reason: string;
     }) => {
-      const { data, error } = await (supabase.rpc as any)("support_request_email_change", {
+      const { data, error } = await supabase.rpc("support_request_email_change", {
         p_order_id: orderId,
         p_new_email: newEmail,
         p_reason: reason,
@@ -187,7 +192,7 @@ export function SupportOrdersTab({
   // Add Internal Order Note Mutation
   const addNoteMutation = useMutation({
     mutationFn: async ({ orderId, note }: { orderId: string; note: string }) => {
-      const { data, error } = await (supabase.rpc as any)("support_add_order_note", {
+      const { data, error } = await supabase.rpc("support_add_order_note", {
         p_order_id: orderId,
         p_note: note,
       });
@@ -207,8 +212,25 @@ export function SupportOrdersTab({
 
   const orderData = orderDetails?.order;
   const ticketsData = orderDetails?.tickets || [];
-  const outboxData = orderDetails?.delivery_log || orderDetails?.outbox || [];
+  const outboxData = orderDetails?.delivery_log || [];
   const notesData = orderDetails?.notes || [];
+
+  // support_get_order_details returns the event id but not its title, time or
+  // venue, so those are fetched separately instead of rendering blank fields.
+  const { data: orderEvent } = useQuery({
+    queryKey: ["support-order-event", orderData?.event_id],
+    queryFn: async () => {
+      if (!orderData?.event_id) return null;
+      const { data, error } = await supabase
+        .from("events")
+        .select("title, start_datetime, venue_name")
+        .eq("id", orderData.event_id)
+        .maybeSingle();
+      if (error) return null;
+      return data;
+    },
+    enabled: Boolean(orderData?.event_id),
+  });
 
   return (
     <div className="space-y-6">
@@ -226,7 +248,13 @@ export function SupportOrdersTab({
           </div>
 
           <div className="flex items-center gap-2">
-            <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val); setPageOffset(0); }}>
+            <Select
+              value={statusFilter}
+              onValueChange={(val) => {
+                setStatusFilter(val as SupportOrderStatus | "all");
+                setPageOffset(0);
+              }}
+            >
               <SelectTrigger className="w-[140px] rounded-xl text-xs h-9">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -400,26 +428,26 @@ export function SupportOrdersTab({
                   </div>
                   <div>
                     <span className="text-muted-foreground">Buyer Email: </span>
-                    <span className="font-mono font-medium">{orderData?.buyer_email || orderData?.masked_buyer_email || "N/A"}</span>
+                    <span className="font-mono font-medium">{orderData?.buyer_email || "N/A"}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Buyer Phone: </span>
-                    <span className="font-mono">{orderData?.buyer_phone || orderData?.masked_buyer_phone || "N/A"}</span>
+                    <span className="font-mono">{orderData?.buyer_phone || "N/A"}</span>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
                   <div>
                     <span className="text-muted-foreground">Event: </span>
-                    <span className="font-semibold text-foreground">{orderData.event_title}</span>
+                    <span className="font-semibold text-foreground">{orderEvent?.title || "N/A"}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Event Start: </span>
-                    <span>{new Date(orderData.start_datetime).toLocaleString()}</span>
+                    <span>{orderEvent?.start_datetime ? new Date(orderEvent.start_datetime).toLocaleString() : "N/A"}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Venue: </span>
-                    <span>{orderData.venue_name || "N/A"}</span>
+                    <span>{orderEvent?.venue_name || "N/A"}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Total Paid: </span>
@@ -672,7 +700,7 @@ export function SupportOrdersTab({
           <div className="p-3 rounded-xl bg-secondary/40 border border-border/50 text-xs space-y-1">
             <div>
               <span className="text-muted-foreground">Recipient Email: </span>
-              <span className="font-mono font-semibold">{orderData?.buyer_email || orderData?.masked_buyer_email || "N/A"}</span>
+              <span className="font-mono font-semibold">{orderData?.buyer_email || "N/A"}</span>
             </div>
             <div>
               <span className="text-muted-foreground">Order Reference: </span>

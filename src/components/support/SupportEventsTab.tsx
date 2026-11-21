@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { SupportEventSummary } from "@/lib/support-rpc-types";
 
 export function SupportEventsTab() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -22,14 +23,14 @@ export function SupportEventsTab() {
   const { data: eventsList, isLoading, refetch } = useQuery({
     queryKey: ["support-events-list", debouncedQuery],
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("support_get_events_list", {
-        p_search: debouncedQuery.trim() || null,
+      const { data, error } = await supabase.rpc("support_get_events_list", {
+        p_search: debouncedQuery.trim() || undefined,
       });
       if (error) {
         console.warn("support_get_events_list:", error.message);
         return [];
       }
-      return (data as any[]) || [];
+      return (data as SupportEventSummary[] | null) || [];
     },
   });
 

@@ -35,6 +35,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "@/lib/toast";
+import type { SupportOverviewStats, SupportUnmatchedPayment } from "@/lib/support-rpc-types";
 
 interface SupportOverviewTabProps {
   onNavigateTab: (tab: string, param?: string) => void;
@@ -50,7 +51,7 @@ export function SupportOverviewTab({ onNavigateTab }: SupportOverviewTabProps) {
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["support-overview-stats"],
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("support_get_overview_stats");
+      const { data, error } = await supabase.rpc("support_get_overview_stats");
       if (error) {
         console.warn("support_get_overview_stats:", error.message);
         return {
@@ -61,7 +62,7 @@ export function SupportOverviewTab({ onNavigateTab }: SupportOverviewTabProps) {
           unmatched_payments: 0,
         };
       }
-      return data || {
+      return (data as SupportOverviewStats | null) || {
         open_cases: 0,
         unassigned_cases: 0,
         pending_refunds: 0,
@@ -76,12 +77,12 @@ export function SupportOverviewTab({ onNavigateTab }: SupportOverviewTabProps) {
   const { data: unmatchedPayments, isLoading: unmatchedLoading } = useQuery({
     queryKey: ["support-unmatched-payments"],
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("support_get_unmatched_payments");
+      const { data, error } = await supabase.rpc("support_get_unmatched_payments");
       if (error) {
         console.warn("support_get_unmatched_payments:", error.message);
         return [];
       }
-      return (data as any[]) || [];
+      return (data as SupportUnmatchedPayment[] | null) || [];
     },
     refetchInterval: 30000,
   });
@@ -91,7 +92,7 @@ export function SupportOverviewTab({ onNavigateTab }: SupportOverviewTabProps) {
   const { data: slaBreaches } = useQuery({
     queryKey: ["support-sla-breaches"],
     queryFn: async () => {
-      const { count, error } = await (supabase as any)
+      const { count, error } = await supabase
         .from("support_cases")
         .select("id", { count: "exact", head: true })
         .in("status", ["open", "pending"])
@@ -108,7 +109,7 @@ export function SupportOverviewTab({ onNavigateTab }: SupportOverviewTabProps) {
   // Flag payment mutation
   const flagMutation = useMutation({
     mutationFn: async ({ paymentId, note }: { paymentId: string; note: string }) => {
-      const { data, error } = await (supabase.rpc as any)("support_flag_payment", {
+      const { data, error } = await supabase.rpc("support_flag_payment", {
         p_payment_event_id: paymentId,
         p_note: note,
       });

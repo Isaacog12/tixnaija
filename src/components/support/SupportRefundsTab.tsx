@@ -39,6 +39,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "@/lib/toast";
+import type { SupportRefundRequest } from "@/lib/support-rpc-types";
 
 export function SupportRefundsTab() {
   const qc = useQueryClient();
@@ -67,14 +68,14 @@ export function SupportRefundsTab() {
   const { data: refundRequests, isLoading, refetch } = useQuery({
     queryKey: ["support-refund-requests", statusFilter],
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("support_get_refund_requests", {
-        p_status: statusFilter === "all" ? null : statusFilter,
+      const { data, error } = await supabase.rpc("support_get_refund_requests", {
+        p_status: statusFilter === "all" ? undefined : statusFilter,
       });
       if (error) {
         console.warn("support_get_refund_requests:", error.message);
         return [];
       }
-      return (data as any[]) || [];
+      return (data as SupportRefundRequest[] | null) || [];
     },
   });
 
@@ -89,7 +90,7 @@ export function SupportRefundsTab() {
       newStatus: string;
       note: string;
     }) => {
-      const { data, error } = await (supabase.rpc as any)("support_recommend_refund", {
+      const { data, error } = await supabase.rpc("support_recommend_refund", {
         p_refund_request_id: refundId,
         p_new_status: newStatus,
         p_note: note,

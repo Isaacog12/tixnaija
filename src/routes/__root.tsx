@@ -407,7 +407,7 @@ function RootComponent() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setIsAuthenticated(Boolean(session));
       if (event === "SIGNED_IN" && session) {
-        const { error } = await supabase.rpc("claim_guest_messages" as any);
+        const { error } = await supabase.rpc("claim_guest_messages");
         if (error) console.error("Failed to claim guest messages:", error);
       }
       // Re-evaluate routes when auth state changes

@@ -62,7 +62,7 @@ async function fetchEvent(eventId: string) {
     .order("created_at", { ascending: false });
   if (e3) throw e3;
 
-  const { data: waitlists, error: e4 } = await (supabase as any)
+  const { data: waitlists, error: e4 } = await supabase
     .from("waitlist_entries")
     .select("*, ticket_types(name)")
     .eq("event_id", eventId)
@@ -188,7 +188,7 @@ function EditEventPage() {
     }
 
     setSaving(true);
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from("events")
       .update({
         title: form.title,

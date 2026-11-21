@@ -24,7 +24,7 @@ async function fetchEventAnalytics(eventId: string) {
 
   // 2. Fetch page views
   // Present in the database, missing from the stale generated `types.ts`.
-  const { count: pageViews } = await (supabase as any)
+  const { count: pageViews } = await supabase
     .from("event_page_views")
     .select("*", { count: "exact", head: true })
     .eq("event_id", eventId);

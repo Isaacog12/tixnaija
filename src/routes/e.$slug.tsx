@@ -186,16 +186,16 @@ async function fetchEventBySlug(slug: string) {
   const types = ev.ticket_types || [];
   const questions = ev.checkout_questions || [];
   const { data: organizer } = await (supabase
-    .from("public_organizer_profiles" as any)
+    .from("public_organizer_profiles")
     .select("full_name, organizer_slug, avatar_url")
     .eq("id", ev.organizer_id)
-    .maybeSingle() as any);
+    .maybeSingle());
   ev.profiles = organizer;
   delete ev.ticket_types; // keep structure identical for rest of code
   delete ev.checkout_questions;
 
   // Fetch Social Proof
-  const { data: socialProof } = await supabase.rpc("get_event_attendees" as any, { p_event_id: ev.id });
+  const { data: socialProof } = await supabase.rpc("get_event_attendees", { p_event_id: ev.id });
 
   // Sort tickets by price locally since we fetched via join
   types.sort((a: any, b: any) => a.price_kobo - b.price_kobo);
@@ -334,7 +334,7 @@ function EventDetailPage() {
   useEffect(() => {
     async function validatePromoter() {
       if (!ref || !data?.event) return;
-      const { data: res, error } = await supabase.rpc("validate_promoter_code" as any, {
+      const { data: res, error } = await supabase.rpc("validate_promoter_code", {
         p_event_id: data.event.id,
         p_code: ref.trim(),
       });
@@ -350,7 +350,7 @@ function EventDetailPage() {
     // `event_page_views` exists in the database but is missing from the
     // generated `types.ts`, which is stale. Cast this one call rather than
     // editing the generated file.
-    (supabase as any)
+    supabase
       .from("event_page_views")
       .insert({ event_id: data.event.id })
       .then();
@@ -477,7 +477,7 @@ function EventDetailPage() {
     if (!waitlistTier || !data?.event) return;
     setWaitlistBusy(true);
     try {
-      const { error } = await (supabase.from("waitlist_entries" as any) as any).insert({
+      const { error } = await supabase.from("waitlist_entries").insert({
         event_id: data.event.id,
         ticket_tier_id: waitlistTier.id,
         user_id: userId,
@@ -528,7 +528,7 @@ function EventDetailPage() {
       if (totalKobo === 0) {
         // `process_free_checkout` is deployed but absent from the stale
         // generated types, hence the same cast the other RPC calls use.
-        const { data: orderId, error: checkoutError } = await (supabase.rpc as any)("process_free_checkout", {
+        const { data: orderId, error: checkoutError } = await supabase.rpc("process_free_checkout", {
           p_event_id: data!.event.id,
           p_user_id: (userId || null) as string,
           p_buyer_name: values.buyerName,

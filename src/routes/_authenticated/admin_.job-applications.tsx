@@ -85,7 +85,7 @@ const STATUS_COLORS: Record<JobAppStatus, string> = {
 // ── Data fetchers ─────────────────────────────────────────────
 
 async function fetchJobApplications(): Promise<Record<JobAppStatus, JobApp[]>> {
-  const { data, error } = await supabase.rpc("admin_get_job_applications" as any);
+  const { data, error } = await supabase.rpc("admin_get_job_applications");
 
   if (error) throw error;
 
@@ -126,10 +126,10 @@ function JobApplicationsPage() {
       status: JobAppStatus;
       adminNote: string;
     }) => {
-      const { error } = await supabase.rpc("admin_update_job_application" as any, {
+      const { error } = await supabase.rpc("admin_update_job_application", {
         p_id: id,
         p_status: status,
-        p_admin_note: adminNote || null,
+        p_admin_note: (adminNote || null) as string,
       });
       if (error) throw error;
     },
@@ -148,7 +148,7 @@ function JobApplicationsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.rpc("admin_delete_job_application" as any, { p_id: id });
+      const { error } = await supabase.rpc("admin_delete_job_application", { p_id: id });
       if (error) throw error;
     },
     onSuccess: () => {

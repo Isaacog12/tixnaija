@@ -23,6 +23,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/lib/toast";
+import type { SupportMacro } from "@/lib/support-rpc-types";
 
 export function SupportMacrosTab() {
   const qc = useQueryClient();
@@ -38,12 +39,12 @@ export function SupportMacrosTab() {
   const { data: macros, isLoading, refetch } = useQuery({
     queryKey: ["support-macros-list"],
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("support_get_macros");
+      const { data, error } = await supabase.rpc("support_get_macros");
       if (error) {
         console.warn("support_get_macros:", error.message);
         return [];
       }
-      return (data as any[]) || [];
+      return (data as SupportMacro[] | null) || [];
     },
   });
 
@@ -58,7 +59,7 @@ export function SupportMacrosTab() {
       category: string;
       content: string;
     }) => {
-      const { data, error } = await (supabase.rpc as any)("admin_manage_macro", {
+      const { data, error } = await supabase.rpc("admin_manage_macro", {
         p_action: "create",
         p_title: title.trim(),
         p_category: category,
@@ -83,7 +84,7 @@ export function SupportMacrosTab() {
   // Delete Macro Mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await (supabase.rpc as any)("admin_manage_macro", {
+      const { data, error } = await supabase.rpc("admin_manage_macro", {
         p_action: "delete",
         p_id: id,
       });

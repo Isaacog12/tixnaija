@@ -69,7 +69,7 @@ export function PromotersTab({ events }: { events: { id: string; title: string; 
     queryKey: ["promoters", events.map(e => e.id)],
     queryFn: async () => {
       if (!events.length) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("promoter_links")
         .select(`
           id, unique_code, active, event_id,
@@ -99,7 +99,7 @@ export function PromotersTab({ events }: { events: { id: string; title: string; 
   const savePromoter = useMutation({
     mutationFn: async (values: PromoterFormValues) => {
       // 1. Create the promoter
-      const { data: promoterData, error: pError } = await (supabase as any)
+      const { data: promoterData, error: pError } = await supabase
         .from("promoters")
         .insert([{ event_id: values.event_id, name: values.name, contact_info: values.contact_info }])
         .select("id")
@@ -108,7 +108,7 @@ export function PromotersTab({ events }: { events: { id: string; title: string; 
       if (pError) throw pError;
 
       // 2. Create the link
-      const { error: lError } = await (supabase as any)
+      const { error: lError } = await supabase
         .from("promoter_links")
         .insert([{
           promoter_id: promoterData.id,
@@ -135,7 +135,7 @@ export function PromotersTab({ events }: { events: { id: string; title: string; 
 
   const toggleStatus = useMutation({
     mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
-      const { error } = await (supabase as any).from("promoter_links").update({ active }).eq("id", id);
+      const { error } = await supabase.from("promoter_links").update({ active }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {

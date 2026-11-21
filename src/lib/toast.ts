@@ -49,7 +49,7 @@ export const toast = {
     return show("info", message, options);
   },
 
-  /** Sonner alias. */
+  /** Neutral one-liner, for call sites that used to pass through Sonner. */
   message(message: string, options?: ToastOptions) {
     return show("info", message, options);
   },

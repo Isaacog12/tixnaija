@@ -125,7 +125,7 @@ function AttendeesPage() {
 
   const updateTicketMutation = useMutation({
     mutationFn: async ({ ticketId, name, email }: { ticketId: string, name: string, email: string }) => {
-      const { error } = await supabase.rpc("update_ticket_attendee" as any, {
+      const { error } = await supabase.rpc("update_ticket_attendee", {
         p_ticket_id: ticketId,
         p_attendee_name: name,
         p_attendee_email: email,
@@ -440,7 +440,7 @@ function MassEmailDialog({ eventId }: { eventId: string }) {
       const { data: userData } = await supabase.auth.getUser();
       
       // 1. Create broadcast record
-      const { data: broadcast, error: insertErr } = await (supabase as any)
+      const { data: broadcast, error: insertErr } = await supabase
         .from("event_broadcasts")
         .insert({
           event_id: eventId,

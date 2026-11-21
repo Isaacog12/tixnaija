@@ -187,7 +187,7 @@ function RefundRequestModal({ open, onClose, event, ticketId, buyerEmail, buyerN
       if (!reason) throw new Error("Please select a reason.");
       if (reason === "other" && !otherText.trim()) throw new Error("Please describe your reason.");
 
-      const { error } = await supabase.from("refund_requests" as any).insert({
+      const { error } = await supabase.from("refund_requests").insert({
         ticket_id: ticketId,
         event_id: event.id,
         buyer_email: buyerEmail,
@@ -319,11 +319,11 @@ function SupportCaseModal({ open, onClose, event, orderId }: SupportCaseModalPro
       if (!subject.trim()) throw new Error("Please enter a subject.");
       if (!description.trim() || description.trim().length < 5) throw new Error("Please describe your issue in detail.");
 
-      const { data, error } = await (supabase.rpc as any)("open_support_case", {
+      const { data, error } = await supabase.rpc("open_support_case", {
         p_subject: subject.trim(),
         p_category: category,
         p_description: description.trim(),
-        p_order_id: orderId || null,
+        p_order_id: orderId || undefined,
       });
 
       if (error) throw error;

@@ -5,6 +5,7 @@ import { Archive, AlertTriangle, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/toast";
 import { formatNaira } from "@/lib/currency";
+import { purgeBlockReason, type EventDeletionPreview } from "@/lib/event-deletion";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -17,17 +18,6 @@ import {
 } from "@/components/ui/alert-dialog";
 
 type DeleteMode = "keep_records" | "purge";
-
-type Preview = {
-  orders: number;
-  tickets: number;
-  buyers: number;
-  paid_unrefunded: number;
-  open_refunds: number;
-  revenue_kobo: number;
-  refunded_kobo: number;
-  money_owed: boolean;
-};
 
 /**
  * Admin delete for a single event.
@@ -53,7 +43,7 @@ export function EventDeleteDialog({
   onDeleted?: () => void;
 }) {
   const qc = useQueryClient();
-  const [preview, setPreview] = useState<Preview | null>(null);
+  const [preview, setPreview] = useState<EventDeletionPreview | null>(null);
   const [previewFailed, setPreviewFailed] = useState(false);
   const [busy, setBusy] = useState<DeleteMode | null>(null);
 
@@ -66,7 +56,7 @@ export function EventDeleteDialog({
     let cancelled = false;
 
     (async () => {
-      const { data, error } = await (supabase.rpc as any)(
+      const { data, error } = await supabase.rpc(
         "admin_event_deletion_preview",
         { p_event_id: event.id },
       );
@@ -77,7 +67,7 @@ export function EventDeleteDialog({
         return;
       }
       setPreviewFailed(false);
-      setPreview(data as Preview);
+      setPreview(data as EventDeletionPreview);
     })();
 
     return () => {
@@ -88,7 +78,7 @@ export function EventDeleteDialog({
   async function run(mode: DeleteMode) {
     if (!event) return;
     setBusy(mode);
-    const { error } = await (supabase.rpc as any)("admin_delete_event", {
+    const { error } = await supabase.rpc("admin_delete_event", {
       p_event_id: event.id,
       p_mode: mode,
       p_note:
@@ -115,7 +105,9 @@ export function EventDeleteDialog({
     onDeleted?.();
   }
 
-  const moneyOwed = preview?.money_owed ?? false;
+  // A missing preview blocks purging: "no sales figure" is not "no sales".
+  const block = purgeBlockReason(preview);
+  const canPurge = block === null;
 
   return (
     <AlertDialog open={!!event} onOpenChange={(open) => !open && onClose()}>
@@ -156,7 +148,19 @@ export function EventDeleteDialog({
           )}
         </div>
 
-        {moneyOwed && (
+        {block === "preview_unavailable" && (
+          <div className="flex items-start gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+            <p className="text-xs text-amber-500/90">
+              {previewFailed
+                ? "Sales for this event could not be checked"
+                : "Sales for this event have not been checked yet"}
+              , so clearing is disabled. Remove the event and keep its records instead.
+            </p>
+          </div>
+        )}
+
+        {block === "money_owed" && (
           <div className="flex items-start gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
             <p className="text-xs text-amber-500/90">
@@ -209,7 +213,7 @@ export function EventDeleteDialog({
               size="sm"
               className="shrink-0 rounded-lg"
               onClick={() => run("purge")}
-              disabled={busy !== null || moneyOwed}
+              disabled={busy !== null || !canPurge}
             >
               <Trash2 className="mr-1.5 h-3.5 w-3.5" />
               {busy === "purge" ? "Deleting…" : "Clear everything"}

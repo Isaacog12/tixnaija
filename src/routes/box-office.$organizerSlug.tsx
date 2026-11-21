@@ -16,7 +16,7 @@ export const Route = createFileRoute("/box-office/$organizerSlug")({
     // Check if it's a UUID
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawParam);
 
-    let query = (supabase.from("public_organizer_profiles" as any).select("*") as any);
+    let query = supabase.from("public_organizer_profiles").select("*");
     if (isUuid) {
       query = query.or(`organizer_slug.eq.${lowerParam},id.eq.${rawParam}`);
     } else {
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/box-office/$organizerSlug")({
 
     const { data: profile, error: profileErr } = await query.maybeSingle();
 
-    if (profileErr || !profile) {
+    if (profileErr || !profile || !profile.id) {
       throw new Error("Organizer not found");
     }
 
@@ -66,7 +66,7 @@ function BoxOfficePage() {
         {/* Banner */}
         <div className="w-full h-52 md:h-72 bg-muted relative overflow-hidden">
           {hasCustomBanner ? (
-            <img src={profile.banner_url} alt={`${organizerName} Banner`} className="w-full h-full object-cover" />
+            <img src={profile.banner_url ?? undefined} alt={`${organizerName} Banner`} className="w-full h-full object-cover" />
           ) : bannerImage ? (
             <div className="w-full h-full relative">
               <img

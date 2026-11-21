@@ -63,7 +63,7 @@ interface GuestOrderFull {
 async function fetchOrderTickets(orderId: string, guestEmail?: string) {
   // Guest mode: the order id plus the buyer/recipient email unlock the order.
   if (guestEmail) {
-    const { data, error } = await supabase.rpc("get_guest_order_full" as any, {
+    const { data, error } = await supabase.rpc("get_guest_order_full", {
       p_order_id: orderId,
       p_email: guestEmail.trim().toLowerCase(),
     });

@@ -36,7 +36,6 @@ export default defineConfig({
         "react-hook-form",
         "@hookform/resolvers",
         "recharts",
-        "sonner",
         "clsx",
         "tailwind-merge",
         "class-variance-authority",

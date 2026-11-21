@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/lib/toast";
+import type { SupportCsatResult } from "@/lib/support-rpc-types";
 
 export const Route = createFileRoute("/csat/$token")({
   component: CsatPage,
@@ -38,9 +39,9 @@ function CsatPage() {
 
   useEffect(() => {
     let cancelled = false;
-    (supabase.rpc as any)("support_get_csat_case", { p_token: token })
-      .then(({ data }: any) => {
-        if (!cancelled) setDetail(data ?? null);
+    Promise.resolve(supabase.rpc("support_get_csat_case", { p_token: token }))
+      .then(({ data }) => {
+        if (!cancelled) setDetail((data as CsatCase | null) ?? null);
       })
       .catch(() => {
         if (!cancelled) setDetail(null);
@@ -60,13 +61,13 @@ function CsatPage() {
     }
     setSubmitting(true);
     try {
-      const { data, error } = await (supabase.rpc as any)("support_submit_csat", {
+      const { data, error } = await supabase.rpc("support_submit_csat", {
         p_token: token,
         p_rating: rating,
-        p_comment: comment.trim() || null,
+        p_comment: comment.trim() || undefined,
       });
       if (error) throw error;
-      if (!data?.success) {
+      if (!(data as SupportCsatResult | null)?.success) {
         toast.error("This request has already been rated.");
         setDone(true);
         return;

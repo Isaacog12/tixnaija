@@ -27,6 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "@/lib/toast";
+import type { SupportLookupResult } from "@/lib/support-rpc-types";
 
 interface SupportLookupTabProps {
   initialQuery?: string;
@@ -53,11 +54,11 @@ export function SupportLookupTab({
     queryKey: ["support-lookup", executedQuery],
     queryFn: async () => {
       if (!executedQuery || executedQuery.trim().length < 3) return null;
-      const { data, error } = await (supabase.rpc as any)("support_lookup_customer", {
+      const { data, error } = await supabase.rpc("support_lookup_customer", {
         p_query: executedQuery.trim(),
       });
       if (error) throw error;
-      return data;
+      return data as SupportLookupResult | null;
     },
     enabled: Boolean(executedQuery && executedQuery.trim().length >= 3),
   });
@@ -118,7 +119,7 @@ export function SupportLookupTab({
           {error && (
             <div className="mt-4 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-xs text-destructive flex items-center gap-2">
               <ShieldAlert className="h-4 w-4 shrink-0" />
-              <span>{(error as any).message || "Search failed or rate limit exceeded"}</span>
+              <span>{error.message || "Search failed or rate limit exceeded"}</span>
             </div>
           )}
         </CardContent>

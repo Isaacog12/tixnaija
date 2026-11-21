@@ -60,7 +60,7 @@ function AdminAuditLogsViewer() {
     queryKey: ["admin-audit-logs"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("support_audit_logs" as any)
+        .from("support_audit_logs")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(100);

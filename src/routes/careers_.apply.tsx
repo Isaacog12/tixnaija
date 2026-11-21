@@ -169,7 +169,7 @@ function ApplyPage() {
         throw new Error("CV not ready.");
       }
 
-      const { error } = await (supabase as any).from("job_applications").insert({
+      const { error } = await supabase.from("job_applications").insert({
         role_applied_for: form.role,
         full_name: form.fullName.trim(),
         email: form.email.trim().toLowerCase(),

@@ -41,7 +41,7 @@ async function fetchMyEvents() {
     .limit(1)
     .maybeSingle()) as { data: any };
 
-  const { data: events, error } = (await (supabase as any)
+  const { data: events, error } = (await supabase
     .from("events")
     .select("id, title, slug, city, start_datetime, status, cover_image_url, event_series(title)")
     .is("deleted_at", null)

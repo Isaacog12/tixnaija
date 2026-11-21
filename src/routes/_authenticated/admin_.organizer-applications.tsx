@@ -101,11 +101,10 @@ function OrganizerApplicationsPage() {
       id: string;
       note: string;
     }) => {
-      const { error } = await supabase.rpc(
-        "approve_organizer_application" as any,
+      const { error } = await supabase.rpc("approve_organizer_application",
         {
           p_application_id: id,
-          p_note: note || null,
+          p_note: note || undefined,
         }
       );
       if (error) throw error;
@@ -125,11 +124,10 @@ function OrganizerApplicationsPage() {
       id: string;
       note: string;
     }) => {
-      const { error } = await supabase.rpc(
-        "reject_organizer_application" as any,
+      const { error } = await supabase.rpc("reject_organizer_application",
         {
           p_application_id: id,
-          p_note: note || null,
+          p_note: note || undefined,
         }
       );
       if (error) throw error;
