@@ -282,14 +282,13 @@ function BrowsePage() {
               }}
               className="group w-full lg:max-w-md"
             >
-              <div className="flex items-center gap-2 rounded-2xl border border-border/70 bg-card p-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-[border-color,box-shadow] duration-[var(--duration-fast)] focus-within:border-primary/50 focus-within:shadow-[0_0_0_3px_color-mix(in_oklch,var(--color-primary)_14%,transparent)]">
+              <div className="flex items-center gap-2 rounded-2xl border border-border/70 bg-card p-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-colors duration-[var(--duration-fast)]">
                 <Search className="ml-3 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
                 <Input
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   placeholder="Search events, artists, venues…"
                   aria-label="Search events"
-                  data-focus-ring="none"
                   className="h-10 flex-1 border-0 bg-transparent px-1 text-sm shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/80"
                 />
                 <Button
