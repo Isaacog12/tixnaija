@@ -253,9 +253,19 @@ function BrowsePage() {
   const [activeView, setActiveView] = useState(view ?? "grid");
   const cityHydrated = useRef(false);
 
-  const updateSearch = (updates: Partial<z.infer<typeof searchSchema>>) => {
+  /**
+   * Filter and typing updates REPLACE the history entry. Otherwise every
+   * debounced keystroke pause pushes an entry and Back walks through partial
+   * queries. An explicit submit passes `push` so Back still returns to the
+   * previous result set.
+   */
+  const updateSearch = (
+    updates: Partial<z.infer<typeof searchSchema>>,
+    options?: { push?: boolean },
+  ) => {
     navigate({
       to: "/browse",
+      replace: options?.push !== true,
       search: (prev) => ({
         ...prev,
         ...updates,
@@ -459,7 +469,7 @@ function BrowsePage() {
                   e.preventDefault();
                   const value = searchInput.trim();
                   if (value) rememberSearch(value);
-                  updateSearch({ q: value });
+                  updateSearch({ q: value }, { push: true });
                   setSearchFocused(false);
                 }}
                 className="group w-full"
@@ -504,7 +514,7 @@ function BrowsePage() {
                   onPick={(value) => {
                     setSearchInput(value);
                     rememberSearch(value);
-                    updateSearch({ q: value });
+                    updateSearch({ q: value }, { push: true });
                   }}
                   onRemove={forgetSearch}
                   onClear={clearSearches}
@@ -1014,7 +1024,7 @@ function FilterSelect({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-label={label}
-        className="h-8 max-w-[190px] appearance-none truncate rounded-full border border-border/70 bg-transparent pl-8 pr-8 text-[12px] font-medium text-foreground transition-colors hover:border-border focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+        className="h-8 max-w-[190px] appearance-none truncate rounded-full border border-border/70 bg-card pl-8 pr-8 text-[12px] font-medium text-foreground transition-colors [color-scheme:light] hover:border-border focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 dark:[color-scheme:dark] [&>option]:bg-card [&>option]:text-foreground"
       >
         {Object.entries(options).map(([key, text]) => (
           <option key={key} value={key}>
@@ -1053,7 +1063,7 @@ function MobileSelect({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-label={label}
-        className="h-10 w-full appearance-none truncate rounded-md border border-border/70 bg-card pl-9 pr-8 text-[12px] font-medium text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+        className="h-10 w-full appearance-none truncate rounded-md border border-border/70 bg-card pl-9 pr-8 text-[12px] font-medium text-foreground [color-scheme:light] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 dark:[color-scheme:dark] [&>option]:bg-card [&>option]:text-foreground"
       >
         {Object.entries(options).map(([key, text]) => (
           <option key={key} value={key}>
