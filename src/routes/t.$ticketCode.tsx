@@ -6,7 +6,6 @@ import { SiteNav } from "@/components/site-nav";
 import { BackButton } from "@/components/back-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Ticket } from "lucide-react";
 import { useEffect } from "react";
 
 export const Route = createFileRoute("/t/$ticketCode")({
@@ -28,8 +27,9 @@ interface TicketFull {
 }
 
 async function fetchSingleTicket(ticketCode: string) {
-  const { data: ticket, error: ticketErr } = await supabase
-    .rpc("get_ticket_by_code", { p_ticket_code: ticketCode });
+  const { data: ticket, error: ticketErr } = await supabase.rpc("get_ticket_by_code", {
+    p_ticket_code: ticketCode,
+  });
 
   if (ticketErr || !ticket) {
     throw notFound();
@@ -59,47 +59,48 @@ function SingleTicketPage() {
   return (
     <div className="min-h-dvh bg-background">
       <SiteNav />
-      <section className="bg-card border-b border-border shadow-sm mb-10 pt-6 pb-8 relative overflow-hidden">
-        <div className="mx-auto max-w-7xl px-4 w-full relative z-20 mb-4 md:mb-6">
+
+      <section className="border-b border-border/60">
+        <div className="mx-auto max-w-4xl px-4 pb-8 pt-6 sm:px-6 md:pb-10">
           <BackButton />
-        </div>
-        <div className="absolute inset-0 z-0 bg-gradient-to-r from-primary/5 to-transparent opacity-50" />
-        <div className="mx-auto max-w-4xl px-4 relative z-10 text-center">
-          <h1 className="font-display text-4xl mb-2">Your Ticket</h1>
-          <p className="text-muted-foreground text-sm">
+          <div className="mt-6 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+            <span className="h-px w-10 bg-border" aria-hidden />
+            TixNaija / Ticket
+          </div>
+          <h1 className="mt-4 font-display text-4xl leading-none tracking-[-0.02em] text-foreground">
+            Your ticket
+          </h1>
+          <p className="mt-3 max-w-lg text-[14px] leading-relaxed text-muted-foreground">
             Have this ready to scan at the door, or download it for offline use.
           </p>
         </div>
       </section>
 
-      <div className="mx-auto max-w-4xl px-4 pb-32">
+      <div className="mx-auto max-w-4xl px-4 pb-32 pt-8 sm:px-6">
         {isLoading ? (
-          <Skeleton className="h-[300px] w-full max-w-2xl mx-auto rounded-2xl" />
+          <Skeleton className="mx-auto h-[320px] w-full max-w-2xl rounded-lg" />
         ) : isError || !ticket ? (
-          <div className="mx-auto max-w-md my-12 rounded-3xl border border-border/80 bg-card/75 p-8 sm:p-10 text-center shadow-2xl backdrop-blur-2xl">
-            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20">
-              <Ticket className="h-7 w-7 text-primary" />
-            </div>
-            <h2 className="font-display text-xl sm:text-2xl font-semibold text-foreground">Ticket Not Found</h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              We couldn't locate a ticket matching this verification code. It may have expired or been reissued.
+          <div className="mx-auto my-12 max-w-md rounded-lg border border-border/60 bg-card p-8 text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+              Not found
             </p>
-            <div className="mt-6 flex justify-center gap-3">
-              <Button asChild className="rounded-xl gradient-sunset text-white shadow-glow active:scale-[0.98]">
-                <Link to="/my-tickets">Find My Tickets</Link>
-              </Button>
-            </div>
+            <h2 className="mt-3 font-display text-2xl text-foreground">Ticket not found</h2>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              We couldn't locate a ticket matching this verification code. It may have expired or
+              been reissued.
+            </p>
+            <Button asChild className="mt-6 rounded-md">
+              <Link to="/my-tickets">Email my tickets</Link>
+            </Button>
           </div>
         ) : (
           <div className="flex justify-center">
-            <div className="w-full max-w-2xl">
-              <TicketStub
-                ticket={ticket}
-                event={ticket.order_items.orders.events}
-                order={ticket.order_items.orders}
-                ticketType={ticket.order_items.ticket_types}
-              />
-            </div>
+            <TicketStub
+              ticket={ticket}
+              event={ticket.order_items.orders.events}
+              order={ticket.order_items.orders}
+              ticketType={ticket.order_items.ticket_types}
+            />
           </div>
         )}
       </div>

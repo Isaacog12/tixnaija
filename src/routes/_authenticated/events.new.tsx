@@ -15,6 +15,7 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { BackButton } from "@/components/back-button";
+import { CitySelect } from "@/components/city-select";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -598,11 +599,10 @@ function NewEventPage() {
                   />
                 </Field>
                 <Field label="City" required>
-                  <Input
+                  <CitySelect
                     value={form.city}
-                    onChange={(e) => setForm({ ...form, city: e.target.value })}
-                    placeholder="Lagos"
-                    className="h-11"
+                    onChange={(city) => setForm({ ...form, city })}
+                    required
                   />
                 </Field>
                 <Field label="Starts at" required>

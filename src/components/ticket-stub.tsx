@@ -1,33 +1,75 @@
 import React, { useRef } from "react";
 import { format } from "date-fns";
 import { QRCodeCanvas } from "qrcode.react";
-import { MapPin, Calendar, Download, CalendarPlus } from "lucide-react";
+import { Download, CalendarPlus } from "lucide-react";
 import { Button } from "./ui/button";
 import { toast } from "@/lib/toast";
+import { cn } from "@/lib/utils";
+
+interface TicketStubTicket {
+  id?: string | null;
+  ticket_code?: string | null;
+  status?: string | null;
+  attendee_name?: string | null;
+}
+
+interface TicketStubEvent {
+  title?: string | null;
+  slug?: string | null;
+  description?: string | null;
+  cover_image_url?: string | null;
+  start_datetime?: string | null;
+  end_datetime?: string | null;
+  venue_name?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+}
+
+interface TicketStubOrder {
+  buyer_name?: string | null;
+  [key: string]: unknown;
+}
+
+interface TicketStubType {
+  name?: string | null;
+}
 
 interface TicketStubProps {
-  ticket: any;
-  event: any;
-  order: any;
-  ticketType: any;
+  ticket?: TicketStubTicket | null;
+  event?: TicketStubEvent | null;
+  order?: TicketStubOrder | null;
+  ticketType?: TicketStubType | null;
+}
+
+type StatusTone = "valid" | "used" | "void";
+
+function statusMeta(status: unknown): { label: string; tone: StatusTone } {
+  const value = String(status ?? "valid").toLowerCase();
+  if (value === "checked_in" || value === "used") return { label: "Used — already scanned", tone: "used" };
+  if (value === "cancelled" || value === "refunded" || value === "void") {
+    return { label: value === "refunded" ? "Refunded" : "Cancelled", tone: "void" };
+  }
+  return { label: "Valid for entry", tone: "valid" };
 }
 
 export function TicketStub({ ticket = {}, event = {}, order = {}, ticketType = {} }: TicketStubProps) {
   const ticketRef = useRef<HTMLDivElement>(null);
-  const safeEvent = event || {};
-  const safeTicket = ticket || {};
-  const safeOrder = order || {};
-  const safeTicketType = ticketType || {};
+  const safeEvent: TicketStubEvent = event || {};
+  const safeTicket: TicketStubTicket = ticket || {};
+  const safeOrder: TicketStubOrder = order || {};
+  const safeTicketType: TicketStubType = ticketType || {};
 
   const ticketCode = String(safeTicket.ticket_code || safeTicket.id || "TICKET");
   const ticketShortCode = ticketCode.includes("-") ? ticketCode.split("-")[0] : ticketCode.substring(0, 8);
+  const status = statusMeta(safeTicket.status);
 
   const handleDownload = async () => {
     if (!ticketRef.current) return;
     try {
       // Ensure fonts are fully loaded before capturing so we don't get generic fallback fonts
       await document.fonts.ready;
-      
+
       // Dynamically import heavy libraries for PDF generation to reduce bundle size
       const { toPng } = await import("html-to-image");
       const { jsPDF } = await import("jspdf");
@@ -36,10 +78,10 @@ export function TicketStub({ ticket = {}, event = {}, order = {}, ticketType = {
       const dataUrl = await toPng(ticketRef.current, {
         cacheBust: true,
         pixelRatio: 2,
-        backgroundColor: '#ffffff', // Ensure background isn't transparent so text stays legible
+        backgroundColor: "#ffffff", // Ensure background isn't transparent so text stays legible
         skipFonts: false,
       });
-      
+
       // Get actual dimensions of the element to scale the PDF correctly
       const rect = ticketRef.current.getBoundingClientRect();
       const width = rect.width;
@@ -48,32 +90,34 @@ export function TicketStub({ ticket = {}, event = {}, order = {}, ticketType = {
       const pdf = new jsPDF({
         orientation: width > height ? "landscape" : "portrait",
         unit: "px",
-        format: [width, height]
+        format: [width, height],
       });
-      
-      pdf.addImage(dataUrl, 'PNG', 0, 0, width, height);
+
+      pdf.addImage(dataUrl, "PNG", 0, 0, width, height);
       pdf.save(`Ticket_${safeEvent.title || "Tix"}_${ticketShortCode}.pdf`);
       toast.success("Ticket downloaded successfully!");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to download ticket", err);
-      toast.error(`Download failed: ${err.message || "Unknown error"}`);
+      toast.error(`Download failed: ${err instanceof Error ? err.message : "Unknown error"}`);
     }
   };
 
-  const formattedDate = safeEvent.start_datetime 
+  const startRaw = typeof safeEvent.start_datetime === "string" ? safeEvent.start_datetime : null;
+
+  const formattedDate = startRaw
     ? (() => {
         try {
-          return format(new Date(safeEvent.start_datetime), "EEEE, MMMM do, yyyy");
+          return format(new Date(startRaw), "EEEE, MMMM do, yyyy");
         } catch {
           return "TBA";
         }
       })()
     : "TBA";
-    
-  const formattedTime = safeEvent.start_datetime 
+
+  const formattedTime = startRaw
     ? (() => {
         try {
-          return format(new Date(safeEvent.start_datetime), "h:mm a");
+          return format(new Date(startRaw), "h:mm a");
         } catch {
           return "TBA";
         }
@@ -82,8 +126,11 @@ export function TicketStub({ ticket = {}, event = {}, order = {}, ticketType = {
 
   const generateCalendarDates = () => {
     try {
-      const start = new Date(safeEvent.start_datetime);
-      const end = safeEvent.end_datetime ? new Date(safeEvent.end_datetime) : new Date(start.getTime() + 2 * 60 * 60 * 1000);
+      if (!startRaw) return { startStr: "", endStr: "" };
+      const start = new Date(startRaw);
+      const end = safeEvent.end_datetime
+        ? new Date(safeEvent.end_datetime)
+        : new Date(start.getTime() + 2 * 60 * 60 * 1000);
       const formatForCal = (d: Date) => d.toISOString().replace(/-|:|\.\d+/g, "");
       return { startStr: formatForCal(start), endStr: formatForCal(end) };
     } catch {
@@ -97,16 +144,23 @@ export function TicketStub({ ticket = {}, event = {}, order = {}, ticketType = {
     if (!startStr || !endStr) return;
     const title = encodeURIComponent(safeEvent.title || "Event");
     const details = encodeURIComponent(safeEvent.description || "");
-    const location = encodeURIComponent([safeEvent.venue_name, safeEvent.address, safeEvent.city, safeEvent.state].filter(Boolean).join(", "));
-    window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startStr}/${endStr}&details=${details}&location=${location}`, "_blank");
+    const location = encodeURIComponent(
+      [safeEvent.venue_name, safeEvent.address, safeEvent.city, safeEvent.state].filter(Boolean).join(", "),
+    );
+    window.open(
+      `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startStr}/${endStr}&details=${details}&location=${location}`,
+      "_blank",
+    );
   };
 
   const handleIcsDownload = () => {
     if (!safeEvent.start_datetime) return;
     const { startStr, endStr } = generateCalendarDates();
     if (!startStr || !endStr) return;
-    const location = [safeEvent.venue_name, safeEvent.address, safeEvent.city, safeEvent.state].filter(Boolean).join(", ");
-    
+    const location = [safeEvent.venue_name, safeEvent.address, safeEvent.city, safeEvent.state]
+      .filter(Boolean)
+      .join(", ");
+
     const icsContent = [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
@@ -117,7 +171,7 @@ export function TicketStub({ ticket = {}, event = {}, order = {}, ticketType = {
       `DESCRIPTION:${safeEvent.description || ""}`,
       `LOCATION:${location}`,
       "END:VEVENT",
-      "END:VCALENDAR"
+      "END:VCALENDAR",
     ].join("\r\n");
 
     const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
@@ -130,137 +184,134 @@ export function TicketStub({ ticket = {}, event = {}, order = {}, ticketType = {
     document.body.removeChild(link);
   };
 
+  const details: Array<{ label: string; value: string; hint?: string }> = [
+    { label: "Date", value: formattedDate, hint: formattedTime },
+    {
+      label: "Venue",
+      value: safeEvent.venue_name || "Online event",
+      hint: [safeEvent.address, safeEvent.city, safeEvent.state].filter(Boolean).join(", "),
+    },
+    {
+      label: "Ticket type",
+      value: safeTicketType.name || "General admission",
+    },
+    {
+      label: "Ticket holder",
+      value: safeTicket.attendee_name || safeOrder.buyer_name || "Guest",
+    },
+  ];
+
   return (
-    <div className="w-full max-w-2xl mx-auto mb-8 relative group">
-      {/* Visual Ticket Element */}
-      <div 
-        ref={ticketRef} 
-        className="flex flex-col md:flex-row w-full bg-card/95 backdrop-blur-sm rounded-2xl overflow-hidden shadow-2xl shadow-black/5 border border-border/60 relative transition-transform duration-300 hover:shadow-primary/20"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239C92AC' fill-opacity='0.03' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E")`
-        }}
+    <div className="mx-auto mb-8 w-full max-w-2xl">
+      <div
+        ref={ticketRef}
+        className={cn(
+          "overflow-hidden rounded-lg border bg-card",
+          status.tone === "void" ? "border-destructive/40" : "border-border/60",
+        )}
       >
-        
-        {/* Main Content Area */}
-        <div className="flex-1 relative min-h-[300px] flex flex-col">
-          {/* Banner Image with dark gradient */}
-          <div className="h-36 w-full relative shrink-0">
-            {safeEvent.cover_image_url ? (
-              <img 
-                src={safeEvent.cover_image_url} 
-                alt={safeEvent.title || "Event"} 
-                className="w-full h-full object-cover"
-                crossOrigin="anonymous"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-primary/80 to-primary" />
+        {/* Header strip */}
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border/60 px-4 py-3 sm:px-6">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+            Admit one
+          </span>
+          <span
+            className={cn(
+              "inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em]",
+              status.tone === "valid" && "border-foreground/20 text-foreground",
+              status.tone === "used" && "border-border text-muted-foreground",
+              status.tone === "void" && "border-destructive/50 text-destructive",
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-card/95 via-card/40 to-transparent" />
-            <div className="absolute bottom-4 left-6 right-6 text-white drop-shadow-lg">
-              <h2 className="font-display text-4xl font-extrabold truncate tracking-tight">
-                {safeEvent.title || "Event Ticket"}
-              </h2>
-            </div>
-          </div>
-
-          {/* Details Area */}
-          <div className="p-6 flex-1 flex flex-col justify-between gap-6 relative">
-            <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <div className="shrink-0 mt-0.5">
-                  <Calendar className="w-6 h-6 text-primary drop-shadow-sm" />
-                </div>
-                <div>
-                  <p className="font-semibold text-foreground text-lg leading-tight tracking-tight">{formattedDate}</p>
-                  <p className="text-muted-foreground font-medium">{formattedTime}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4">
-                <div className="shrink-0 mt-0.5">
-                  <MapPin className="w-6 h-6 text-primary drop-shadow-sm" />
-                </div>
-                <div>
-                  <p className="font-semibold text-foreground text-lg leading-tight tracking-tight">{safeEvent.venue_name || "Online Event"}</p>
-                  {(safeEvent.address || safeEvent.city || safeEvent.state) && (
-                    <p className="text-muted-foreground font-medium">
-                      {[safeEvent.address, safeEvent.city, safeEvent.state].filter(Boolean).join(", ")}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between gap-2 mt-2">
-              <span className="px-4 py-1.5 bg-primary text-primary-foreground text-sm font-bold rounded-full uppercase tracking-wider shadow-sm">
-                {safeTicketType.name || "General Admission"}
-              </span>
-              <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest opacity-60">
-                TIX-{safeTicket.id ? String(safeTicket.id).substring(0, 8) : ticketShortCode}
-              </span>
-            </div>
-          </div>
+          >
+            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-current" />
+            {status.label}
+          </span>
         </div>
 
-        {/* Perforated Divider (Hidden on mobile, visible on desktop) */}
-        <div className="hidden md:flex flex-col items-center justify-between relative w-0 border-l-2 border-dashed border-border/80">
-          <div className="w-6 h-6 bg-background rounded-full absolute -top-3 -left-3" />
-          <div className="w-6 h-6 bg-background rounded-full absolute -bottom-3 -left-3" />
-        </div>
-        
-        {/* Mobile Perforated Divider */}
-        <div className="md:hidden flex items-center justify-between relative h-0 border-t-2 border-dashed border-border/80">
-          <div className="w-6 h-6 bg-background rounded-full absolute -left-3 -top-3" />
-          <div className="w-6 h-6 bg-background rounded-full absolute -right-3 -top-3" />
-        </div>
+        {safeEvent.cover_image_url && (
+          <img
+            src={safeEvent.cover_image_url}
+            alt=""
+            className="h-24 w-full border-b border-border/60 object-cover sm:h-32"
+            crossOrigin="anonymous"
+          />
+        )}
 
-        {/* Stub Area (QR Code) */}
-        <div className="w-full md:w-72 p-6 flex flex-col items-center justify-center shrink-0 relative overflow-hidden bg-primary/5">
-          {/* Subtle sunset gradient wash on the stub */}
-          <div className="absolute inset-0 opacity-10 gradient-sunset pointer-events-none" />
-          {/* Decorative Barcode on the right edge */}
-          <div className="absolute right-0 top-0 bottom-0 w-8 opacity-5" 
-               style={{ backgroundImage: 'repeating-linear-gradient(to bottom, currentColor, currentColor 2px, transparent 2px, transparent 5px, currentColor 5px, currentColor 6px, transparent 6px, transparent 10px)' }}>
+        <div className="grid md:grid-cols-[1fr_auto]">
+          {/* Details */}
+          <div className="min-w-0 px-4 py-5 sm:px-6 sm:py-6">
+            <h1 className="font-display text-2xl leading-[1.1] tracking-[-0.02em] text-foreground sm:text-3xl">
+              {safeEvent.title || "Event ticket"}
+            </h1>
+
+            <dl className="mt-5 grid gap-4 sm:grid-cols-2">
+              {details.map((detail) => (
+                <div key={detail.label} className="min-w-0">
+                  <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    {detail.label}
+                  </dt>
+                  <dd className="mt-1 break-words text-[14px] font-medium leading-snug text-foreground">
+                    {detail.value}
+                    {detail.hint && (
+                      <span className="mt-0.5 block text-[12px] font-normal text-muted-foreground">
+                        {detail.hint}
+                      </span>
+                    )}
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </div>
 
-          <div className="text-center w-full mb-6 z-10">
-            <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1 font-semibold">Admit One</p>
-            <p className="font-display font-semibold text-xl truncate px-2 text-foreground">
-              {safeTicket.attendee_name || safeOrder.buyer_name || "Guest"}
+          {/* QR stub — always black on white so it scans in either theme and
+              survives a phone at low brightness. */}
+          <div className="flex flex-col items-center justify-center gap-3 border-t border-border/60 px-4 py-6 md:border-l md:border-t-0 sm:px-6">
+            <div className="rounded-md bg-white p-3 ring-1 ring-black/10">
+              <QRCodeCanvas
+                value={ticketCode}
+                size={168}
+                bgColor={"#ffffff"}
+                fgColor={"#000000"}
+                level={"Q"}
+                includeMargin={false}
+              />
+            </div>
+            <p className="font-mono text-[12px] uppercase tracking-[0.18em] text-foreground">
+              {ticketShortCode}
+            </p>
+            <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+              Scan at the gate
             </p>
           </div>
-          
-          <div className="bg-white p-4 rounded-2xl shadow-md border border-black/5 mb-4 z-10 hover:scale-105 transition-transform duration-300">
-            <QRCodeCanvas 
-              value={ticketCode}
-              size={150}
-              bgColor={"#ffffff"}
-              fgColor={"#000000"}
-              level={"Q"}
-              includeMargin={false}
-            />
-          </div>
-          
-          <p className="text-sm font-mono font-medium text-muted-foreground uppercase tracking-widest bg-background/50 px-3 py-1 rounded-md z-10">
-            {ticketShortCode}
-          </p>
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex flex-wrap justify-end gap-3 mt-6">
+      {/* Actions */}
+      <div className="mt-4 flex flex-wrap justify-end gap-2 print:hidden">
         {safeEvent.start_datetime && (
           <>
-            <Button variant="outline" onClick={handleGoogleCalendar} className="gap-2 bg-card/50 backdrop-blur-sm border-border/60 hover:bg-accent/50">
-              <CalendarPlus className="w-4 h-4 text-primary" /> <span className="hidden sm:inline">Google Calendar</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleGoogleCalendar}
+              className="gap-2 rounded-md border-border/70"
+            >
+              <CalendarPlus className="h-4 w-4" aria-hidden />{" "}
+              <span className="hidden sm:inline">Google Calendar</span>
             </Button>
-            <Button variant="outline" onClick={handleIcsDownload} className="gap-2 bg-card/50 backdrop-blur-sm border-border/60 hover:bg-accent/50">
-              <CalendarPlus className="w-4 h-4 text-primary" /> <span className="hidden sm:inline">Download .ics</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleIcsDownload}
+              className="gap-2 rounded-md border-border/70"
+            >
+              <CalendarPlus className="h-4 w-4" aria-hidden />{" "}
+              <span className="hidden sm:inline">Download .ics</span>
             </Button>
           </>
         )}
-        <Button variant="default" onClick={handleDownload} className="gap-2 gradient-sunset text-white border-0 shadow-glow hover:opacity-90">
-          <Download className="w-4 h-4" /> Download PDF
+        <Button size="sm" onClick={handleDownload} className="gap-2 rounded-md">
+          <Download className="h-4 w-4" aria-hidden /> Download PDF
         </Button>
       </div>
     </div>

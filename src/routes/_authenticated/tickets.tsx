@@ -771,29 +771,29 @@ function TicketsPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 md:py-20 min-h-dvh">
-      <div className="mb-12">
-        <div className="flex items-center gap-4 mb-4">
-          <BackButton />
-          <h1 className="font-display text-5xl md:text-6xl tracking-tight">Your Tickets</h1>
+      <div className="mb-10 border-b border-border/60 pb-8">
+        <BackButton />
+        <div className="mt-6 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+          <span className="h-px w-10 bg-border" aria-hidden />
+          TixNaija / Tickets
         </div>
-        <p className="text-muted-foreground text-lg max-w-2xl">
-          Manage your purchased tickets and passes. Every ticket you own is ready to scan, share, or download offline.
+        <h1 className="mt-4 font-display text-4xl leading-none tracking-[-0.02em] text-foreground md:text-5xl">
+          Your tickets
+        </h1>
+        <p className="mt-3 max-w-2xl text-[14px] leading-relaxed text-muted-foreground">
+          Every ticket you own is ready to scan, share or download offline.
         </p>
       </div>
 
       {isLoading && (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-8">
+        <div className="divide-y divide-border/60 border-y border-border/60">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="animate-pulse rounded-[2rem] bg-card border border-border/40 overflow-hidden shadow-sm h-[380px]">
-              <div className="h-48 bg-muted/60 relative overflow-hidden">
-                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-background/20 to-transparent" />
-              </div>
-              <div className="p-6 space-y-4">
-                <div className="h-5 w-2/3 bg-muted/80 rounded-md" />
-                <div className="h-4 w-1/3 bg-muted/80 rounded-md" />
-                <div className="pt-4 mt-4 border-t border-border/40">
-                  <div className="h-12 w-full bg-muted/80 rounded-xl" />
-                </div>
+            <div key={i} className="flex animate-pulse items-center gap-4 py-4">
+              <div className="h-16 w-24 shrink-0 rounded-md bg-muted/60" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 w-28 rounded-full bg-muted/60" />
+                <div className="h-5 w-2/3 rounded-md bg-muted/60" />
+                <div className="h-3 w-1/3 rounded-full bg-muted/60" />
               </div>
             </div>
           ))}
@@ -801,39 +801,35 @@ function TicketsPage() {
       )}
 
       {error && (
-        <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-8 text-center text-destructive max-w-2xl mx-auto">
-          <Frown className="h-10 w-10 mx-auto mb-4 opacity-50" />
-          <h3 className="font-medium text-lg mb-1">Failed to load tickets</h3>
-          <p className="text-destructive/80">{(error as Error).message}</p>
+        <div className="mx-auto max-w-2xl rounded-lg border border-destructive/30 bg-destructive/5 p-8 text-center">
+          <h3 className="font-display text-xl text-foreground">Failed to load tickets</h3>
+          <p className="mt-2 text-sm text-destructive">{(error as Error).message}</p>
         </div>
       )}
 
       {rawTickets && rawTickets.length === 0 ? (
-        <div className="flex flex-col items-center justify-center border border-dashed border-border/60 bg-card/30 p-16 md:p-24 text-center rounded-[2.5rem] mt-8 shadow-sm max-w-3xl mx-auto backdrop-blur-sm stagger-card-in">
-          <div className="mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-secondary/50 relative">
-            <div className="absolute inset-0 bg-primary/10 rounded-full animate-ping opacity-20" />
-            <TicketIcon className="h-12 w-12 text-muted-foreground/50" />
-          </div>
-          <h3 className="font-display text-4xl mb-4 text-foreground">Your ticket stash is empty. Let's fix that.</h3>
-          <p className="text-muted-foreground text-lg max-w-md mx-auto mb-10 leading-relaxed">
-            You haven't purchased any tickets. Discover amazing concerts, comedy shows, and parties happening near you.
+        <div className="mx-auto mt-8 flex max-w-xl flex-col items-center rounded-lg border border-dashed border-border p-10 text-center md:p-14">
+          <TicketIcon className="h-7 w-7 text-muted-foreground/60" aria-hidden />
+          <h3 className="mt-4 font-display text-2xl text-foreground">No tickets yet</h3>
+          <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
+            Tickets you buy will appear here, ready to scan at the door.
           </p>
-          <Button asChild size="lg" className="rounded-full h-14 px-10 gradient-sunset text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all font-semibold text-lg">
-            <Link to="/browse">Explore events</Link>
+          <Button asChild className="mt-6 rounded-md">
+            <Link to="/browse">Browse events</Link>
           </Button>
         </div>
       ) : (
         rawTickets && (
           <div>
             <Tabs defaultValue={live.length > 0 ? "live" : upcoming.length > 0 ? "upcoming" : "past"} className="w-full mt-2">
-              <TabsList className="mb-10 inline-flex h-14 items-center justify-center rounded-full bg-secondary/50 p-1.5 text-muted-foreground border border-border/40 shadow-inner overflow-x-auto overflow-y-hidden max-w-full no-scrollbar">
-                <TabsTrigger value="upcoming" className="rounded-full px-6 py-2.5 text-base font-semibold data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md transition-all">
+              <TabsList className="mb-8 inline-flex h-auto max-w-full items-center justify-start gap-1 overflow-x-auto overflow-y-hidden rounded-full border border-border/60 p-1 text-muted-foreground no-scrollbar">
+                <TabsTrigger value="upcoming" className="rounded-full px-4 py-1.5 text-[13px] font-medium data-[state=active]:bg-foreground data-[state=active]:text-background">
                   Upcoming ({upcoming.length})
                 </TabsTrigger>
-                <TabsTrigger value="live" className="rounded-full px-6 py-2.5 text-base font-semibold data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md transition-all">
+                <TabsTrigger value="live" className="rounded-full px-4 py-1.5 text-[13px] font-medium data-[state=active]:bg-foreground data-[state=active]:text-background">
                   Live ({live.length})
                 </TabsTrigger>
-                <TabsTrigger value="past" className="rounded-full px-6 py-2.5 text-base font-semibold data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md transition-all">
+                <TabsTrigger value="past" className="rounded-full px-4 py-1.5 text-[13px] font-medium data-[state=active]:bg-foreground data-[state=active]:text-background">
                   Past ({past.length})
                 </TabsTrigger>
               </TabsList>
@@ -890,7 +886,7 @@ function EventList({
 
   if (events.length === 0) {
     return (
-      <div className="rounded-3xl border border-dashed border-border/60 bg-card/30 py-20 text-center text-lg text-muted-foreground font-medium stagger-card-in">
+      <div className="rounded-lg border border-dashed border-border py-16 text-center text-sm text-muted-foreground">
         {emptyMessage}
       </div>
     );
@@ -898,19 +894,29 @@ function EventList({
 
   return (
     <>
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:gap-8">
+      <div className="divide-y divide-border/60 border-y border-border/60">
         {events.map((ev, i) => {
           const isExpanded = !!expandedCards[ev.id];
           const ticketCount = ev.tickets.length;
           const primaryOrderId = ev.orders[0]?.id || "";
+          const statusText =
+            ev.status === "cancelled"
+              ? "Cancelled"
+              : ev.status === "postponed"
+                ? "Postponed"
+                : type === "past"
+                  ? "Ended"
+                  : type === "live"
+                    ? "Happening now"
+                    : "Upcoming";
 
           return (
             <div
               key={ev.id}
-              className="group relative flex flex-col overflow-hidden rounded-[2rem] bg-card border border-border/60 shadow-sm transition-all duration-300 hover:shadow-2xl hover:shadow-primary/10 hover:border-primary/30 stagger-card-in"
+              className="group relative flex flex-col overflow-hidden bg-card transition-colors duration-200 hover:bg-secondary/20 sm:flex-row"
               style={{ animationDelay: `${i * STAGGER_MS}ms` }}
             >
-              <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary">
+              <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-secondary sm:aspect-auto sm:w-[200px]">
                 {ev.cover_image_url ? (
                   <img
                     src={ev.cover_image_url}
@@ -937,75 +943,60 @@ function EventList({
                   </div>
                 )}
                 
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-30 group-hover:opacity-70 transition-opacity duration-300 z-10" />
-                
-                <div className="absolute left-4 top-4 flex flex-wrap gap-2 z-20">
+                <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
                   {ev.city && (
-                    <div className="inline-flex items-center gap-1.5 rounded-full bg-background/95 px-3 py-1.5 text-xs font-bold text-foreground shadow-sm backdrop-blur-md border border-border/50 uppercase tracking-wider">
-                      <MapPin className="h-3 w-3 text-primary" />
+                    <span className="inline-flex items-center gap-1 rounded-sm bg-background/90 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground backdrop-blur-sm">
+                      <MapPin className="h-3 w-3" aria-hidden />
                       {ev.city}
-                    </div>
+                    </span>
                   )}
-                  {type === "live" && ev.status !== "cancelled" && (
-                    <div className="inline-flex items-center gap-2 rounded-full bg-green-500 px-3 py-1.5 text-xs font-bold text-white shadow-lg shadow-green-500/30 uppercase tracking-wider">
-                      <div className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-                      Live now
-                    </div>
-                  )}
-                  {type === "past" && (
-                    <div className="inline-flex items-center gap-1.5 rounded-full bg-background/95 px-3 py-1.5 text-xs font-bold text-muted-foreground shadow-sm backdrop-blur-md border border-border/50 uppercase tracking-wider">
-                      Ended
-                    </div>
-                  )}
-                </div>
-
-                {/* Top Right: Ticket Count Chip */}
-                <div className="absolute right-4 top-4 z-20">
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-background/95 px-3.5 py-1.5 text-xs font-bold text-foreground shadow-md backdrop-blur-md border border-border/60">
-                    <TicketIcon className="h-3.5 w-3.5 text-primary" />
-                    <span>{ticketCount} {ticketCount === 1 ? "Ticket" : "Tickets"}</span>
-                  </div>
                 </div>
               </div>
               
-              <div className="flex flex-1 flex-col p-6 lg:p-7 bg-card/80 backdrop-blur-sm z-20 relative -mt-4 rounded-t-3xl border-t border-white/5">
-                <div className="mb-2.5 flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
-                  <Calendar className="h-4 w-4" />
-                  {new Date(ev.start_datetime).toLocaleString("en-NG", {
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
+              <div className="relative z-20 flex flex-1 flex-col p-4 sm:p-5">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  <span className="text-foreground">
+                    {new Date(ev.start_datetime).toLocaleString("en-NG", {
+                      weekday: "short",
+                      day: "numeric",
+                      month: "short",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                  <span className="h-1 w-1 rounded-full bg-border" aria-hidden />
+                  <span>{statusText}</span>
+                  <span className="h-1 w-1 rounded-full bg-border" aria-hidden />
+                  <span>{ticketCount} {ticketCount === 1 ? "ticket" : "tickets"}</span>
                 </div>
-                
-                <h3 className="font-display text-2xl lg:text-3xl leading-tight group-hover:text-primary transition-colors line-clamp-2 mb-2">
+
+                <h3 className="mt-2 line-clamp-2 font-display text-xl leading-tight text-foreground transition-colors group-hover:text-primary">
                   {ev.title}
                 </h3>
-                
+
                 {ev.venue_name && (
-                  <p className="text-sm text-muted-foreground font-medium line-clamp-1 mb-4">
+                  <p className="mt-1.5 line-clamp-1 text-[13px] text-muted-foreground">
                     {ev.venue_name}
                   </p>
                 )}
 
-                {/* Tier and Order Pills */}
-                <div className="flex flex-wrap items-center gap-1.5 mb-6">
+                {/* Ticket types and quantities */}
+                <div className="mt-3 flex flex-wrap items-center gap-1.5">
                   {Object.entries(ev.ticketTypeCounts).map(([tier, count]) => (
                     <span
                       key={tier}
-                      className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-secondary-foreground"
+                      className="inline-flex items-center gap-1 rounded-md border border-border/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
                     >
                       {tier} × {count}
                     </span>
                   ))}
                   {ev.orders.length > 1 && (
-                    <span className="inline-flex items-center rounded-full border border-border/60 bg-background/50 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                    <span className="inline-flex items-center rounded-md border border-border/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                       {ev.orders.length} orders
                     </span>
                   )}
                   {ev.tickets.some((t) => !t.attendee_name) && (
-                    <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-600">
+                    <span className="inline-flex items-center rounded-md border border-border/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                       Unassigned attendee
                     </span>
                   )}
@@ -1064,42 +1055,36 @@ function EventList({
                 )}
                 
                 {/* Footer Buttons */}
-                <div className="mt-auto pt-4 flex flex-col gap-2.5 border-t border-border/60">
+                <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
                   <Button
+                    size="sm"
                     onClick={() => setModalTarget({ event: ev, initialIndex: 0 })}
-                    className="w-full justify-between h-12 rounded-xl gradient-sunset text-primary-foreground font-semibold shadow-md hover:shadow-lg transition-all"
+                    className="h-9 gap-2 rounded-md px-3 text-[12px] font-semibold"
                   >
-                    <span className="flex items-center gap-2">
-                      <QrCode className="h-5 w-5" />
-                      <span>{ticketCount > 1 ? `View All ${ticketCount} Tickets` : "View Ticket Pass"}</span>
-                    </span>
-                    <span className="text-xs bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-full font-bold">
-                      {ticketCount} {ticketCount === 1 ? "Pass" : "Passes"}
-                    </span>
+                    <QrCode className="h-4 w-4" aria-hidden />
+                    {ticketCount > 1 ? `View ${ticketCount} tickets` : "View ticket"}
                   </Button>
 
                   {(ev.status === "cancelled" || ev.status === "postponed" || type === "upcoming") && (
                     <Button
-                      variant="ghost"
-                      className="w-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 text-xs gap-2 font-medium h-9 rounded-xl"
-                      onClick={() =>
-                        setRefundTarget({ event: ev, ticketId: ev.tickets[0]?.id })
-                      }
+                      variant="outline"
+                      size="sm"
+                      className="h-9 gap-2 rounded-md px-3 text-[12px] font-medium text-muted-foreground"
+                      onClick={() => setRefundTarget({ event: ev, ticketId: ev.tickets[0]?.id })}
                     >
-                      <RefreshCcw className="h-3.5 w-3.5" />
-                      Request Refund
+                      <RefreshCcw className="h-3.5 w-3.5" aria-hidden />
+                      Request refund
                     </Button>
                   )}
 
                   <Button
                     variant="ghost"
-                    className="w-full text-muted-foreground hover:text-foreground text-xs gap-2 font-medium h-9 rounded-xl"
-                    onClick={() =>
-                      setSupportTarget({ event: ev, orderId: primaryOrderId })
-                    }
+                    size="sm"
+                    className="h-9 gap-2 rounded-md px-3 text-[12px] font-medium text-muted-foreground"
+                    onClick={() => setSupportTarget({ event: ev, orderId: primaryOrderId })}
                   >
-                    <HelpCircle className="h-3.5 w-3.5" />
-                    Need Help with Order?
+                    <HelpCircle className="h-3.5 w-3.5" aria-hidden />
+                    Help with order
                   </Button>
                 </div>
               </div>

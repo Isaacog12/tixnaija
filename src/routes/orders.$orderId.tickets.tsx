@@ -5,7 +5,7 @@ import { TicketStub } from "@/components/ticket-stub";
 import { SiteNav } from "@/components/site-nav";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Ticket, ArrowLeft, Check, Edit2 } from "lucide-react";
+import { Ticket, ArrowLeft, Edit2 } from "lucide-react";
 import { formatNaira } from "@/lib/currency";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -32,19 +32,21 @@ export const Route = createFileRoute("/orders/$orderId/tickets")({
     download: search.download === "true" || search.download === true,
   }),
   errorComponent: ({ error }) => (
-    <div className="min-h-dvh bg-background flex flex-col items-center justify-center p-6 text-center">
-      <div className="max-w-md w-full bg-card p-8 rounded-2xl border border-border shadow-sm">
-        <Ticket className="mx-auto h-12 w-12 text-muted-foreground/60 mb-4" />
-        <h2 className="text-xl font-bold font-display text-foreground mb-2">Unable to load tickets</h2>
-        <p className="text-sm text-muted-foreground mb-6">
+    <div className="flex min-h-dvh flex-col items-center justify-center bg-background p-6 text-center">
+      <div className="w-full max-w-md rounded-lg border border-border/60 bg-card p-8">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+          Not available
+        </p>
+        <h2 className="mt-3 font-display text-2xl text-foreground">Unable to load tickets</h2>
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
           {error instanceof Error ? error.message : "The requested order could not be retrieved."}
         </p>
-        <div className="flex gap-3 justify-center">
-          <Button asChild variant="outline">
-            <Link to="/tickets">My Tickets</Link>
+        <div className="mt-6 flex justify-center gap-2">
+          <Button asChild variant="outline" className="rounded-md">
+            <Link to="/tickets">My tickets</Link>
           </Button>
-          <Button asChild className="gradient-sunset text-white">
-            <Link to="/">Go Home</Link>
+          <Button asChild className="rounded-md">
+            <Link to="/">Go home</Link>
           </Button>
         </div>
       </div>
@@ -220,107 +222,133 @@ function OrderTicketsPage() {
     <div className="min-h-dvh bg-background">
       <SiteNav />
       
-      {/* Order Summary Header / Hero */}
-      <section className="bg-card border-b border-border shadow-sm mb-10 pt-8 pb-8 relative overflow-hidden">
-        <div className="absolute inset-0 z-0 bg-gradient-to-r from-primary/5 to-transparent opacity-50" />
-        <div className="mx-auto max-w-4xl px-4 relative z-10">
+      <section className="border-b border-border/60">
+        <div className="mx-auto max-w-4xl px-4 pb-8 pt-6 sm:px-6 md:pb-10">
+          <BackButton />
           {guestCredentials && (
-            <Button asChild variant="ghost" size="sm" className="-ml-2 mb-4">
+            <Button asChild variant="ghost" size="sm" className="-ml-2 mt-2 text-muted-foreground">
               <Link to="/my-tickets">
-                <ArrowLeft className="mr-1 h-4 w-4" /> Email my tickets again
+                <ArrowLeft className="mr-1 h-4 w-4" aria-hidden /> Email my tickets again
               </Link>
             </Button>
           )}
-
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500/10">
-                  <Check className="h-5 w-5 text-green-500" />
-                </div>
-                <span className="text-sm font-medium text-green-600 dark:text-green-500">Order Confirmed</span>
-              </div>
-              <div className="flex items-center gap-4 mb-1">
-                <BackButton />
-                <h1 className="type-heading-xl">Your Tickets</h1>
-              </div>
-              <p className="text-muted-foreground text-sm">
-                Have these ready to scan at the door, or download them for offline use.
-              </p>
-            </div>
-
-            {data && data.order && (
-              <div className="bg-background/80 backdrop-blur-md rounded-xl p-4 border border-border/50 shadow-sm md:text-right">
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Total Paid</p>
-                <p className="text-2xl font-bold font-mono">{formatNaira(data.order.total_kobo || 0)}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Order #{data.order.id ? (String(data.order.id).includes("-") ? String(data.order.id).split("-")[0] : String(data.order.id).substring(0, 8)) : ""}
-                </p>
-              </div>
-            )}
+          <div className="mt-6 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+            <span className="h-px w-10 bg-border" aria-hidden />
+            TixNaija / Order
           </div>
+          <h1 className="mt-4 font-display text-4xl leading-none tracking-[-0.02em] text-foreground">
+            Your tickets
+          </h1>
+          <p className="mt-3 max-w-lg text-[14px] leading-relaxed text-muted-foreground">
+            Have these ready to scan at the door, or download them for offline use.
+          </p>
         </div>
       </section>
 
-      <div className="mx-auto max-w-4xl px-4 pb-32">
+      <div className="mx-auto max-w-4xl px-4 pb-32 pt-8 sm:px-6">
 
         {isLoading ? (
-          <div className="space-y-8">
-            <Skeleton className="h-[300px] w-full max-w-2xl mx-auto rounded-2xl" />
-            <Skeleton className="h-[300px] w-full max-w-2xl mx-auto rounded-2xl" />
+          <div className="space-y-6">
+            <Skeleton className="mx-auto h-24 w-full max-w-2xl rounded-lg" />
+            <Skeleton className="mx-auto h-[300px] w-full max-w-2xl rounded-lg" />
           </div>
         ) : isError || !data || !data.order ? (
-          <div className="mx-auto max-w-md my-16 rounded-3xl border border-border/80 bg-card/75 p-8 sm:p-10 text-center shadow-2xl backdrop-blur-2xl">
-            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20">
-              <Ticket className="h-7 w-7 text-primary" />
-            </div>
-            <h2 className="font-display text-xl sm:text-2xl font-semibold text-foreground">Tickets Unavailable</h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          <div className="mx-auto my-12 max-w-md rounded-lg border border-border/60 bg-card p-8 text-center">
+            <Ticket className="mx-auto h-7 w-7 text-muted-foreground" aria-hidden />
+            <h2 className="mt-4 font-display text-2xl text-foreground">Tickets unavailable</h2>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
               We couldn't retrieve these tickets. If you checked out as a guest, open the ticket link
               from your confirmation email or have it sent again.
             </p>
-            <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
-              <Button asChild variant="outline" className="rounded-xl active:scale-[0.98]">
-                <Link to="/tickets">My Account</Link>
+            <div className="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
+              <Button asChild variant="outline" className="rounded-md">
+                <Link to="/tickets">My account</Link>
               </Button>
-              <Button asChild className="gradient-sunset text-white shadow-glow rounded-xl active:scale-[0.98]">
-                <Link to="/my-tickets">Email My Tickets</Link>
+              <Button asChild className="rounded-md">
+                <Link to="/my-tickets">Email my tickets</Link>
               </Button>
             </div>
           </div>
         ) : data.tickets.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border py-24 text-center">
-            <Ticket className="mx-auto h-12 w-12 text-muted-foreground/50" />
-            <h3 className="mt-4 font-semibold font-display text-xl text-foreground">Your ticket stash is empty. Let's fix that.</h3>
-            <p className="text-sm text-muted-foreground">We couldn't find any tickets for this order.</p>
+          <div className="rounded-lg border border-dashed border-border py-20 text-center">
+            <Ticket className="mx-auto h-8 w-8 text-muted-foreground/60" aria-hidden />
+            <h3 className="mt-3 font-display text-xl text-foreground">No tickets on this order</h3>
+            <p className="mt-2 text-sm text-muted-foreground">We couldn't find any tickets for this order.</p>
           </div>
         ) : (
-          <div className="space-y-12">
+          <div className="space-y-8">
+            {/* Order summary */}
+            <div className="rounded-lg border border-border/60 bg-card">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 px-4 py-3 sm:px-5">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Order summary
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-md border border-border/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-foreground">
+                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-current" />
+                  {String(data.order.status || "pending").replace(/_/g, " ")}
+                </span>
+              </div>
+              <dl className="grid gap-4 px-4 py-4 sm:grid-cols-3 sm:px-5">
+                <div className="min-w-0">
+                  <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Reference
+                  </dt>
+                  <dd className="mt-1 truncate font-mono text-[13px] text-foreground">
+                    #{String(data.order.id).includes("-") ? String(data.order.id).split("-")[0] : String(data.order.id).slice(0, 8)}
+                  </dd>
+                </div>
+                <div className="min-w-0">
+                  <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Placed
+                  </dt>
+                  <dd className="mt-1 text-[13px] text-foreground">
+                    {data.order.created_at
+                      ? new Date(data.order.created_at).toLocaleDateString("en-NG", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "—"}
+                  </dd>
+                </div>
+                <div className="min-w-0">
+                  <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Total paid
+                  </dt>
+                  <dd className="mt-1 text-[13px] font-semibold text-foreground">
+                    {formatNaira(data.order.total_kobo || 0)}
+                  </dd>
+                </div>
+              </dl>
+            </div>
             {data.siblingOrders && data.siblingOrders.length > 0 && (
-              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <Ticket className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">
-                      You have tickets from {data.siblingOrders.length} other order{data.siblingOrders.length > 1 ? "s" : ""} for this event
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      View all your passes together in My Tickets or switch directly to another order.
-                    </p>
-                  </div>
+              <div className="flex flex-col justify-between gap-4 rounded-lg border border-border/60 bg-card p-4 sm:flex-row sm:items-center sm:p-5">
+                <div className="min-w-0">
+                  <p className="text-[13px] font-semibold text-foreground">
+                    You have tickets from {data.siblingOrders.length} other order
+                    {data.siblingOrders.length > 1 ? "s" : ""} for this event
+                  </p>
+                  <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
+                    View all your passes together in My tickets, or switch directly to another
+                    order.
+                  </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {data.siblingOrders.map((sib: any) => (
-                    <Button key={sib.id} asChild variant="outline" size="sm" className="rounded-xl h-8 text-xs font-mono bg-card/80">
+                    <Button
+                      key={sib.id}
+                      asChild
+                      variant="outline"
+                      size="sm"
+                      className="h-8 rounded-md font-mono text-[11px]"
+                    >
                       <Link to="/orders/$orderId/tickets" params={{ orderId: sib.id }}>
-                        Order #{sib.id.slice(0, 8)} →
+                        #{sib.id.slice(0, 8)}
                       </Link>
                     </Button>
                   ))}
-                  <Button asChild size="sm" className="rounded-xl h-8 text-xs gradient-sunset text-primary-foreground font-semibold">
-                    <Link to="/tickets">View All in My Tickets</Link>
+                  <Button asChild size="sm" className="h-8 rounded-md text-[11px] font-semibold">
+                    <Link to="/tickets">All my tickets</Link>
                   </Button>
                 </div>
               </div>
@@ -365,37 +393,41 @@ function OrderTicketsPage() {
 
             {/* Upsell for guests */}
             {data.isGuest && (
-              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 text-center">
-                <h3 className="font-semibold">Create a free account</h3>
-                <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
-                  Sign up with this email to get your tickets in one place, receive notifications, and request refunds easily.
+              <div className="rounded-lg border border-border/60 bg-secondary/20 p-5 text-center">
+                <h3 className="font-display text-lg text-foreground">Create a free account</h3>
+                <p className="mx-auto mt-1 max-w-sm text-[13px] leading-relaxed text-muted-foreground">
+                  Sign up with this email to keep your tickets in one place, get notifications and
+                  request refunds without digging through your inbox.
                 </p>
-                <Button asChild className="mt-4 gradient-sunset text-primary-foreground shadow-glow press-sm transition-all duration-[120ms]">
-                   <Link to="/auth" search={{ mode: "signup" }}>Create free account</Link>
-                 </Button>
+                <Button asChild className="mt-4 rounded-md press-sm">
+                  <Link to="/auth" search={{ mode: "signup" }}>
+                    Create free account
+                  </Link>
+                </Button>
               </div>
             )}
 
-            {/* Need Help Support Banner */}
-            <div className="rounded-2xl border border-border/70 bg-card/70 backdrop-blur-md p-4 text-center sm:text-left sm:flex sm:items-center sm:justify-between gap-4 shadow-sm">
-              <div>
-                <p className="text-sm font-semibold text-foreground">Need help or missing an email?</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Contact support directly on WhatsApp/Text ({BUSINESS_DETAILS.supportPhone}) or email ({BUSINESS_DETAILS.supportEmail}).
+            {/* Need help */}
+            <div className="flex flex-col justify-between gap-4 rounded-lg border border-border/60 bg-card p-4 sm:flex-row sm:items-center">
+              <div className="min-w-0">
+                <p className="text-[13px] font-semibold text-foreground">Need help or missing an email?</p>
+                <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
+                  Reach support on WhatsApp ({BUSINESS_DETAILS.supportPhone}) or email (
+                  {BUSINESS_DETAILS.supportEmail}).
                 </p>
               </div>
-              <div className="mt-3 sm:mt-0 flex items-center justify-center gap-2 shrink-0">
+              <div className="flex shrink-0 items-center gap-2">
                 <a
                   href={`https://wa.me/${BUSINESS_DETAILS.supportPhone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hello TixNaija Support, I need assistance with Order ${data.order?.id || ""}.`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-3 py-1.5 text-xs font-semibold transition-colors"
+                  className="inline-flex items-center rounded-md border border-border/70 px-3 py-1.5 text-[12px] font-semibold text-foreground transition-colors hover:bg-secondary/50"
                 >
                   WhatsApp
                 </a>
                 <a
                   href={`mailto:${BUSINESS_DETAILS.supportEmail}?subject=${encodeURIComponent(`Order Support - ${data.order?.id || ""}`)}`}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border px-3 py-1.5 text-xs font-medium transition-colors"
+                  className="inline-flex items-center rounded-md border border-border/70 px-3 py-1.5 text-[12px] font-semibold text-foreground transition-colors hover:bg-secondary/50"
                 >
                   Email
                 </a>
@@ -436,12 +468,12 @@ function OrderTicketsPage() {
               />
             </div>
             <DialogFooter className="pt-4">
-              <Button type="button" variant="outline" onClick={() => setEditingTicket(null)} disabled={isUpdating}>
+              <Button type="button" variant="outline" onClick={() => setEditingTicket(null)} disabled={isUpdating} className="rounded-md">
                 Cancel
               </Button>
-              <Button type="submit" disabled={isUpdating} className="gradient-sunset text-primary-foreground shadow-glow press-sm transition-all duration-[120ms]">
-                 {isUpdating ? "Saving..." : "Save & Resend"}
-               </Button>
+              <Button type="submit" disabled={isUpdating} className="rounded-md press-sm">
+                {isUpdating ? "Saving..." : "Save & resend"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

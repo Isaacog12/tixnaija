@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Search,
@@ -20,6 +20,8 @@ import { Input } from "@/components/ui/input";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { optimizeImage, imageSrcSet } from "@/lib/image";
 import Autoplay from "embla-carousel-autoplay";
+import { RecentSearches } from "@/components/recent-searches";
+import { useRecentSearches } from "@/lib/recent-searches";
 
 export const Route = createFileRoute("/")({
   /**
@@ -105,7 +107,19 @@ function formatEventDate(iso: string) {
 function LandingPage() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
+  const {
+    items: recentItems,
+    hydrate: hydrateRecent,
+    remember: rememberSearch,
+    forget: forgetSearch,
+    clear: clearSearches,
+  } = useRecentSearches();
   const loaderData = Route.useLoaderData();
+
+  useEffect(() => {
+    hydrateRecent();
+  }, [hydrateRecent]);
 
   // `initialData` seeds the cache from the SSR loader so the client does not
   // immediately re-request what the server just fetched.
@@ -159,8 +173,10 @@ function LandingPage() {
             </p>
 
             <form
+              role="search"
               onSubmit={(e) => {
                 e.preventDefault();
+                if (query.trim()) rememberSearch(query);
                 navigate({ to: "/browse", search: { q: query.trim() || undefined } });
               }}
               className="mt-8 flex w-full max-w-xl flex-col gap-2 rounded-2xl border border-border/70 bg-card p-2 transition-colors duration-[var(--duration-fast)] focus-within:border-border sm:flex-row sm:items-center"
@@ -170,6 +186,8 @@ function LandingPage() {
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => window.setTimeout(() => setSearchFocused(false), 120)}
                   placeholder="Search events, artists, venues..."
                   aria-label="Search events"
                   className="h-11 border-0 bg-transparent px-0 text-[15px] shadow-none placeholder:text-muted-foreground focus-visible:ring-0"
@@ -182,6 +200,21 @@ function LandingPage() {
                 Find events
               </Button>
             </form>
+
+            {searchFocused && !query.trim() && recentItems.length > 0 && (
+              <RecentSearches
+                items={recentItems}
+                onPick={(value) => {
+                  setQuery(value);
+                  rememberSearch(value);
+                  navigate({ to: "/browse", search: { q: value } });
+                }}
+                onRemove={forgetSearch}
+                onClear={clearSearches}
+                onDismiss={() => setSearchFocused(false)}
+                className="mt-2 w-full max-w-xl overflow-hidden rounded-lg border border-border/60 bg-card text-left"
+              />
+            )}
 
             <div className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
               {CATEGORIES.map((category, i) => (

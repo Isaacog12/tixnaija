@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormLabel, FormMessage } from "@/components/ui/form";
 import { BackButton } from "@/components/back-button";
+import { CitySelect } from "@/components/city-select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -317,10 +318,7 @@ function EditEventPage() {
                 />
               </Field>
               <Field label="City">
-                <Input
-                  value={form.city}
-                  onChange={(e) => setForm({ ...form, city: e.target.value })}
-                />
+                <CitySelect value={form.city} onChange={(city) => setForm({ ...form, city })} />
               </Field>
               <Field label="Starts">
                 <Input
