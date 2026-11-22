@@ -289,7 +289,8 @@ function BrowsePage() {
                   onChange={(e) => setSearchInput(e.target.value)}
                   placeholder="Search events, artists, venues…"
                   aria-label="Search events"
-                  className="h-10 flex-1 border-0 bg-transparent px-1 text-sm shadow-none focus-visible:outline-none placeholder:text-muted-foreground/80"
+                  data-focus-ring="none"
+                  className="h-10 flex-1 border-0 bg-transparent px-1 text-sm shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/80"
                 />
                 <Button
                   type="submit"

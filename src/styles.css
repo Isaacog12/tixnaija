@@ -315,7 +315,10 @@
   }
 
   /* ── Brand-aligned Focus States ───────────────────────────────────────── */
-  *:focus-visible {
+  /* Composite controls (a pill wrapper around a bare input) draw the focus
+     treatment on the wrapper, so the inner field opts out with
+     data-focus-ring="none" instead of painting a second outline. */
+  *:not([data-focus-ring="none"]):focus-visible {
     outline: 2px solid var(--color-primary) !important;
     outline-offset: 2px !important;
     box-shadow: none !important; /* Override shadcn's ring utilities */
