@@ -383,39 +383,6 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* ── Organizer CTA ────────────────────────────────────────────── */}
-      <section className="border-y border-border/60 bg-secondary/20">
-        <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 py-14 sm:px-6 md:grid-cols-[1fr_auto] md:items-end md:py-20 lg:px-8">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-              For organizers
-            </p>
-            <h2 className="mt-4 max-w-xl font-display text-[clamp(1.9rem,3.5vw,2.6rem)] leading-tight tracking-[-0.02em] text-foreground">
-              Selling tickets? Start here.
-            </h2>
-            <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-muted-foreground">
-              Publish in minutes, sell at checkout, scan at the door — and get paid straight to your
-              Nigerian bank account. Zero listing fees.
-            </p>
-          </div>
-          <div className="flex flex-col gap-2.5 sm:flex-row md:shrink-0">
-            <Link
-              to="/auth"
-              search={{ mode: "signup" }}
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-[15px] font-semibold text-primary-foreground press-sm transition-colors hover:bg-primary/90"
-            >
-              Create your event <ArrowRight className="h-4 w-4" aria-hidden />
-            </Link>
-            <Link
-              to="/dashboard"
-              className="inline-flex h-12 items-center justify-center rounded-xl border border-border/70 bg-card px-6 text-[15px] font-semibold text-foreground press-sm transition-colors hover:bg-secondary/50"
-            >
-              Go to dashboard
-            </Link>
-          </div>
-        </div>
-      </section>
-
       <SiteFooter />
     </div>
   );

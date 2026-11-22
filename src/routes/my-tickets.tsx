@@ -17,20 +17,36 @@ export const Route = createFileRoute("/my-tickets")({
       {
         name: "description",
         content:
-          "Bought tickets without an account? Enter your email and we'll send your ticket links right away — no account or code needed.",
+          "Bought tickets without an account? Enter your email and the date you bought them and we'll send those ticket links right away — no account or code needed.",
       },
     ],
   }),
 });
 
+/** Nigeria runs on WAT (UTC+1), which is how the date is interpreted server-side. */
+const TODAY_IN_WAT = () => new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 10);
+
+/** "2026-12-12" → "12 Dec 2026" without shifting a day across timezones. */
+function formatPurchaseDate(value: string) {
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return value;
+  return new Date(Date.UTC(year, month - 1, day)).toLocaleDateString("en-NG", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
 function GuestTicketsPage() {
   const [email, setEmail] = useState("");
-  const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
+  const [purchaseDate, setPurchaseDate] = useState("");
+  const [submitted, setSubmitted] = useState<{ email: string; purchaseDate: string } | null>(null);
 
   const send = useMutation({
-    mutationFn: async (emailValue: string) => {
+    mutationFn: async (values: { email: string; purchaseDate: string }) => {
       const { data, error } = await supabase.functions.invoke("resend-ticket-links", {
-        body: { email: emailValue },
+        body: { email: values.email, purchaseDate: values.purchaseDate },
       });
       if (error) {
         // Map the transport failures we can act on; anything else is surfaced as-is.
@@ -46,16 +62,19 @@ function GuestTicketsPage() {
       if (data?.error) throw new Error(data.error);
       return data as { ok: boolean; sent?: number };
     },
-    onSuccess: (_data, emailValue) => {
-      setSubmittedEmail(emailValue.trim().toLowerCase());
+    onSuccess: (_data, values) => {
+      setSubmitted({
+        email: values.email.trim().toLowerCase(),
+        purchaseDate: values.purchaseDate,
+      });
     },
   });
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email.trim()) return;
-    setSubmittedEmail(null);
-    send.mutate(email.trim());
+    if (!email.trim() || !purchaseDate) return;
+    setSubmitted(null);
+    send.mutate({ email: email.trim(), purchaseDate });
   }
 
   return (
@@ -73,8 +92,8 @@ function GuestTicketsPage() {
             Email my tickets
           </h1>
           <p className="mt-3 max-w-lg text-[14px] leading-relaxed text-muted-foreground">
-            Enter the email you used at checkout and we'll send your ticket links straight to your
-            inbox. No account needed.
+            Enter the email you used at checkout and the day you bought the tickets. We'll email
+            only that day's ticket links. No account needed.
           </p>
         </div>
       </section>
@@ -103,10 +122,31 @@ function GuestTicketsPage() {
             </p>
           </div>
 
+          <div className="space-y-2">
+            <Label
+              htmlFor="guest-purchase-date"
+              className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground"
+            >
+              Date of purchase
+            </Label>
+            <Input
+              id="guest-purchase-date"
+              type="date"
+              value={purchaseDate}
+              onChange={(e) => setPurchaseDate(e.target.value)}
+              max={TODAY_IN_WAT()}
+              className="h-12 rounded-md bg-card text-base text-foreground [color-scheme:light] dark:[color-scheme:dark]"
+              required
+            />
+            <p className="text-[12px] text-muted-foreground">
+              The day you paid — not the day of the event.
+            </p>
+          </div>
+
           <Button
             type="submit"
             className="h-12 w-full gap-2 rounded-md font-semibold press-sm"
-            disabled={send.isPending || !email.trim()}
+            disabled={send.isPending || !email.trim() || !purchaseDate}
           >
             {send.isPending ? (
               <>
@@ -125,11 +165,11 @@ function GuestTicketsPage() {
 
           <p className="border-t border-border/60 pt-4 text-[12px] leading-relaxed text-muted-foreground">
             <span className="font-semibold text-foreground">Privacy:</span> we only email tickets
-            bought with this exact address.
+            bought with this exact address on this exact date.
           </p>
         </form>
 
-        {(send.isError || submittedEmail) && (
+        {(send.isError || submitted) && (
           <div className="mt-6 space-y-4">
             {send.isError ? (
               <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-6">
@@ -153,12 +193,16 @@ function GuestTicketsPage() {
                 </div>
                 <h2 className="mt-3 font-display text-xl text-foreground">Check your inbox</h2>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  If we found tickets for{" "}
-                  <strong className="font-semibold text-foreground">{submittedEmail}</strong>, the
-                  links are on their way. Emails usually arrive within a minute.
+                  If we found tickets bought with{" "}
+                  <strong className="font-semibold text-foreground">{submitted?.email}</strong> on{" "}
+                  <strong className="font-semibold text-foreground">
+                    {submitted ? formatPurchaseDate(submitted.purchaseDate) : ""}
+                  </strong>
+                  , the links are on their way. Emails usually arrive within a minute.
                 </p>
                 <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">
-                  Nothing yet? Check spam/junk, then try again in a few minutes. Still stuck?{" "}
+                  Bought on a different day? Try that date instead. Nothing yet? Check spam/junk,
+                  then try again in a few minutes. Still stuck?{" "}
                   <Link to="/contact" className="font-medium text-foreground underline underline-offset-4">
                     Contact support
                   </Link>

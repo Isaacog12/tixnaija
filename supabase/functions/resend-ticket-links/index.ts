@@ -5,6 +5,12 @@
 // + buyer/recipient email) is the only key. This function is the "I lost the
 // email" recovery path used by /my-tickets.
 //
+// A guest must also supply the calendar day they bought the tickets
+// (purchaseDate, YYYY-MM-DD, Nigerian time). Without it, one email address would
+// release every ticket that address ever bought — so the page requires it and
+// the lookup is narrowed to that single day. Support flows that already know the
+// order id are unaffected.
+//
 // Authorization model: the caller proves nothing but an email address, so the
 // response is always generic and the lookup is rate limited per IP and per
 // email to prevent inbox spam.
@@ -43,6 +49,21 @@ function escapeLike(value: string) {
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Narrows an orders query to a single Nigerian calendar day (WAT, UTC+1).
+ * The date is interpreted in WAT rather than the caller's timezone so an order
+ * placed at 00:30 in Lagos always counts as that day, wherever it is looked up.
+ */
+function withinPurchaseDay(query: any, dayStart: Date | null) {
+  if (!dayStart) return query;
+  const dayEnd = new Date(dayStart.getTime() + DAY_MS);
+  return query
+    .gte("created_at", dayStart.toISOString())
+    .lt("created_at", dayEnd.toISOString());
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -50,11 +71,20 @@ serve(async (req) => {
   }
 
   try {
-    const { email, orderId } = await req.json();
+    const { email, orderId, purchaseDate } = await req.json();
     const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
 
     if (!normalizedEmail || !EMAIL_PATTERN.test(normalizedEmail)) {
       return jsonResponse(req, { error: "A valid email address is required." }, 400);
+    }
+
+    const rawPurchaseDate = typeof purchaseDate === "string" ? purchaseDate.trim() : "";
+    let purchaseDayStart: Date | null = null;
+    if (rawPurchaseDate) {
+      purchaseDayStart = new Date(`${rawPurchaseDate}T00:00:00+01:00`);
+      if (!DATE_PATTERN.test(rawPurchaseDate) || Number.isNaN(purchaseDayStart.getTime())) {
+        return jsonResponse(req, { error: "A valid purchase date (YYYY-MM-DD) is required." }, 400);
+      }
     }
 
     const supabase = createClient(
@@ -130,18 +160,24 @@ serve(async (req) => {
     const statuses = ["paid", "comp"];
 
     const [asBuyer, asRecipient] = await Promise.all([
-      supabase
-        .from("orders")
-        .select("id")
-        .in("status", statuses)
-        .ilike("buyer_email", pattern)
+      withinPurchaseDay(
+        supabase
+          .from("orders")
+          .select("id")
+          .in("status", statuses)
+          .ilike("buyer_email", pattern),
+        purchaseDayStart,
+      )
         .order("created_at", { ascending: false })
         .limit(10),
-      supabase
-        .from("orders")
-        .select("id")
-        .in("status", statuses)
-        .ilike("recipient_email", pattern)
+      withinPurchaseDay(
+        supabase
+          .from("orders")
+          .select("id")
+          .in("status", statuses)
+          .ilike("recipient_email", pattern),
+        purchaseDayStart,
+      )
         .order("created_at", { ascending: false })
         .limit(10),
     ]);
