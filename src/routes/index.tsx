@@ -1,16 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Search,
-  MapPin,
-  ArrowRight,
-  QrCode,
-  CreditCard,
-  Ticket,
-  CalendarDays,
-  ArrowUpRight,
-} from "lucide-react";
+import { Search, ArrowRight, QrCode, CreditCard, Ticket, ArrowUpRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { filterActiveEvents } from "@/lib/events";
 import { SiteNav } from "@/components/site-nav";
@@ -33,28 +24,45 @@ export const Route = createFileRoute("/")({
    * render if one of them misbehaves.
    */
   loader: async () => {
-    const [upcoming, banners] = await Promise.all([
-      fetchUpcoming().catch(() => []),
+    // The hero panel shows the current week (Sunday → Saturday), so the bounds
+    // are resolved once here and shipped with the payload. Computing them during
+    // render would frame a different week on the client and can break
+    // hydration around midnight.
+    const { start, end } = weekBounds(new Date());
+    const [banners, thisWeek] = await Promise.all([
       fetchBanners().catch(() => []),
+      fetchThisWeek(start, end).catch(() => []),
     ]);
-    return { upcoming, banners };
+    return { banners, thisWeek, weekStart: start.toISOString(), weekEnd: end.toISOString() };
   },
   // The canonical URL is emitted by the root route for every page.
   component: LandingPage,
 });
 
-async function fetchUpcoming() {
+/** Sunday 00:00 → next Sunday 00:00 (exclusive): the week the user is living in. */
+function weekBounds(reference: Date) {
+  const start = new Date(reference);
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - start.getDay());
+  const end = new Date(start);
+  end.setDate(end.getDate() + 7);
+  return { start, end };
+}
+
+async function fetchThisWeek(start: Date, end: Date) {
   const now = new Date();
   const { data, error } = await supabase
     .from("events")
     .select("id, title, slug, city, venue_name, start_datetime, end_datetime, cover_image_url, status")
     .eq("status", "published")
+    .gte("start_datetime", start.toISOString())
+    .lt("start_datetime", end.toISOString())
     .gte("end_datetime", now.toISOString())
     .order("start_datetime", { ascending: true })
-    .limit(20);
+    .limit(12);
   if (error) throw error;
 
-  return filterActiveEvents(data, now).slice(0, 3);
+  return filterActiveEvents(data, now).slice(0, 12);
 }
 
 async function fetchBanners() {
@@ -99,9 +107,22 @@ const CATEGORIES = ["Concerts", "Comedy", "Conferences", "Nightlife", "Festivals
 function formatEventDate(iso: string) {
   const date = new Date(iso);
   return {
-    day: date.toLocaleString("en-NG", { weekday: "short", day: "numeric", month: "short" }),
+    weekday: date.toLocaleString("en-NG", { weekday: "short" }),
+    day: date.toLocaleString("en-NG", { day: "numeric" }),
+    month: date.toLocaleString("en-NG", { month: "short" }),
     time: date.toLocaleString("en-NG", { hour: "numeric", minute: "2-digit" }),
   };
+}
+
+/** "5–11 Nov", or "29 Nov – 5 Dec" when the week straddles two months. */
+function formatWeekRange(startISO: string, endISO: string) {
+  const start = new Date(startISO);
+  const last = new Date(new Date(endISO).getTime() - 1);
+  const month = (d: Date) => d.toLocaleString("en-NG", { month: "short" });
+  if (start.getMonth() === last.getMonth()) {
+    return `${start.getDate()}–${last.getDate()} ${month(last)}`;
+  }
+  return `${start.getDate()} ${month(start)} – ${last.getDate()} ${month(last)}`;
 }
 
 function LandingPage() {
@@ -123,10 +144,10 @@ function LandingPage() {
 
   // `initialData` seeds the cache from the SSR loader so the client does not
   // immediately re-request what the server just fetched.
-  const upcoming = useQuery({
-    queryKey: ["home-upcoming"],
-    queryFn: fetchUpcoming,
-    initialData: loaderData.upcoming,
+  const week = useQuery({
+    queryKey: ["home-this-week"],
+    queryFn: () => fetchThisWeek(new Date(loaderData.weekStart), new Date(loaderData.weekEnd)),
+    initialData: loaderData.thisWeek,
   });
   const banners = useQuery({
     queryKey: ["home-banners"],
@@ -145,8 +166,9 @@ function LandingPage() {
     }
   };
 
-  // The soonest published event is the hero feature.
-  const featured = upcoming.data?.[0];
+  // Four rows fit the panel without scrolling; the remainder stay one tap away.
+  const weekTotal = week.data?.length ?? 0;
+  const weekEvents = (week.data ?? []).slice(0, 4);
 
   return (
     <div className="min-h-dvh bg-background">
@@ -231,78 +253,112 @@ function LandingPage() {
             </div>
           </div>
 
-          {/* Featured: the soonest event */}
+          {/* This week: everything published between Sunday and Saturday */}
           <div className="min-w-0">
-            {featured ? (
-              <Link
-                to="/e/$slug"
-                params={{ slug: featured.slug }}
-                className="group block overflow-hidden rounded-2xl border border-border/70 bg-card transition-[border-color,transform] duration-[var(--duration-fast)] hover:-translate-y-0.5 hover:border-border"
-              >
-                <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary/50">
-                  {featured.cover_image_url ? (
-                    <img
-                      src={optimizeImage(featured.cover_image_url, 900)}
-                      srcSet={imageSrcSet(featured.cover_image_url, [500, 900])}
-                      sizes="(max-width: 1024px) 100vw, 520px"
-                      alt={featured.title}
-                      width={900}
-                      height={675}
-                      loading="eager"
-                      decoding="async"
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 bg-secondary/60" />
-                  )}
-                  <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-background/85 px-2.5 py-1 text-[11px] font-semibold text-foreground backdrop-blur">
-                    <CalendarDays className="h-3 w-3" aria-hidden />
-                    Next up
-                  </span>
+            <div className="overflow-hidden rounded-2xl border border-border/70 bg-card">
+              <div className="flex items-end justify-between gap-3 border-b border-border/60 px-4 py-4 sm:px-5">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                    This week
+                  </p>
+                  <p className="mt-1 font-display text-[19px] leading-none text-foreground">
+                    {formatWeekRange(loaderData.weekStart, loaderData.weekEnd)}
+                  </p>
                 </div>
+                {weekTotal > 0 && (
+                  <p className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    {weekTotal} {weekTotal === 1 ? "event" : "events"}
+                  </p>
+                )}
+              </div>
 
-                <div className="p-5 md:p-6">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    {formatEventDate(featured.start_datetime).day} ·{" "}
-                    {formatEventDate(featured.start_datetime).time}
-                  </p>
-                  <h2 className="mt-2 line-clamp-2 font-display text-[24px] leading-snug tracking-[-0.01em] text-foreground transition-colors group-hover:text-primary">
-                    {featured.title}
-                  </h2>
-                  <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/60 pt-4 text-[13px] text-muted-foreground">
-                    <span className="flex min-w-0 items-center gap-1.5">
-                      <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                      <span className="truncate">
-                        {featured.venue_name || featured.city || "Nigeria"}
-                      </span>
-                    </span>
-                    <span className="inline-flex shrink-0 items-center gap-1 font-semibold text-foreground">
-                      View <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ) : (
-              <div className="flex aspect-[4/3] flex-col justify-between rounded-2xl border border-dashed border-border/70 bg-card/40 p-6 md:p-8">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                  Next up
-                </span>
-                <div>
-                  <p className="font-display text-[26px] leading-tight tracking-[-0.02em] text-foreground">
-                    The calendar is open.
-                  </p>
-                  <p className="mt-2 max-w-[16rem] text-[14px] leading-relaxed text-muted-foreground">
-                    New events land here the moment organizers publish them.
-                  </p>
+              {weekEvents.length > 0 ? (
+                <>
+                  <ul className="divide-y divide-border/60">
+                    {weekEvents.map((event) => {
+                      const when = formatEventDate(event.start_datetime);
+                      return (
+                        <li key={event.id}>
+                          <Link
+                            to="/e/$slug"
+                            params={{ slug: event.slug }}
+                            className="group flex items-start gap-4 px-4 py-4 transition-colors hover:bg-secondary/40 sm:px-5"
+                          >
+                            <div className="w-11 shrink-0 border-r border-border/60 pr-3 text-center">
+                              <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                                {when.weekday}
+                              </span>
+                              <span className="mt-1 block font-display text-[20px] leading-none text-foreground">
+                                {when.day}
+                              </span>
+                              <span className="mt-1 block text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                                {when.month}
+                              </span>
+                            </div>
+                            <div className="h-14 w-14 shrink-0 overflow-hidden rounded-md border border-border/60 bg-secondary/40">
+                              {event.cover_image_url ? (
+                                <img
+                                  src={optimizeImage(event.cover_image_url, 160)}
+                                  srcSet={imageSrcSet(event.cover_image_url, [120, 240])}
+                                  sizes="56px"
+                                  alt=""
+                                  width={56}
+                                  height={56}
+                                  loading="lazy"
+                                  decoding="async"
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : null}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <h2 className="line-clamp-2 text-[15px] font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
+                                {event.title}
+                              </h2>
+                              <p className="mt-1.5 flex items-center gap-1.5 text-[12px] text-muted-foreground">
+                                <span className="shrink-0">{when.time}</span>
+                                <span className="h-3 w-px shrink-0 bg-border" aria-hidden />
+                                <span className="truncate">
+                                  {event.venue_name || event.city || "Nigeria"}
+                                </span>
+                              </p>
+                            </div>
+                            <ArrowUpRight
+                              className="mt-1 h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground"
+                              aria-hidden
+                            />
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+
                   <Link
                     to="/browse"
-                    className="mt-5 inline-flex h-10 items-center gap-2 rounded-xl border border-border/70 bg-card px-4 text-[13px] font-semibold text-foreground transition-colors hover:bg-secondary/50"
+                    className="flex items-center justify-between border-t border-border/60 px-4 py-3 text-[12px] font-semibold text-foreground transition-colors hover:bg-secondary/40 sm:px-5"
+                  >
+                    See everything on this week
+                    <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                  </Link>
+                </>
+              ) : (
+                <div className="flex flex-col gap-8 p-6 md:p-8">
+                  <div>
+                    <p className="font-display text-[24px] leading-tight tracking-[-0.02em] text-foreground">
+                      Nothing on this week.
+                    </p>
+                    <p className="mt-2 max-w-[18rem] text-[14px] leading-relaxed text-muted-foreground">
+                      New events land here the moment organizers publish them.
+                    </p>
+                  </div>
+                  <Link
+                    to="/browse"
+                    className="inline-flex h-10 w-fit items-center gap-2 rounded-xl border border-border/70 bg-card px-4 text-[13px] font-semibold text-foreground transition-colors hover:bg-secondary/50"
                   >
                     Browse events <ArrowRight className="h-3.5 w-3.5" aria-hidden />
                   </Link>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </section>
