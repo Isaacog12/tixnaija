@@ -247,7 +247,10 @@ function BrowsePage() {
   // default listing behind a Results heading.
   const isUnfiltered =
     !q && (!c || c === "All") && (!date || date === "all") && (!price || price === "all");
-  const spotlight = isUnfiltered ? filteredEvents[0] : undefined;
+  // The spotlight is a grid-view affordance. In list view every result — including
+  // the first — renders as a row, so the toggle always has a visible effect even
+  // when a single event is listed.
+  const spotlight = isUnfiltered && activeView === "grid" ? filteredEvents[0] : undefined;
   const gridEvents = spotlight ? filteredEvents.slice(1) : filteredEvents;
   const hasFilters = Boolean(q) || activeCategory !== "All" || activeDate !== "all" || activePrice !== "all";
 

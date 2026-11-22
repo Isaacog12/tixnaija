@@ -131,9 +131,8 @@ function LandingPage() {
     }
   };
 
-  // The soonest event becomes the hero feature; the rest fill the listing below.
+  // The soonest published event is the hero feature.
   const featured = upcoming.data?.[0];
-  const rest = upcoming.data?.slice(1) ?? [];
 
   return (
     <div className="min-h-dvh bg-background">
@@ -382,100 +381,6 @@ function LandingPage() {
             </Link>
           </div>
         </div>
-      </section>
-
-      {/* ── Also on the calendar ─────────────────────────────────────── */}
-      <section className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 md:py-24 lg:px-8">
-        <div className="flex flex-col gap-4 border-b border-border/60 pb-6 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-              Also on the calendar
-            </p>
-            <h2 className="mt-4 font-display text-[clamp(1.9rem,3.5vw,2.6rem)] leading-tight tracking-[-0.02em] text-foreground">
-              Coming up next
-            </h2>
-          </div>
-          <Link
-            to="/browse"
-            className="inline-flex h-11 shrink-0 items-center gap-2 self-start rounded-xl border border-border/70 bg-card px-5 text-[14px] font-semibold text-foreground transition-colors hover:bg-secondary/50 press-sm sm:self-auto"
-          >
-            Browse all <ArrowRight className="h-4 w-4" aria-hidden />
-          </Link>
-        </div>
-
-        {upcoming.isLoading && (
-          <div className="mt-8 space-y-2">
-            {[1, 2].map((i) => (
-              <div
-                key={i}
-                className="h-[92px] animate-pulse rounded-2xl border border-border/60 bg-card"
-              />
-            ))}
-          </div>
-        )}
-
-        {!upcoming.isLoading && rest.length === 0 && (
-          <div className="mt-8 flex flex-col items-start justify-between gap-4 rounded-2xl border border-dashed border-border/70 bg-card/40 p-6 sm:flex-row sm:items-center">
-            <p className="max-w-md text-[14px] leading-relaxed text-muted-foreground">
-              {featured
-                ? "That's the only date on the calendar right now. More events land here as organizers publish them."
-                : "Nothing scheduled just yet. Events appear here the moment they're published."}
-            </p>
-            <Link
-              to="/browse"
-              className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Explore events <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-            </Link>
-          </div>
-        )}
-
-        {rest.length > 0 && (
-          <ul className="mt-8 divide-y divide-border/60 border-y border-border/60">
-            {rest.map((ev) => {
-              const isCancelled = ev.status === "cancelled";
-              const { day, time } = formatEventDate(ev.start_datetime);
-
-              return (
-                <li key={ev.id}>
-                  <Link
-                    to="/e/$slug"
-                    params={{ slug: ev.slug }}
-                    className="group flex flex-col gap-4 py-5 transition-colors hover:bg-secondary/30 sm:flex-row sm:items-center sm:gap-6 sm:px-2"
-                  >
-                    <div className="flex w-full shrink-0 items-baseline gap-3 sm:w-40 sm:flex-col sm:gap-1">
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-                        {day}
-                      </span>
-                      <span className="text-[12px] text-muted-foreground">{time}</span>
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <h3 className="line-clamp-1 font-display text-[20px] leading-snug tracking-[-0.01em] text-foreground transition-colors group-hover:text-primary">
-                        {ev.title}
-                      </h3>
-                      <p className="mt-1 flex items-center gap-1.5 text-[13px] text-muted-foreground">
-                        <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                        <span className="truncate">{ev.venue_name || ev.city || "Nigeria"}</span>
-                      </p>
-                    </div>
-
-                    {isCancelled ? (
-                      <span className="shrink-0 rounded-full border border-destructive/30 bg-destructive/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-destructive">
-                        Cancelled
-                      </span>
-                    ) : (
-                      <span className="inline-flex shrink-0 items-center gap-1.5 text-[13px] font-semibold text-foreground">
-                        Get tickets
-                        <ArrowRight className="h-4 w-4 transition-transform duration-[var(--duration-fast)] group-hover:translate-x-0.5" aria-hidden />
-                      </span>
-                    )}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
       </section>
 
       <SiteFooter />
