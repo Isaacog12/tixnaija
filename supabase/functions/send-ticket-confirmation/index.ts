@@ -36,8 +36,19 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { orderId, ticketId, accessCode } = await req.json();
+    const { orderId, ticketId, accessCode, onlyEmail } = await req.json();
     if (!orderId) throw new Error("Missing orderId");
+
+    // Addresses are entered in several different forms (checkout, attendee
+    // details, the guest lookup page), so they are compared normalized. Without
+    // this, "Ada@Example.com" and "ada@example.com" were treated as two people
+    // and the same inbox received a receipt plus a separate ticket email.
+    const normalizeEmail = (value: unknown) =>
+      typeof value === "string" ? value.trim().toLowerCase() : "";
+
+    // A self-serve recovery request carries onlyEmail: it must reach the person
+    // who asked and nobody else. Checkout delivery omits it, so attendees still
+    // get their own tickets.
 
     // @ts-ignore
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
@@ -272,8 +283,10 @@ serve(async (req: Request) => {
     // Silently skipping this was why buyers (and guests sharing the same
     // address) received a "success" response with no email at all.
     let emailsSent = 0;
+    const onlyRecipient = normalizeEmail(onlyEmail);
+    const recipientAddress = normalizeEmail(recipientEmail);
 
-    if (!ticketId) {
+    if (!ticketId && (!onlyRecipient || onlyRecipient === recipientAddress)) {
       await sendEmail({
         to: { address: recipientEmail, name: recipientName },
         subject,
@@ -292,22 +305,30 @@ serve(async (req: Request) => {
         }))
     ) || [];
 
-    const attendeeGroups = new Map<string, any[]>();
+    // Keyed on the normalized address so one inbox is one group, whichever form
+    // the address was typed in.
+    const attendeeGroups = new Map<string, { email: string; tickets: any[] }>();
     for (const t of allTickets) {
       if (ticketId && t.id !== ticketId) continue; // Only process the specific ticket if provided
 
       // If ticketId is provided, force send to that ticket's email. Otherwise, send to attendee.
       if (ticketId || t.attendee_email) {
-        const targetEmail = t.attendee_email || recipientEmail;
-        if (!attendeeGroups.has(targetEmail)) attendeeGroups.set(targetEmail, []);
-        attendeeGroups.get(targetEmail)!.push(t);
+        const targetEmail = normalizeEmail(t.attendee_email || recipientEmail);
+        if (!targetEmail) continue;
+        const group = attendeeGroups.get(targetEmail) ?? { email: targetEmail, tickets: [] };
+        group.tickets.push(t);
+        attendeeGroups.set(targetEmail, group);
       }
     }
 
-    for (const [email, tickets] of attendeeGroups.entries()) {
+    for (const { email, tickets } of attendeeGroups.values()) {
+      // A self-serve recovery request gets the order receipt only: the person who
+      // asked receives one email, and attendees are not mailed again for it.
+      if (onlyRecipient) continue;
+
       // Skip sending individual ticket emails to the buyer/recipient since they already received the Master Receipt,
       // UNLESS we are specifically resending a single ticket (ticketId is present).
-      if (!ticketId && email === recipientEmail) {
+      if (!ticketId && email === recipientAddress) {
         continue;
       }
 

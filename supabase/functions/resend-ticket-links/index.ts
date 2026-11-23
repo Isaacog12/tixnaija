@@ -5,6 +5,11 @@
 // + buyer/recipient email) is the only key. This function is the "I lost the
 // email" recovery path used by /my-tickets.
 //
+// Every email this function causes is addressed to the person who asked: the
+// order receipt goes to their address only, and tickets bought for other
+// attendees are not re-sent to those attendees. Checkout delivery (which calls
+// send-ticket-confirmation directly) still reaches each attendee.
+//
 // A guest must also supply the calendar day they bought the tickets
 // (purchaseDate, YYYY-MM-DD, Nigerian time). Without it, one email address would
 // release every ticket that address ever bought — so the page requires it and
@@ -198,7 +203,12 @@ serve(async (req) => {
 
     const results = await Promise.allSettled(
       orderIds.map((id) =>
-        supabase.functions.invoke("send-ticket-confirmation", { body: { orderId: id } }),
+        supabase.functions.invoke("send-ticket-confirmation", {
+          // A recovery request (no orderId from the caller) mails only the
+          // requesting address. First delivery from checkout supplies orderId
+          // and keeps sending each attendee their own ticket.
+          body: orderId ? { orderId: id } : { orderId: id, onlyEmail: normalizedEmail },
+        }),
       ),
     );
 
