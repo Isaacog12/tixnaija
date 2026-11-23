@@ -55,11 +55,6 @@ const ESCALATION_WINDOW_MS = 60 * 60 * 1000;
 const IP_MAX_ESCALATIONS = 3;
 const EMAIL_MAX_ESCALATIONS = 2;
 
-// Ticket resends mail a real inbox, so they get their own per-address budget.
-const RESEND_WINDOW_MS = 60 * 60 * 1000;
-const RESEND_MAX_PER_EMAIL = 3;
-const RESEND_DOWNSTREAM_TIMEOUT_MS = 8000;
-
 const GENERIC_ERROR = "Something went wrong on our side. Please try again.";
 const GENERIC_RATE_LIMIT = "Too many messages. Please wait a few minutes and try again.";
 
@@ -1333,7 +1328,7 @@ serve(async (req: Request) => {
           "- Find an event and give you the date, time and venue — try \"when is <event name>\"",
           "- Show ticket prices and how many are left — \"how much is <event name>\"",
           "- Tell you what's coming up — \"what events are happening\"",
-          "- Resend your ticket links — \"I didn't get my ticket\"",
+          "- Show you how to resend your ticket links — \"I didn't get my ticket\"",
           "- Explain refunds, payments, promo codes, waitlists and accounts",
           "- Show you how to list and sell tickets for your own event",
           "- Answer who runs the platform",
@@ -1416,53 +1411,12 @@ serve(async (req: Request) => {
     }
 
     if (intent === "order") {
-      const orderEmail = caller.email ?? guestEmail;
-
-      if (!orderEmail) {
-        return reply({
-          needsEmail: true,
-          escalated: false,
-          reply: "I can resend your ticket links. What email address did you buy with?",
-        });
-      }
-
-      /**
-       * Per-address cap on triggering a resend, independent of the caller's IP.
-       *
-       * What matters here is how often one inbox can be mailed, not how often one
-       * caller can ask. resend-ticket-links caps 3 per address per 10 minutes but
-       * exempts service-role callers from its IP bucket, so this path was bounded
-       * only by the bot's per-caller IP limit. Without a bucket of its own the
-       * assistant could be walked down a list of addresses to harass.
-       */
-      const resendLimit = await consumeLimit(
-        supabase, orderEmail, "support_bot_resend_trigger", RESEND_WINDOW_MS, RESEND_MAX_PER_EMAIL, true,
-      );
-
-      if (resendLimit.unavailable) {
-        return new Response(JSON.stringify({ error: GENERIC_ERROR }), {
-          status: 503,
-          headers: { ...cors, "Content-Type": "application/json" },
-        });
-      }
-
-      if (!resendLimit.allowed) {
-        // Wording stays neutral: a capped reply must not reveal whether the
-        // address has any orders either.
-        return reply({
-          reply:
-            "I've already sent a resend for that address recently, so give it a few minutes and check the inbox and spam folder. Still nothing? Say \"talk to a person\" and I'll pass it on.",
-          escalated: false,
-          context: contextSlug || undefined,
-        });
-      }
-
-      // Deliberately neutral: this must not reveal whether the address has orders.
-      await triggerTicketResend(supabaseUrl, serviceKey, ip, orderEmail);
-
+      // Recovery belongs to the customer's explicit, purchase-date-scoped
+      // request. A chat message must not mail every historical order for an
+      // address or turn the assistant into an unsolicited resend trigger.
       return reply({
         reply:
-          "If that email has orders, your ticket links are on the way — check the inbox and spam folder over the next couple of minutes. Signed-in buyers can also open /tickets. Still nothing? Say \"talk to a person\" and I'll pass it on.",
+          "Open /my-tickets and enter the email you bought with plus the purchase date to resend only that day's ticket links. Signed-in buyers can also open /tickets. Still nothing? Say \"talk to a person\" and I'll pass it on.",
         escalated: false,
         context: contextSlug || undefined,
       });
@@ -1574,43 +1528,6 @@ serve(async (req: Request) => {
     });
   }
 });
-
-// ---------------------------------------------------------------------------
-// Self-serve ticket recovery
-// ---------------------------------------------------------------------------
-
-/**
- * Hands the address to resend-ticket-links without forwarding or inspecting the
- * result: the caller always gets the same neutral answer, so the assistant can
- * never be used to test whether an address has orders.
- */
-async function triggerTicketResend(
-  supabaseUrl: string,
-  serviceKey: string,
-  ip: string,
-  email: string,
-): Promise<void> {
-  try {
-    const response = await fetch(`${supabaseUrl}/functions/v1/resend-ticket-links`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: serviceKey,
-        Authorization: `Bearer ${serviceKey}`,
-        "x-forwarded-for": ip,
-      },
-      body: JSON.stringify({ email }),
-      // Bounded so a hung downstream cannot hold this invocation until the
-      // platform kills it. The customer's reply never depends on the result.
-      signal: AbortSignal.timeout(RESEND_DOWNSTREAM_TIMEOUT_MS),
-    });
-    if (!response.ok) {
-      console.error("support-bot: resend-ticket-links returned", response.status);
-    }
-  } catch (error) {
-    console.error("support-bot: resend-ticket-links call failed", error);
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Escalation with hourly caps per IP and per email

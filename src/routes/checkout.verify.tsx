@@ -39,6 +39,8 @@ function VerifyCheckoutPage() {
   const [isGuest, setIsGuest] = useState(false);
   const [guestEmail, setGuestEmail] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [isGift, setIsGift] = useState(false);
+  const [recipientEmail, setRecipientEmail] = useState<string | null>(null);
 
   useEffect(() => {
     if (!reference) {
@@ -74,6 +76,9 @@ function VerifyCheckoutPage() {
 
         const verifiedOrderId = (data?.order_id as string | undefined) ?? null;
         if (verifiedOrderId) setOrderId(verifiedOrderId);
+        setIsGift(Boolean(data?.is_gift));
+        setRecipientEmail((data?.recipient_email as string | undefined) || null);
+        if (data?.buyer_email) setGuestEmail(String(data.buyer_email));
 
         // Hand the guest straight into their tickets: the ticket page reads
         // these credentials from sessionStorage.
@@ -162,21 +167,26 @@ function VerifyCheckoutPage() {
             <h1 className="font-display text-3xl sm:text-4xl">Payment Successful!</h1>
             
             <p className="mt-3 text-sm sm:text-base text-muted-foreground max-w-md">
-              {isGuest
-                ? guestEmail
-                  ? `Your tickets have been generated and emailed to ${guestEmail}.`
-                  : "Your tickets have been generated and emailed to you."
-                : "Your tickets have been generated and sent to your email. You can also view and download them right now in your account."}
+              {isGift
+                ? `Your gift purchase is confirmed. ${recipientEmail ? `The recipient will receive their tickets at ${recipientEmail}.` : "The recipient will receive their tickets separately."} Your purchase receipt was sent to ${guestEmail || "your email"}.`
+                : isGuest
+                  ? guestEmail
+                    ? `Your tickets have been generated and emailed to ${guestEmail}.`
+                    : "Your tickets have been generated and emailed to you."
+                  : "Your tickets have been generated and sent to your email. You can also view and download them right now in your account."}
             </p>
 
             {isGuest && (
               <div className="mt-5 w-full rounded-xl border border-primary/25 bg-primary/5 px-4 py-3 text-left">
-                <p className="text-xs font-semibold text-foreground">Your tickets are in your inbox</p>
+                <p className="text-xs font-semibold text-foreground">
+                  {isGift ? "Your gift receipt is in your inbox" : "Your tickets are in your inbox"}
+                </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {guestEmail
-                    ? `We emailed your tickets to ${guestEmail}. `
-                    : "We emailed your tickets. "}
-                  Open that email on any device to view or download them — no account or code needed.
+                  {isGift
+                    ? `${guestEmail ? `We emailed your receipt to ${guestEmail}. ` : "We emailed your receipt. "}The recipient receives their ticket access separately${recipientEmail ? ` at ${recipientEmail}` : ""}.`
+                    : guestEmail
+                      ? `We emailed your tickets to ${guestEmail}. Open that email on any device to view or download them — no account or code needed.`
+                      : "We emailed your tickets. Open that email on any device to view or download them — no account or code needed."}
                 </p>
                 <p className="mt-2 text-xs text-muted-foreground">
                   Lost the email?{" "}

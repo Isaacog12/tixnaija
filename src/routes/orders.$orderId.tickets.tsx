@@ -173,27 +173,31 @@ function OrderTicketsPage() {
     if (!editingTicket) return;
     setIsUpdating(true);
     try {
-      const { error } = await supabase.rpc("update_ticket_attendee", {
+      const { data: emailChanged, error } = await supabase.rpc("update_ticket_attendee", {
         p_ticket_id: editingTicket.id,
         p_attendee_name: editName,
         p_attendee_email: editEmail,
       });
 
       if (error) throw error;
-      
+
       toast.success(
         data?.isGuest
           ? "Ticket updated! It's live on your ticket link right away."
-          : "Ticket updated! An email with the ticket has been sent to the new address.",
+          : emailChanged
+            ? "Ticket updated! An email with the ticket has been sent to the new address."
+            : "Attendee details updated. The delivery address did not change, so no email was needed.",
       );
       setEditingTicket(null);
       refetch();
 
-      // Trigger the edge function to re-send the specific ticket to the new email.
-      // Guests have no session, so their order link keeps working either way.
-      if (!data?.isGuest) {
+      if (!data?.isGuest && emailChanged && data?.order?.id) {
         const { error: emailError } = await supabase.functions.invoke("send-ticket-confirmation", {
-          body: { orderId: data?.order?.id, ticketId: editingTicket.id },
+          body: {
+            orderId: data.order.id,
+            ticketId: editingTicket.id,
+            requestId: crypto.randomUUID(),
+          },
         });
         if (emailError) {
           console.error("Failed to email the updated ticket", emailError);

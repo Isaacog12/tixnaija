@@ -2,8 +2,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // @ts-ignore
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-// @ts-ignore
-import QRCode from "https://esm.sh/qrcode@1.5.3";
 import { sendEmail } from "../_shared/zeptomail.ts";
 import { escapeHtml } from "../_shared/html.ts";
 
@@ -29,6 +27,214 @@ function getCorsHeaders(req: Request) {
     "Access-Control-Allow-Origin": isAllowed ? origin : "https://www.tixnaija.name.ng",
   };
 }
+
+// ---------------------------------------------------------------------------
+// Email layout
+//
+// One table-based shell for every ticket email: a 600px column, hairline rules
+// instead of nested cards, 16px body text at 1.65 line height, one primary
+// action. Flexbox and rounded cards were replaced because Outlook ignores them
+// and Gmail rewrites them, which is how these emails ended up looking broken.
+// ---------------------------------------------------------------------------
+
+const INK = "#f5f3ef";
+const BODY_TEXT = "#bdb7af";
+const MUTED = "#8f8981";
+const CANVAS = "#0e0e10";
+const SOFT = "#16161a";
+const LINE = "#26262a";
+const ACCENT = "#f97316";
+const SANS = "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
+const SERIF = "Georgia, 'Times New Roman', serif";
+
+const SITE = "https://tixnaija.name.ng";
+
+const shell = (inner: string) => `
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${CANVAS};">
+  <tr>
+    <td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:${CANVAS};font-family:${SANS};">${inner}
+      </table>
+    </td>
+  </tr>
+</table>`;
+
+/** Masthead: wordmark on the left, the one identifier that matters on the right. */
+const masthead = (right: string) => `
+        <tr>
+          <td style="padding:22px 32px;border-bottom:1px solid ${LINE};">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="left" style="font-family:${SERIF};font-size:15px;letter-spacing:0.22em;text-transform:uppercase;color:${INK};">TixNaija</td>
+                <td align="right" style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${MUTED};">${right}</td>
+              </tr>
+            </table>
+          </td>
+        </tr>`;
+
+const hero = (overline: string, heading: string, intro: string) => `
+        <tr>
+          <td style="padding:36px 32px 0;">
+            <p style="margin:0 0 16px;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:${MUTED};">${overline}</p>
+            <h1 style="margin:0 0 14px;font-family:${SERIF};font-weight:400;font-size:30px;line-height:1.2;letter-spacing:-0.01em;color:${INK};">${heading}</h1>
+            <p style="margin:0 0 28px;font-size:16px;line-height:1.65;color:${BODY_TEXT};">${intro}</p>
+          </td>
+        </tr>`;
+
+/** Banner when a cover image exists. Alt is empty: the title is right beside it. */
+const cover = (url?: string | null) =>
+  url
+    ? `
+        <tr>
+          <td style="padding:0 32px;">
+            <img src="${escapeHtml(url)}" alt="" width="536" style="display:block;width:100%;max-width:536px;height:auto;border:1px solid ${LINE};" />
+          </td>
+        </tr>`
+    : "";
+
+/** Label/value rows read as a receipt; values are pre-escaped by the caller. */
+const details = (rows: Array<[string, string]>) => {
+  const cells = rows
+    .map(([label, value], index) => {
+      const bottom = index === rows.length - 1 ? `border-bottom:1px solid ${LINE};` : "";
+      return `
+                <tr>
+                  <td style="padding:14px 0;border-top:1px solid ${LINE};${bottom}width:120px;vertical-align:top;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:${MUTED};">${escapeHtml(label)}</td>
+                  <td style="padding:14px 0;border-top:1px solid ${LINE};${bottom}vertical-align:top;font-size:16px;line-height:1.5;color:${INK};">${value}</td>
+                </tr>`;
+    })
+    .join("");
+
+  return `
+        <tr>
+          <td style="padding:28px 32px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">${cells}
+            </table>
+          </td>
+        </tr>`;
+};
+
+const actions = (
+  primaryHref: string,
+  primaryLabel: string,
+  secondaryHref: string,
+  secondaryLabel: string,
+) => `
+        <tr>
+          <td style="padding:28px 32px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="padding-bottom:10px;">
+                  <a href="${escapeHtml(primaryHref)}" style="display:block;text-align:center;text-decoration:none;background-color:${INK};color:${CANVAS};font-size:16px;font-weight:600;padding:16px 24px;border-radius:2px;">${primaryLabel}</a>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="${escapeHtml(secondaryHref)}" style="display:block;text-align:center;text-decoration:none;border:1px solid #35353a;color:${INK};font-size:16px;font-weight:600;padding:15px 24px;border-radius:2px;">${secondaryLabel}</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>`;
+
+const organizerNote = (message?: string | null) =>
+  message
+    ? `
+        <tr>
+          <td style="padding:0 32px 28px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${SOFT};border:1px solid ${LINE};">
+              <tr>
+                <td style="padding:20px 22px;">
+                  <p style="margin:0 0 10px;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:${MUTED};">Message from the organizer</p>
+                  <p style="margin:0;font-size:15px;line-height:1.65;color:${INK};white-space:pre-wrap;">${escapeHtml(message)}</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>`
+    : "";
+
+const giftNote = (lines: { label: string; value: string; message?: string | null }) => `
+        <tr>
+          <td style="padding:0 32px 28px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="border-left:2px solid ${ACCENT};padding:2px 0 2px 16px;">
+                  <p style="margin:0 0 6px;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:${MUTED};">${escapeHtml(lines.label)}</p>
+                  <p style="margin:0 0 8px;font-size:17px;line-height:1.5;color:${INK};">${escapeHtml(lines.value)}</p>
+                  ${
+                    lines.message
+                      ? `<p style="margin:0;font-size:15px;line-height:1.65;color:${BODY_TEXT};font-style:italic;">&ldquo;${escapeHtml(lines.message)}&rdquo;</p>`
+                      : ""
+                  }
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>`;
+
+const footer = (reason: string) => `
+        <tr>
+          <td style="padding:28px 32px 0;">
+            <p style="margin:0;font-size:13px;line-height:1.6;color:${MUTED};">${escapeHtml(reason)}</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:24px 32px 32px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid ${LINE};">
+              <tr>
+                <td style="padding-top:20px;">
+                  <p style="margin:0 0 8px;font-size:12px;line-height:1.6;color:${MUTED};">TixNaija &middot; Independent Nigerian ticketing platform</p>
+                  <p style="margin:0;font-size:12px;line-height:1.6;color:${MUTED};">
+                    <a href="${SITE}/terms" style="color:${ACCENT};text-decoration:underline;">Terms</a> &middot;
+                    <a href="${SITE}/privacy" style="color:${ACCENT};text-decoration:underline;">Privacy</a> &middot;
+                    <a href="${SITE}/refunds" style="color:${ACCENT};text-decoration:underline;">Refunds</a> &middot;
+                    <a href="${SITE}/account?tab=notifications" style="color:${ACCENT};text-decoration:underline;">Email settings</a>
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>`;
+
+const shortCode = (code: string) => (code || "").split("-")[0].toUpperCase();
+
+/** One bordered card per ticket: type, code, QR, and its own downloads. */
+const ticketCard = (ticket: any) => {
+  const code = shortCode(ticket.ticket_code);
+  const singleUrl = `${SITE}/t/${encodeURIComponent(ticket.ticket_code)}`;
+  const pdfUrl = `${singleUrl}?download=true`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=264x264&data=${encodeURIComponent(ticket.ticket_code)}&margin=0`;
+
+  return `
+        <tr>
+          <td style="padding:22px 32px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${LINE};">
+              <tr>
+                <td align="center" style="padding:26px 24px 0;">
+                  <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:${MUTED};">${escapeHtml(ticket.ticketTypeName)}</p>
+                  <p style="margin:0 0 22px;font-family:${SERIF};font-size:22px;letter-spacing:0.12em;color:${INK};">${escapeHtml(code)}</p>
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background-color:#ffffff;">
+                    <tr>
+                      <td style="padding:12px;">
+                        <img src="${escapeHtml(qrUrl)}" alt="Ticket QR code ${escapeHtml(code)}" width="132" height="132" style="display:block;width:132px;height:132px;" />
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="margin:16px 0 24px;font-size:13px;line-height:1.6;color:${MUTED};">Scan at the entrance. One entry per ticket.</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:0 24px 26px;">
+                  <a href="${escapeHtml(String(pdfUrl))}" style="display:block;text-align:center;text-decoration:none;background-color:${INK};color:${CANVAS};font-size:16px;font-weight:600;padding:16px 24px;border-radius:2px;">Download PDF ticket</a>
+                  <div style="height:10px;"></div>
+                  <a href="${escapeHtml(String(singleUrl))}" style="display:block;text-align:center;text-decoration:none;border:1px solid #35353a;color:${INK};font-size:16px;font-weight:600;padding:15px 24px;border-radius:2px;">View in browser</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>`;
+};
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -171,109 +377,67 @@ serve(async (req: Request) => {
     const isGift = order.is_gift;
     const recipientName = order.recipient_name || order.buyer_name;
     const recipientEmail = order.recipient_email || order.buyer_email;
+    const buyerName = order.buyer_name || "Someone";
 
     const orderRef = order.id.split('-')[0].toUpperCase();
-    const sentTime = new Date().toLocaleString("en-US", { timeStyle: "short" });
 
     const subject = isGift
-      ? `You received a gift for ${eventTitle} 🎁 (Ref: ${orderRef})`
-      : `Your tickets for ${eventTitle} are ready 🎟️ (Ref: ${orderRef})`;
-
-    // Guests unlock their order with the emailed link alone: order id + email.
-    const guestFragment = `#email=${encodeURIComponent(recipientEmail)}`;
-    const ticketUrl = `https://tixnaija.name.ng/orders/${order.id}/tickets${guestFragment}`;
-    const downloadUrl = `https://tixnaija.name.ng/orders/${order.id}/tickets?download=true${guestFragment}`;
+      ? `You've received a gift for ${eventTitle} (Ref: ${orderRef})`
+      : `Tickets confirmed for ${eventTitle} (Ref: ${orderRef})`;
 
     const ticketTypes = order.order_items?.map((item: any) => item.ticket_types?.name).filter(Boolean).join(', ') || 'General Admission';
     const totalQuantity = order.order_items?.reduce((acc: number, item: any) => acc + item.quantity, 0) || 1;
     const amountPaid = `₦${(order.total_kobo / 100).toLocaleString()}`;
     const venue = [order.events?.venue_name, order.events?.address].filter(Boolean).join(', ') || 'Online';
 
-    // 1. Send Master Receipt to Buyer
-    const eventImageHtml = order.events?.cover_image_url
-      ? `<img src="${escapeHtml(order.events.cover_image_url)}" alt="${escapeHtml(eventTitle)}" style="width: 100%; border-radius: 12px; margin-bottom: 32px; object-fit: cover;" />`
-      : '';
+    // The receipt is built per addressee: the recipient reads "you received a
+    // gift", while the buyer asking for their own copy gets the order and a note
+    // that the recipient's link is theirs alone.
+    const buildMasterHtml = (name: string, email: string, buyerCopy: boolean) => {
+      // Guests unlock their order with the emailed link alone: order id + email.
+      const guestFragment = `#email=${encodeURIComponent(email)}`;
+      const ticketUrl = `${SITE}/orders/${order.id}/tickets${guestFragment}`;
+      const downloadUrl = `${SITE}/orders/${order.id}/tickets?download=true${guestFragment}`;
 
-    let masterHtmlBody = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif; background-color: #000000; color: #F5F5F7; padding: 60px 20px; text-align: center; -webkit-font-smoothing: antialiased;">
-      <div style="max-width: 480px; margin: 0 auto; text-align: left;">
-        
-        <div style="text-align: center; margin-bottom: 48px;">
-          <img src="https://tixnaija.name.ng/logo.png" alt="TixNaija" style="height: 24px; display: inline-block;" />
-        </div>
-        
-        ${eventImageHtml}
+      const overline = buyerCopy ? "Your gift" : isGift ? "A gift for you" : "Order confirmed";
+      const intro = buyerCopy
+        ? `Hello ${escapeHtml(name)}, this is your copy of the order. ${escapeHtml(recipientName)} has their own link, so there is nothing to forward.`
+        : isGift
+          ? `Hello ${escapeHtml(name)}, ${escapeHtml(buyerName)} sent you a ticket. Show the code at the gate when you arrive.`
+          : `Hello ${escapeHtml(name)}, your order is complete. Your tickets and receipt are one link away — no account needed.`;
 
-        <h1 style="font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 8px; color: #FFFFFF;">
-          Tickets Confirmed.
-        </h1>
-        <p style="margin: 0 0 40px; color: #A1A1A6; font-size: 17px; line-height: 1.4;">Hello ${escapeHtml(recipientName)}, your order is complete.</p>
-    `;
+      const glance = details([
+        ["When", escapeHtml(date)],
+        ["Where", escapeHtml(venue)],
+        ["Tickets", escapeHtml(`${ticketTypes} (×${totalQuantity})`)],
+        ["Paid", escapeHtml(amountPaid)],
+      ]);
 
-    if (isGift) {
-      masterHtmlBody += `
-        <div style="border-left: 2px solid #FF5A1F; padding-left: 16px; margin-bottom: 40px;">
-          <p style="margin: 0; font-size: 15px; color: #FFFFFF;">Gifted by <strong>${escapeHtml(order.buyer_name)}</strong></p>
-          ${order.gift_message ? `<p style="margin: 8px 0 0; color: #A1A1A6; font-style: italic;">"${escapeHtml(order.gift_message)}"</p>` : ''}
-        </div>
-      `;
-    }
-
-    if (order.events?.custom_order_confirmation) {
-      masterHtmlBody += `
-        <div style="background-color: #1C1C1E; border-radius: 12px; padding: 24px; margin-bottom: 40px;">
-          <h3 style="margin: 0 0 12px; font-size: 13px; font-weight: 500; color: #86868B; text-transform: uppercase; letter-spacing: 0.05em;">Message from Organizer</h3>
-          <p style="margin: 0; font-size: 15px; color: #E5E5EA; line-height: 1.5; white-space: pre-wrap;">${escapeHtml(order.events.custom_order_confirmation)}</p>
-        </div>
-      `;
-    }
-
-    masterHtmlBody += `
-        <div style="margin-bottom: 48px;">
-          <div style="border-bottom: 1px solid #333336; padding: 16px 0;">
-            <span style="display: block; font-size: 13px; color: #86868B; margin-bottom: 4px;">Event</span>
-            <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${escapeHtml(eventTitle)}</span>
-          </div>
-          <div style="border-bottom: 1px solid #333336; padding: 16px 0;">
-            <span style="display: block; font-size: 13px; color: #86868B; margin-bottom: 4px;">Date & Time</span>
-            <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${escapeHtml(date)}</span>
-          </div>
-          <div style="border-bottom: 1px solid #333336; padding: 16px 0;">
-            <span style="display: block; font-size: 13px; color: #86868B; margin-bottom: 4px;">Venue</span>
-            <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${escapeHtml(venue)}</span>
-          </div>
-          <div style="border-bottom: 1px solid #333336; padding: 16px 0; display: flex; justify-content: space-between;">
-            <div>
-              <span style="display: block; font-size: 13px; color: #86868B; margin-bottom: 4px;">Ticket</span>
-              <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${escapeHtml(ticketTypes)} (x${totalQuantity})</span>
-            </div>
-            <div style="text-align: right;">
-              <span style="display: block; font-size: 13px; color: #86868B; margin-bottom: 4px;">Total</span>
-              <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${escapeHtml(amountPaid)}</span>
-            </div>
-          </div>
-        </div>
-        
-        <a href="${escapeHtml(ticketUrl)}" style="display: block; width: 100%; text-align: center; background-color: #FFFFFF; color: #000000; text-decoration: none; padding: 16px 0; border-radius: 12px; font-weight: 500; font-size: 17px; margin-bottom: 12px;">View Tickets</a>
-        <a href="${escapeHtml(downloadUrl)}" style="display: block; width: 100%; text-align: center; background-color: transparent; border: 1px solid #333336; color: #FFFFFF; text-decoration: none; padding: 16px 0; border-radius: 12px; font-weight: 500; font-size: 17px;">Download PDF Receipt</a>
-
-        <div style="margin-top: 60px; padding-top: 24px; border-top: 1px solid #1C1C1E; text-align: center;">
-          <p style="margin: 0 0 6px; font-size: 12px; color: #86868B;">
-            You received this transactional receipt because an order was placed on TixNaija with this email address.
-          </p>
-          <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">
-            Order Ref: ${escapeHtml(orderRef)} · <a href="https://tixnaija.name.ng/refunds" style="color: #ea580c; text-decoration: underline;">Refund Policy</a> · <a href="https://tixnaija.name.ng/privacy" style="color: #ea580c; text-decoration: underline;">Privacy Policy</a>
-          </p>
-          <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">
-            Manage notifications: <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a>
-          </p>
-          <p style="margin: 12px 0 0; font-size: 11px; color: #636366; line-height: 1.4;">
-            TixNaija · Independent Nigerian Ticketing Platform
-          </p>
-        </div>
-      </div>
-    </div>
-    `;
+      return shell(
+        masthead(`Order ${escapeHtml(orderRef)}`) +
+        hero(overline, escapeHtml(eventTitle), intro) +
+        (isGift
+          ? giftNote({
+              label: buyerCopy ? "Gift for" : "Gifted by",
+              value: buyerCopy
+                ? [recipientName, recipientEmail].filter(Boolean).join(" · ")
+                : buyerName,
+              message: order.gift_message,
+            })
+          : "") +
+        organizerNote(order.events?.custom_order_confirmation) +
+        cover(order.events?.cover_image_url) +
+        glance +
+        actions(ticketUrl, "View tickets", downloadUrl, "Download PDF receipt") +
+        `
+        <tr>
+          <td style="padding:24px 32px 0;">
+            <p style="margin:0;font-size:14px;line-height:1.65;color:${MUTED};">Bring the ticket on your phone. Each attendee gets their own ticket link, so there is nothing to print.</p>
+          </td>
+        </tr>` +
+        footer("You are receiving this because an order was placed on TixNaija with this email address."),
+      );
+    };
 
     // 1. Send Master Receipt to Buyer.
     //
@@ -285,12 +449,38 @@ serve(async (req: Request) => {
     let emailsSent = 0;
     const onlyRecipient = normalizeEmail(onlyEmail);
     const recipientAddress = normalizeEmail(recipientEmail);
+    const buyerAddress = normalizeEmail(order.buyer_email);
 
-    if (!ticketId && (!onlyRecipient || onlyRecipient === recipientAddress)) {
+    // Who receives the order receipt for this call.
+    //
+    // Checkout delivery (no onlyEmail) goes to the recipient, the person the
+    // order was bought for. A self-serve recovery (onlyEmail) goes to whoever
+    // asked. On a gift order those are two different people: the buyer asking
+    // for their own link matched neither branch, so the receipt was skipped and
+    // the attendee emails were suppressed as well, leaving the request with no
+    // email at all. The buyer now gets the receipt in that case.
+    let receiptAddress: string | null = null;
+    let receiptName = "";
+    let receiptIsBuyerCopy = false;
+
+    if (!ticketId) {
+      if (!onlyRecipient || onlyRecipient === recipientAddress) {
+        receiptAddress = recipientEmail;
+        receiptName = recipientName;
+      } else if (onlyRecipient === buyerAddress) {
+        receiptAddress = order.buyer_email;
+        receiptName = order.buyer_name || recipientName;
+        receiptIsBuyerCopy = true;
+      }
+    }
+
+    if (receiptAddress) {
       await sendEmail({
-        to: { address: recipientEmail, name: recipientName },
-        subject,
-        htmlBody: masterHtmlBody,
+        to: { address: receiptAddress, name: receiptName || "there" },
+        subject: receiptIsBuyerCopy
+          ? `Your gift for ${eventTitle} is ready (Ref: ${orderRef})`
+          : subject,
+        htmlBody: buildMasterHtml(receiptName || "there", receiptAddress, receiptIsBuyerCopy),
       });
       emailsSent += 1;
     }
@@ -326,91 +516,30 @@ serve(async (req: Request) => {
       // asked receives one email, and attendees are not mailed again for it.
       if (onlyRecipient) continue;
 
-      // Skip sending individual ticket emails to the buyer/recipient since they already received the Master Receipt,
+      // Skip individual ticket emails to the buyer/recipient since they already received the Master Receipt,
       // UNLESS we are specifically resending a single ticket (ticketId is present).
       if (!ticketId && email === recipientAddress) {
         continue;
       }
 
       const attendeeName = tickets[0].attendee_name || 'Attendee';
-      const attSubject = `Your ticket for ${eventTitle} 🎟️ (Code: ${tickets[0].ticket_code.split('-')[0].toUpperCase()})`;
+      const attSubject = `Your ticket for ${eventTitle} (Code: ${shortCode(tickets[0].ticket_code)})`;
 
-      let attHtmlBody = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif; background-color: #000000; color: #F5F5F7; padding: 60px 20px; text-align: center; -webkit-font-smoothing: antialiased;">
-        <div style="max-width: 480px; margin: 0 auto; text-align: left;">
-          
-          <div style="text-align: center; margin-bottom: 48px;">
-            <img src="https://tixnaija.name.ng/logo.png" alt="TixNaija" style="height: 24px; display: inline-block;" />
-          </div>
-
-          ${eventImageHtml}
-          
-          <h1 style="font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 8px; color: #FFFFFF;">
-            Your Ticket.
-          </h1>
-          <p style="margin: 0 0 40px; color: #A1A1A6; font-size: 17px; line-height: 1.4;">Hi ${escapeHtml(attendeeName)}, <strong>${escapeHtml(order.buyer_name)}</strong> sent you a ticket for <strong>${escapeHtml(eventTitle)}</strong>.</p>
-      `;
-
-      if (order.events?.custom_order_confirmation) {
-        attHtmlBody += `
-          <div style="background-color: #1C1C1E; border-radius: 12px; padding: 24px; margin-bottom: 40px;">
-            <h3 style="margin: 0 0 12px; font-size: 13px; font-weight: 500; color: #86868B; text-transform: uppercase; letter-spacing: 0.05em;">Message from Organizer</h3>
-            <p style="margin: 0; font-size: 15px; color: #E5E5EA; line-height: 1.5; white-space: pre-wrap;">${escapeHtml(order.events.custom_order_confirmation)}</p>
-          </div>
-        `;
-      }
-
-      attHtmlBody += `
-          <div style="margin-bottom: 40px;">
-            <div style="border-bottom: 1px solid #333336; padding: 16px 0;">
-              <span style="display: block; font-size: 13px; color: #86868B; margin-bottom: 4px;">Date & Time</span>
-              <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${escapeHtml(date)}</span>
-            </div>
-            <div style="border-bottom: 1px solid #333336; padding: 16px 0;">
-              <span style="display: block; font-size: 13px; color: #86868B; margin-bottom: 4px;">Venue</span>
-              <span style="display: block; font-size: 17px; color: #FFFFFF; font-weight: 500;">${escapeHtml(venue)}</span>
-            </div>
-          </div>
-      `;
-
-      for (const t of tickets) {
-        const singleUrl = `https://tixnaija.name.ng/t/${encodeURIComponent(t.ticket_code)}`;
-        const singlePdfUrl = `${singleUrl}?download=true`;
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(t.ticket_code)}&margin=1`;
-        
-        attHtmlBody += `
-          <div style="background-color: #1C1C1E; border-radius: 16px; padding: 32px; margin-bottom: 24px; text-align: center; border: 1px solid #333336;">
-            <p style="margin: 0 0 4px; font-weight: 600; font-size: 20px; color: #FFFFFF;">${escapeHtml(t.ticketTypeName)}</p>
-            <p style="margin: 0 0 24px; font-size: 14px; color: #86868B; letter-spacing: 0.05em;">CODE: ${escapeHtml(t.ticket_code.split('-')[0].toUpperCase())}</p>
-            
-            <div style="background: #FFFFFF; padding: 16px; border-radius: 16px; display: inline-block; margin-bottom: 32px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);">
-              <img src="${escapeHtml(qrUrl)}" alt="Ticket QR Code" style="display: block; width: 160px; height: 160px; margin: 0 auto;" />
-            </div>
-            
-            <a href="${escapeHtml(singlePdfUrl)}" style="display: block; width: 100%; text-align: center; background-color: #FFFFFF; color: #000000; text-decoration: none; padding: 16px 0; border-radius: 12px; font-weight: 500; font-size: 17px; margin-bottom: 12px;">Download PDF Ticket</a>
-            <a href="${escapeHtml(singleUrl)}" style="display: block; width: 100%; text-align: center; background-color: transparent; border: 1px solid #48484A; color: #FFFFFF; text-decoration: none; padding: 16px 0; border-radius: 12px; font-weight: 500; font-size: 17px;">View in Browser</a>
-          </div>
-        `;
-      }
-
-      attHtmlBody += `
-          <div style="margin-top: 60px; padding-top: 24px; border-top: 1px solid #1C1C1E; text-align: center;">
-            <p style="margin: 0 0 6px; font-size: 12px; color: #86868B;">
-              You received this ticket because a spot was booked for you for this event on TixNaija.
-            </p>
-            <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">
-              Questions? View our <a href="https://tixnaija.name.ng/refunds" style="color: #ea580c; text-decoration: underline;">Refund Policy</a> · <a href="https://tixnaija.name.ng/privacy" style="color: #ea580c; text-decoration: underline;">Privacy Policy</a>
-            </p>
-            <p style="margin: 0 0 8px; font-size: 12px; color: #86868B;">
-              Manage notifications: <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a>
-            </p>
-            <p style="margin: 12px 0 0; font-size: 11px; color: #636366; line-height: 1.4;">
-              TixNaija · Independent Nigerian Ticketing Platform
-            </p>
-          </div>
-        </div>
-      </div>
-      `;
+      const attHtmlBody = shell(
+        masthead(`Ticket ${escapeHtml(shortCode(tickets[0].ticket_code))}`) +
+        hero(
+          "Your ticket",
+          escapeHtml(eventTitle),
+          `Hi ${escapeHtml(attendeeName)}, ${escapeHtml(buyerName)} sent you a ticket. Show the code below at the gate.`,
+        ) +
+        tickets.map((t) => ticketCard(t)).join("") +
+        details([
+          ["When", escapeHtml(date)],
+          ["Where", escapeHtml(venue)],
+        ]) +
+        organizerNote(order.events?.custom_order_confirmation) +
+        footer("You are receiving this because a ticket for this event was booked in your name."),
+      );
 
       // Individual tickets are transactional too: each attendee must receive
       // the ticket that gets them through the door.
@@ -427,7 +556,3 @@ serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: error.message }), { headers: getCorsHeaders(req), status: 400 });
   }
 });
-
-
-
-

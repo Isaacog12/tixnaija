@@ -115,9 +115,11 @@ export type Database = {
       email_outbox: {
         Row: {
           case_id: string | null
+          claimed_at: string | null
           created_at: string
           error_message: string | null
           id: string
+          idempotency_key: string | null
           order_id: string | null
           payload: Json
           recipient_email: string
@@ -128,9 +130,11 @@ export type Database = {
         }
         Insert: {
           case_id?: string | null
+          claimed_at?: string | null
           created_at?: string
           error_message?: string | null
           id?: string
+          idempotency_key?: string | null
           order_id?: string | null
           payload?: Json
           recipient_email: string
@@ -141,9 +145,11 @@ export type Database = {
         }
         Update: {
           case_id?: string | null
+          claimed_at?: string | null
           created_at?: string
           error_message?: string | null
           id?: string
+          idempotency_key?: string | null
           order_id?: string | null
           payload?: Json
           recipient_email?: string
@@ -168,6 +174,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      email_delivery_log: {
+        Row: {
+          claimed_at: string
+          delivery_key: string
+          last_error: string | null
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          claimed_at?: string
+          delivery_key: string
+          last_error?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          claimed_at?: string
+          delivery_key?: string
+          last_error?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: []
       }
       event_broadcasts: {
         Row: {
@@ -1630,6 +1660,7 @@ export type Database = {
           event_id: string
           id: string
           name: string
+          notified_at: string | null
           status: string
           ticket_tier_id: string | null
           user_id: string | null
@@ -1640,6 +1671,7 @@ export type Database = {
           event_id: string
           id?: string
           name: string
+          notified_at?: string | null
           status?: string
           ticket_tier_id?: string | null
           user_id?: string | null
@@ -1650,6 +1682,7 @@ export type Database = {
           event_id?: string
           id?: string
           name?: string
+          notified_at?: string | null
           status?: string
           ticket_tier_id?: string | null
           user_id?: string | null
@@ -1822,9 +1855,11 @@ export type Database = {
         Args: { p_batch_size?: number }
         Returns: {
           case_id: string | null
+          claimed_at: string | null
           created_at: string
           error_message: string | null
           id: string
+          idempotency_key: string | null
           order_id: string | null
           payload: Json
           recipient_email: string
@@ -1840,7 +1875,15 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      claim_email_delivery: {
+        Args: { p_delivery_key: string }
+        Returns: string
+      }
       claim_guest_messages: { Args: never; Returns: undefined }
+      complete_email_delivery: {
+        Args: { p_delivery_key: string; p_error?: string; p_success: boolean }
+        Returns: undefined
+      }
       create_event_series: {
         Args: { p_recurrence_rule: string; p_title: string }
         Returns: string
@@ -2047,8 +2090,18 @@ export type Database = {
         Args: { p_new_email: string; p_order_id: string; p_reason: string }
         Returns: Json
       }
+      queue_email_outbox: {
+        Args: {
+          p_idempotency_key?: string
+          p_order_id?: string
+          p_payload?: Json
+          p_recipient_email?: string
+          p_template?: string
+        }
+        Returns: string
+      }
       support_resend_ticket_email: {
-        Args: { p_order_id: string }
+        Args: { p_order_id: string; p_request_id?: string }
         Returns: Json
       }
       support_submit_csat: {
@@ -2077,7 +2130,7 @@ export type Database = {
           p_attendee_name: string
           p_ticket_id: string
         }
-        Returns: undefined
+        Returns: boolean
       }
       validate_promo_code: {
         Args: { p_code: string; p_event_id: string }

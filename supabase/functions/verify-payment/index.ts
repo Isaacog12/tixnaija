@@ -99,12 +99,18 @@ async function processVerifiedPayment(
   // Idempotency — skip if order already exists for this reference
   const { data: existingOrder } = await supabase
     .from("orders")
-    .select("id")
+    .select("id, is_gift, buyer_email, recipient_email")
     .eq("payment_reference", reference)
     .maybeSingle();
 
   if (existingOrder) {
-    return { order_id: existingOrder.id, already_existed: true };
+    return {
+      order_id: existingOrder.id,
+      already_existed: true,
+      is_gift: Boolean(existingOrder.is_gift),
+      buyer_email: existingOrder.buyer_email,
+      recipient_email: existingOrder.recipient_email || existingOrder.buyer_email,
+    };
   }
 
   // Process checkout via RPC
@@ -146,7 +152,13 @@ async function processVerifiedPayment(
     })
     .catch((e: any) => console.error("Ticket confirmation email failed:", e));
 
-  return { order_id: orderId, already_existed: false };
+  return {
+    order_id: orderId,
+    already_existed: false,
+    is_gift: Boolean(metadata.isGift),
+    buyer_email: metadata.buyerEmail || null,
+    recipient_email: metadata.recipientEmail || metadata.buyerEmail || null,
+  };
 }
 
 // ---------------------------------------------------------------------------

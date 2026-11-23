@@ -588,7 +588,9 @@ function EventDetailPage() {
           toast.success(
             emailFailed
               ? "Ticket claimed! We couldn't email your confirmation — your tickets are available below."
-              : "Ticket claimed! We've emailed your tickets.",
+              : values.isGift
+                ? `Gift claimed! We emailed the recipient's tickets and your purchase receipt to ${values.buyerEmail}.`
+                : "Ticket claimed! We've emailed your tickets.",
             { duration: 6000 },
           );
           navigate({ to: "/orders/$orderId/tickets", params: { orderId: orderId as string } });
@@ -596,7 +598,9 @@ function EventDetailPage() {
           toast.success(
             emailFailed
               ? "Free ticket claimed, but we couldn't send the confirmation email. Resend it from My Tickets."
-              : "Free ticket claimed successfully!",
+              : values.isGift
+                ? `Gift claimed! The recipient's tickets and your receipt were emailed to ${values.recipientEmail} and ${values.buyerEmail}.`
+                : "Free ticket claimed successfully!",
           );
           navigate({ to: "/notifications" });
         }

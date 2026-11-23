@@ -105,34 +105,22 @@ function AdminEmailChangesQueue() {
 
   // Review Mutation
   const reviewMutation = useMutation({
-    mutationFn: async ({
-      requestId,
-      approve,
-      orderId,
-    }: {
-      requestId: string;
-      approve: boolean;
-      orderId?: string;
-    }) => {
+    mutationFn: async ({ requestId, approve }: { requestId: string; approve: boolean }) => {
       const { data, error } = await supabase.rpc("admin_review_email_change", {
         p_request_id: requestId,
         p_approve: approve,
       });
       if (error) throw error;
 
-      // When approved, invoke send-ticket-confirmation to send the rotated tickets to the new email
-      if (approve && orderId) {
+      // Approval queues the reissue and any necessary old-address security alert.
+      // Dispatch only those outbox rows; a direct confirmation send would duplicate
+      // the reissue notice.
+      if (approve) {
         try {
-          await supabase.functions.invoke("send-ticket-confirmation", {
-            body: { orderId },
-          });
+          const { error: outboxError } = await supabase.functions.invoke("process-email-outbox");
+          if (outboxError) console.warn("process-email-outbox error:", outboxError);
         } catch (e) {
-          console.warn("send-ticket-confirmation invoke error:", e);
-        }
-        try {
-          await supabase.functions.invoke("process-email-outbox");
-        } catch (e) {
-          // non-blocking
+          // Queued rows remain durable for the scheduled worker.
         }
       }
 
@@ -358,7 +346,6 @@ function AdminEmailChangesQueue() {
                   reviewMutation.mutate({
                     requestId: selectedReq.id,
                     approve: confirmAction === "approve",
-                    orderId: selectedReq.order_id,
                   });
               }}
               disabled={reviewMutation.isPending}

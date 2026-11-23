@@ -4,6 +4,7 @@ import { sendEmail } from "../_shared/zeptomail.ts";
 import { escapeHtml } from "../_shared/html.ts";
 import { filterOptedInEmails } from "../_shared/notification-preferences.ts";
 import { authorizeCronOrRoles } from "../_shared/cron-auth.ts";
+import { buildEmailDeliveryKey, collectTicketRecipients } from "../_shared/email-delivery.ts";
 
 serve(async (req) => {
   if (req.method !== "POST") {
@@ -55,6 +56,7 @@ serve(async (req) => {
       const { data: events, error: eventsError } = await supabase
         .from("events")
         .select("id, title, slug, start_datetime, venue_name, address, city, state")
+        .eq("status", "published")
         .gte("start_datetime", win.min.toISOString())
         .lt("start_datetime", win.max.toISOString());
 
@@ -66,39 +68,30 @@ serve(async (req) => {
       if (!events || events.length === 0) continue;
 
       for (const event of events) {
-        // Fetch paid orders and tickets for this event
+        // Only paid and comp orders with valid tickets belong in a reminder.
         const { data: orders, error: ordersError } = await supabase
           .from("orders")
           .select(`
+            id,
+            status,
             buyer_email,
             buyer_name,
             order_items (
               tickets (
+                id,
+                ticket_code,
                 attendee_name,
-                attendee_email
+                attendee_email,
+                status
               )
             )
           `)
           .eq("event_id", event.id)
-          .eq("status", "paid");
+          .in("status", ["paid", "comp"]);
 
         if (ordersError || !orders) continue;
 
-        // Gather all recipient emails and names
-        const recipientMap = new Map<string, string>();
-        for (const order of orders) {
-          const tickets = order.order_items?.flatMap((item: any) => item.tickets || []) || [];
-          if (tickets.length > 0) {
-            for (const ticket of tickets) {
-              const email = (ticket.attendee_email || order.buyer_email || "").trim().toLowerCase();
-              if (email) {
-                recipientMap.set(email, ticket.attendee_name || order.buyer_name || "Attendee");
-              }
-            }
-          } else if (order.buyer_email) {
-            recipientMap.set(order.buyer_email.trim().toLowerCase(), order.buyer_name || "Attendee");
-          }
-        }
+        const recipientMap = collectTicketRecipients(orders || []);
 
         const candidateEmails = Array.from(recipientMap.keys());
         if (candidateEmails.length === 0) continue;
@@ -143,6 +136,18 @@ serve(async (req) => {
           }
 
           const name = recipientMap.get(email) || "Attendee";
+          const deliveryKey = buildEmailDeliveryKey("event-reminder", `${event.id}:${win.type}`, email);
+          const { data: claimStatus, error: claimError } = await supabase.rpc("claim_email_delivery", {
+            p_delivery_key: deliveryKey,
+          });
+          if (claimError) {
+            console.error(`Could not claim reminder delivery for ${email}:`, claimError);
+            continue;
+          }
+          if (claimStatus !== "claimed") {
+            totalSkippedAlreadySent++;
+            continue;
+          }
 
           const htmlBody = `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #09090b; color: #f4f4f5; padding: 40px 20px; text-align: center;">
@@ -195,9 +200,17 @@ serve(async (req) => {
 
           try {
             await sendEmail({ to: { address: email, name }, subject, htmlBody });
+            const { error: completionError } = await supabase.rpc("complete_email_delivery", {
+              p_delivery_key: deliveryKey,
+              p_success: true,
+            });
+            if (completionError) {
+              console.error(`Reminder sent but ledger completion failed for ${email}:`, completionError);
+            }
             totalSent++;
 
-            // Record sent reminder in event_reminders_log
+            // Keep the historical log for compatibility; the delivery ledger is
+            // the concurrency guard if this insert fails.
             await supabase.from("event_reminders_log").insert({
               event_id: event.id,
               recipient_email: email,
@@ -205,6 +218,15 @@ serve(async (req) => {
             });
           } catch (err) {
             console.error(`Failed to send ${win.type} reminder to ${email}:`, err);
+            try {
+              await supabase.rpc("complete_email_delivery", {
+                p_delivery_key: deliveryKey,
+                p_success: false,
+                p_error: err instanceof Error ? err.message : String(err),
+              });
+            } catch (completionError) {
+              console.error(`Could not release reminder delivery claim for ${email}:`, completionError);
+            }
           }
         }
       }

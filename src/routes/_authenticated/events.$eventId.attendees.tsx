@@ -125,20 +125,23 @@ function AttendeesPage() {
 
   const updateTicketMutation = useMutation({
     mutationFn: async ({ ticketId, name, email }: { ticketId: string, name: string, email: string }) => {
-      const { error } = await supabase.rpc("update_ticket_attendee", {
+      const { data: emailChanged, error } = await supabase.rpc("update_ticket_attendee", {
         p_ticket_id: ticketId,
         p_attendee_name: name,
         p_attendee_email: email,
       });
       if (error) throw error;
-      
-      // We also trigger the edge function to re-send to the new email.
-      // functions.invoke() resolves with { error } on non-2xx instead of
-      // throwing, so the result has to be inspected explicitly.
+
+      // A name-only or case-only edit does not need another email. functions.invoke
+      // resolves with { error } on non-2xx, so inspect it explicitly.
       const ticket = filteredTickets?.find((t: any) => t.id === ticketId);
-      if (ticket) {
+      if (emailChanged && ticket) {
         const { error: emailError } = await supabase.functions.invoke("send-ticket-confirmation", {
-          body: { orderId: (ticket.order_items.orders as any).id, ticketId },
+          body: {
+            orderId: (ticket.order_items.orders as any).id,
+            ticketId,
+            requestId: crypto.randomUUID(),
+          },
         });
         if (emailError) {
           console.error("Failed to email the updated ticket", emailError);

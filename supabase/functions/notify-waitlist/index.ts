@@ -2,6 +2,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import { sendEmail } from "../_shared/zeptomail.ts";
+import { escapeHtml } from "../_shared/html.ts";
+import { buildEmailDeliveryKey, isDeliverableEmail } from "../_shared/email-delivery.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -112,16 +114,44 @@ serve(async (req) => {
     }
 
     let notifiedCount = 0;
+    let skippedCount = 0;
 
     for (const person of waitlisters) {
-      const eventUrl = `https://tixnaija.name.ng/e/${tier.events.slug}`;
+      if (!isDeliverableEmail(person.email)) {
+        skippedCount++;
+        continue;
+      }
+
+      const deliveryKey = buildEmailDeliveryKey("waitlist", person.id, "notified");
+      const { data: claimStatus, error: claimError } = await supabaseClient.rpc("claim_email_delivery", {
+        p_delivery_key: deliveryKey,
+      });
+      if (claimError) {
+        console.error(`Could not claim waitlist delivery for ${person.id}:`, claimError);
+        continue;
+      }
+      if (claimStatus === "sent") {
+        // Repair a row whose email succeeded but whose status update failed.
+        await supabaseClient
+          .from("waitlist_entries")
+          .update({ status: "notified", notified_at: new Date().toISOString() })
+          .eq("id", person.id);
+        skippedCount++;
+        continue;
+      }
+      if (claimStatus !== "claimed") {
+        skippedCount++;
+        continue;
+      }
+
+      const eventUrl = `https://tixnaija.name.ng/e/${encodeURIComponent(tier.events.slug || "")}`;
       const htmlBody = `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1a1a1a; padding: 20px;">
-          <h2 style="color: #ea580c; font-size: 20px; font-weight: 700; margin-bottom: 12px;">Good news, ${person.name}!</h2>
-          <p style="font-size: 15px; color: #333333; line-height: 1.5;">A ticket for <strong>${tier.events.title}</strong> (${tier.name}) has just become available.</p>
+          <h2 style="color: #ea580c; font-size: 20px; font-weight: 700; margin-bottom: 12px;">Good news, ${escapeHtml(person.name || "there")}!</h2>
+          <p style="font-size: 15px; color: #333333; line-height: 1.5;">A ticket for <strong>${escapeHtml(tier.events.title)}</strong> (${escapeHtml(tier.name)}) has just become available.</p>
           <p style="font-size: 15px; color: #333333; line-height: 1.5;">Please claim it before it sells out again!</p>
           <div style="margin: 28px 0;">
-            <a href="${eventUrl}" style="display: inline-block; padding: 14px 28px; background: #ea580c; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+            <a href="${escapeHtml(eventUrl)}" style="display: inline-block; padding: 14px 28px; background: #ea580c; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
               Get Ticket Now
             </a>
           </div>
@@ -142,20 +172,36 @@ serve(async (req) => {
           htmlBody,
         });
 
-        // Update their status
+        const { error: completionError } = await supabaseClient.rpc("complete_email_delivery", {
+          p_delivery_key: deliveryKey,
+          p_success: true,
+        });
+        if (completionError) {
+          console.error(`Waitlist email sent but ledger completion failed for ${person.id}:`, completionError);
+        }
+
         await supabaseClient
           .from("waitlist_entries")
-          .update({ status: "notified" })
+          .update({ status: "notified", notified_at: new Date().toISOString() })
           .eq("id", person.id);
 
         notifiedCount++;
       } catch (sendErr) {
         console.error(`Failed to send waitlist email to ${person.email}:`, sendErr);
+        try {
+          await supabaseClient.rpc("complete_email_delivery", {
+            p_delivery_key: deliveryKey,
+            p_success: false,
+            p_error: sendErr instanceof Error ? sendErr.message : String(sendErr),
+          });
+        } catch (completionError) {
+          console.error(`Could not release waitlist delivery claim for ${person.id}:`, completionError);
+        }
       }
     }
 
     return new Response(
-      JSON.stringify({ message: `Notified ${notifiedCount} people.`, count: notifiedCount }),
+      JSON.stringify({ message: `Notified ${notifiedCount} people.`, count: notifiedCount, skipped: skippedCount }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,

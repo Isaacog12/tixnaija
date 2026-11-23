@@ -4,6 +4,7 @@ import { sendEmail } from "../_shared/zeptomail.ts";
 import { filterOptedInEmails } from "../_shared/notification-preferences.ts";
 import { generateUnsubscribeToken } from "../_shared/unsubscribe.ts";
 import { escapeHtml } from "../_shared/html.ts";
+import { buildEmailDeliveryKey, collectTicketRecipients } from "../_shared/email-delivery.ts";
 
 const allowedOrigins = [
   "https://tixnaija.vercel.app",
@@ -100,24 +101,42 @@ serve(async (req: Request) => {
       });
     }
 
-    if (broadcast.recipient_count && broadcast.recipient_count > 0) throw new Error("Broadcast already sent");
+    // Legacy broadcasts have only recipient_count. Once a broadcast has a
+    // delivery-ledger entry, reruns may retry failed/unsent recipients safely.
+    if (broadcast.recipient_count && broadcast.recipient_count > 0) {
+      const { count: priorDeliveries, error: priorError } = await supabase
+        .from("email_delivery_log")
+        .select("delivery_key", { count: "exact", head: true })
+        .eq("status", "sent")
+        .like("delivery_key", `event-broadcast:${broadcastId}:%`);
+      if (priorError) throw new Error("Could not verify prior broadcast delivery safely");
+      if (!priorDeliveries) throw new Error("Broadcast already sent");
+    }
 
-    // Fetch all unique attendees for this event (successful paid orders)
+    // Fetch valid ticket holders from paid and comp orders.
     const { data: orders, error: oErr } = await supabase
       .from("orders")
-      .select("buyer_email, buyer_name")
+      .select(`
+        id,
+        status,
+        buyer_email,
+        buyer_name,
+        order_items (
+          tickets (
+            id,
+            ticket_code,
+            attendee_name,
+            attendee_email,
+            status
+          )
+        )
+      `)
       .eq("event_id", broadcast.event_id)
-      .eq("status", "paid");
+      .in("status", ["paid", "comp"]);
 
     if (oErr) throw new Error("Failed to fetch attendees");
 
-    // De-duplicate emails
-    const uniqueAttendees = new Map<string, string>();
-    orders.forEach(o => {
-      if (o.buyer_email) {
-        uniqueAttendees.set(o.buyer_email.trim().toLowerCase(), o.buyer_name || "Attendee");
-      }
-    });
+    const uniqueAttendees = collectTicketRecipients(orders || []);
 
     const candidateEmails = Array.from(uniqueAttendees.keys());
     if (candidateEmails.length === 0) {
@@ -133,11 +152,25 @@ serve(async (req: Request) => {
     const eventLink = `https://tixnaija.name.ng/e/${broadcast.events?.slug || ""}`;
     let successCount = 0;
     let optedOutCount = 0;
+    let skippedCount = 0;
     
     for (const [email, name] of uniqueAttendees.entries()) {
       if (!optedInEmails.has(email)) {
         console.log(`[OPT-OUT] Skipping organizer broadcast for ${email} (user opted out of organizer_updates)`);
         optedOutCount++;
+        continue;
+      }
+
+      const deliveryKey = buildEmailDeliveryKey("event-broadcast", broadcastId, email);
+      const { data: claimStatus, error: claimError } = await supabase.rpc("claim_email_delivery", {
+        p_delivery_key: deliveryKey,
+      });
+      if (claimError) {
+        console.error(`Could not claim broadcast delivery for ${email}:`, claimError);
+        continue;
+      }
+      if (claimStatus !== "claimed") {
+        skippedCount++;
         continue;
       }
 
@@ -181,21 +214,46 @@ serve(async (req: Request) => {
             { name: "List-Unsubscribe-Post", value: "List-Unsubscribe=One-Click" },
           ],
         });
+        const { error: completionError } = await supabase.rpc("complete_email_delivery", {
+          p_delivery_key: deliveryKey,
+          p_success: true,
+        });
+        if (completionError) {
+          console.error(`Broadcast sent but ledger completion failed for ${email}:`, completionError);
+        }
         successCount++;
       } catch (err) {
         console.error(`Failed to send to ${email}:`, err);
+        try {
+          await supabase.rpc("complete_email_delivery", {
+            p_delivery_key: deliveryKey,
+            p_success: false,
+            p_error: err instanceof Error ? err.message : String(err),
+          });
+        } catch (completionError) {
+          console.error(`Could not release broadcast delivery claim for ${email}:`, completionError);
+        }
       }
     }
 
-    // Mark broadcast as sent
+    // Count durable successes, not just this run, and never reduce the legacy
+    // recipient_count marker.
+    const { count: deliveredCount, error: countError } = await supabase
+      .from("email_delivery_log")
+      .select("delivery_key", { count: "exact", head: true })
+      .eq("status", "sent")
+      .like("delivery_key", `event-broadcast:${broadcastId}:%`);
+    if (countError) console.error("Could not count broadcast deliveries:", countError);
+    const recipientCount = Math.max(broadcast.recipient_count || 0, deliveredCount || successCount);
+
     await supabase
       .from("event_broadcasts")
-      .update({
-        recipient_count: successCount,
-      })
+      .update({ recipient_count: recipientCount })
       .eq("id", broadcastId);
 
-    return new Response(JSON.stringify({ success: true, count: successCount, opted_out: optedOutCount }), {
+    return new Response(
+      JSON.stringify({ success: true, count: successCount, opted_out: optedOutCount, skipped: skippedCount }),
+      {
       headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       status: 200,
     });

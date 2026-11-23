@@ -5,6 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { sendEmail } from "../_shared/zeptomail.ts";
 import { authorizeCronOrRoles } from "../_shared/cron-auth.ts";
 import { escapeHtml } from "../_shared/html.ts";
+import { isDeliverableEmail, normalizeEmail } from "../_shared/email-delivery.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -43,22 +44,16 @@ serve(async (req: Request) => {
       p_batch_size: 20,
     });
 
-    let itemsToProcess = batch;
-
-    // Fallback if RPC not yet created in schema cache
-    if (claimErr || !itemsToProcess) {
-      const { data: fallbackBatch } = await supabase
-        .from("email_outbox")
-        .select("*")
-        .eq("status", "pending")
-        .lt("retry_count", 3)
-        .order("created_at", { ascending: true })
-        .limit(20);
-
-      itemsToProcess = fallbackBatch || [];
+    if (claimErr) {
+      console.error("Could not atomically claim outbox batch:", claimErr);
+      return new Response(JSON.stringify({ error: "Could not claim email batch safely." }), {
+        status: 503,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    if (!itemsToProcess || itemsToProcess.length === 0) {
+    const itemsToProcess = batch || [];
+    if (itemsToProcess.length === 0) {
       return new Response(JSON.stringify({ processed: 0, message: "No pending emails" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -66,8 +61,52 @@ serve(async (req: Request) => {
 
     let successCount = 0;
     let failCount = 0;
+    let skippedCount = 0;
 
     for (const item of itemsToProcess) {
+      if (!isDeliverableEmail(item.recipient_email)) {
+        console.error(`Refusing invalid outbox recipient ${item.id}`);
+        failCount++;
+        await supabase
+          .from("email_outbox")
+          .update({ status: "failed", error_message: "Invalid recipient email address" })
+          .eq("id", item.id);
+        continue;
+      }
+
+      const deliveryKey = `outbox:${item.id}`;
+      const { data: claimStatus, error: deliveryClaimError } = await supabase.rpc(
+        "claim_email_delivery",
+        { p_delivery_key: deliveryKey },
+      );
+
+      if (deliveryClaimError) {
+        console.error(`Could not claim outbox delivery ${item.id}:`, deliveryClaimError);
+        failCount++;
+        await supabase
+          .from("email_outbox")
+          .update({
+            status: "pending",
+            retry_count: (item.retry_count || 0) + 1,
+            error_message: deliveryClaimError.message,
+          })
+          .eq("id", item.id);
+        continue;
+      }
+
+      if (claimStatus === "sent") {
+        await supabase
+          .from("email_outbox")
+          .update({ status: "sent", sent_at: new Date().toISOString() })
+          .eq("id", item.id);
+        skippedCount++;
+        continue;
+      }
+      if (claimStatus !== "claimed") {
+        skippedCount++;
+        continue;
+      }
+
       try {
         let subject = "Notification from TixNaija";
         let htmlBody = "";
@@ -119,31 +158,86 @@ serve(async (req: Request) => {
             </div>
           `;
         } else if (item.template === "ticket_confirmation") {
-          // Re-trigger confirmation or dispatch notice
-          subject = `Your TixNaija Tickets (Order Confirmed)`;
+          subject = "Your TixNaija Tickets";
           const orderId = item.order_id || item.payload?.order_id;
           const safeOrderId = encodeURIComponent(String(orderId || ""));
+          const recipient = normalizeEmail(item.recipient_email);
+          const ticketLinks: Array<{ code: string; name: string }> = [];
+
+          if (orderId) {
+            const { data: orderItems } = await supabase
+              .from("order_items")
+              .select("id")
+              .eq("order_id", orderId);
+            const itemIds = (orderItems || []).map((orderItem: any) => orderItem.id);
+            if (itemIds.length > 0) {
+              const { data: tickets } = await supabase
+                .from("tickets")
+                .select("ticket_code, attendee_name, attendee_email")
+                .in("order_item_id", itemIds)
+                .eq("status", "valid");
+              for (const ticket of tickets || []) {
+                if (normalizeEmail(ticket.attendee_email) === recipient) {
+                  ticketLinks.push({ code: ticket.ticket_code, name: ticket.attendee_name || "Attendee" });
+                }
+              }
+            }
+          }
+
+          const ticketLinksHtml = ticketLinks.length
+            ? ticketLinks.map((ticket) => {
+                const ticketUrl = `https://tixnaija.name.ng/t/${encodeURIComponent(ticket.code)}`;
+                return `<div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin: 12px 0;">
+                  <p style="margin: 0 0 10px; font-size: 14px;"><strong>${escapeHtml(ticket.name)}</strong> · ${escapeHtml(ticket.code.split("-")[0].toUpperCase())}</p>
+                  <a href="${escapeHtml(ticketUrl)}" style="color: #047857; text-decoration: underline; font-weight: 600;">View ticket</a>
+                  <span style="color: #6b7280;"> · </span>
+                  <a href="${escapeHtml(`${ticketUrl}?download=true`)}" style="color: #047857; text-decoration: underline; font-weight: 600;">Download PDF</a>
+                </div>`;
+              }).join("")
+            : "";
+
+          const guestFragment = `#email=${encodeURIComponent(recipient)}`;
+          const orderUrl = `https://tixnaija.name.ng/orders/${safeOrderId}/tickets${guestFragment}`;
           htmlBody = `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1a1a1a; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;">
               <div style="margin-bottom: 24px; border-bottom: 2px solid #10b981; padding-bottom: 12px;">
-                <h1 style="font-size: 20px; font-weight: bold; margin: 0; color: #111827;">Your Reissued Tickets</h1>
+                <h1 style="font-size: 20px; font-weight: bold; margin: 0; color: #111827;">Your TixNaija Tickets</h1>
               </div>
               <p style="font-size: 15px; line-height: 1.6; margin-bottom: 16px;">Hello,</p>
-              <p style="font-size: 15px; line-height: 1.6; margin-bottom: 16px;">
-                Your tickets for order <strong>${escapeHtml(orderId || "")}</strong> are available.
-              </p>
-              <div style="text-align: center; margin: 28px 0;">
-                <a href="https://www.tixnaija.name.ng/orders/${safeOrderId}/tickets" style="background: #10b981; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 15px; display: inline-block;">
-                  View & Download Tickets
-                </a>
-              </div>
-              <p style="font-size: 13px; color: #6b7280; line-height: 1.5;">
-                Keep your ticket codes and QR codes safe. Each ticket code is valid for one scan at the door.
-              </p>
+              <p style="font-size: 15px; line-height: 1.6; margin-bottom: 16px;">Your ticket access for order <strong>${escapeHtml(orderId || "")}</strong> is ready.</p>
+              ${ticketLinksHtml}
+              ${ticketLinks.length ? "" : `<div style="text-align: center; margin: 28px 0;"><a href="${escapeHtml(orderUrl)}" style="background: #10b981; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 15px; display: inline-block;">View & Download Tickets</a></div>`}
+              <p style="font-size: 13px; color: #6b7280; line-height: 1.5;">Keep your ticket codes and QR codes safe. Each ticket code is valid for one scan at the door.</p>
               <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
-              <p style="font-size: 12px; color: #9ca3af; text-align: center;">
-                TixNaija · Independent Nigerian Ticketing Platform
-              </p>
+              <p style="font-size: 12px; color: #9ca3af; text-align: center;">TixNaija · Independent Nigerian Ticketing Platform</p>
+            </div>
+          `;
+        } else if (item.template === "event_cancelled" || item.template === "event_postponed") {
+          const cancelled = item.template === "event_cancelled";
+          const eventTitle = String(item.payload?.event_title || "your event");
+          const eventUrl = String(item.payload?.event_url || "https://tixnaija.name.ng/browse");
+          const note = String(item.payload?.note || "");
+          const rawNewStart = String(item.payload?.new_start || "");
+          const parsedNewStart = rawNewStart ? new Date(rawNewStart) : null;
+          const newStart = parsedNewStart && !Number.isNaN(parsedNewStart.getTime())
+            ? parsedNewStart.toLocaleString("en-US", { dateStyle: "full", timeStyle: "short", timeZone: "Africa/Lagos" })
+            : rawNewStart;
+          subject = cancelled
+            ? `[TixNaija] Event cancelled: ${eventTitle}`
+            : `[TixNaija] Event postponed: ${eventTitle}`;
+          htmlBody = `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1a1a1a; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;">
+              <div style="margin-bottom: 24px; border-bottom: 2px solid ${cancelled ? "#dc2626" : "#d97706"}; padding-bottom: 12px;">
+                <h1 style="font-size: 20px; font-weight: bold; margin: 0; color: #111827;">${cancelled ? "Event Cancelled" : "Event Postponed"}</h1>
+              </div>
+              <p style="font-size: 15px; line-height: 1.6; margin-bottom: 16px;">Hello ${escapeHtml(item.payload?.recipient_name || "there")},</p>
+              <p style="font-size: 15px; line-height: 1.6; margin-bottom: 16px;"><strong>${escapeHtml(eventTitle)}</strong> has been ${cancelled ? "cancelled" : "postponed"}.</p>
+              ${cancelled ? "" : `<p style="font-size: 15px; line-height: 1.6; margin-bottom: 16px;"><strong>New date and time:</strong> ${escapeHtml(newStart || "to be announced")}</p>`}
+              ${note ? `<div style="background: #f9fafb; border-left: 4px solid ${cancelled ? "#dc2626" : "#d97706"}; padding: 16px; margin-bottom: 24px; white-space: pre-wrap;">${escapeHtml(note)}</div>` : ""}
+              <p style="font-size: 14px; color: #4b5563; line-height: 1.6;">${cancelled ? "If you have questions about your order or refund options, contact support.tixnaija@gmail.com." : "Your existing ticket remains valid for the rescheduled event. Check the event page for updates."}</p>
+              <p style="margin: 24px 0;"><a href="${escapeHtml(eventUrl)}" style="color: #047857; text-decoration: underline; font-weight: 600;">View event page</a></p>
+              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+              <p style="font-size: 12px; color: #9ca3af; text-align: center;">TixNaija · Independent Nigerian Ticketing Platform</p>
             </div>
           `;
         } else if (item.template === "support_csat") {
@@ -244,26 +338,39 @@ serve(async (req: Request) => {
           `;
         }
 
-        // Send through ZeptoMail
         await sendEmail({
           to: { address: item.recipient_email },
           subject,
           htmlBody,
         });
 
-        // Mark as sent
+        const { error: completionError } = await supabase.rpc("complete_email_delivery", {
+          p_delivery_key: deliveryKey,
+          p_success: true,
+        });
+        if (completionError) {
+          console.error(`Outbox item ${item.id} sent but ledger completion failed:`, completionError);
+        }
+
         await supabase
           .from("email_outbox")
-          .update({
-            status: "sent",
-            sent_at: new Date().toISOString(),
-          })
+          .update({ status: "sent", sent_at: new Date().toISOString(), error_message: null })
           .eq("id", item.id);
 
         successCount++;
       } catch (err: any) {
         console.error(`Failed to send outbox item ${item.id}:`, err);
         failCount++;
+
+        try {
+          await supabase.rpc("complete_email_delivery", {
+            p_delivery_key: deliveryKey,
+            p_success: false,
+            p_error: err?.message || String(err),
+          });
+        } catch (completionError) {
+          console.error(`Could not release outbox delivery claim ${deliveryKey}:`, completionError);
+        }
 
         const newRetryCount = (item.retry_count || 0) + 1;
         const newStatus = newRetryCount >= 3 ? "failed" : "pending";
@@ -284,6 +391,7 @@ serve(async (req: Request) => {
         processed: itemsToProcess.length,
         success: successCount,
         failed: failCount,
+        skipped: skippedCount,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

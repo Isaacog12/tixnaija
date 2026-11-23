@@ -4,12 +4,15 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.APP_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error("Missing VITE_SUPABASE_URL (or SUPABASE_URL) and APP_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) in .env.local");
+  console.error(
+    "Missing VITE_SUPABASE_URL (or SUPABASE_URL) and APP_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) in .env.local",
+  );
   process.exit(1);
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+const campaignId = "tixnaija-android-app-launch-v1";
 const subject = "The TixNaija app is here — get it for Android";
 
 const htmlBody = `
@@ -34,11 +37,11 @@ const htmlBody = `
 
 async function run() {
   console.log("Triggering broadcast...");
-  
+
   const { data, error } = await supabase.functions.invoke("send-platform-broadcast", {
-    body: { subject, htmlBody },
+    body: { campaignId, subject, htmlBody },
   });
-  
+
   if (error) {
     console.error("Error triggering broadcast:", error);
   } else {

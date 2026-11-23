@@ -5,10 +5,9 @@
 // + buyer/recipient email) is the only key. This function is the "I lost the
 // email" recovery path used by /my-tickets.
 //
-// Every email this function causes is addressed to the person who asked: the
-// order receipt goes to their address only, and tickets bought for other
-// attendees are not re-sent to those attendees. Checkout delivery (which calls
-// send-ticket-confirmation directly) still reaches each attendee.
+// Every recovery email this function causes is addressed to the person who
+// asked: buyers, gift recipients, and attendee-only inboxes receive only their
+// own delivery. Explicit order-id checkout delivery still reaches each attendee.
 //
 // A guest must also supply the calendar day they bought the tickets
 // (purchaseDate, YYYY-MM-DD, Nigerian time). Without it, one email address would
@@ -21,6 +20,7 @@
 // email to prevent inbox spam.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { isDeliverableEmail } from "../_shared/email-delivery.ts";
 
 const allowedOrigins = [
   "https://tixnaija.vercel.app",
@@ -53,7 +53,6 @@ function escapeLike(value: string) {
   return value.replace(/[\\%_]/g, (match) => `\\${match}`);
 }
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -78,12 +77,16 @@ serve(async (req) => {
   try {
     const { email, orderId, purchaseDate } = await req.json();
     const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+    const requestedOrderId = typeof orderId === "string" ? orderId.trim() : "";
 
-    if (!normalizedEmail || !EMAIL_PATTERN.test(normalizedEmail)) {
+    if (!isDeliverableEmail(normalizedEmail)) {
       return jsonResponse(req, { error: "A valid email address is required." }, 400);
     }
 
     const rawPurchaseDate = typeof purchaseDate === "string" ? purchaseDate.trim() : "";
+    if (!requestedOrderId && !rawPurchaseDate) {
+      return jsonResponse(req, { error: "A purchase date (YYYY-MM-DD) is required." }, 400);
+    }
     let purchaseDayStart: Date | null = null;
     if (rawPurchaseDate) {
       purchaseDayStart = new Date(`${rawPurchaseDate}T00:00:00+01:00`);
@@ -101,24 +104,12 @@ serve(async (req) => {
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
     const MAX_REQUESTS = 3;
 
-    // A trusted server-to-server caller (the support assistant) is throttled per
-    // IP and per session on its own side, and its x-forwarded-for can be rewritten
-    // by the gateway. Keeping it in the IP bucket would collapse every caller into
-    // one shared counter and stop real resends after three, so only the per-email
-    // bucket applies to it.
-    const serviceKey =
-      (Deno.env.get("APP_SECRET_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) ?? "";
-    const authorization = req.headers.get("authorization") ?? "";
-    const isServiceCall = Boolean(serviceKey) && authorization === `Bearer ${serviceKey}`;
-
     // Per-IP and per-email throttle. The ip_address column is used as the
     // bucket key in both cases, which keeps a single counter table in play.
-    const buckets: [string, string][] = isServiceCall
-      ? [["resend_ticket_links_email", normalizedEmail]]
-      : [
-          ["resend_ticket_links_ip", ip],
-          ["resend_ticket_links_email", normalizedEmail],
-        ];
+    const buckets: [string, string][] = [
+      ["resend_ticket_links_ip", ip],
+      ["resend_ticket_links_email", normalizedEmail],
+    ];
 
     for (const [endpoint, bucketKey] of buckets) {
       const { count, error: countError } = await supabase
@@ -164,7 +155,7 @@ serve(async (req) => {
     const pattern = escapeLike(normalizedEmail);
     const statuses = ["paid", "comp"];
 
-    const [asBuyer, asRecipient] = await Promise.all([
+    const [asBuyer, asRecipient, asAttendee] = await Promise.all([
       withinPurchaseDay(
         supabase
           .from("orders")
@@ -185,29 +176,48 @@ serve(async (req) => {
       )
         .order("created_at", { ascending: false })
         .limit(10),
+      withinPurchaseDay(
+        supabase
+          .from("orders")
+          .select("id")
+          .in("status", statuses)
+          .ilike("order_items.tickets.attendee_email", pattern),
+        purchaseDayStart,
+      )
+        .order("created_at", { ascending: false })
+        .limit(10),
     ]);
 
-    if (asBuyer.error || asRecipient.error) {
-      console.error("Order lookup failed:", asBuyer.error || asRecipient.error);
+    if (asBuyer.error || asRecipient.error || asAttendee.error) {
+      console.error("Order lookup failed:", asBuyer.error || asRecipient.error || asAttendee.error);
       return jsonResponse(req, { error: "Could not look up your orders right now." }, 500);
     }
 
     const orderIds = Array.from(
-      new Set([...(asBuyer.data ?? []), ...(asRecipient.data ?? [])].map((order: any) => order.id)),
-    ).filter((id) => (orderId ? id === orderId : true)).slice(0, 10);
+      new Set(
+        [...(asBuyer.data ?? []), ...(asRecipient.data ?? []), ...(asAttendee.data ?? [])].map(
+          (order: any) => order.id,
+        ),
+      ),
+    )
+      .filter((id) => (requestedOrderId ? id === requestedOrderId : true))
+      .slice(0, 10);
 
     // Never reveal whether the email matched any order.
     if (orderIds.length === 0) {
       return jsonResponse(req, { ok: true, sent: 0 });
     }
 
+    const requestId = crypto.randomUUID();
     const results = await Promise.allSettled(
       orderIds.map((id) =>
         supabase.functions.invoke("send-ticket-confirmation", {
           // A recovery request (no orderId from the caller) mails only the
           // requesting address. First delivery from checkout supplies orderId
           // and keeps sending each attendee their own ticket.
-          body: orderId ? { orderId: id } : { orderId: id, onlyEmail: normalizedEmail },
+          body: requestedOrderId
+            ? { orderId: id, requestId }
+            : { orderId: id, onlyEmail: normalizedEmail, requestId },
         }),
       ),
     );
@@ -227,7 +237,15 @@ serve(async (req) => {
       );
     }
 
-    return jsonResponse(req, { ok: true, sent: orderIds.length - failures.length });
+    const sent = results.reduce((total, result) => {
+      if (result.status === "rejected") return total;
+      const value = result.value;
+      if (value?.error) return total;
+      const count = Number(value?.data?.sent);
+      return total + (Number.isFinite(count) && count > 0 ? count : 0);
+    }, 0);
+
+    return jsonResponse(req, { ok: true, sent });
   } catch (error: any) {
     console.error("Resend ticket links error:", error);
     return jsonResponse(req, { error: error?.message || "Unknown error" }, 400);

@@ -128,28 +128,23 @@ export function SupportOrdersTab({
     mutationFn: async (orderId: string) => {
       const { data, error } = await supabase.rpc("support_resend_ticket_email", {
         p_order_id: orderId,
+        p_request_id: crypto.randomUUID(),
       });
       if (error) throw error;
 
-      // Invoke the Edge Function to dispatch tickets via ZeptoMail
-      const { error: invokeErr } = await supabase.functions.invoke("send-ticket-confirmation", {
-        body: { orderId },
-      });
-      if (invokeErr) {
-        console.warn("send-ticket-confirmation error:", invokeErr);
-      }
-
-      // Also trigger process-email-outbox asynchronously
+      // The RPC queues one notice per current valid ticket recipient. Triggering
+      // the outbox worker dispatches those notices without a second direct send.
       try {
-        await supabase.functions.invoke("process-email-outbox");
+        const { error: outboxError } = await supabase.functions.invoke("process-email-outbox");
+        if (outboxError) console.warn("process-email-outbox error:", outboxError);
       } catch (e) {
-        // non-blocking
+        // Queued rows remain durable and will be retried by the scheduled worker.
       }
 
       return data;
     },
     onSuccess: () => {
-      toast.success("Ticket confirmation email sent successfully!");
+      toast.success("Ticket confirmation emails queued successfully!");
       setResendConfirmOpen(false);
       refetchDetails();
     },
@@ -694,13 +689,13 @@ export function SupportOrdersTab({
               Confirm Ticket Resend
             </DialogTitle>
             <DialogDescription className="text-xs">
-              This will re-dispatch the official ticket confirmation and QR codes to the buyer's registered email via the asynchronous outbox.
+              This will queue one ticket-access notice for every current valid ticket recipient via the asynchronous outbox.
             </DialogDescription>
           </DialogHeader>
           <div className="p-3 rounded-xl bg-secondary/40 border border-border/50 text-xs space-y-1">
             <div>
-              <span className="text-muted-foreground">Recipient Email: </span>
-              <span className="font-mono font-semibold">{orderData?.buyer_email || "N/A"}</span>
+              <span className="text-muted-foreground">Delivery: </span>
+              <span className="font-semibold">All current valid ticket recipients</span>
             </div>
             <div>
               <span className="text-muted-foreground">Order Reference: </span>

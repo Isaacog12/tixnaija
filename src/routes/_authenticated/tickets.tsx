@@ -439,7 +439,7 @@ function ReassignTicketModal({ open, onClose, ticket, onSuccess }: ReassignModal
     if (!ticket) return;
     setIsUpdating(true);
     try {
-      const { error } = await supabase.rpc("update_ticket_attendee", {
+      const { data: emailChanged, error } = await supabase.rpc("update_ticket_attendee", {
         p_ticket_id: ticket.id,
         p_attendee_name: attendeeName.trim(),
         p_attendee_email: attendeeEmail.trim().toLowerCase(),
@@ -447,16 +447,20 @@ function ReassignTicketModal({ open, onClose, ticket, onSuccess }: ReassignModal
 
       if (error) throw error;
 
-      toast.success("Ticket reassigned! Attendee details updated successfully.");
-      
-      // Resend confirmation to new email. functions.invoke() resolves with
-      // { error } on non-2xx, so it must be checked explicitly.
-      const { error: emailError } = await supabase.functions.invoke("send-ticket-confirmation", {
-        body: { orderId: ticket.order?.id, ticketId: ticket.id },
-      });
-      if (emailError) {
-        console.error("Failed to email the reassigned ticket", emailError);
-        toast.error("Ticket reassigned, but the confirmation email could not be sent.");
+      toast.success(
+        emailChanged
+          ? "Ticket reassigned! Attendee details updated successfully."
+          : "Attendee details updated. The delivery address did not change, so no email was needed.",
+      );
+
+      if (emailChanged && ticket.order?.id) {
+        const { error: emailError } = await supabase.functions.invoke("send-ticket-confirmation", {
+          body: { orderId: ticket.order.id, ticketId: ticket.id, requestId: crypto.randomUUID() },
+        });
+        if (emailError) {
+          console.error("Failed to email the reassigned ticket", emailError);
+          toast.error("Ticket reassigned, but the confirmation email could not be sent.");
+        }
       }
 
       onSuccess();
