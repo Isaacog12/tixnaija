@@ -28,6 +28,7 @@ import {
   CalendarCheck,
   Megaphone,
   Info,
+  Image as ImageIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -190,6 +191,9 @@ function AccountPage() {
   // Avatar upload state
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  // Box office banner upload state
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
 
   useEffect(() => {
     if (data?.profile) {
@@ -401,6 +405,67 @@ function AccountPage() {
       // Reset the input so the same file can be selected again
       if (avatarInputRef.current) avatarInputRef.current.value = "";
     }
+  }
+
+  // Box office banner upload handler
+  async function handleBannerUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !data) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5MB");
+      return;
+    }
+
+    setUploadingBanner(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+      const path = `${data.userId}/${Date.now()}-banner.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true, cacheControl: "3600" });
+      if (uploadError) throw uploadError;
+
+      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      const bannerUrl = pub.publicUrl;
+
+      // Persist right away so the box office updates without a second save.
+      const { error: profileError } = await supabase
+        .from("profiles")
+        // @ts-ignore
+        .update({ banner_url: bannerUrl })
+        .eq("id", data.userId);
+      if (profileError) throw profileError;
+
+      setForm((prev) => ({ ...prev, banner_url: bannerUrl }));
+      toast.success("Box office banner updated!");
+      qc.invalidateQueries({ queryKey: ["me"] });
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed to upload banner");
+    } finally {
+      setUploadingBanner(false);
+      if (bannerInputRef.current) bannerInputRef.current.value = "";
+    }
+  }
+
+  async function handleBannerRemove() {
+    if (!data) return;
+    setForm((prev) => ({ ...prev, banner_url: "" }));
+    const { error } = await supabase
+      .from("profiles")
+      // @ts-ignore
+      .update({ banner_url: null })
+      .eq("id", data.userId);
+    if (error) {
+      toast.error("Could not remove banner");
+      return;
+    }
+    toast.success("Banner removed — profile photo will be used");
+    qc.invalidateQueries({ queryKey: ["me"] });
   }
 
   // Sign out handler
@@ -634,17 +699,67 @@ function AccountPage() {
                             </p>
                             {slugError && <p className="text-sm font-medium text-destructive mt-2">{slugError}</p>}
                           </Field>
-                          <Field label="Custom Banner Image URL (Optional)">
-                            <Input
-                              className="h-12 bg-background/50 border-border/50 focus-visible:ring-primary/20 rounded-xl"
-                              value={form.banner_url}
-                              onChange={(e) => setForm({ ...form, banner_url: e.target.value })}
-                              placeholder="Leave blank to use profile photo"
-                            />
-                            <p className="text-xs text-muted-foreground mt-1.5">
-                              Defaults automatically to your profile photo as an ambient backdrop.
-                            </p>
-                          </Field>
+                          <div className="sm:col-span-2">
+                            <Field label="Custom Banner Image (Optional)">
+                              <div className="rounded-xl border border-border/50 bg-background/50 p-4">
+                                <div className="relative aspect-[3/1] w-full overflow-hidden rounded-lg border border-border/50 bg-muted/30">
+                                  {form.banner_url ? (
+                                    <img
+                                      src={form.banner_url}
+                                      alt="Box office banner preview"
+                                      className="h-full w-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 text-muted-foreground">
+                                      <ImageIcon className="h-5 w-5" />
+                                      <span className="text-xs">No banner uploaded</span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <input
+                                  ref={bannerInputRef}
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={handleBannerUpload}
+                                />
+                                <div className="mt-3 flex flex-wrap items-center gap-2">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="h-10 rounded-full"
+                                    disabled={uploadingBanner}
+                                    onClick={() => bannerInputRef.current?.click()}
+                                  >
+                                    {uploadingBanner ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Upload className="h-4 w-4" />
+                                    )}
+                                    {uploadingBanner
+                                      ? "Uploading…"
+                                      : form.banner_url
+                                        ? "Replace banner"
+                                        : "Upload banner"}
+                                  </Button>
+                                  {form.banner_url && !uploadingBanner && (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      className="h-10 rounded-full text-muted-foreground"
+                                      onClick={handleBannerRemove}
+                                    >
+                                      <Trash2 className="h-4 w-4" /> Remove
+                                    </Button>
+                                  )}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-3">
+                                  Wide landscape image, recommended 1600×500 and under 5MB. Leave empty to use your profile photo as the backdrop.
+                                </p>
+                              </div>
+                            </Field>
+                          </div>
                           <div className="sm:col-span-2">
                             <Field label="Bio / About Organizer">
                               <textarea
