@@ -60,6 +60,27 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+/**
+ * Profile images live in `event-covers`.
+ *
+ * That is the public bucket whose storage policies already allow a signed-in
+ * user to write into their own `${userId}/…` folder. This page used to upload to
+ * an `avatars` bucket that was never provisioned, so every upload failed with
+ * "Bucket not found".
+ */
+const PROFILE_IMAGE_BUCKET = "event-covers";
+
+async function uploadProfileImage(userId: string, file: File, kind: "avatar" | "banner") {
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  // The timestamp keeps the CDN from serving the previous file at the same URL.
+  const path = `${userId}/${Date.now()}-${kind}.${ext}`;
+  const { error } = await supabase.storage
+    .from(PROFILE_IMAGE_BUCKET)
+    .upload(path, file, { upsert: true, cacheControl: "3600" });
+  if (error) throw error;
+  return supabase.storage.from(PROFILE_IMAGE_BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
 export const Route = createFileRoute("/_authenticated/account")({
   component: AccountPage,
 });
@@ -109,7 +130,6 @@ const profileSchema = z.object({
   bio: z.string().trim().max(300).optional().nullable(),
   banner_url: z.string().trim().url().optional().nullable().or(z.literal("")),
   phone: z.string().trim().max(20).optional().nullable(),
-  city: z.string().trim().max(60).optional().nullable(),
   bank_name: z.string().trim().max(60).optional().nullable(),
   bank_account_number: z
     .string()
@@ -180,7 +200,6 @@ function AccountPage() {
     bio: "",
     banner_url: "",
     phone: "",
-    city: "",
     bank_name: "",
     bank_account_number: "",
     bank_account_name: "",
@@ -211,7 +230,6 @@ function AccountPage() {
         bio: data.profile.bio ?? "",
         banner_url: data.profile.banner_url || data.profile.avatar_url || "",
         phone: data.profile.phone ?? "",
-        city: data.profile.city ?? "",
         bank_name: data.profile.bank_name ?? "",
         bank_account_number: data.profile.bank_account_number ?? "",
         bank_account_name: data.profile.bank_account_name ?? "",
@@ -351,7 +369,8 @@ function AccountPage() {
         toast.success("Other profile fields saved");
         qc.invalidateQueries({ queryKey: ["me"] });
       } else {
-        toast.error("Something went wrong, please try again.");
+        if (import.meta.env.DEV) console.error("Profile save failed", error);
+        toast.error(error, { description: "Nothing was saved — check the fields and try again." });
       }
     } else {
       toast.success("Profile saved");
@@ -376,24 +395,12 @@ function AccountPage() {
 
     setUploadingAvatar(true);
     try {
-      const ext = file.name.split(".").pop() ?? "jpg";
-      const path = `${data.userId}/${Date.now()}-avatar.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(path, file, { upsert: true });
+      const avatarUrl = await uploadProfileImage(data.userId, file, "avatar");
 
-      if (uploadError) {
-        // If "avatars" bucket doesn't exist, try event-covers as fallback
-        // or just store the URL directly
-        throw uploadError;
-      }
-
-      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-      
       await supabase
         .from("profiles")
         // @ts-ignore
-        .update({ avatar_url: pub.publicUrl })
+        .update({ avatar_url: avatarUrl })
         .eq("id", data.userId);
 
       toast.success("Profile photo updated!");
@@ -423,15 +430,7 @@ function AccountPage() {
 
     setUploadingBanner(true);
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-      const path = `${data.userId}/${Date.now()}-banner.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(path, file, { upsert: true, cacheControl: "3600" });
-      if (uploadError) throw uploadError;
-
-      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-      const bannerUrl = pub.publicUrl;
+      const bannerUrl = await uploadProfileImage(data.userId, file, "banner");
 
       // Persist right away so the box office updates without a second save.
       const { error: profileError } = await supabase
@@ -640,14 +639,6 @@ function AccountPage() {
                       </Field>
                       <Field label="Email Address">
                          <Input className="h-12 bg-muted/50 border-border/50 rounded-xl" value={data?.email ?? ""} readOnly disabled />
-                      </Field>
-                      <Field label="City">
-                        <Input
-                          className="h-12 bg-background/50 border-border/50 focus-visible:ring-primary/20 rounded-xl"
-                          value={form.city}
-                          onChange={(e) => setForm({ ...form, city: e.target.value })}
-                          placeholder="Lagos"
-                        />
                       </Field>
                     </div>
 

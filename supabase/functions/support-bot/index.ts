@@ -2,6 +2,23 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // @ts-ignore
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import {
+  containsSensitiveData,
+  detectIntent,
+  extractCity,
+  extractSearchTerm,
+  isIntent,
+  linksForKnowledge,
+  listingWindow,
+  looksSubstantive,
+  normalise,
+  orderStatusGuidance,
+  rankKnowledge,
+  SENSITIVE_REFUSAL,
+  type ActionLink,
+  type BotKnowledgeEntry,
+  type Intent,
+} from "../_shared/support-brain.ts";
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -118,72 +135,6 @@ function clientIp(req: Request): string {
     .filter(Boolean);
   return entries[entries.length - 1] || "unknown";
 }
-
-// ---------------------------------------------------------------------------
-// Text helpers
-// ---------------------------------------------------------------------------
-
-function normalise(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9'\s?]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-/** Damerau-free Levenshtein, capped for speed. */
-function editDistance(a: string, b: string): number {
-  if (a === b) return 0;
-  if (Math.abs(a.length - b.length) > 2) return 3;
-  const rows = a.length + 1;
-  const cols = b.length + 1;
-  let previous = new Array<number>(cols);
-  let current = new Array<number>(cols);
-  for (let j = 0; j < cols; j++) previous[j] = j;
-  for (let i = 1; i < rows; i++) {
-    current[0] = i;
-    for (let j = 1; j < cols; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      current[j] = Math.min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + cost);
-    }
-    const swap = previous;
-    previous = current;
-    current = swap;
-  }
-  return previous[cols - 1];
-}
-
-/** Whole-word match, so "hi" never fires inside "this". */
-function containsPhrase(text: string, phrase: string): boolean {
-  if (phrase.includes(" ")) return text.includes(phrase);
-  return new RegExp(`\\b${phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(text);
-}
-
-/** Tolerates one typo in words of five letters or more ("refnud", "tickts"). */
-/** "refnud" is one adjacent swap away from "refund". */
-function isAdjacentSwap(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  const diffs: number[] = [];
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) diffs.push(i);
-  }
-  if (diffs.length !== 2) return false;
-  const [i, j] = diffs;
-  return j === i + 1 && a[i] === b[j] && a[j] === b[i];
-}
-
-function fuzzyContains(text: string, phrase: string): boolean {
-  if (phrase.includes(" ")) return text.includes(phrase);
-  if (phrase.length < 5) return false;
-  return text.split(" ").some((word) => {
-    if (word.length < 5 || Math.abs(word.length - phrase.length) > 1) return false;
-    return editDistance(word, phrase) <= 1 || isAdjacentSwap(word, phrase);
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Intent rules
-// ---------------------------------------------------------------------------
 
 type Intent =
   | "human"
@@ -509,115 +460,9 @@ const INTENT_RULES: Rule[] = [
   },
 ];
 
-const STOPWORDS = new Set([
-  "a", "about", "abeg", "am", "an", "and", "any", "are", "as", "at", "be", "been",
-  "but", "by", "can", "could", "dey", "did", "do", "does", "for", "from", "get",
-  "give", "go", "going", "got", "has", "have", "he", "her", "him", "his", "how", "i",
-  "if", "in", "is", "it", "its", "just", "me", "my", "na", "no", "not", "now", "of",
-  "on", "or", "our", "please", "pls", "so", "tell", "that", "the", "their", "them",
-  "there", "they", "this", "to", "una", "up", "us", "was", "we", "were", "wet",
-  "wetin", "what", "whats", "when", "where", "which", "who", "why", "will", "with",
-  "would", "you", "your", "show", "shows", "event", "events", "party", "concert",
-  "ticket", "tickets", "price", "cost", "much", "date", "time", "day", "venue",
-  "location", "address", "still", "left", "available", "today", "tomorrow",
-  "week", "weekend", "month", "next", "coming", "happening", "upcoming", "hold",
-  "again", "sir", "ma", "oo", "o", "wan", "want", "see", "know", "happen", "dey",
-  "get", "there", "any", "for", "am", "i'm", "im", "abeg",
-]);
-
-function detectIntent(message: string): { intent: Intent; matched: string[]; weight: number } {
-  const text = normalise(message);
-  let best: { intent: Intent; matched: string[]; weight: number } = {
-    intent: "unknown",
-    matched: [],
-    weight: -1,
-  };
-
-  for (const rule of INTENT_RULES) {
-    const matched = rule.phrases.filter((phrase) => containsPhrase(text, phrase));
-    if (matched.length > 0 && rule.weight > best.weight) {
-      best = { intent: rule.intent, matched, weight: rule.weight };
-    }
-  }
-
-  if (best.intent !== "unknown") return best;
-
-  // Second pass: tolerate typos in longer words.
-  for (const rule of INTENT_RULES) {
-    const matched = rule.phrases.filter((phrase) => fuzzyContains(text, phrase));
-    if (matched.length > 0 && rule.weight > best.weight) {
-      best = { intent: rule.intent, matched, weight: rule.weight };
-    }
-  }
-
-  return best;
-}
-
-/** Everything that is a question word, an intent trigger or filler is removed. */
-function extractSearchTerm(message: string, matchedPhrases: string[]): string {
-  let text = normalise(message);
-  for (const phrase of matchedPhrases) {
-    text = text.split(phrase).join(" ");
-  }
-  const words = text
-    .split(" ")
-    .map((word) => word.trim())
-    .filter((word) => word.length > 1 && !STOPWORDS.has(word));
-  return words.join(" ").slice(0, 80);
-}
-
 /** Escapes LIKE wildcards so a customer cannot broaden the search. */
 function escapeLike(value: string): string {
   return value.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
-}
-
-// ---------------------------------------------------------------------------
-// Things the assistant must never accept or store
-// ---------------------------------------------------------------------------
-
-// Mentioning a credential is not the same as sending one: "I forgot my
-// password" must still reach the account answer. Only a credential given as a
-// value is refused.
-const SENSITIVE_PATTERNS: RegExp[] = [
-  // A card number supplied as a value: 15-19 digits, spaces or dashes allowed.
-  // Starting at 15 keeps a 13-digit international phone number out of the net.
-  /\b(?:\d[ -]?){15,19}\b/,
-  // A payment credential supplied as a value: "cvv 123", "pin: 1234", "bvn 12345678901".
-  // NIN and national id are included because an 11-digit NIN is personal data
-  // under the same class as a BVN. A bare 11-digit run is deliberately NOT
-  // matched: a Nigerian mobile number is also 11 digits, and refusing those
-  // would block legitimate messages.
-  /\b(cvv|cvc|card pin|pin code|pin|otp|one time password|bvn|nin|national id)\b\s*(?:is|are|:|=|-)?\s*\d{3,11}\b/i,
-  // A password supplied as a value. The digit requirement keeps "my password is
-  // not working" on the account path instead of refusing it.
-  /\b(password|passcode)\b\s*(?:is|:|=)\s*\S*\d\S*/i,
-  // Bank details supplied as numbers.
-  /\b(account number|account no|acct number|nuban)\b\s*(?:is|:|=|-)?\s*\d{6,}\b/i,
-  // A card expiry supplied as a value: "expiry 12/30".
-  /\bexpir(?:y|es)\b\s*(?:date|is|:|=)?\s*\d{2}\s*\/\s*\d{2,4}\b/i,
-];
-
-function containsSensitiveData(message: string): boolean {
-  return SENSITIVE_PATTERNS.some((pattern) => pattern.test(message));
-}
-
-const SENSITIVE_REFUSAL =
-  "Please don't send that here — I can't accept card numbers, CVV codes, PINs, passwords, OTPs, NIN, BVN or bank details, and this chat doesn't store them.\n\nIf a payment has an issue, tell me what happened without the card details and I'll pass it to the support team, or use /my-tickets to resend your links.";
-
-/**
- * Cheap gibberish gate. Stops "asdf" from burning an escalation (and its
- * hourly cap) before a real question arrives.
- */
-function looksSubstantive(message: string): boolean {
-  const words = normalise(message)
-    .split(" ")
-    .filter((word) => word.length >= 2);
-  const meaningful = words.filter(
-    (word) => word.length >= 3 && /[aeiou]/.test(word) && !/^(.)\1+$/.test(word),
-  );
-  if (meaningful.length === 0) return false;
-  if (meaningful.length === 1 && meaningful[0].length < 5 && !message.includes("?")) return false;
-  return true;
 }
 
 // ---------------------------------------------------------------------------

@@ -133,7 +133,8 @@ const INTENT_RULES: Rule[] = [
     phrases: [
       "email came but error", "email arrived but error", "got email but not sent",
       "received email but not sent", "ticket email came", "mail came but error",
-      "email don land but error", "i get mail but e say not sent",
+      "email don land but error", "i get mail but e say not sent", "email came but",
+      "email arrived but", "came but not sent", "says not sent",
     ],
   },
   {
@@ -142,7 +143,7 @@ const INTENT_RULES: Rule[] = [
     phrases: [
       "qr won't scan", "qr not scanning", "code not scanning", "ticket not scanning",
       "can't enter", "cannot enter", "turned away", "gate staff", "door staff",
-      "at the gate", "check in", "checkin", "manual check in", "admission",
+      "at the gate", "check in", "checkin", "manual check in", "admission", "entry",
       "entry denied", "code no dey work", "dem no allow me enter",
     ],
   },
@@ -231,7 +232,8 @@ const INTENT_RULES: Rule[] = [
       "payment failed", "payment no go through", "payment not going through",
       "not going through", "was i charged", "debited", "money deducted",
       "money left my account", "double charge", "charged twice", "debited twice",
-      "payment pending", "transaction pending", "payment stuck", "transaction failed",
+      "payment pending", "payment is pending", "pending payment", "still pending",
+      "transaction pending", "payment stuck", "transaction failed",
       "no payment confirmation", "charged but", "paid but", "i paid but", "paid no ticket",
       "bank transfer pending", "transfer not confirmed", "payment not confirmed",
     ],
@@ -288,7 +290,7 @@ const INTENT_RULES: Rule[] = [
   },
   {
     intent: "email_change",
-    weight: 57,
+    weight: 76,
     phrases: [
       "change my email", "update my email", "new email address", "change email address",
       "update email address", "email change", "wrong email on account",
@@ -314,6 +316,7 @@ const INTENT_RULES: Rule[] = [
       "broken link", "error page", "site down", "ticket page error", "checkout error",
       "loading screen", "blank page", "website not working", "app not working",
       "not loading", "keeps loading", "stuck on loading", "page error", "technical error",
+      "app is not working", "website is not working", "is not working",
     ],
   },
   {
@@ -462,6 +465,16 @@ export function detectIntent(message: string, previousIntent?: Intent): IntentMa
     }
   }
 
+  // A typo in the bare word "refund" is ambiguous. Possessive, status and
+  // timing language makes it an action; "can I get a refnd?" stays a policy query.
+  if (
+    best.intent === "refund_policy" &&
+    best.weight < 95 &&
+    /\b(my|me|order|ticket|status|when|no)\b/.test(text)
+  ) {
+    return { intent: "refund", matched: best.matched, weight: best.weight + 1 };
+  }
+
   if (best.intent !== "unknown" || !previousIntent) return best;
   if (["greeting", "thanks", "unknown"].includes(previousIntent)) return best;
 
@@ -515,6 +528,51 @@ export function extractCity(text: string): string | null {
   return null;
 }
 
+export interface ListingWindow {
+  start: string;
+  end: string;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const LAGOS_OFFSET_MS = 60 * 60 * 1000;
+
+/** WAT has no daylight-saving transition, so a fixed UTC+1 conversion is exact. */
+export function listingWindow(message: string, now = new Date()): ListingWindow | null {
+  const text = normalise(message);
+  const isWeekend = text.includes("weekend");
+  const isWeek = text.includes("this week");
+  const isToday = text.includes("today") || text.includes("tonight");
+  if (!isWeekend && !isWeek && !isToday) return null;
+
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Africa/Lagos",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((part) => part.type === type)?.value ?? 0);
+  const todayUtc = Date.UTC(value("year"), value("month") - 1, value("day"));
+  const weekday = new Date(todayUtc).getUTCDay();
+
+  let startDay = todayUtc;
+  let endDay = todayUtc + DAY_MS;
+  if (isWeekend) {
+    // On Sunday, "this weekend" still includes today. Otherwise start Saturday.
+    startDay = weekday === 0
+      ? todayUtc
+      : todayUtc + ((6 - weekday + 7) % 7) * DAY_MS;
+    endDay = startDay + 2 * DAY_MS;
+  } else if (isWeek) {
+    endDay = todayUtc + 7 * DAY_MS;
+  }
+
+  return {
+    start: new Date(startDay - LAGOS_OFFSET_MS).toISOString(),
+    end: new Date(endDay - LAGOS_OFFSET_MS).toISOString(),
+  };
+}
+
 // Mentioning a credential is not the same as sending one: "I forgot my
 // password" must still reach the account answer. Only a credential given as a
 // value is refused.
@@ -523,7 +581,7 @@ const SENSITIVE_PATTERNS: RegExp[] = [
   /\b(cvv|cvc|card pin|pin code|pin|otp|one time password|bvn|nin|national id)\b\s*(?:is|are|:|=|-)?\s*\d{3,11}\b/i,
   /\b(password|passcode)\b\s*(?:is|:|=)\s+(?!not\b|no\b|broken\b|incorrect\b)\S+/i,
   /\b(account number|account no|acct number|nuban)\b\s*(?:is|:|=|-)?\s*\d{6,}\b/i,
-  /\bexpir(?:y|es)\b\s*(?:date|is|:|=)?\s*\d{2}\s*\/\s*\d{2,4}\b/i,
+  /\bexpir(?:y|es)\b\s*(?:(?:date|is|:|=)\s*)*\d{2}\s*\/\s*\d{2,4}\b/i,
 ];
 
 export function containsSensitiveData(message: string): boolean {
@@ -536,9 +594,12 @@ export const SENSITIVE_REFUSAL =
 /** Cheap gibberish gate; gibberish must not consume an escalation slot. */
 export function looksSubstantive(message: string): boolean {
   const words = normalise(message).split(" ").filter((word) => word.length >= 2);
-  const meaningful = words.filter(
-    (word) => word.length >= 3 && /[aeiou]/.test(word) && !/^(.)\1+$/.test(word),
-  );
+  const shortSupportWords = new Set(["app", "bug", "pay", "fee", "help", "otp", "scam"]);
+  const meaningful = words.filter((word) => {
+    if (word.length < 3 || /^(.)\1+$/.test(word)) return false;
+    const vowels = (word.match(/[aeiou]/g) ?? []).length;
+    return vowels >= 2 || shortSupportWords.has(word);
+  });
   if (meaningful.length === 0) return false;
   if (meaningful.length === 1 && meaningful[0].length < 5 && !message.includes("?")) return false;
   return true;
@@ -630,7 +691,7 @@ export function rankKnowledge(
     let score = coverage * 52 + precision * 23;
     if (exactTrigger) score += 32;
     if (exactTitle) score += 28;
-    if (triggerCovered) score += 15;
+    if (triggerCovered) score += 22;
     if (titleCovered) score += 10;
     score -= fuzzyCount * 4;
 
