@@ -8,7 +8,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 // ---------------------------------------------------------------------------
 
 // Server-side only. Never accepted from the client.
-const PUBLIC_SUPPORT_ADDRESS = "support.tixnaija@gmail.com";
+const PUBLIC_SUPPORT_ADDRESS = "tixnaijaapp@gmail.com";
+const PUBLIC_SUPPORT_PHONE = "+234 901 127 5275";
+const SUPPORT_HOURS = "Mon-Fri, 9am-6pm WAT";
 
 function readEnvVar(name: string): string {
   // @ts-ignore Deno is provided by the Edge runtime, not by the app tsconfig.
@@ -41,6 +43,7 @@ const REFUND_POLICY =
   "- If an event is cancelled, buyers are emailed automatically, and the refund is the organizer's responsibility because ticket money is settled to them through Paystack.\n" +
   "- After a postponement or venue change, you can request a refund within 14 calendar days of the notice.\n" +
   "- Requests are reviewed within 3 business days, and approved refunds land back on the card in 3 to 7 business days via Paystack.\n" +
+  `- To request a refund, include your order reference, purchase email and reason, or email ${PUBLIC_SUPPORT_ADDRESS}.\n` +
   "Full policy: /refunds";
 
 const MAX_MESSAGE_LENGTH = 500;
@@ -184,9 +187,12 @@ function fuzzyContains(text: string, phrase: string): boolean {
 
 type Intent =
   | "human"
+  | "fraud"
   | "refund"
   | "transfer"
   | "order"
+  | "delivery_confirmation"
+  | "entry"
   | "price"
   | "availability"
   | "venue"
@@ -202,6 +208,8 @@ type Intent =
   | "about"
   | "capabilities"
   | "account"
+  | "account_delete"
+  | "email_change"
   | "app"
   | "contact"
   | "greeting"
@@ -220,9 +228,19 @@ const INTENT_RULES: Rule[] = [
     intent: "human",
     weight: 100,
     phrases: [
-      "human", "real person", "agent", "support team", "customer care", "talk to",
-      "speak to", "chat with a person", "call me", "someone else", "abeg connect me",
-      "person wey go help", "talk to somebody", "can i speak", "manager",
+      "human", "real person", "human agent", "agent", "support team", "customer care",
+      "customer service", "support person", "talk to", "speak to", "chat with a person",
+      "call me", "someone else", "abeg connect me", "person wey go help",
+      "talk to somebody", "can i speak", "manager",
+    ],
+  },
+  {
+    intent: "fraud",
+    weight: 96,
+    phrases: [
+      "fraud", "fake event", "fake organizer", "scam", "scammer", "suspicious event",
+      "report event", "report organizer", "not legitimate", "event legit", "organizer legit",
+      "i was scammed", "dem scam me", "fake show",
     ],
   },
   {
@@ -232,6 +250,8 @@ const INTENT_RULES: Rule[] = [
       "refund", "money back", "my money", "return my money", "reverse the payment",
       "reversal", "charge back", "chargeback", "cancel my ticket", "cancel my order",
       "give me back my money", "abeg refund", "make una refund", "i want my money",
+      "refund policy", "refund status", "when will my refund", "how do refunds work",
+      "how do i request a refund", "no refund",
     ],
   },
   {
@@ -240,6 +260,8 @@ const INTENT_RULES: Rule[] = [
     phrases: [
       "transfer my ticket", "transfer ticket", "give my ticket to", "change the name",
       "change attendee", "send ticket to", "sell my ticket", "resell",
+      "reassign my ticket", "reassign ticket", "give ticket to", "change ticket name",
+      "rename ticket", "change attendee name", "send to another person",
     ],
   },
   {
@@ -251,6 +273,27 @@ const INTENT_RULES: Rule[] = [
       "haven't received", "no email", "confirmation email", "resend", "lost my ticket",
       "i no see my ticket", "ticket never land", "my ticket no dey", "email me",
       "not sent", "never sent", "no ticket", "ticket missing", "email missing",
+      "spam folder", "junk folder", "where is my ticket", "ticket email",
+      "email not received", "resend my ticket", "find my ticket", "ticket link",
+    ],
+  },
+  {
+    intent: "delivery_confirmation",
+    weight: 87,
+    phrases: [
+      "email came but error", "email arrived but error", "got email but not sent",
+      "received email but not sent", "ticket email came", "mail came but error",
+      "email don land but error", "i get mail but e say not sent",
+    ],
+  },
+  {
+    intent: "entry",
+    weight: 86,
+    phrases: [
+      "qr won't scan", "qr not scanning", "code not scanning", "ticket not scanning",
+      "can't enter", "cannot enter", "turned away", "gate staff", "door staff",
+      "at the gate", "check in", "checkin", "manual check in", "admission",
+      "entry denied", "code no dey work", "dem no allow me enter",
     ],
   },
   {
@@ -302,6 +345,7 @@ const INTENT_RULES: Rule[] = [
     phrases: [
       "how do i buy", "how to buy", "how can i buy", "how to purchase", "where to buy",
       "how do i get a ticket", "how i go buy", "buy ticket", "purchase", "checkout",
+      "guest checkout", "buy without account", "do i need an account", "checkout steps",
     ],
   },
   {
@@ -340,6 +384,8 @@ const INTENT_RULES: Rule[] = [
       "sell tickets", "selling tickets", "promote my event", "my own event",
       "i have an event", "planning an event", "become an organizer",
       "sign up as an organizer", "box office", "payout", "payouts", "my payout",
+      "organizer application", "apply to sell", "organizer fee", "platform fee",
+      "commission", "kyc", "become a seller", "application pending",
     ],
   },
   {
@@ -347,8 +393,10 @@ const INTENT_RULES: Rule[] = [
     weight: 62,
     phrases: [
       "payment method", "pay with", "card payment", "transfer to", "bank transfer",
-      "ussd", "opay", "paystack", "flutterwave", "how do i pay", "payment failed",
-      "payment no go through", "was i charged", "debited", "double charge",
+      "ussd", "opay", "palmpay", "paystack", "flutterwave", "how do i pay",
+      "payment failed", "payment no go through", "was i charged", "debited",
+      "double charge", "charged twice", "debited twice", "payment pending",
+      "transaction failed", "no payment confirmation",
     ],
   },
   {
@@ -381,7 +429,7 @@ const INTENT_RULES: Rule[] = [
       "who founded", "founder", "ceo", "who is behind", "who runs", "owner",
       "tix africa", "tixafrica", "tix-africa", "is this tix africa",
       "are you tix africa", "same as tix africa", "about tixnaija", "about you",
-      "who are you", "what is tixnaija",
+      "who are you", "what is tixnaija", "isaac", "ogbomo",
     ],
   },
   {
@@ -392,7 +440,24 @@ const INTENT_RULES: Rule[] = [
       "forgot password", "forgot my password", "forgot my pass", "reset my password",
       "change my password", "password reset", "can't log in", "can't login",
       "cant log in", "cant login", "cannot login", "can't sign in", "login issue",
-      "login problem", "otp", "my account",
+      "login problem", "otp", "my account", "account locked", "verification email",
+      "otp not received", "password not working",
+    ],
+  },
+  {
+    intent: "account_delete",
+    weight: 57,
+    phrases: [
+      "delete my account", "close my account", "remove my account", "deactivate my account",
+      "account deletion", "delete account", "how do i delete",
+    ],
+  },
+  {
+    intent: "email_change",
+    weight: 57,
+    phrases: [
+      "change my email", "update my email", "new email address", "change email address",
+      "update email address", "email change", "wrong email on account",
     ],
   },
   {
@@ -405,7 +470,8 @@ const INTENT_RULES: Rule[] = [
     weight: 52,
     phrases: [
       "contact", "email address", "phone number", "whatsapp", "reach you",
-      "organizer contact", "how do i reach the organizer",
+      "organizer contact", "how do i reach the organizer", "support hours",
+      "working hours", "customer care number", "whatsapp number", "support email",
     ],
   },
   {
@@ -424,6 +490,7 @@ const INTENT_RULES: Rule[] = [
       "what's happening", "whats happening", "what is happening", "what's on",
       "whats on", "any events", "show events", "upcoming", "upcoming events",
       "wetin dey happen", "this weekend", "this week", "tonight", "today",
+      "events in", "events for", "show me events",
     ],
   },
   {

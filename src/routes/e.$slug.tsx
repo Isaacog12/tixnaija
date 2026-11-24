@@ -44,6 +44,15 @@ import {
 } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 
+/**
+ * Event time is Lagos time, on the server and in the browser.
+ *
+ * Formatting without a fixed zone used the runtime's zone: the server (UTC on
+ * Vercel) rendered "19:00" and a visitor in WAT "20:00" for the same event, so
+ * hydration failed with React #418 and the tree was re-rendered on the client.
+ */
+const EVENT_ZONE = "Africa/Lagos";
+
 const GUEST_TICKET_CREDENTIALS_PREFIX = "tixnaija:guest-ticket-credentials:";
 const GUEST_CHECKOUT_PENDING_KEY = "tixnaija:guest-checkout-pending";
 
@@ -66,6 +75,7 @@ export const Route = createFileRoute("/e/$slug")({
           month: "short",
           day: "numeric",
           year: "numeric",
+          timeZone: EVENT_ZONE,
         })
       : "";
     const cityPart = event.city ? ` — ${event.city}` : "";
@@ -1336,6 +1346,9 @@ function EventBody({
                   year: "numeric",
                   hour: "numeric",
                   minute: "2-digit",
+                  // Without this the server (UTC) and a visitor in WAT printed
+                  // different hours, and hydration threw the tree away (#418).
+                  timeZone: EVENT_ZONE,
                 })}
               </span>
               {(event.venue_name || event.city) && (
@@ -1636,6 +1649,7 @@ function SimilarEvents({ events }: { events: any[] }) {
                   day: "numeric",
                   hour: "numeric",
                   minute: "2-digit",
+                  timeZone: EVENT_ZONE,
                 })}
               </div>
 
