@@ -55,21 +55,26 @@ export function DynamicIsland() {
   const notification = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const reduceMotion = useReducedMotion();
   const [open, setOpen] = useState(false);
+  // A click pins the island open until it is dismissed, so a long error stays
+  // readable; hovering only expands it while the pointer is over it.
+  const [pinned, setPinned] = useState(false);
+  const expanded = open || pinned;
   const notificationId = notification?.id;
 
   // Each new notification starts compact, like a fresh island state.
   useEffect(() => {
     setOpen(false);
+    setPinned(false);
   }, [notificationId]);
 
   // Retract on the notification's own timer, paused while it is expanded so the
   // message cannot disappear mid-read.
   useEffect(() => {
     if (!notification) return;
-    if (notification.duration <= 0 || open) return;
+    if (notification.duration <= 0 || expanded) return;
     const timer = window.setTimeout(() => dismiss(notification.id), notification.duration);
     return () => window.clearTimeout(timer);
-  }, [notification, open]);
+  }, [notification, expanded]);
 
   const close = useCallback(() => dismiss(notification?.id), [notification?.id]);
 
@@ -93,18 +98,18 @@ export function DynamicIsland() {
             }
             role={notification.kind === "error" ? "alert" : "status"}
             aria-live={notification.kind === "error" ? "assertive" : "polite"}
-            onClick={() => {
-              if (notification.description || notification.action) setOpen((value) => !value);
-            }}
+            // A click pins the island open so a long error can be read in full;
+            // the dismiss button closes it again.
+            onClick={() => setPinned(true)}
             onMouseEnter={() => {
               if (notification.description || notification.action) setOpen(true);
             }}
             onMouseLeave={() => setOpen(false)}
             className={cn(
-              "pointer-events-auto relative flex w-fit max-w-[min(92vw,26rem)] overflow-hidden border bg-zinc-950/95 text-zinc-50",
+              "pointer-events-auto relative flex w-fit max-w-[min(92vw,26rem)] cursor-pointer overflow-hidden border bg-zinc-950/95 text-zinc-50",
               "shadow-[0_18px_50px_-12px_rgba(0,0,0,0.85)] backdrop-blur-xl",
               TONE[notification.kind].border,
-              open
+              expanded
                 ? "items-start gap-3 rounded-3xl px-4 py-3.5"
                 : "items-center gap-2.5 rounded-full px-3 py-2",
             )}
@@ -122,17 +127,17 @@ export function DynamicIsland() {
               <p
                 className={cn(
                   "text-[13px] font-medium leading-tight",
-                  open ? "whitespace-normal" : "max-w-[15rem] truncate",
+                  expanded ? "whitespace-normal break-words" : "max-w-[15rem] truncate",
                 )}
               >
                 {notification.title}
               </p>
-              {open && notification.description && (
-                <p className="mt-1 text-[11.5px] leading-snug text-zinc-400">
+              {expanded && notification.description && (
+                <p className="mt-1 whitespace-normal break-words text-[11.5px] leading-snug text-zinc-400">
                   {notification.description}
                 </p>
               )}
-              {open && notification.action && (
+              {expanded && notification.action && (
                 <button
                   type="button"
                   onClick={(event) => {
@@ -147,7 +152,7 @@ export function DynamicIsland() {
               )}
             </div>
 
-            {open && (
+            {expanded && (
               <button
                 type="button"
                 aria-label="Dismiss"
@@ -161,7 +166,7 @@ export function DynamicIsland() {
               </button>
             )}
 
-            {notification.duration > 0 && !open && (
+            {notification.duration > 0 && !expanded && (
               <motion.span
                 key={notification.id}
                 aria-hidden="true"
