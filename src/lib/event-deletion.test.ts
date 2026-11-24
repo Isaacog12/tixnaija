@@ -18,7 +18,7 @@ const preview = (overrides: Partial<EventDeletionPreview> = {}): EventDeletionPr
 });
 
 describe("purgeBlockReason", () => {
-  it("refuses to purge when a buyer paid and has no processed refund", () => {
+  it("allows purging when a buyer paid and has no processed refund", () => {
     const p = preview({
       orders: 3,
       tickets: 5,
@@ -27,11 +27,11 @@ describe("purgeBlockReason", () => {
       revenue_kobo: 250000,
       money_owed: true,
     });
-    expect(purgeBlockReason(p)).toBe("money_owed");
-    expect(canPurgeEvent(p)).toBe(false);
+    expect(purgeBlockReason(p)).toBeNull();
+    expect(canPurgeEvent(p)).toBe(true);
   });
 
-  it("refuses to purge while a refund request is still open", () => {
+  it("allows purging while a refund request is still open", () => {
     const p = preview({
       orders: 1,
       tickets: 1,
@@ -40,14 +40,12 @@ describe("purgeBlockReason", () => {
       open_refunds: 1,
       money_owed: true,
     });
-    expect(purgeBlockReason(p)).toBe("money_owed");
+    expect(purgeBlockReason(p)).toBeNull();
   });
 
-  it("treats money_owed as authoritative even if the counters say otherwise", () => {
-    // The counters are a snapshot; money_owed is the server's verdict. When the
-    // two disagree, the safe reading wins.
+  it("keeps money_owed informational even if the counters say otherwise", () => {
     const p = preview({ paid_unrefunded: 0, open_refunds: 0, money_owed: true });
-    expect(canPurgeEvent(p)).toBe(false);
+    expect(canPurgeEvent(p)).toBe(true);
   });
 
   it("allows purging an event that never sold a ticket", () => {

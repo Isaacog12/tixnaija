@@ -27,9 +27,10 @@ type DeleteMode = "keep_records" | "purge";
  * everything (the event and the rows attached to it are deleted).
  * Buyers are cancelled and notified either way, by the RPC.
  *
- * Clearing is refused while money is owed, and refund records are never
- * deleted. The numbers come from admin_event_deletion_preview, which is
- * SECURITY DEFINER because admins cannot read orders directly.
+ * Admins may clear sold events even while money is owed. Refund records are
+ * never deleted, and outstanding obligations are included in the audit. The
+ * numbers come from admin_event_deletion_preview, which is SECURITY DEFINER
+ * because admins cannot read orders directly.
  */
 export function EventDeleteDialog({
   event,
@@ -160,16 +161,15 @@ export function EventDeleteDialog({
           </div>
         )}
 
-        {block === "money_owed" && (
+        {preview?.money_owed && (
           <div className="flex items-start gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
             <p className="text-xs text-amber-500/90">
-              Money is still owed: {preview?.paid_unrefunded} paid{" "}
-              {preview?.paid_unrefunded === 1 ? "buyer has" : "buyers have"} no processed refund, and{" "}
-              {preview?.open_refunds} refund{" "}
-              {preview?.open_refunds === 1 ? "request is" : "requests are"} still open. Records cannot
-              be cleared until those refunds are processed — remove the event and keep the records
-              for now.
+              Money is still owed: {preview.paid_unrefunded} paid{" "}
+              {preview.paid_unrefunded === 1 ? "buyer has" : "buyers have"} no processed refund, and{" "}
+              {preview.open_refunds} refund{" "}
+              {preview.open_refunds === 1 ? "request is" : "requests are"} still open. Deleting will not
+              process or cancel these refund obligations. Refund records will be kept.
             </p>
           </div>
         )}

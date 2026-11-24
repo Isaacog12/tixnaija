@@ -5,11 +5,9 @@
  * They are mirrored here so the dialog cannot offer an action the server will
  * reject, and so the decision can be tested without a database.
  *
- * Two rules matter:
- *  - Money owed blocks a purge. If a buyer paid and has no processed refund,
- *    or a refund request is still open, the records have to survive.
- *  - No sales figure means no purge. A failed preview must never be read as
- *    "no sales" — that is exactly the case where money could be wiped unseen.
+ * A preview is required before purging so the action is audited with accurate
+ * sales totals. Money owed is reported to the admin but does not block an
+ * explicit purge; refund records and audit history are retained.
  */
 
 export type EventDeletionPreview = {
@@ -25,7 +23,7 @@ export type EventDeletionPreview = {
   money_owed: boolean;
 };
 
-export type PurgeBlockReason = "money_owed" | "preview_unavailable";
+export type PurgeBlockReason = "preview_unavailable";
 
 /**
  * Why "clear everything" must stay disabled, or null when it is allowed.
@@ -35,7 +33,6 @@ export function purgeBlockReason(
   preview: EventDeletionPreview | null,
 ): PurgeBlockReason | null {
   if (!preview) return "preview_unavailable";
-  if (preview.money_owed) return "money_owed";
   return null;
 }
 
