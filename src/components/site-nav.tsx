@@ -84,14 +84,14 @@ export function SiteNav() {
   }, []);
 
   // ── Dark / light mode toggle ────────────────────────────────────────────────
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof document === "undefined") return true;
-    return document.documentElement.classList.contains("dark");
-  });
-
+  //
+  // The icon is driven by the `dark` class through CSS, not by React state. The
+  // class is set by the inline script in __root before hydration, and that script
+  // reads localStorage/prefers-color-scheme — which the server cannot. Rendering
+  // from that value produced a sun on the server and a moon in the browser, and
+  // React threw the whole tree away (#418).
   function toggleTheme() {
-    const next = !isDark;
-    setIsDark(next);
+    const next = !document.documentElement.classList.contains("dark");
     document.documentElement.classList.toggle("dark", next);
     try {
       localStorage.setItem("tixnaija-theme", next ? "dark" : "light");
@@ -187,11 +187,8 @@ export function SiteNav() {
             aria-label="Toggle theme"
             className="h-9 w-9 rounded-full text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground press-sm sm:h-10 sm:w-10"
           >
-            {isDark ? (
-              <Sun className="h-[17px] w-[17px]" aria-hidden />
-            ) : (
-              <Moon className="h-[17px] w-[17px]" aria-hidden />
-            )}
+            <Sun className="h-[17px] w-[17px] dark:hidden" aria-hidden />
+            <Moon className="hidden h-[17px] w-[17px] dark:block" aria-hidden />
           </Button>
 
           {/* Hairline divider: utility controls vs. account */}
