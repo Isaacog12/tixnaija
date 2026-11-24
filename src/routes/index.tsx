@@ -104,13 +104,16 @@ const VALUE_PROPS = [
 
 const CATEGORIES = ["Concerts", "Comedy", "Conferences", "Nightlife", "Festivals"];
 
+/** Event time is always Lagos time, so server and browser render the same text. */
+const EVENT_ZONE = "Africa/Lagos";
+
 function formatEventDate(iso: string) {
   const date = new Date(iso);
   return {
-    weekday: date.toLocaleString("en-NG", { weekday: "short" }),
-    day: date.toLocaleString("en-NG", { day: "numeric" }),
-    month: date.toLocaleString("en-NG", { month: "short" }),
-    time: date.toLocaleString("en-NG", { hour: "numeric", minute: "2-digit" }),
+    weekday: date.toLocaleString("en-NG", { weekday: "short", timeZone: EVENT_ZONE }),
+    day: date.toLocaleString("en-NG", { day: "numeric", timeZone: EVENT_ZONE }),
+    month: date.toLocaleString("en-NG", { month: "short", timeZone: EVENT_ZONE }),
+    time: date.toLocaleString("en-NG", { hour: "numeric", minute: "2-digit", timeZone: EVENT_ZONE }),
   };
 }
 

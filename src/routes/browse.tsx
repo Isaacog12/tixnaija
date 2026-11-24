@@ -219,13 +219,27 @@ const PRICE_LABELS: Record<PriceFilter, string> = {
   under_20k: "Under ₦20,000",
 };
 
+/**
+ * Event time is always Lagos time, on the server and in the browser.
+ *
+ * Without a fixed zone this formatted in the runtime's zone: the server (UTC)
+ * and a visitor in WAT produced different text for the same event, which is a
+ * hydration mismatch (React #418) for anything near midnight — and a delay for
+ * anyone browsing from abroad.
+ */
+const EVENT_ZONE = "Africa/Lagos";
+
 function formatEventDate(value: string) {
   const date = new Date(value);
   return {
-    weekday: date.toLocaleString("en-NG", { weekday: "short" }),
-    day: date.toLocaleString("en-NG", { day: "numeric" }),
-    month: date.toLocaleString("en-NG", { month: "short" }),
-    time: date.toLocaleString("en-NG", { hour: "numeric", minute: "2-digit" }),
+    weekday: date.toLocaleString("en-NG", { weekday: "short", timeZone: EVENT_ZONE }),
+    day: date.toLocaleString("en-NG", { day: "numeric", timeZone: EVENT_ZONE }),
+    month: date.toLocaleString("en-NG", { month: "short", timeZone: EVENT_ZONE }),
+    time: date.toLocaleString("en-NG", {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: EVENT_ZONE,
+    }),
   };
 }
 

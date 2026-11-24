@@ -172,7 +172,7 @@ async function fetchEventBySlug(slug: string) {
     .select(
       `
       id, title, slug, description, category, tags, cover_image_url, venue_name, city, state, 
-      start_datetime, end_datetime, status, postponed_at, organizer_note, theme_color,
+      start_datetime, end_datetime, status, postponed_at, organizer_note, theme_color, organizer_id,
       checkout_questions(id, question_text, type, options, required, position),
       ticket_types(id, name, description, price_kobo, quantity_available, quantity_sold, max_per_order, sales_start_at, sales_end_at)
     `,
@@ -185,11 +185,16 @@ async function fetchEventBySlug(slug: string) {
   const ev = _ev as any;
   const types = ev.ticket_types || [];
   const questions = ev.checkout_questions || [];
-  const { data: organizer } = await (supabase
-    .from("public_organizer_profiles")
-    .select("full_name, organizer_slug, avatar_url")
-    .eq("id", ev.organizer_id)
-    .maybeSingle());
+  // organizer_id has to be part of the select above: without it the query went
+  // out as `id=eq.undefined`, PostgREST rejected it with a 400, and the page ran
+  // without the organizer block.
+  const { data: organizer } = ev.organizer_id
+    ? await supabase
+        .from("public_organizer_profiles")
+        .select("full_name, organizer_slug, avatar_url")
+        .eq("id", ev.organizer_id)
+        .maybeSingle()
+    : { data: null };
   ev.profiles = organizer;
   delete ev.ticket_types; // keep structure identical for rest of code
   delete ev.checkout_questions;
