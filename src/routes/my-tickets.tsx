@@ -31,6 +31,8 @@ async function readFunctionError(context?: Response) {
   if (!context || typeof context.clone !== "function") return "";
   try {
     const payload = await context.clone().json();
+    // The server's extra detail is for whoever is debugging, not for the guest.
+    if (payload?.detail) console.error("[resend-ticket-links]", payload.detail);
     return typeof payload?.error === "string" ? payload.error : "";
   } catch {
     return "";

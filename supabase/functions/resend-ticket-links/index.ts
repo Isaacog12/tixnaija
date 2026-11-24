@@ -168,7 +168,7 @@ serve(async (req) => {
       withinPurchaseDay(
         supabase
           .from("orders")
-          .select("id")
+          .select("id, access_code")
           .in("status", statuses)
           .ilike("buyer_email", pattern),
         purchaseDayStart,
@@ -178,7 +178,7 @@ serve(async (req) => {
       withinPurchaseDay(
         supabase
           .from("orders")
-          .select("id")
+          .select("id, access_code")
           .in("status", statuses)
           .ilike("recipient_email", pattern),
         purchaseDayStart,
@@ -204,7 +204,7 @@ serve(async (req) => {
      * steps now, and a failure here cannot take the buyer/recipient lookups down
      * with it.
      */
-    let attendeeOrderIds: string[] = [];
+    let attendeeOrders: any[] = [];
     let attendeeLookupFailed = false;
 
     const attendeeTickets = await supabase
@@ -239,7 +239,7 @@ serve(async (req) => {
             const { data: matched, error: matchedError } = await withinPurchaseDay(
               supabase
                 .from("orders")
-                .select("id")
+                .select("id, access_code")
                 .in("status", statuses)
                 .in("id", candidateIds),
               purchaseDayStart,
@@ -249,20 +249,30 @@ serve(async (req) => {
               console.error("Attendee order lookup failed:", matchedError);
               attendeeLookupFailed = true;
             } else {
-              attendeeOrderIds = (matched ?? []).map((order: any) => order.id);
+              attendeeOrders = matched ?? [];
             }
           }
         }
       }
     }
 
-    const orderIds = Array.from(
-      new Set([
-        ...(asBuyer.data ?? []).map((order: any) => order.id),
-        ...(asRecipient.data ?? []).map((order: any) => order.id),
-        ...attendeeOrderIds,
-      ]),
-    )
+    const matchedOrders = [
+      ...(asBuyer.data ?? []),
+      ...(asRecipient.data ?? []),
+      ...attendeeOrders,
+    ] as any[];
+
+    // Each order's own access code is passed along to send-ticket-confirmation.
+    // The call already proves ownership of the address, and a guest access code
+    // keeps it authorized even if the gateway ever refuses the service-role
+    // header — which silently turned every recovery into "couldn't email them"
+    // while the receipt had in fact been sent.
+    const accessCodeById = new Map<string, string>();
+    for (const order of matchedOrders) {
+      if (order?.id) accessCodeById.set(order.id, order.access_code ?? "");
+    }
+
+    const orderIds = Array.from(new Set(matchedOrders.map((order) => order.id)))
       .filter((id) => (requestedOrderId ? id === requestedOrderId : true))
       .slice(0, 10);
 
@@ -289,8 +299,13 @@ serve(async (req) => {
           // requesting address. First delivery from checkout supplies orderId
           // and keeps sending each attendee their own ticket.
           body: requestedOrderId
-            ? { orderId: id, requestId }
-            : { orderId: id, onlyEmail: normalizedEmail, requestId },
+            ? { orderId: id, accessCode: accessCodeById.get(id), requestId }
+            : {
+                orderId: id,
+                accessCode: accessCodeById.get(id),
+                onlyEmail: normalizedEmail,
+                requestId,
+              },
         }),
       ),
     );
@@ -308,6 +323,30 @@ serve(async (req) => {
         `Ticket email failed for ${failures.length} of ${orderIds.length} orders`,
         failures,
       );
+
+      // invoke() hides the function's own message behind "Edge Function returned
+      // a non-2xx status code", which is why this looked like a mail outage with
+      // no cause. Log the status and body of each failure instead.
+      for (const failure of failures) {
+        if (failure.status === "rejected") {
+          console.error("send-ticket-confirmation request failed:", failure.reason);
+          continue;
+        }
+        const invokeError = (failure as PromiseFulfilledResult<any>).value?.error;
+        const context = invokeError?.context as Response | undefined;
+        let body = "";
+        try {
+          body = context ? await context.clone().text() : "";
+        } catch {
+          body = "unreadable response body";
+        }
+        console.error(
+          "send-ticket-confirmation returned an error:",
+          context?.status,
+          invokeError?.message,
+          body,
+        );
+      }
     }
 
     const sent = results.reduce((total, result) => {
@@ -326,6 +365,13 @@ serve(async (req) => {
         {
           error:
             "We found your tickets but couldn't email them. Please try again in a few minutes, or contact support.",
+          // Kept out of the page copy but logged by the client, so the next
+          // failure names its cause without another deploy.
+          detail: failures.map((failure) => {
+            if (failure.status === "rejected") return String(failure.reason ?? "request failed");
+            const value = (failure as PromiseFulfilledResult<any>).value;
+            return String(value?.error?.message ?? "unknown error");
+          }),
         },
         502,
       );
