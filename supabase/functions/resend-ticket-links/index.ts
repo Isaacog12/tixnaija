@@ -155,7 +155,7 @@ serve(async (req) => {
     const pattern = escapeLike(normalizedEmail);
     const statuses = ["paid", "comp"];
 
-    const [asBuyer, asRecipient, asAttendee] = await Promise.all([
+    const [asBuyer, asRecipient] = await Promise.all([
       withinPurchaseDay(
         supabase
           .from("orders")
@@ -176,36 +176,100 @@ serve(async (req) => {
       )
         .order("created_at", { ascending: false })
         .limit(10),
-      withinPurchaseDay(
-        supabase
-          .from("orders")
-          .select("id")
-          .in("status", statuses)
-          .ilike("order_items.tickets.attendee_email", pattern),
-        purchaseDayStart,
-      )
-        .order("created_at", { ascending: false })
-        .limit(10),
     ]);
 
-    if (asBuyer.error || asRecipient.error || asAttendee.error) {
-      console.error("Order lookup failed:", asBuyer.error || asRecipient.error || asAttendee.error);
+    if (asBuyer.error || asRecipient.error) {
+      console.error("Order lookup failed:", asBuyer.error || asRecipient.error);
       return jsonResponse(req, { error: "Could not look up your orders right now." }, 500);
     }
 
+    /*
+     * Orders whose tickets were assigned to this address.
+     *
+     * A ticket belongs to an order through order_items (tickets.order_item_id),
+     * never directly, and PostgREST cannot filter orders on an embedded path
+     * that is not in the select list. Filtering `order_items.tickets.attendee_email`
+     * therefore failed the whole lookup, so *every* request — including a plain
+     * buyer's — returned a 500 and the page could only show "Edge Function
+     * returned a non-2xx status code". Attendee matches are resolved in explicit
+     * steps now, and a failure here cannot take the buyer/recipient lookups down
+     * with it.
+     */
+    let attendeeOrderIds: string[] = [];
+    let attendeeLookupFailed = false;
+
+    const attendeeTickets = await supabase
+      .from("tickets")
+      .select("order_item_id")
+      .ilike("attendee_email", pattern)
+      .limit(50);
+
+    if (attendeeTickets.error) {
+      console.error("Attendee ticket lookup failed:", attendeeTickets.error);
+      attendeeLookupFailed = true;
+    } else {
+      const orderItemIds = Array.from(
+        new Set((attendeeTickets.data ?? []).map((ticket: any) => ticket.order_item_id)),
+      ).filter(Boolean);
+
+      if (orderItemIds.length > 0) {
+        const { data: items, error: itemsError } = await supabase
+          .from("order_items")
+          .select("order_id")
+          .in("id", orderItemIds);
+
+        if (itemsError) {
+          console.error("Attendee order item lookup failed:", itemsError);
+          attendeeLookupFailed = true;
+        } else {
+          const candidateIds = Array.from(
+            new Set((items ?? []).map((item: any) => item.order_id)),
+          ).filter(Boolean);
+
+          if (candidateIds.length > 0) {
+            const { data: matched, error: matchedError } = await withinPurchaseDay(
+              supabase
+                .from("orders")
+                .select("id")
+                .in("status", statuses)
+                .in("id", candidateIds),
+              purchaseDayStart,
+            ).limit(10);
+
+            if (matchedError) {
+              console.error("Attendee order lookup failed:", matchedError);
+              attendeeLookupFailed = true;
+            } else {
+              attendeeOrderIds = (matched ?? []).map((order: any) => order.id);
+            }
+          }
+        }
+      }
+    }
+
     const orderIds = Array.from(
-      new Set(
-        [...(asBuyer.data ?? []), ...(asRecipient.data ?? []), ...(asAttendee.data ?? [])].map(
-          (order: any) => order.id,
-        ),
-      ),
+      new Set([
+        ...(asBuyer.data ?? []).map((order: any) => order.id),
+        ...(asRecipient.data ?? []).map((order: any) => order.id),
+        ...attendeeOrderIds,
+      ]),
     )
       .filter((id) => (requestedOrderId ? id === requestedOrderId : true))
       .slice(0, 10);
 
-    // Never reveal whether the email matched any order.
+    // Name the two things a guest gets wrong — the address and the day — instead
+    // of reporting a send that never happened. A generic "sent" with an empty
+    // inbox was indistinguishable from a broken function.
     if (orderIds.length === 0) {
-      return jsonResponse(req, { ok: true, sent: 0 });
+      return jsonResponse(
+        req,
+        {
+          error: attendeeLookupFailed
+            ? "We couldn't check your tickets right now. Please try again in a minute."
+            : "No tickets found for that email on this date. Check the address you paid with and the day you bought them.",
+        },
+        attendeeLookupFailed ? 500 : 404,
+      );
     }
 
     const requestId = crypto.randomUUID();
@@ -244,6 +308,19 @@ serve(async (req) => {
       const count = Number(value?.data?.sent);
       return total + (Number.isFinite(count) && count > 0 ? count : 0);
     }, 0);
+
+    // The order exists, so reporting "sent" here would be a lie: say the mail
+    // failed and let the guest retry or reach support.
+    if (sent === 0) {
+      return jsonResponse(
+        req,
+        {
+          error:
+            "We found your tickets but couldn't email them. Please try again in a few minutes, or contact support.",
+        },
+        502,
+      );
+    }
 
     return jsonResponse(req, { ok: true, sent });
   } catch (error: any) {

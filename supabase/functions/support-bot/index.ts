@@ -1414,6 +1414,11 @@ serve(async (req: Request) => {
       // Recovery belongs to the customer's explicit, purchase-date-scoped
       // request. A chat message must not mail every historical order for an
       // address or turn the assistant into an unsolicited resend trigger.
+      //
+      // The assistant never calls resend-ticket-links itself: it holds no order
+      // id and no purchase date, so a lookup from here could not be scoped to a
+      // day and would release every order the address ever bought. The reply is
+      // the handoff to /my-tickets, which asks for the date.
       return reply({
         reply:
           "Open /my-tickets and enter the email you bought with plus the purchase date to resend only that day's ticket links. Signed-in buyers can also open /tickets. Still nothing? Say \"talk to a person\" and I'll pass it on.",

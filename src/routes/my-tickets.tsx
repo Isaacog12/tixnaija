@@ -26,6 +26,17 @@ export const Route = createFileRoute("/my-tickets")({
 /** Nigeria runs on WAT (UTC+1), which is how the date is interpreted server-side. */
 const TODAY_IN_WAT = () => new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 10);
 
+/** Reads the `error` string a function returned with a non-2xx status, if any. */
+async function readFunctionError(context?: Response) {
+  if (!context || typeof context.clone !== "function") return "";
+  try {
+    const payload = await context.clone().json();
+    return typeof payload?.error === "string" ? payload.error : "";
+  } catch {
+    return "";
+  }
+}
+
 /** "2026-12-12" → "12 Dec 2026" without shifting a day across timezones. */
 function formatPurchaseDate(value: string) {
   const [year, month, day] = value.split("-").map(Number);
@@ -49,13 +60,18 @@ function GuestTicketsPage() {
         body: { email: values.email, purchaseDate: values.purchaseDate },
       });
       if (error) {
-        // Map the transport failures we can act on; anything else is surfaced as-is.
-        const status = (error as { context?: { status?: number } })?.context?.status;
-        if (status === 404) {
-          throw new Error("Ticket email service is unavailable right now. Please contact support.");
-        }
+        // supabase-js replaces the function's JSON body with "Edge Function
+        // returned a non-2xx status code", so read the reason from the response
+        // itself before falling back to a status-based message.
+        const context = (error as { context?: Response })?.context;
+        const body = await readFunctionError(context);
+        if (body) throw new Error(body);
+        const status = context?.status;
         if (status === 429) {
           throw new Error("Too many requests. Please wait a few minutes and try again.");
+        }
+        if (status === 404) {
+          throw new Error("Ticket email service is unavailable right now. Please contact support.");
         }
         throw error;
       }
@@ -193,16 +209,16 @@ function GuestTicketsPage() {
                 </div>
                 <h2 className="mt-3 font-display text-xl text-foreground">Check your inbox</h2>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  If we found tickets bought with{" "}
-                  <strong className="font-semibold text-foreground">{submitted?.email}</strong> on{" "}
+                  We found your tickets from{" "}
                   <strong className="font-semibold text-foreground">
                     {submitted ? formatPurchaseDate(submitted.purchaseDate) : ""}
-                  </strong>
-                  , the links are on their way. Emails usually arrive within a minute.
+                  </strong>{" "}
+                  and emailed them to{" "}
+                  <strong className="font-semibold text-foreground">{submitted?.email}</strong>. Emails
+                  usually arrive within a minute.
                 </p>
                 <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">
-                  Bought on a different day? Try that date instead. Nothing yet? Check spam/junk,
-                  then try again in a few minutes. Still stuck?{" "}
+                  Nothing yet? Check spam/junk, then try again in a few minutes. Still stuck?{" "}
                   <Link to="/contact" className="font-medium text-foreground underline underline-offset-4">
                     Contact support
                   </Link>
