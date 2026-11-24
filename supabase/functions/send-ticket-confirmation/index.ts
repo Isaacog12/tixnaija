@@ -33,7 +33,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { orderId, ticketId, accessCode, onlyEmail } = await req.json();
+    const { orderId, ticketId, accessCode, onlyEmail, ifUndelivered } = await req.json();
     if (!orderId) throw new Error("Missing orderId");
 
     // @ts-ignore
@@ -131,7 +131,21 @@ serve(async (req: Request) => {
     // A recipient that fails is reported without discarding the emails that
     // already went out — that was the bug that reported "couldn't email them"
     // for a receipt the buyer was holding.
-    const { sent, failures } = await deliverOrderTickets(order, { ticketId, onlyEmail });
+    const { sent, skipped, failures } = await deliverOrderTickets(order, {
+      ticketId,
+      onlyEmail,
+      ifUndelivered: Boolean(ifUndelivered),
+      supabase,
+    });
+
+    // A checkout hand-off that lost the race to verify-payment has nothing left
+    // to mail. That is success, not a failure — it is how the duplicate stops.
+    if (sent === 0 && skipped > 0) {
+      return new Response(
+        JSON.stringify({ success: true, sent: 0, skipped, alreadyDelivered: true }),
+        { headers: getCorsHeaders(req), status: 200 }
+      );
+    }
 
     if (sent === 0) {
       return new Response(

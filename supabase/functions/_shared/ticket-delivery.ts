@@ -28,6 +28,8 @@ import {
 export type DeliveryResult = {
   /** Emails ZeptoMail accepted. */
   sent: number;
+  /** Recipients already mailed for this order, so nothing was sent again. */
+  skipped: number;
   /** One entry per recipient whose send threw, with the reason. */
   failures: string[];
 };
@@ -68,11 +70,57 @@ export async function fetchOrderForDelivery(supabase: any, orderId: string) {
  * `onlyEmail` marks a self-serve recovery: it reaches that one address and
  * nobody else. `ticketId` resends a single ticket after its details changed.
  */
+export type DeliveryOptions = {
+  ticketId?: string | null;
+  onlyEmail?: string | null;
+  /**
+   * Set for the checkout hand-off only (browser + verify-payment). Those two can
+   * both reach an order for the same payment, and without a guard each one mails
+   * the buyer. The ledger makes the first caller the sender and the second a
+   * no-op. Explicit resends never set this, so they still send.
+   */
+  ifUndelivered?: boolean;
+  /** Needed for the ledger; checkout delivery is skipped without it. */
+  supabase?: any;
+};
+
 export async function deliverOrderTickets(
   order: any,
-  { ticketId, onlyEmail }: { ticketId?: string | null; onlyEmail?: string | null } = {},
+  options: DeliveryOptions = {},
 ): Promise<DeliveryResult> {
-  const result: DeliveryResult = { sent: 0, failures: [] };
+  const { ticketId, onlyEmail } = options;
+  const result: DeliveryResult = { sent: 0, skipped: 0, failures: [] };
+
+  // Checkout delivery is the order-wide send (no recovery address, no single
+  // ticket). Only that shape is guarded: a recovery or a reassigned ticket is an
+  // explicit request from a person and must always send.
+  const isCheckoutDelivery = !ticketId && !normalizeEmail(onlyEmail);
+  const ledger = options.supabase;
+  const gated = Boolean(options.ifUndelivered) && isCheckoutDelivery && Boolean(ledger);
+  const claimKey = (address: string) => `ticket-checkout:${order.id}:${normalizeEmail(address)}`;
+
+  /** True when this recipient still needs the email. */
+  const claimRecipient = async (address: string) => {
+    if (!gated) return true;
+    const { data: status, error } = await ledger.rpc("claim_email_delivery", {
+      p_delivery_key: claimKey(address),
+    });
+    if (error) throw new Error(`delivery ledger: ${error.message}`);
+    return status === "claimed";
+  };
+
+  const completeRecipient = async (address: string, success: boolean, reason?: string) => {
+    if (!gated) return;
+    try {
+      await ledger.rpc("complete_email_delivery", {
+        p_delivery_key: claimKey(address),
+        p_success: success,
+        p_error: reason ?? null,
+      });
+    } catch (error: any) {
+      console.error("Could not complete the delivery ledger entry:", error?.message ?? error);
+    }
+  };
 
   const eventTitle = order.events?.title || "Event";
   const date = new Date(order.events?.start_datetime || "").toLocaleString("en-US", {
@@ -178,17 +226,26 @@ export async function deliverOrderTickets(
   }
 
   if (receiptAddress) {
+    let claimed = false;
     try {
-      await sendEmail({
-        to: { address: receiptAddress, name: receiptName || "there" },
-        subject: receiptIsBuyerCopy
-          ? `Your gift for ${eventTitle} is ready (Ref: ${orderRef})`
-          : subject,
-        htmlBody: buildMasterHtml(receiptName || "there", receiptAddress, receiptIsBuyerCopy),
-      });
-      result.sent += 1;
+      claimed = await claimRecipient(receiptAddress);
+      if (!claimed) {
+        result.skipped += 1;
+      } else {
+        await sendEmail({
+          to: { address: receiptAddress, name: receiptName || "there" },
+          subject: receiptIsBuyerCopy
+            ? `Your gift for ${eventTitle} is ready (Ref: ${orderRef})`
+            : subject,
+          htmlBody: buildMasterHtml(receiptName || "there", receiptAddress, receiptIsBuyerCopy),
+        });
+        result.sent += 1;
+        await completeRecipient(receiptAddress, true);
+      }
     } catch (error: any) {
-      result.failures.push(`receipt to ${receiptAddress}: ${error?.message ?? error}`);
+      const reason = String(error?.message ?? error);
+      result.failures.push(`receipt to ${receiptAddress}: ${reason}`);
+      if (claimed) await completeRecipient(receiptAddress, false, reason);
     }
   }
 
@@ -247,15 +304,25 @@ export async function deliverOrderTickets(
         footer("You are receiving this because a ticket for this event was booked in your name."),
     );
 
+    let claimed = false;
     try {
+      claimed = await claimRecipient(email);
+      if (!claimed) {
+        result.skipped += 1;
+        continue;
+      }
+
       await sendEmail({
         to: { address: email, name: attendeeName },
         subject: `Your ticket for ${eventTitle} (Code: ${shortCode(tickets[0].ticket_code)})`,
         htmlBody,
       });
       result.sent += 1;
+      await completeRecipient(email, true);
     } catch (error: any) {
-      result.failures.push(`ticket to ${email}: ${error?.message ?? error}`);
+      const reason = String(error?.message ?? error);
+      result.failures.push(`ticket to ${email}: ${reason}`);
+      if (claimed) await completeRecipient(email, false, reason);
     }
   }
 

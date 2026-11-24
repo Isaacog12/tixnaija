@@ -84,7 +84,7 @@ export function EventDeleteDialog({
       p_mode: mode,
       p_note:
         mode === "purge"
-          ? "Deleted by platform admin. All records were cleared."
+          ? "Deleted by platform admin. Event sales records were cleared; refund records were kept."
           : "Removed by platform admin. Records were kept.",
     });
     setBusy(null);
@@ -96,7 +96,7 @@ export function EventDeleteDialog({
 
     toast.success(
       mode === "purge"
-        ? "Event and its records were deleted."
+        ? "Event and its sales records were deleted. Refund records were kept."
         : "Event removed. Orders and tickets were kept.",
     );
     qc.invalidateQueries({ queryKey: ["admin-events"] });

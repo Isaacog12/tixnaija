@@ -76,7 +76,7 @@ serve(async (req) => {
   }
 
   try {
-    const { email, orderId, purchaseDate } = await req.json();
+    const { email, orderId, purchaseDate, ifUndelivered } = await req.json();
     const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
     const requestedOrderId = typeof orderId === "string" ? orderId.trim() : "";
 
@@ -302,6 +302,9 @@ serve(async (req) => {
           // requesting address. Checkout delivery supplies orderId and keeps
           // sending each attendee their own ticket.
           onlyEmail: requestedOrderId ? null : normalizedEmail,
+          // Checkout only: verify-payment may already have sent this order.
+          ifUndelivered: Boolean(ifUndelivered),
+          supabase,
         });
 
         if (delivery.failures.length > 0) {
@@ -313,7 +316,13 @@ serve(async (req) => {
     );
 
     const sent = deliveries.reduce((total, delivery) => total + delivery.sent, 0);
+    const skipped = deliveries.reduce((total, delivery) => total + delivery.skipped, 0);
     const failures = deliveries.flatMap((delivery) => delivery.failures);
+
+    // The server already mailed this order at checkout; nothing to send again.
+    if (sent === 0 && skipped > 0) {
+      return jsonResponse(req, { ok: true, sent: 0, skipped, alreadyDelivered: true });
+    }
 
     // Nothing left, so this is a real failure — but it names the reason instead
     // of blaming the address or the date.

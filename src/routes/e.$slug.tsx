@@ -560,8 +560,11 @@ function EventDetailPage() {
         let emailFailed = false;
 
         if (userId) {
+          // ifUndelivered: verify-payment may have mailed this order already.
+          // The function claims the delivery, so whichever call wins sends and
+          // the other returns alreadyDelivered instead of a second email.
           const { error: emailError } = await supabase.functions.invoke("send-ticket-confirmation", {
-            body: { orderId },
+            body: { orderId, ifUndelivered: true },
           });
           if (emailError) {
             console.error("Failed to send ticket confirmation", emailError);
@@ -571,7 +574,7 @@ function EventDetailPage() {
           // Guests have no session, so the confirmation is sent through the
           // resend helper, which authorizes on order id + email.
           const { error: emailError } = await supabase.functions.invoke("resend-ticket-links", {
-            body: { email: values.buyerEmail, orderId },
+            body: { email: values.buyerEmail, orderId, ifUndelivered: true },
           });
           if (emailError) {
             console.error("Failed to send ticket confirmation", emailError);

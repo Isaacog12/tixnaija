@@ -146,7 +146,10 @@ async function processVerifiedPayment(
   // rejecting, so a .catch() alone never fires — every failure has to be
   // inspected or it is lost silently.
   supabase.functions
-    .invoke("send-ticket-confirmation", { body: { orderId } })
+    // ifUndelivered: the browser also asks for this order after checkout. The
+    // delivery ledger lets whichever call arrives first send, and makes the
+    // other a no-op, so the buyer gets one confirmation instead of two.
+    .invoke("send-ticket-confirmation", { body: { orderId, ifUndelivered: true } })
     .then(({ error }: any) => {
       if (error) console.error("Ticket confirmation email failed:", error);
     })
