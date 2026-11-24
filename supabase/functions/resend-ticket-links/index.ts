@@ -102,16 +102,22 @@ serve(async (req) => {
 
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-    const MAX_REQUESTS = 3;
 
     // Per-IP and per-email throttle. The ip_address column is used as the
     // bucket key in both cases, which keeps a single counter table in play.
-    const buckets: [string, string][] = [
-      ["resend_ticket_links_ip", ip],
-      ["resend_ticket_links_email", normalizedEmail],
+    //
+    // The email bucket is the real anti-spam guard: it decides whether an inbox
+    // can be mailed again. The IP bucket only stops one connection sweeping many
+    // addresses, so it has to stay loose. Most Nigerian mobile networks put
+    // thousands of subscribers behind a single CGNAT address, and a cap of 3 per
+    // IP locked out innocent people — including whoever was retrying a broken
+    // lookup three times while debugging it.
+    const buckets: Array<{ endpoint: string; key: string; max: number }> = [
+      { endpoint: "resend_ticket_links_ip", key: ip, max: 20 },
+      { endpoint: "resend_ticket_links_email", key: normalizedEmail, max: 5 },
     ];
 
-    for (const [endpoint, bucketKey] of buckets) {
+    for (const { endpoint, key: bucketKey, max } of buckets) {
       const { count, error: countError } = await supabase
         .from("rate_limit_log")
         .select("*", { count: "exact", head: true })
@@ -130,10 +136,13 @@ serve(async (req) => {
         );
       }
 
-      if (typeof count === "number" && count >= MAX_REQUESTS) {
+      if (typeof count === "number" && count >= max) {
         return jsonResponse(
           req,
-          { error: "Too many requests. Please wait a few minutes and try again." },
+          {
+            error:
+              "This address has asked for its ticket email several times in the last few minutes. Please wait 10 minutes, then try again.",
+          },
           429,
         );
       }
