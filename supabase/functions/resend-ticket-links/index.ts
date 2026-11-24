@@ -21,6 +21,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { isDeliverableEmail } from "../_shared/email-delivery.ts";
+import { deliverOrderTickets, fetchOrderForDelivery } from "../_shared/ticket-delivery.ts";
 
 const allowedOrigins = [
   "https://tixnaija.vercel.app",
@@ -168,7 +169,7 @@ serve(async (req) => {
       withinPurchaseDay(
         supabase
           .from("orders")
-          .select("id, access_code")
+          .select("id")
           .in("status", statuses)
           .ilike("buyer_email", pattern),
         purchaseDayStart,
@@ -178,7 +179,7 @@ serve(async (req) => {
       withinPurchaseDay(
         supabase
           .from("orders")
-          .select("id, access_code")
+          .select("id")
           .in("status", statuses)
           .ilike("recipient_email", pattern),
         purchaseDayStart,
@@ -239,7 +240,7 @@ serve(async (req) => {
             const { data: matched, error: matchedError } = await withinPurchaseDay(
               supabase
                 .from("orders")
-                .select("id, access_code")
+                .select("id")
                 .in("status", statuses)
                 .in("id", candidateIds),
               purchaseDayStart,
@@ -262,16 +263,6 @@ serve(async (req) => {
       ...attendeeOrders,
     ] as any[];
 
-    // Each order's own access code is passed along to send-ticket-confirmation.
-    // The call already proves ownership of the address, and a guest access code
-    // keeps it authorized even if the gateway ever refuses the service-role
-    // header — which silently turned every recovery into "couldn't email them"
-    // while the receipt had in fact been sent.
-    const accessCodeById = new Map<string, string>();
-    for (const order of matchedOrders) {
-      if (order?.id) accessCodeById.set(order.id, order.access_code ?? "");
-    }
-
     const orderIds = Array.from(new Set(matchedOrders.map((order) => order.id)))
       .filter((id) => (requestedOrderId ? id === requestedOrderId : true))
       .slice(0, 10);
@@ -291,87 +282,49 @@ serve(async (req) => {
       );
     }
 
-    const requestId = crypto.randomUUID();
-    const results = await Promise.allSettled(
-      orderIds.map((id) =>
-        supabase.functions.invoke("send-ticket-confirmation", {
+    // Delivery happens here, in this isolate.
+    //
+    // It used to invoke send-ticket-confirmation over HTTP, and that hop is what
+    // made this page lie: invoke() only reports "Edge Function returned a non-2xx
+    // status code", so a receipt that had already been delivered was counted as
+    // zero and the guest was told nothing had been sent. Sending in-process means
+    // the count is the mail ZeptoMail actually accepted.
+    const deliveries = await Promise.all(
+      orderIds.map(async (id) => {
+        const { order, error } = await fetchOrderForDelivery(supabase, id);
+        if (error || !order) {
+          console.error(`Could not load order ${id} for recovery:`, error);
+          return { sent: 0, failures: [`order ${id}: ${error?.message ?? "not found"}`] };
+        }
+
+        const delivery = await deliverOrderTickets(order, {
           // A recovery request (no orderId from the caller) mails only the
-          // requesting address. First delivery from checkout supplies orderId
-          // and keeps sending each attendee their own ticket.
-          body: requestedOrderId
-            ? { orderId: id, accessCode: accessCodeById.get(id), requestId }
-            : {
-                orderId: id,
-                accessCode: accessCodeById.get(id),
-                onlyEmail: normalizedEmail,
-                requestId,
-              },
-        }),
-      ),
+          // requesting address. Checkout delivery supplies orderId and keeps
+          // sending each attendee their own ticket.
+          onlyEmail: requestedOrderId ? null : normalizedEmail,
+        });
+
+        if (delivery.failures.length > 0) {
+          console.error(`Recovery delivery for ${id} failed to send:`, delivery.failures);
+        }
+
+        return delivery;
+      }),
     );
 
-    // invoke() resolves with { error } on non-2xx instead of rejecting, so
-    // failed sends have to be detected from the resolved value too. Counting
-    // rejections alone reported 400/403 responses as successful sends.
-    const failures = results.filter(
-      (result) =>
-        result.status === "rejected" ||
-        Boolean((result as PromiseFulfilledResult<any>).value?.error),
-    );
-    if (failures.length > 0) {
-      console.error(
-        `Ticket email failed for ${failures.length} of ${orderIds.length} orders`,
-        failures,
-      );
+    const sent = deliveries.reduce((total, delivery) => total + delivery.sent, 0);
+    const failures = deliveries.flatMap((delivery) => delivery.failures);
 
-      // invoke() hides the function's own message behind "Edge Function returned
-      // a non-2xx status code", which is why this looked like a mail outage with
-      // no cause. Log the status and body of each failure instead.
-      for (const failure of failures) {
-        if (failure.status === "rejected") {
-          console.error("send-ticket-confirmation request failed:", failure.reason);
-          continue;
-        }
-        const invokeError = (failure as PromiseFulfilledResult<any>).value?.error;
-        const context = invokeError?.context as Response | undefined;
-        let body = "";
-        try {
-          body = context ? await context.clone().text() : "";
-        } catch {
-          body = "unreadable response body";
-        }
-        console.error(
-          "send-ticket-confirmation returned an error:",
-          context?.status,
-          invokeError?.message,
-          body,
-        );
-      }
-    }
-
-    const sent = results.reduce((total, result) => {
-      if (result.status === "rejected") return total;
-      const value = result.value;
-      if (value?.error) return total;
-      const count = Number(value?.data?.sent);
-      return total + (Number.isFinite(count) && count > 0 ? count : 0);
-    }, 0);
-
-    // The order exists, so reporting "sent" here would be a lie: say the mail
-    // failed and let the guest retry or reach support.
+    // Nothing left, so this is a real failure — but it names the reason instead
+    // of blaming the address or the date.
     if (sent === 0) {
       return jsonResponse(
         req,
         {
           error:
             "We found your tickets but couldn't email them. Please try again in a few minutes, or contact support.",
-          // Kept out of the page copy but logged by the client, so the next
-          // failure names its cause without another deploy.
-          detail: failures.map((failure) => {
-            if (failure.status === "rejected") return String(failure.reason ?? "request failed");
-            const value = (failure as PromiseFulfilledResult<any>).value;
-            return String(value?.error?.message ?? "unknown error");
-          }),
+          // Logged by the client, never shown to the guest.
+          detail: failures.slice(0, 3),
         },
         502,
       );

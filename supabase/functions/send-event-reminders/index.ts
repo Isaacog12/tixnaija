@@ -2,6 +2,16 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { sendEmail } from "../_shared/zeptomail.ts";
 import { escapeHtml } from "../_shared/html.ts";
+import {
+  actions,
+  details,
+  footer,
+  hero,
+  masthead,
+  shell,
+  BODY_TEXT,
+  SITE,
+} from "../_shared/email-layout.ts";
 import { filterOptedInEmails } from "../_shared/notification-preferences.ts";
 import { authorizeCronOrRoles } from "../_shared/cron-auth.ts";
 import { buildEmailDeliveryKey, collectTicketRecipients } from "../_shared/email-delivery.ts";
@@ -34,8 +44,8 @@ serve(async (req) => {
         max: new Date(now.getTime() + 25 * 60 * 60 * 1000),
         subjectPrefix: "Reminder: ",
         subjectSuffix: " is happening tomorrow!",
-        headline: "Your event is tomorrow! 🎟️",
-        timeNotice: "is happening tomorrow",
+        overline: "Tomorrow",
+        lead: "your ticket is ready — this event is tomorrow.",
       },
       {
         type: "1h" as const,
@@ -43,8 +53,8 @@ serve(async (req) => {
         max: new Date(now.getTime() + 2 * 60 * 60 * 1000),
         subjectPrefix: "Starting soon: ",
         subjectSuffix: " starts in 1 hour!",
-        headline: "Starting in 1 hour! 🚀",
-        timeNotice: "starts in approximately 1 hour",
+        overline: "Starting in about an hour",
+        lead: "this event starts in approximately 1 hour.",
       },
     ];
 
@@ -110,12 +120,13 @@ serve(async (req) => {
           (loggedReminders || []).map((r: any) => r.recipient_email.trim().toLowerCase())
         );
 
-        const dateStr = new Date(event.start_datetime).toLocaleDateString("en-US", {
+        const dateStr = new Date(event.start_datetime).toLocaleString("en-US", {
           weekday: "long",
           month: "short",
           day: "numeric",
           hour: "numeric",
           minute: "2-digit",
+          timeZone: "Africa/Lagos",
         });
         const subject = `${win.subjectPrefix}${event.title}${win.subjectSuffix}`;
         const location = [event.venue_name, event.address, event.city, event.state].filter(Boolean).join(", ") || "Online";
@@ -149,54 +160,26 @@ serve(async (req) => {
             continue;
           }
 
-          const htmlBody = `
-            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #09090b; color: #f4f4f5; padding: 40px 20px; text-align: center;">
-              <div style="max-width: 560px; margin: 0 auto; background-color: #18181b; border-radius: 16px; padding: 36px 28px; text-align: left; border: 1px solid #27272a;">
-                
-                <div style="margin-bottom: 28px;">
-                  <span style="font-size: 24px; font-weight: 800; color: #ea580c; letter-spacing: -0.5px;">TixNaija</span>
-                </div>
-                
-                <h2 style="font-size: 22px; font-weight: 700; margin: 0 0 14px; color: #ffffff; letter-spacing: -0.3px;">
-                  ${escapeHtml(win.headline)}
-                </h2>
-                <p style="margin: 0 0 20px; color: #a1a1aa; font-size: 15px; line-height: 1.6;">Hi ${escapeHtml(name)},</p>
-                
-                <p style="margin: 0 0 24px; color: #d4d4d8; font-size: 15px; line-height: 1.6;">
-                  This is a quick reminder that <strong>${escapeHtml(event.title)}</strong> ${escapeHtml(win.timeNotice)}.
-                </p>
-                
-                <div style="background-color: #27272a; border-left: 4px solid #ea580c; padding: 18px; margin-bottom: 28px; border-radius: 0 12px 12px 0;">
-                  <p style="margin: 0 0 8px; color: #d4d4d8; font-size: 14px;"><strong style="color: #ffffff;">Time:</strong> ${escapeHtml(dateStr)}</p>
-                  <p style="margin: 0; color: #d4d4d8; font-size: 14px;"><strong style="color: #ffffff;">Location:</strong> ${escapeHtml(location)}</p>
-                </div>
-                
-                <div style="margin-bottom: 32px; text-align: center;">
-                  <a href="${escapeHtml(eventUrl)}" style="display: inline-block; background-color: #ea580c; color: #ffffff; font-weight: 600; font-size: 15px; padding: 14px 28px; border-radius: 9999px; text-decoration: none;">
-                    View Event & Tickets
-                  </a>
-                </div>
-                
-                <p style="margin: 0 0 24px; color: #a1a1aa; font-size: 14px; line-height: 1.6;">
-                  Make sure your QR tickets are downloaded or accessible on your phone before arrival.
-                </p>
-                
-                <hr style="border: 0; border-top: 1px solid #27272a; margin: 32px 0 20px;" />
-                
-                <div style="text-align: center;">
-                  <p style="margin: 0 0 8px; font-size: 12px; color: #71717a;">
-                    You received this email because you have a ticket to this event.
-                  </p>
-                  <p style="margin: 0 0 12px; font-size: 12px; color: #71717a;">
-                    To update your preferences or opt out of reminders, manage your <a href="https://tixnaija.name.ng/account?tab=notifications" style="color: #ea580c; text-decoration: underline;">Notification Settings</a> · <a href="https://tixnaija.name.ng/privacy" style="color: #ea580c; text-decoration: underline;">Privacy Policy</a>
-                  </p>
-                  <p style="margin: 0; font-size: 11px; color: #71717a;">
-                    TixNaija · Independent Nigerian Ticketing Platform
-                  </p>
-                </div>
-              </div>
-            </div>
-          `;
+          const htmlBody = shell(
+            masthead("Reminder") +
+              hero(
+                win.overline,
+                escapeHtml(event.title),
+                `Hello ${escapeHtml(name)}, ${win.lead}`,
+              ) +
+              details([
+                ["When", escapeHtml(dateStr)],
+                ["Where", escapeHtml(location)],
+              ]) +
+              `
+        <tr>
+          <td style="padding:24px 32px 0;">
+            <p style="margin:0;font-size:14px;line-height:1.65;color:${BODY_TEXT};">Have your QR ticket open on your phone before you reach the gate. One entry per ticket.</p>
+          </td>
+        </tr>` +
+              actions(eventUrl, "Event details", `${SITE}/my-tickets`, "Email my tickets") +
+              footer("You are receiving this because you have a ticket for this event."),
+          );
 
           try {
             await sendEmail({ to: { address: email, name }, subject, htmlBody });
