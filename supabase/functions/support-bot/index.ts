@@ -7,16 +7,10 @@ import {
   detectIntent,
   extractCity,
   extractSearchTerm,
-  isIntent,
-  linksForKnowledge,
   listingWindow,
   looksSubstantive,
-  normalise,
   orderStatusGuidance,
-  rankKnowledge,
   SENSITIVE_REFUSAL,
-  type ActionLink,
-  type BotKnowledgeEntry,
   type Intent,
 } from "../_shared/support-brain.ts";
 
@@ -62,6 +56,30 @@ const REFUND_POLICY =
   "- Requests are reviewed within 3 business days, and approved refunds land back on the card in 3 to 7 business days via Paystack.\n" +
   `- To request a refund, include your order reference, purchase email and reason, or email ${PUBLIC_SUPPORT_ADDRESS}.\n` +
   "Full policy: /refunds";
+
+// Guidance quoted from the app's own screens. These answers exist so a plain
+// policy question never has to open a support case — the previous handler had no
+// branch for them, so "what is your refund policy" escalated to a human.
+const ENTRY_GUIDANCE =
+  "Show the live QR code at the gate: open /tickets in your account, or the ticket email itself. Turn your screen brightness up and don't show a screenshot — gate staff scan the live code.\n\nIf it still won't scan, staff can check you in manually — show them your order reference or the purchase email. If you were already turned away, say \"talk to a person\" and I'll escalate it with your details.";
+
+const EMAIL_CONFIRMATION_GUIDANCE =
+  "That \"not sent\" line means our email provider didn't confirm delivery of that message — it does not mean your ticket is invalid or gone. Your order still stands.\n\nCheck the spam/junk folder for the address you paid with, then open /my-tickets, enter that email and the purchase date, and resend only that day's links. If it still doesn't arrive, say \"talk to a person\" and I'll pass it on.";
+
+const TECHNICAL_GUIDANCE =
+  "Most of these clear up with three steps:\n\n1. Hard-refresh the page (Ctrl+Shift+R, or pull down to reload on a phone).\n2. Try another browser, or the Android app at /download.\n3. Turn off any ad-blocker or data-saver on the checkout page.\n\nIf checkout failed, don't pay a second time — check your bank alert, then look the order up at /my-tickets. Still broken? Tell me the page and what you clicked, and I'll pass it to the team.";
+
+const ACCOUNT_DELETE_GUIDANCE =
+  "You can do it yourself: open /account, go to Security, choose Delete account and type DELETE to confirm. That removes your profile and personal data and signs you out.\n\nIf you organize events, delete or hand over those first — deletion is blocked while any event is still under your account. Want the team to do it instead? Say \"talk to a person\".";
+
+const EMAIL_CHANGE_GUIDANCE =
+  "The email on your account is read-only in /account, so the form can't change it. Sign in and ask the support team to move it — they verify the current address first so nobody can take over an account.\n\nIf you bought as a guest with a different address, /my-tickets still works with the email you paid with.";
+
+const TRUST_GUIDANCE =
+  "Every event on TixNaija is published by a signed-in organizer, and the event page shows who they are. Before you pay:\n\n- Check the organizer's name and their other events.\n- Read the refund terms on the event page.\n- Pay only through TixNaija checkout — never to a personal account or a DM.\n\nIf something looks off, send me the event name and I'll have the team check it.";
+
+const PAYMENT_ISSUE_GUIDANCE =
+  "Please don't pay again while this is open — a second payment creates a second order.\n\nBank transfers can take 2–10 minutes to show as confirmed. Check the order at /my-tickets with the email and date you paid, and check your bank alert: if the money left your account, a failed order is not proof of no debit, so the team has to reconcile it rather than treat it as unpaid.";
 
 const MAX_MESSAGE_LENGTH = 500;
 const MAX_EMAIL_LENGTH = 254;
@@ -335,6 +353,8 @@ function categoryFor(intent: Intent): string {
       return "refund";
     case "order":
     case "transfer":
+    case "delivery_confirmation":
+    case "entry":
       return "missing_ticket";
     // A price question is about an event's ticket tiers, not about a payment
     // that went wrong. Grouping it under "payment" made payment look like the
@@ -348,10 +368,16 @@ function categoryFor(intent: Intent): string {
     case "past_event":
       return "event_inquiry";
     case "payment":
+    case "payment_issue":
     case "promo":
       return "payment";
     case "account":
+    case "account_delete":
+    case "email_change":
       return "account";
+    case "fraud":
+    case "trust":
+      return "event_inquiry";
     default:
       return "other";
   }
@@ -365,11 +391,15 @@ function categoryFor(intent: Intent): string {
  */
 function priorityFor(intent: Intent): "high" | "medium" {
   switch (intent) {
-    // Money has already moved, or a paid ticket has not arrived.
+    // Money has already moved, a paid ticket has not arrived, someone is at the
+    // gate, or a scam is being reported.
     case "refund":
     case "order":
     case "transfer":
     case "payment":
+    case "payment_issue":
+    case "entry":
+    case "fraud":
       return "high";
     default:
       return "medium";
@@ -717,14 +747,26 @@ serve(async (req: Request) => {
       return (byCity.data ?? []) as PublicEvent[];
     };
 
-    const findUpcoming = async (limit = 5): Promise<PublicEvent[]> => {
-      const { data, error } = await supabase
+    const findUpcoming = async (
+      limit = 5,
+      options: { city?: string | null; window?: { start: string; end: string } | null } = {},
+    ): Promise<PublicEvent[]> => {
+      const window = options.window ?? null;
+      let query = supabase
         .from("events")
         .select(eventFields)
         .eq("status", "published")
-        .gte("start_datetime", new Date().toISOString())
+        .gte("start_datetime", window?.start ?? new Date().toISOString())
         .order("start_datetime", { ascending: true })
         .limit(limit);
+
+      // "events in Lagos this weekend" used to return five events from anywhere:
+      // the city and the date range were extracted by the shared brain and then
+      // never applied, so the answer looked confident and was wrong.
+      if (window) query = query.lt("start_datetime", window.end);
+      if (options.city) query = query.ilike("city", `%${escapeLike(options.city)}%`);
+
+      const { data, error } = await query;
       if (error) {
         console.error("support-bot: upcoming lookup failed", error);
         return [];
@@ -756,6 +798,35 @@ serve(async (req: Request) => {
         return [];
       }
       return (data ?? []) as TicketType[];
+    };
+
+    /**
+     * The signed-in customer's most recent order.
+     *
+     * Scoped to the verified JWT subject — never to an email or order id the
+     * browser sent — so one account cannot read another's order.
+     */
+    const findLatestOrder = async (userId: string): Promise<string | null> => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, status, total_kobo, created_at, events(title, slug)")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error || !data) return null;
+
+      const order = data as {
+        id: string;
+        status: string;
+        total_kobo: number;
+        events: { title: string; slug: string } | null;
+      };
+      const reference = `TN-${order.id.slice(0, 8).toUpperCase()}`;
+      const event = order.events?.title ? ` for ${order.events.title}` : "";
+
+      return `Your latest order${event} is ${reference} (${naira(order.total_kobo)}, ${order.status}). ${orderStatusGuidance(order.status)}`;
     };
 
     // ---- Resolve which event, if any, this message is about ----
@@ -867,8 +938,14 @@ serve(async (req: Request) => {
 
     if (intent === "schedule" || intent === "venue") {
       if (!searchTerm) {
+        // "when is the next event" has no subject to look up; listing what is
+        // actually on beats parroting "which event do you mean?".
+        const upcoming = await findUpcoming(3);
         return reply({
-          reply: "Which event do you mean? Tell me the event name and I'll check the date and venue for you.",
+          reply: upcoming.length > 0
+            ? `Which event do you mean? Here's what's coming up next:\n\n${upcoming.map(describeEvent).join("\n\n")}`
+            : "Which event do you mean? Tell me the event name and I'll check the date and venue for you.",
+          cards: upcoming.map(toCard),
           escalated: false,
           context: contextSlug || undefined,
         });
@@ -891,16 +968,30 @@ serve(async (req: Request) => {
 
     // ---- 5. Listing ----
     if (intent === "listing") {
-      const upcoming = await findUpcoming(5);
+      const city = extractCity(message);
+      const window = listingWindow(message);
+      const upcoming = await findUpcoming(5, { city, window });
+
+      const windowLabel = (() => {
+        const text = message.toLowerCase();
+        if (text.includes("weekend")) return "this weekend";
+        if (text.includes("today") || text.includes("tonight")) return "today";
+        if (text.includes("this week")) return "this week";
+        return "";
+      })();
+      const scope = [windowLabel, city ? `in ${city}` : ""].filter(Boolean).join(" ");
+
       if (upcoming.length === 0) {
         return reply({
-          reply: "There are no published events on sale right now. Check back soon, or browse everything at /browse.",
+          reply: scope
+            ? `Nothing is published ${scope} yet. There may still be other events on sale — browse everything at /browse.`
+            : "There are no published events on sale right now. Check back soon, or browse everything at /browse.",
           escalated: false,
           context: contextSlug || undefined,
         });
       }
       return reply({
-        reply: `Here's what's coming up:\n\n${upcoming.map(describeEvent).join("\n\n")}\n\nSee everything at /browse.`,
+        reply: `Here's what's on${scope ? ` ${scope}` : ""}:\n\n${upcoming.map(describeEvent).join("\n\n")}\n\nSee everything at /browse.`,
         cards: upcoming.map(toCard),
         escalated: false,
         context: contextSlug || undefined,
@@ -998,6 +1089,65 @@ serve(async (req: Request) => {
       });
     }
 
+    // Policy and how-to answers. Each of these intents was detected by the
+    // shared brain and then had no branch here, so a question the assistant
+    // knew the answer to was escalated as "I don't have an answer for that one".
+    if (intent === "refund_policy") {
+      return reply({
+        reply: REFUND_POLICY,
+        escalated: false,
+        context: contextSlug || undefined,
+      });
+    }
+
+    if (intent === "entry") {
+      return reply({
+        reply: ENTRY_GUIDANCE,
+        escalated: false,
+        context: contextSlug || undefined,
+      });
+    }
+
+    if (intent === "delivery_confirmation") {
+      return reply({
+        reply: EMAIL_CONFIRMATION_GUIDANCE,
+        escalated: false,
+        context: contextSlug || undefined,
+      });
+    }
+
+    if (intent === "technical") {
+      return reply({
+        reply: TECHNICAL_GUIDANCE,
+        escalated: false,
+        context: contextSlug || undefined,
+      });
+    }
+
+    if (intent === "account_delete") {
+      return reply({
+        reply: ACCOUNT_DELETE_GUIDANCE,
+        escalated: false,
+        context: contextSlug || undefined,
+      });
+    }
+
+    if (intent === "email_change") {
+      return reply({
+        reply: EMAIL_CHANGE_GUIDANCE,
+        escalated: false,
+        context: contextSlug || undefined,
+      });
+    }
+
+    if (intent === "trust") {
+      return reply({
+        reply: TRUST_GUIDANCE,
+        escalated: false,
+        context: contextSlug || undefined,
+      });
+    }
+
     if (intent === "order") {
       // Recovery belongs to the customer's explicit, purchase-date-scoped
       // request. A chat message must not mail every historical order for an
@@ -1007,8 +1157,13 @@ serve(async (req: Request) => {
       // id and no purchase date, so a lookup from here could not be scoped to a
       // day and would release every order the address ever bought. The reply is
       // the handoff to /my-tickets, which asks for the date.
+      //
+      // A signed-in customer gets their own latest order state as well, so
+      // "where is my order" is answered from the record instead of a guess.
+      const known = caller.userId ? await findLatestOrder(caller.userId) : null;
       return reply({
         reply:
+          (known ? `${known}\n\n` : "") +
           "Open /my-tickets and enter the email you bought with plus the purchase date to resend only that day's ticket links. Signed-in buyers can also open /tickets. Still nothing? Say \"talk to a person\" and I'll pass it on.",
         escalated: false,
         context: contextSlug || undefined,
@@ -1084,6 +1239,26 @@ serve(async (req: Request) => {
       return runEscalation(
         "Refunds aren't automatic — each request is reviewed against the policy first.",
         `${REFUND_POLICY}\n\nI've sent your request to the support team for review, and they'll contact you about the outcome.`,
+      );
+    }
+
+    // Money has already moved, so this opens a case as well as explaining what
+    // the customer should not do (pay again).
+    if (intent === "payment_issue") {
+      const known = caller.userId ? await findLatestOrder(caller.userId) : null;
+      return runEscalation(
+        "I'm sorry about that — a payment that looks failed can still have left your account, so this needs a person to check it.",
+        [known, PAYMENT_ISSUE_GUIDANCE]
+          .filter(Boolean)
+          .join("\n\n") +
+          `\n\nI've passed this to the support team with your message. For anything urgent you can also email ${PUBLIC_SUPPORT_ADDRESS}.`,
+      );
+    }
+
+    if (intent === "fraud") {
+      return runEscalation(
+        "Thank you for reporting this — a person needs to look at it, and I'm flagging it as urgent.",
+        "I've sent this to the support team as an urgent case. Don't send money to anyone outside TixNaija checkout in the meantime; if you already paid outside the platform, report it to your bank as well.",
       );
     }
 

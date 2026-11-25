@@ -64,6 +64,22 @@ describe("support intent detection", () => {
     expect(detectIntent("What about entry?", "price").intent).toBe("entry");
   });
 
+  it("routes a payment problem above an order lookup", () => {
+    expect(detectIntent("My money was deducted but no ticket").intent).toBe("payment_issue");
+    expect(detectIntent("I paid but no ticket").intent).toBe("payment_issue");
+    expect(detectIntent("My ticket has not arrived").intent).toBe("order");
+  });
+
+  it("recognizes gate scanning problems and blank pages", () => {
+    expect(detectIntent("The QR code is not scanning at the venue").intent).toBe("entry");
+    expect(detectIntent("My QR wont scan").intent).toBe("entry");
+    expect(detectIntent("Why is the page blank?").intent).toBe("technical");
+  });
+
+  it("does not read a promo-code question as a venue question", () => {
+    expect(detectIntent("Where do I enter my promo code?").intent).toBe("promo");
+  });
+
   it("validates intents supplied by the browser", () => {
     expect(isIntent("refund_policy")).toBe(true);
     expect(isIntent("not-an-intent")).toBe(false);

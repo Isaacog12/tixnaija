@@ -141,7 +141,11 @@ const INTENT_RULES: Rule[] = [
     intent: "entry",
     weight: 88,
     phrases: [
-      "qr won't scan", "qr not scanning", "code not scanning", "ticket not scanning",
+      "qr won't scan", "qr not scanning", "qr code not scanning", "qr code is not scanning",
+      "qr code isn't scanning", "qr code won't scan", "code not scanning", "code is not scanning",
+      "code isn't scanning", "not scanning", "won't scan", "wont scan", "cant scan", "can't scan",
+      "cannot scan", "scan failed", "scan not working", "scanner no dey work",
+      "ticket not scanning",
       "can't enter", "cannot enter", "turned away", "gate staff", "door staff",
       "at the gate", "check in", "checkin", "manual check in", "admission", "entry",
       "entry denied", "code no dey work", "dem no allow me enter",
@@ -226,11 +230,15 @@ const INTENT_RULES: Rule[] = [
     ],
   },
   {
+    // Above "order": someone whose money left the account and got no ticket
+    // needs payment reconciliation, not a resend link.
     intent: "payment_issue",
-    weight: 63,
+    weight: 90,
     phrases: [
       "payment failed", "payment no go through", "payment not going through",
       "not going through", "was i charged", "debited", "money deducted",
+      "money was deducted", "deducted but", "debited but",
+      "paid but no ticket", "pay but no ticket", "no ticket after payment",
       "money left my account", "double charge", "charged twice", "debited twice",
       "payment pending", "payment is pending", "pending payment", "still pending",
       "transaction pending", "payment stuck", "transaction failed",
@@ -248,10 +256,15 @@ const INTENT_RULES: Rule[] = [
     ],
   },
   {
+    // Above "venue": "where do i enter my promo code" was answered as a venue
+    // question because "enter promo code" scored lower than the bare "where".
     intent: "promo",
-    weight: 60,
+    weight: 78,
     phrases: [
-      "promo code", "discount", "coupon", "voucher", "promo", "referral code",
+      "promo code", "promo codes", "enter promo", "apply promo", "promo field",
+      "add promo", "have a code", "use a code", "discount code", "coupon code",
+      "voucher code", "referral code", "promo not working", "code not working",
+      "promo no dey work", "discount", "coupon", "voucher", "promo",
       "student discount", "early bird",
     ],
   },
@@ -314,9 +327,12 @@ const INTENT_RULES: Rule[] = [
     phrases: [
       "page not loading", "website error", "can't open the page", "cannot open the page",
       "broken link", "error page", "site down", "ticket page error", "checkout error",
-      "loading screen", "blank page", "website not working", "app not working",
-      "not loading", "keeps loading", "stuck on loading", "page error", "technical error",
-      "app is not working", "website is not working", "is not working",
+      "loading screen", "blank page", "page blank", "page is blank", "blank screen",
+      "white screen", "website not working", "app not working",
+      "not loading", "won't load", "wont load", "not opening", "won't open", "wont open",
+      "keeps loading", "stuck on loading", "keeps reloading", "spinning",
+      "page error", "technical error", "server error", "error 404", "404",
+      "something went wrong", "app is not working", "website is not working", "is not working",
     ],
   },
   {
