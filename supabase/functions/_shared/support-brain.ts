@@ -31,6 +31,7 @@ export type Intent =
   | "account"
   | "account_delete"
   | "email_change"
+  | "ticket_email_change"
   | "app"
   | "technical"
   | "contact"
@@ -166,7 +167,7 @@ const INTENT_RULES: Rule[] = [
     phrases: [
       "sold out", "still available", "tickets left", "any left", "remaining tickets",
       "still get ticket", "ticket still dey", "space dey", "is it full", "any space",
-      "available tickets", "sold finish",
+      "available tickets", "tickets available", "ticket available", "sold finish",
     ],
   },
   {
@@ -307,6 +308,21 @@ const INTENT_RULES: Rule[] = [
     phrases: [
       "change my email", "update my email", "new email address", "change email address",
       "update email address", "email change", "wrong email on account",
+      "change my account email", "change account email", "update my account email",
+    ],
+  },
+  {
+    // A checkout typo is an order-delivery/security issue, not an account email
+    // change. It must beat the generic order and account rules.
+    intent: "ticket_email_change",
+    weight: 91,
+    phrases: [
+      "wrong email at checkout", "wrong email on ticket", "wrong email on order",
+      "ticket sent to wrong email", "ticket delivered to wrong email", "used wrong email",
+      "typed wrong email", "email typo", "misspelled email", "incorrect email",
+      "wrong mail", "email address wrong", "change ticket email", "change order email",
+      "change purchase email", "update ticket email", "reissue ticket email",
+      "send ticket to correct email",
     ],
   },
   {
@@ -376,20 +392,186 @@ const INTENT_RULES: Rule[] = [
   },
 ];
 
+/**
+ * Additional customer phrasings distilled from support macros, public policy and
+ * common Nigerian/Pidgin wording. Keeping them separate makes the next training
+ * pass additive without disturbing the priority weights above.
+ */
+const TRAINING_ADDITIONS: Partial<Record<Intent, string[]>> = {
+  human: [
+    "real agent", "support staff", "customer support", "support please", "agent please",
+    "connect me to support", "connect me to an agent", "i need a person", "please send a person",
+    "human support", "care agent", "talk to support", "speak with someone", "speak to someone",
+    "chat to an agent",
+  ],
+  fraud: [
+    "fake ticket", "fake website", "they scammed me", "i got scammed", "dem don scam",
+    "suspicious organizer", "report this event", "report this organizer", "not genuine",
+  ],
+  trust: [
+    "can i trust", "trustworthy", "genuine event", "authentic ticket", "how do i know its real",
+    "how do i know it is real", "is this safe", "are they verified", "verified event",
+    "official seller", "tixnaija genuine",
+  ],
+  refund: [
+    "refund this", "refund the ticket", "refund the order", "refund my ticket", "refund my order",
+    "want my money back", "need my money back", "money back please", "return the money",
+    "reverse my payment", "cancel and refund", "refund not received", "refund has not arrived",
+    "refund hasn't arrived", "where is my refund", "when is my refund", "refund pending",
+  ],
+  refund_policy: [
+    "do i get a refund", "will i get a refund", "refundable", "refund eligibility", "refund rules",
+    "can tickets be refunded", "refund if cancelled", "refund if postponed",
+    "what happens if an event is cancelled", "what happens if an event is postponed",
+  ],
+  transfer: [
+    "change ticket holder", "change ticket recipient", "change recipient", "send my ticket",
+    "forward my ticket", "give the ticket to", "ticket for someone else", "reassign",
+    "update attendee", "change guest name", "wrong name on ticket", "name on ticket is wrong",
+    "spelling on ticket", "ticket name", "swap ticket",
+  ],
+  order: [
+    "where are my tickets", "where my ticket", "ticket did not come", "ticket didn't come",
+    "have not got", "haven't got", "no mail", "mail not received", "did not receive",
+    "didn't receive", "not in inbox", "ticket not in email", "download my ticket",
+    "print my ticket", "ticket pdf", "order reference", "order number", "order id",
+    "tn number", "ord number", "no qr code", "no get ticket", "no see ticket", "ticket no dey",
+  ],
+  delivery_confirmation: [
+    "email says not sent", "mail says not sent", "ticket not sent", "not sent but",
+    "email delivery failed", "delivery failed",
+  ],
+  entry: [
+    "barcode", "barcode not scanning", "scanner not working", "gate pass", "entry pass",
+    "cant get in", "can't get in", "cannot get in", "denied entry", "not on guest list",
+    "guest list", "ticket invalid", "invalid ticket", "used ticket", "already used",
+    "screenshot ticket", "printed ticket", "print qr", "no fit enter", "dem no allow me",
+  ],
+  price: [
+    "ticket cost", "how much for", "how much na", "amount be", "regular price", "vip price",
+    "gate price", "what is the price", "whats the price",
+  ],
+  availability: [
+    "tickets available", "ticket available", "is there ticket", "any tickets", "still selling",
+    "on sale", "how many tickets", "fully booked", "no tickets", "sold out already",
+    "ticket remain",
+  ],
+  venue: [
+    "where dem dey", "where the event", "which venue", "venue address", "event location",
+    "location of", "place wey", "how to get there", "direction to", "wetin be the venue",
+  ],
+  schedule: [
+    "when the event", "when dey start", "what time e start", "date for", "event date",
+    "event time", "opening time", "closing time", "what day is", "which date",
+    "when go hold", "when e go hold", "time wey",
+  ],
+  cancelled: [
+    "has it been cancelled", "is it cancelled", "is the event cancelled", "postpone",
+    "rescheduled", "new date", "change of date", "venue change", "relocated",
+    "not holding again", "no hold again",
+  ],
+  how_to_buy: [
+    "where can i buy", "how to order", "how do i order", "get tickets", "ticket booking",
+    "book ticket", "buy tickets online", "purchase ticket", "payment link",
+  ],
+  past_event: ["event over", "already done", "don pass", "old show", "previous event", "event don pass", "event finish"],
+  organizer: [
+    "how to sell tickets", "how do i sell tickets", "event vendor", "promoter", "payout account",
+    "settlement account", "when will my payout", "ticket proceeds", "organizer dashboard",
+    "become organiser", "list tickets for my event",
+  ],
+  payment_issue: [
+    "payment unsuccessful", "payment declined", "card declined", "transfer failed",
+    "bank transfer failed", "debit without ticket", "charged without ticket",
+    "no ticket after paying", "paid without ticket", "payment went through but",
+    "payment successful but", "transaction successful but", "bank alert but no ticket",
+    "money don debit", "money comot", "dem debit", "double payment", "paid two times",
+    "overcharged", "wrong amount charged", "pending transaction", "transaction stuck",
+    "payment processing", "awaiting confirmation", "payment no show", "payment never showed",
+  ],
+  payment: [
+    "available payment methods", "payment platform", "secure payment", "can i use transfer",
+    "do you accept transfer", "accept bank card", "virtual card", "mobile transfer",
+    "how payment works",
+  ],
+  promo: [
+    "code field", "discount field", "promo link", "referral", "promo code no work",
+    "coupon not working", "discount not applied", "code expired", "invalid code",
+    "where to put code", "how to use code", "apply discount",
+  ],
+  waitlist: [
+    "waiting list", "join the list", "notify when available", "notify me when tickets",
+    "restock", "ticket release", "tickets released",
+  ],
+  capabilities: ["what you dey do", "abeg wetin you fit do", "how you fit help", "show me options"],
+  about: ["tixnaija owner", "who be founder", "who own am", "tix africa"],
+  account_delete: ["delete profile", "close profile", "erase my data", "delete my data", "want account removed"],
+  email_change: [
+    "change account email", "new login email", "update login email", "different account email",
+    "wrong email on my account", "change registered email", "update registered email",
+  ],
+  ticket_email_change: [
+    "typed the wrong email", "used the wrong email", "entered the wrong email",
+    "put the wrong email", "wrong email during checkout", "wrong email for the ticket",
+    "ticket went to the wrong email", "correct my ticket email",
+  ],
+  account: [
+    "unable to log in", "unable to sign in", "login page", "signin", "signup", "register",
+    "registration", "create new account", "account verification", "verify email",
+    "confirmation link", "magic link", "auth link", "otp expired", "invalid otp",
+    "resend otp", "resend verification", "locked out", "suspended account", "account disabled",
+    "password expired", "login no dey work", "login no work", "password no work", "change mail",
+  ],
+  technical: [
+    "app crashing", "app freeze", "app keeps stopping", "website crashing", "page frozen",
+    "page stuck", "button not working", "checkout button", "submit button", "images not loading",
+    "video not loading", "network error", "connection error", "timeout", "something is broken",
+    "not responding", "error code", "app dey crash", "site no dey open", "page no dey load",
+  ],
+  app: [
+    "mobile app", "ios app", "iphone app", "android app", "app store", "google play",
+    "install app", "download app", "apk download", "app link",
+  ],
+  contact: [
+    "call support", "phone support", "support number", "official email", "contact number",
+    "reach support", "organizer number", "organizer email", "customer care hours",
+    "support open", "when are you open",
+  ],
+  listing: [
+    "what dey happen", "wetin dey happen", "events near me", "near me", "in my city",
+    "this night", "next weekend", "next week", "saturday", "sunday", "friday", "tomorrow",
+    "weekend events", "show list", "event list", "discover events", "find events",
+    "search events", "all events",
+  ],
+  greeting: ["good nite", "good night", "hey there", "hello there", "how are you", "hope youre fine", "abeg"],
+  thanks: ["thank u", "thanks dear", "thanks bro", "much appreciated", "grateful", "na so", "okay thanks"],
+};
+
 const STOPWORDS = new Set([
-  "a", "about", "abeg", "am", "an", "and", "any", "are", "as", "at", "be", "been",
-  "but", "by", "can", "could", "dey", "did", "do", "does", "for", "from", "get",
-  "give", "go", "going", "got", "has", "have", "he", "her", "him", "his", "how", "i",
-  "if", "in", "is", "it", "its", "just", "me", "my", "na", "no", "not", "now", "of",
-  "on", "or", "our", "please", "pls", "so", "tell", "that", "the", "their", "them",
-  "there", "they", "this", "to", "una", "up", "us", "was", "we", "were", "wet",
-  "wetin", "what", "whats", "when", "where", "which", "who", "why", "will", "with",
-  "would", "you", "your", "show", "shows", "event", "events", "party", "concert",
-  "ticket", "tickets", "price", "cost", "much", "date", "time", "day", "venue",
-  "location", "address", "still", "left", "available", "today", "tomorrow",
-  "week", "weekend", "month", "next", "coming", "happening", "upcoming", "hold",
-  "again", "sir", "ma", "oo", "o", "wan", "want", "see", "know", "happen", "dey",
-  "im", "need", "make", "come", "really", "should", "havent", "didnt", "dont", "cant",
+  "a", "about", "above", "after", "again", "all", "am", "an", "and", "any", "are",
+  "around", "as", "at", "be", "because", "been", "before", "being", "below", "between",
+  "both", "bro", "bros", "but", "by", "can", "cant", "come", "coming", "could", "couldnt",
+  "date", "day", "dey", "did", "didnt", "do", "does", "doesnt", "down", "each", "event",
+  "events", "few", "for", "from", "further", "get", "give", "go", "going", "got", "had",
+  "hadnt", "has", "hasnt", "have", "havent", "he", "her", "here", "hers", "him", "his",
+  "how", "i", "id", "if", "ill", "im", "in", "into", "is", "isnt", "it", "its", "itself",
+  "ive", "just", "know", "left", "like", "location", "ma", "madam", "make", "many", "may",
+  "me", "might", "more", "most", "much", "must", "my", "myself", "na", "near", "nearby",
+  "need", "no", "nor", "not", "now", "of", "off", "on", "once", "one", "only", "or",
+  "other", "our", "ours", "ourselves", "out", "over", "own", "party", "please", "pls",
+  "price", "same", "say", "see", "she", "should", "shouldnt", "show", "shows", "si",
+  "sir", "sis", "so", "some", "still", "such", "than", "that", "thats", "the", "their",
+  "theirs", "them", "themselves", "then", "there", "theres", "these", "they", "this",
+  "those", "through", "ticket", "tickets", "time", "to", "too", "under", "until", "up",
+  "una", "us", "very", "venue", "wan", "want", "was", "wasnt", "we", "week",
+  "weekend", "were", "werent", "wet", "wetin", "what", "whats", "when", "whens", "where",
+  "wheres", "which", "while", "who", "whom", "why", "will", "with", "within", "without",
+  "wont", "would", "wouldnt", "you", "youre", "your", "yours", "yourself", "yourselves",
+  "available", "happening", "upcoming", "coming", "month", "next", "today", "tomorrow",
+  "address", "cost", "hold", "happen", "oo", "o", "really", "actually", "basically",
+  "currently", "already", "yet", "well", "also", "abeg", "oga", "dont", "tell",
+  // Generic event nouns, so a search term keeps the distinctive words.
+  "concert", "concerts", "show", "shows",
 ]);
 
 export const NIGERIAN_CITIES = [
@@ -428,11 +610,10 @@ function editDistance(a: string, b: string): number {
   return previous[cols - 1];
 }
 
-/** Whole-word match, so "hi" never fires inside "this". */
+/** Whole-phrase match, so "hi" never fires inside "this" or "no ticket" inside "no tickets". */
 function containsPhrase(text: string, phrase: string): boolean {
   const needle = normalise(phrase);
   if (!needle) return false;
-  if (needle.includes(" ")) return text.includes(needle);
   return new RegExp(`\\b${needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(text);
 }
 
@@ -454,11 +635,39 @@ function fuzzyWord(word: string, candidate: string): boolean {
   return editDistance(word, candidate) <= 1 || isAdjacentSwap(word, candidate);
 }
 
+/**
+ * Match a contiguous multi-word phrase with one typo in one of its words.
+ * Requiring the other words to match exactly keeps short phrases such as
+ * "where is" and "what time" from becoming noisy catch-alls.
+ */
+function fuzzyPhraseContains(textWords: string[], phraseWords: string[]): boolean {
+  if (phraseWords.length < 2 || phraseWords.length > 6) return false;
+  let usedFuzzy = false;
+
+  for (let start = 0; start <= textWords.length - phraseWords.length; start++) {
+    usedFuzzy = false;
+    let matches = true;
+    for (let index = 0; index < phraseWords.length; index++) {
+      const actual = textWords[start + index];
+      const expected = phraseWords[index];
+      if (actual === expected) continue;
+      if (usedFuzzy || !fuzzyWord(actual, expected)) {
+        matches = false;
+        break;
+      }
+      usedFuzzy = true;
+    }
+    if (matches && usedFuzzy) return true;
+  }
+  return false;
+}
+
 interface CompiledPhrase {
   raw: string;
   needle: string;
-  /** Word-boundary matcher for single-word phrases; null for multi-word ones. */
-  wholeWord: RegExp | null;
+  words: string[];
+  /** Compiled word boundaries for exact matching. */
+  wholePhrase: RegExp | null;
 }
 
 /**
@@ -468,14 +677,23 @@ interface CompiledPhrase {
  */
 function compilePhrase(phrase: string): CompiledPhrase {
   const needle = normalise(phrase);
-  const wholeWord =
-    needle && !needle.includes(" ")
-      ? new RegExp(`\\b${needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`)
-      : null;
-  return { raw: phrase, needle, wholeWord };
+  const wholePhrase = needle
+    ? new RegExp(`\\b${needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`)
+    : null;
+  return { raw: phrase, needle, words: needle.split(" ").filter(Boolean), wholePhrase };
 }
 
-const COMPILED_RULES = INTENT_RULES.map((rule) => ({
+/**
+ * Every phrase for an intent, once: the weighted base rules plus the additive
+ * training list. The additions were declared but never read, so the extra
+ * phrasings they describe never reached detection.
+ */
+const ALL_RULES: Rule[] = INTENT_RULES.map((rule) => ({
+  ...rule,
+  phrases: [...rule.phrases, ...(TRAINING_ADDITIONS[rule.intent] ?? [])],
+}));
+
+const COMPILED_RULES = ALL_RULES.map((rule) => ({
   intent: rule.intent,
   weight: rule.weight,
   phrases: rule.phrases.map(compilePhrase),
@@ -492,7 +710,7 @@ export function detectIntent(message: string, previousIntent?: Intent): IntentMa
     const matched: string[] = [];
     for (const phrase of rule.phrases) {
       if (!phrase.needle) continue;
-      if (phrase.wholeWord ? phrase.wholeWord.test(text) : text.includes(phrase.needle)) {
+      if (phrase.wholePhrase?.test(text)) {
         matched.push(phrase.raw);
       }
     }
@@ -502,15 +720,18 @@ export function detectIntent(message: string, previousIntent?: Intent): IntentMa
     let fuzzy = false;
     if (matched.length === 0) {
       for (const phrase of rule.phrases) {
-        if (phrase.wholeWord && phrase.needle.length >= 5 &&
-          textWords.some((word) => fuzzyWord(word, phrase.needle))) {
+        const singleWordTypo = phrase.words.length === 1 && phrase.needle.length >= 5 &&
+          textWords.some((word) => fuzzyWord(word, phrase.needle));
+        const multiWordTypo = phrase.words.length > 1 &&
+          fuzzyPhraseContains(textWords, phrase.words);
+        if (singleWordTypo || multiWordTypo) {
           matched.push(phrase.raw);
           fuzzy = true;
         }
       }
     }
 
-    const score = rule.weight - (fuzzy ? 8 : 0);
+    const score = rule.weight - (fuzzy ? 4 : 0);
     if (matched.length > 0 && score > best.weight) {
       best = { intent: rule.intent, matched, weight: score };
     }
@@ -540,21 +761,22 @@ export function detectIntent(message: string, previousIntent?: Intent): IntentMa
   return best;
 }
 
+const VALID_INTENTS = new Set<Intent>([
+  "human", "fraud", "trust", "refund", "refund_policy", "transfer", "order",
+  "delivery_confirmation", "entry", "price", "availability", "venue", "schedule",
+  "listing", "past_event", "how_to_buy", "organizer", "payment", "payment_issue",
+  "promo", "waitlist", "cancelled", "about", "capabilities", "account",
+  "account_delete", "email_change", "ticket_email_change", "app", "technical",
+  "contact", "greeting", "thanks", "unknown",
+]);
+
 export function isIntent(value: string): value is Intent {
-  return new Set<Intent>([
-    "human", "fraud", "trust", "refund", "refund_policy", "transfer", "order",
-    "delivery_confirmation", "entry", "price", "availability", "venue", "schedule",
-    "listing", "past_event", "how_to_buy", "organizer", "payment", "payment_issue",
-    "promo", "waitlist", "cancelled", "about", "capabilities", "account",
-    "account_delete", "email_change", "app", "technical", "contact", "greeting",
-    "thanks", "unknown",
-  ]).has(value as Intent);
+  return VALID_INTENTS.has(value as Intent);
 }
 
 function removePhrase(text: string, phrase: string): string {
   const needle = normalise(phrase);
   if (!needle) return text;
-  if (needle.includes(" ")) return text.split(needle).join(" ");
   const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return text.replace(new RegExp(`\\b${escaped}\\b`, "g"), " ");
 }
@@ -586,21 +808,25 @@ export interface ListingWindow {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const LAGOS_OFFSET_MS = 60 * 60 * 1000;
+const LAGOS_DATE_FORMAT = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Africa/Lagos",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
 
 /** WAT has no daylight-saving transition, so a fixed UTC+1 conversion is exact. */
 export function listingWindow(message: string, now = new Date()): ListingWindow | null {
   const text = normalise(message);
-  const isWeekend = text.includes("weekend");
-  const isWeek = text.includes("this week");
-  const isToday = text.includes("today") || text.includes("tonight");
-  if (!isWeekend && !isWeek && !isToday) return null;
+  const isNextWeekend = text.includes("next weekend");
+  const isWeekend = text.includes("weekend") && !isNextWeekend;
+  const isNextWeek = text.includes("next week");
+  const isWeek = text.includes("this week") && !isNextWeek;
+  const isTomorrow = text.includes("tomorrow");
+  const isToday = text.includes("today") || text.includes("tonight") || text.includes("this night");
+  if (!isNextWeekend && !isWeekend && !isNextWeek && !isWeek && !isTomorrow && !isToday) return null;
 
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Africa/Lagos",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(now);
+  const parts = LAGOS_DATE_FORMAT.formatToParts(now);
   const value = (type: Intl.DateTimeFormatPartTypes) =>
     Number(parts.find((part) => part.type === type)?.value ?? 0);
   const todayUtc = Date.UTC(value("year"), value("month") - 1, value("day"));
@@ -608,14 +834,26 @@ export function listingWindow(message: string, now = new Date()): ListingWindow 
 
   let startDay = todayUtc;
   let endDay = todayUtc + DAY_MS;
-  if (isWeekend) {
+  if (isNextWeekend) {
+    const daysToSaturday = (6 - weekday + 7) % 7;
+    const days = weekday === 6 ? 7 : weekday === 0 ? daysToSaturday : daysToSaturday + 7;
+    startDay = todayUtc + days * DAY_MS;
+    endDay = startDay + 2 * DAY_MS;
+  } else if (isWeekend) {
     // On Sunday, "this weekend" still includes today. Otherwise start Saturday.
     startDay = weekday === 0
       ? todayUtc
       : todayUtc + ((6 - weekday + 7) % 7) * DAY_MS;
     endDay = startDay + 2 * DAY_MS;
+  } else if (isNextWeek) {
+    const daysToMonday = (8 - weekday) % 7 || 7;
+    startDay = todayUtc + daysToMonday * DAY_MS;
+    endDay = startDay + 7 * DAY_MS;
   } else if (isWeek) {
     endDay = todayUtc + 7 * DAY_MS;
+  } else if (isTomorrow) {
+    startDay = todayUtc + DAY_MS;
+    endDay = startDay + DAY_MS;
   }
 
   return {
@@ -678,7 +916,7 @@ const CATEGORY_INTENTS: Record<string, Intent[]> = {
   tickets: ["how_to_buy", "order", "transfer", "entry", "delivery_confirmation", "waitlist"],
   payments: ["payment", "payment_issue", "promo"],
   refunds: ["refund", "refund_policy", "cancelled"],
-  account: ["account", "account_delete", "email_change"],
+  account: ["account", "account_delete", "email_change", "ticket_email_change"],
   checkin: ["entry"],
   events: ["listing", "price", "availability", "venue", "schedule", "cancelled", "past_event", "trust"],
   organizer: ["organizer"],
@@ -687,13 +925,17 @@ const CATEGORY_INTENTS: Record<string, Intent[]> = {
 };
 
 function tokens(text: string): string[] {
-  return Array.from(new Set(normalise(text).split(" ").filter((word) => word.length > 1 && !STOPWORDS.has(word))));
+  return Array.from(
+    new Set(normalise(text).split(" ").filter((word) => word.length > 1 && !STOPWORDS.has(word))),
+  );
 }
 
 /**
- * Deterministic retrieval over staff-approved answers. Exact customer phrasing
- * wins, while token coverage handles paraphrase and a single common typo.
- * Returns null below the confidence threshold instead of guessing.
+ * Deterministic retrieval over staff-approved answers in support_bot_knowledge.
+ *
+ * Exact customer phrasing wins, while token coverage handles paraphrase and a
+ * single common typo. Returns null below the confidence threshold instead of
+ * guessing, so an unrecognised question still reaches a person.
  */
 export function rankKnowledge(
   message: string,
@@ -729,12 +971,13 @@ export function rankKnowledge(
     const exactTitle = title.length >= 3 && containsPhrase(text, title);
     const triggerCovered = triggers.some((trigger) => {
       const triggerTokens = tokens(trigger);
-      return triggerTokens.length > 0 && triggerTokens.every((triggerToken) =>
-        queryTokens.some((queryToken) => fuzzyWord(queryToken, triggerToken)),
-      );
+      return triggerTokens.length > 0 &&
+        triggerTokens.every((triggerToken) =>
+          queryTokens.some((queryToken) => fuzzyWord(queryToken, triggerToken))
+        );
     });
     const titleCovered = tokens(entry.title).every((titleToken) =>
-      queryTokens.some((queryToken) => fuzzyWord(queryToken, titleToken)),
+      queryTokens.some((queryToken) => fuzzyWord(queryToken, titleToken))
     );
 
     const coverage = matchedCount / queryTokens.length;
@@ -784,12 +1027,34 @@ const CATEGORY_LINK: Record<string, string> = {
   general: "/faq",
 };
 
+const INTENT_LINK: Partial<Record<Intent, string>> = {
+  transfer: "/tickets",
+  order: "/my-tickets",
+  delivery_confirmation: "/my-tickets",
+  entry: "/tickets",
+  how_to_buy: "/browse",
+  organizer: "/dashboard",
+  account: "/auth",
+  account_delete: "/account",
+  email_change: "/account",
+  ticket_email_change: "/contact",
+  app: "/Tixnaija.apk",
+  contact: "/contact",
+  refund_policy: "/refunds",
+  listing: "/browse",
+};
+
 /** Only known internal routes become buttons; staff cannot inject arbitrary URLs. */
 export function linksForKnowledge(entry: BotKnowledgeEntry): ActionLink[] {
   const mentioned = KNOWN_LINKS.filter((link) => entry.content.includes(link.href));
   if (mentioned.length > 0) return mentioned.slice(0, 3);
   const fallback = CATEGORY_LINK[entry.category.toLowerCase()] ?? "/faq";
   return KNOWN_LINKS.filter((link) => link.href === fallback);
+}
+
+export function linksForIntent(intent: Intent): ActionLink[] {
+  const href = INTENT_LINK[intent];
+  return href ? KNOWN_LINKS.filter((link) => link.href === href) : [];
 }
 
 /** Safe wording for live order states; a failed order is not proof of no debit. */

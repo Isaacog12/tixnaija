@@ -7,21 +7,36 @@ import {
   detectIntent,
   extractCity,
   extractSearchTerm,
+  isIntent,
+  linksForIntent,
+  linksForKnowledge,
   listingWindow,
   looksSubstantive,
   orderStatusGuidance,
+  rankKnowledge,
   SENSITIVE_REFUSAL,
+  type BotKnowledgeEntry,
   type Intent,
 } from "../_shared/support-brain.ts";
+import {
+  PAYMENT_ISSUE_GUIDANCE,
+  PUBLIC_SUPPORT_ADDRESS,
+  REFUND_POLICY,
+  STATIC_ANSWERS,
+} from "../_shared/support-answers.ts";
+import {
+  describeEvent,
+  describeTickets,
+  eventStatusGuidance,
+  formatWhen,
+  naira,
+  type PublicEvent,
+  type TicketType,
+} from "../_shared/support-events.ts";
 
 // ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
-
-// Server-side only. Never accepted from the client.
-const PUBLIC_SUPPORT_ADDRESS = "tixnaijaapp@gmail.com";
-const PUBLIC_SUPPORT_PHONE = "+234 901 127 5275";
-const SUPPORT_HOURS = "Mon-Fri, 9am-6pm WAT";
 
 function readEnvVar(name: string): string {
   // @ts-ignore Deno is provided by the Edge runtime, not by the app tsconfig.
@@ -46,40 +61,6 @@ function escalationRecipients(): string[] {
   const fallback = ["isaacnerds@gmail.com", PUBLIC_SUPPORT_ADDRESS];
   return Array.from(new Set(configured.length > 0 ? configured : fallback));
 }
-
-// Quoted from /refunds — policy only, never a promise about one customer.
-const REFUND_POLICY =
-  "Here's the policy in short:\n" +
-  "- All sales are final unless the event is cancelled, postponed or materially misrepresented.\n" +
-  "- If an event is cancelled, buyers are emailed automatically, and the refund is the organizer's responsibility because ticket money is settled to them through Paystack.\n" +
-  "- After a postponement or venue change, you can request a refund within 14 calendar days of the notice.\n" +
-  "- Requests are reviewed within 3 business days, and approved refunds land back on the card in 3 to 7 business days via Paystack.\n" +
-  `- To request a refund, include your order reference, purchase email and reason, or email ${PUBLIC_SUPPORT_ADDRESS}.\n` +
-  "Full policy: /refunds";
-
-// Guidance quoted from the app's own screens. These answers exist so a plain
-// policy question never has to open a support case — the previous handler had no
-// branch for them, so "what is your refund policy" escalated to a human.
-const ENTRY_GUIDANCE =
-  "Show the live QR code at the gate: open /tickets in your account, or the ticket email itself. Turn your screen brightness up and don't show a screenshot — gate staff scan the live code.\n\nIf it still won't scan, staff can check you in manually — show them your order reference or the purchase email. If you were already turned away, say \"talk to a person\" and I'll escalate it with your details.";
-
-const EMAIL_CONFIRMATION_GUIDANCE =
-  "That \"not sent\" line means our email provider didn't confirm delivery of that message — it does not mean your ticket is invalid or gone. Your order still stands.\n\nCheck the spam/junk folder for the address you paid with, then open /my-tickets, enter that email and the purchase date, and resend only that day's links. If it still doesn't arrive, say \"talk to a person\" and I'll pass it on.";
-
-const TECHNICAL_GUIDANCE =
-  "Most of these clear up with three steps:\n\n1. Hard-refresh the page (Ctrl+Shift+R, or pull down to reload on a phone).\n2. Try another browser, or the Android app at /download.\n3. Turn off any ad-blocker or data-saver on the checkout page.\n\nIf checkout failed, don't pay a second time — check your bank alert, then look the order up at /my-tickets. Still broken? Tell me the page and what you clicked, and I'll pass it to the team.";
-
-const ACCOUNT_DELETE_GUIDANCE =
-  "You can do it yourself: open /account, go to Security, choose Delete account and type DELETE to confirm. That removes your profile and personal data and signs you out.\n\nIf you organize events, delete or hand over those first — deletion is blocked while any event is still under your account. Want the team to do it instead? Say \"talk to a person\".";
-
-const EMAIL_CHANGE_GUIDANCE =
-  "The email on your account is read-only in /account, so the form can't change it. Sign in and ask the support team to move it — they verify the current address first so nobody can take over an account.\n\nIf you bought as a guest with a different address, /my-tickets still works with the email you paid with.";
-
-const TRUST_GUIDANCE =
-  "Every event on TixNaija is published by a signed-in organizer, and the event page shows who they are. Before you pay:\n\n- Check the organizer's name and their other events.\n- Read the refund terms on the event page.\n- Pay only through TixNaija checkout — never to a personal account or a DM.\n\nIf something looks off, send me the event name and I'll have the team check it.";
-
-const PAYMENT_ISSUE_GUIDANCE =
-  "Please don't pay again while this is open — a second payment creates a second order.\n\nBank transfers can take 2–10 minutes to show as confirmed. Check the order at /my-tickets with the email and date you paid, and check your bank alert: if the money left your account, a failed order is not proof of no debit, so the team has to reconcile it rather than treat it as unpaid.";
 
 const MAX_MESSAGE_LENGTH = 500;
 const MAX_EMAIL_LENGTH = 254;
@@ -167,78 +148,15 @@ function escapeLike(value: string): string {
   return value.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
 }
 
-// ---------------------------------------------------------------------------
-// Formatting
-// ---------------------------------------------------------------------------
-
-const LAGOS = "Africa/Lagos";
-
-// Building an Intl.DateTimeFormat is the expensive part, not formatting, and
-// every event answer formats three or four dates. Created once per isolate.
-const EVENT_DATE_FORMAT = new Intl.DateTimeFormat("en-NG", {
-  timeZone: LAGOS, weekday: "short", day: "numeric", month: "short", year: "numeric",
-});
-const EVENT_TIME_FORMAT = new Intl.DateTimeFormat("en-NG", {
-  timeZone: LAGOS, hour: "numeric", minute: "2-digit",
-});
-const EVENT_END_DATE_FORMAT = new Intl.DateTimeFormat("en-NG", {
-  timeZone: LAGOS, day: "numeric", month: "short", year: "numeric",
-});
-
-function formatWhen(start: string | null, end: string | null): string {
-  if (!start) return "date to be announced";
-  const startDate = new Date(start);
-  if (Number.isNaN(startDate.getTime())) return "date to be announced";
-
-  const datePart = EVENT_DATE_FORMAT.format(startDate);
-  const timePart = EVENT_TIME_FORMAT.format(startDate);
-
-  if (!end) return `${datePart}, ${timePart}`;
-  const endDate = new Date(end);
-  if (Number.isNaN(endDate.getTime())) return `${datePart}, ${timePart}`;
-
-  const sameDay = endDate.toDateString() === startDate.toDateString();
-  const endTime = EVENT_TIME_FORMAT.format(endDate);
-  return sameDay
-    ? `${datePart}, ${timePart} to ${endTime}`
-    : `${datePart}, ${timePart} until ${EVENT_END_DATE_FORMAT.format(endDate)}, ${endTime}`;
+/**
+ * Values inside a PostgREST `or(...)` filter are comma-separated, so a token
+ * containing a comma, parenthesis or wildcard could change the filter's shape.
+ * Search terms are already lowercased alphanumerics; this enforces it.
+ */
+function escapeFilterValue(value: string): string {
+  return value.replace(/[,()%_\\]/g, "").trim();
 }
 
-function naira(kobo: number): string {
-  if (!kobo || kobo <= 0) return "Free";
-  return `NGN ${(kobo / 100).toLocaleString("en-NG")}`;
-}
-
-interface PublicEvent {
-  id: string;
-  title: string;
-  slug: string;
-  start_datetime: string | null;
-  end_datetime: string | null;
-  venue_name: string | null;
-  city: string | null;
-}
-
-interface TicketType {
-  name: string;
-  price_kobo: number;
-  quantity_available: number;
-  quantity_sold: number;
-  quantity_cancelled: number | null;
-}
-
-function remaining(event: TicketType): number {
-  const sold = Math.max(0, event.quantity_sold - (event.quantity_cancelled ?? 0));
-  return Math.max(0, event.quantity_available - sold);
-}
-
-function describeEvent(event: PublicEvent): string {
-  const place = [event.venue_name, event.city].filter(Boolean).join(", ");
-  const lines = [event.title, formatWhen(event.start_datetime, event.end_datetime)];
-  if (place) lines.push(place);
-  lines.push(`Details: /e/${event.slug}`);
-  return lines.join("\n");
-}
 
 /**
  * Structured event reference sent alongside the text reply.
@@ -267,26 +185,6 @@ function toCard(event: PublicEvent): EventCard {
   };
 }
 
-function describeTickets(types: TicketType[]): string {
-  if (types.length === 0) return "Ticket types for this event are not published yet.";
-  const sorted = [...types].sort((a, b) => a.price_kobo - b.price_kobo);
-  const totalLeft = sorted.reduce((sum, type) => sum + remaining(type), 0);
-
-  const lines = sorted.slice(0, 6).map((type) => {
-    const left = remaining(type);
-    const state = left === 0 ? "sold out" : `${left} left`;
-    return `- ${type.name}: ${naira(type.price_kobo)} (${state})`;
-  });
-
-  const cheapest = sorted.find((type) => remaining(type) > 0) ?? sorted[0];
-  const summary =
-    totalLeft === 0
-      ? "This event is sold out."
-      : `From ${naira(cheapest.price_kobo)}. ${totalLeft} ticket${totalLeft === 1 ? "" : "s"} left in total.`;
-
-  return `${summary}\n${lines.join("\n")}`;
-}
-
 // ---------------------------------------------------------------------------
 // Rate limiting
 // ---------------------------------------------------------------------------
@@ -308,7 +206,13 @@ async function consumeLimit(
     .from("rate_limit_log")
     .insert({ ip_address: ip, endpoint });
 
-  if (insertError) return { allowed: false, unavailable: true };
+  // Failing closed took the whole assistant offline whenever the log table was
+  // unavailable: every message became a 503. Losing one counter is the smaller
+  // harm, and it is logged so the outage is still visible.
+  if (insertError) {
+    console.error("support-bot: rate limit write failed", insertError);
+    return { allowed: true, unavailable: true };
+  }
 
   const since = new Date(Date.now() - windowMs).toISOString();
   let query = supabase
@@ -320,7 +224,10 @@ async function consumeLimit(
   if (matchIp) query = query.eq("ip_address", ip);
 
   const { count, error } = await query;
-  if (error || count === null) return { allowed: false, unavailable: true };
+  if (error || count === null) {
+    console.error("support-bot: rate limit count failed", error);
+    return { allowed: true, unavailable: true };
+  }
 
   return { allowed: count <= max, unavailable: false };
 }
@@ -386,6 +293,7 @@ function categoryFor(intent: Intent): string {
     case "account":
     case "account_delete":
     case "email_change":
+    case "ticket_email_change":
       return "account";
     case "fraud":
     case "trust":
@@ -412,6 +320,7 @@ function priorityFor(intent: Intent): "high" | "medium" {
     case "payment_issue":
     case "entry":
     case "fraud":
+    case "ticket_email_change":
       return "high";
     default:
       return "medium";
@@ -423,6 +332,29 @@ interface EscalateResult {
   caseNumber: string | null;
   /** False when the case was created but its notifications could not be queued. */
   notified: boolean;
+  /** False when no receipt was sent to the customer (unverified address). */
+  notifiedCustomer: boolean;
+}
+
+/**
+ * Whether an address belongs to someone who has actually transacted here.
+ *
+ * The assistant invites a guest to type any address, and an acknowledgement is
+ * a real email to it. Without this check the bot could be used to send mail to
+ * a stranger twice an hour. A failed lookup is treated as unverified.
+ */
+async function buyerEmailExists(supabase: any, email: string | null): Promise<boolean> {
+  if (!email) return false;
+  const { count, error } = await supabase
+    .from("orders")
+    .select("id", { count: "exact", head: true })
+    .eq("buyer_email", email)
+    .limit(1);
+  if (error) {
+    console.error("support-bot: buyer verification failed", error);
+    return false;
+  }
+  return (count ?? 0) > 0;
 }
 
 /**
@@ -450,6 +382,53 @@ async function logBotQuery(
   }
 }
 
+/**
+ * Staff-approved fallback answers (support_bot_knowledge), cached per isolate.
+ *
+ * A paraphrase that no intent rule covers used to become an escalation. This
+ * gives it a checked answer instead. The 60 second cache keeps a hot bot from
+ * paying one query per message while still picking up a staff edit quickly.
+ */
+const KNOWLEDGE_TTL_MS = 60 * 1000;
+let knowledgeCache: { loadedAt: number; entries: BotKnowledgeEntry[] } = {
+  loadedAt: 0,
+  entries: [],
+};
+
+async function loadKnowledge(supabase: any): Promise<BotKnowledgeEntry[]> {
+  if (Date.now() - knowledgeCache.loadedAt < KNOWLEDGE_TTL_MS) return knowledgeCache.entries;
+
+  const { data, error } = await supabase
+    .from("support_bot_knowledge")
+    .select("id, title, category, content, triggers")
+    .eq("active", true)
+    .limit(200);
+
+  if (error) {
+    // An empty answer list is fine; failing the whole reply is not.
+    console.error("support-bot: knowledge load failed", error);
+    return knowledgeCache.entries;
+  }
+
+  knowledgeCache = { loadedAt: Date.now(), entries: (data ?? []) as BotKnowledgeEntry[] };
+  return knowledgeCache.entries;
+}
+
+async function matchKnowledge(
+  supabase: any,
+  message: string,
+  intent: Intent,
+): Promise<string | null> {
+  try {
+    const entries = await loadKnowledge(supabase);
+    if (entries.length === 0) return null;
+    return rankKnowledge(message, entries, intent)?.entry.content ?? null;
+  } catch (error) {
+    console.error("support-bot: knowledge lookup failed", error);
+    return null;
+  }
+}
+
 async function escalate(
   supabase: any,
   params: {
@@ -465,6 +444,10 @@ async function escalate(
   const { message, intent, sessionId, ip, caller, guestEmail, lastEvent } = params;
   const contactEmail = caller.email ?? guestEmail;
   const requestedAt = new Date().toISOString();
+
+  // A signed-in customer's address is verified by their session. A guest's is
+  // only trusted for a receipt when it has bought something here.
+  const verifiedContact = caller.userId ? true : await buyerEmailExists(supabase, guestEmail);
 
   const { data: created, error: caseError } = await supabase
     .from("support_cases")
@@ -491,7 +474,7 @@ async function escalate(
 
   if (caseError || !created) {
     console.error("support-bot: case insert failed", caseError);
-    return { ok: false, caseNumber: null, notified: false };
+    return { ok: false, caseNumber: null, notified: false, notifiedCustomer: false };
   }
 
   // A signed-in customer does have an auth.users row, so their question goes
@@ -531,7 +514,7 @@ async function escalate(
   // The customer gets a receipt carrying the case number. Every recipient used
   // to be a staff inbox, so the person who asked received no email at all while
   // the reply text promised a human would follow up by email.
-  const acknowledgementRows = contactEmail
+  const acknowledgementRows = contactEmail && verifiedContact
     ? [
         {
           case_id: created.id,
@@ -557,10 +540,20 @@ async function escalate(
     // here would hand the customer a 503 that invites a retry and a duplicate
     // case. Told the truth instead: it was passed on, notification is degraded.
     console.error("support-bot: outbox insert failed", outboxError);
-    return { ok: true, caseNumber: created.case_number, notified: false };
+    return {
+      ok: true,
+      caseNumber: created.case_number,
+      notified: false,
+      notifiedCustomer: verifiedContact,
+    };
   }
 
-  return { ok: true, caseNumber: created.case_number, notified: true };
+  return {
+    ok: true,
+    caseNumber: created.case_number,
+    notified: true,
+    notifiedCustomer: verifiedContact,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -644,6 +637,12 @@ serve(async (req: Request) => {
     // Last event shown in this chat, so follow-ups like "how much?" resolve.
     const contextSlug = typeof body?.context === "string" ? body.context.trim().slice(0, 120) : "";
 
+    // The previous intent, echoed by the client, is what keeps the subject of
+    // "and the venue?" or "what about entry?". Validated against the enum, and
+    // used only to choose a reply branch — never as a permission.
+    const previousIntentRaw = typeof body?.previousIntent === "string" ? body.previousIntent : "";
+    const previousIntent = isIntent(previousIntentRaw) ? previousIntentRaw : undefined;
+
     const ip = clientIp(req);
 
     // Both counters are independent, so they are written and counted in one
@@ -656,23 +655,17 @@ serve(async (req: Request) => {
       ),
     ]);
     if (!ipLimit.allowed) {
-      return new Response(
-        JSON.stringify({ error: ipLimit.unavailable ? GENERIC_ERROR : GENERIC_RATE_LIMIT }),
-        {
-          status: ipLimit.unavailable ? 503 : 429,
-          headers: { ...cors, "Content-Type": "application/json" },
-        },
-      );
+      return new Response(JSON.stringify({ error: GENERIC_RATE_LIMIT }), {
+        status: 429,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
     }
 
     if (!sessionLimit.allowed) {
-      return new Response(
-        JSON.stringify({ error: sessionLimit.unavailable ? GENERIC_ERROR : GENERIC_RATE_LIMIT }),
-        {
-          status: sessionLimit.unavailable ? 503 : 429,
-          headers: { ...cors, "Content-Type": "application/json" },
-        },
-      );
+      return new Response(JSON.stringify({ error: GENERIC_RATE_LIMIT }), {
+        status: 429,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
     }
 
     // Supabase auth is only contacted when an answer actually needs identity
@@ -682,7 +675,7 @@ serve(async (req: Request) => {
     const getCaller = (): Promise<Caller> =>
       (callerPromise ??= resolveCaller(req, supabaseUrl, anonKey));
 
-    const { intent, matched } = detectIntent(message);
+    const { intent, matched } = detectIntent(message, previousIntent);
     const searchTerm = extractSearchTerm(message, matched);
     // The message is scanned once; the reply logger and the refusal branch used
     // to run the same seven patterns twice for every message.
@@ -700,7 +693,9 @@ serve(async (req: Request) => {
           escalated: payload.escalated === true,
         });
       }
-      return new Response(JSON.stringify(payload), {
+      // The matched intent goes back so the client can echo it as
+      // previousIntent, which is what gives short follow-ups their subject.
+      return new Response(JSON.stringify({ intent, ...payload }), {
         status: 200,
         headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" },
       });
@@ -716,59 +711,63 @@ serve(async (req: Request) => {
       });
     }
 
-    const eventFields = "id, title, slug, start_datetime, end_datetime, venue_name, city";
+    const eventFields =
+      "id, title, slug, start_datetime, end_datetime, venue_name, city, status, postponed_at, organizer_note";
 
-    // ---- Data access: published events and their public ticket types only ----
-    const findEvents = async (term: string): Promise<PublicEvent[]> => {
+    // ---- Data access: events and their public ticket types only ----
+    /**
+     * Title phrase, individual title words and city, in one round trip.
+     *
+     * The previous version matched the whole cleaned phrase only, so "burna boy
+     * lagos concert" found nothing unless those words were contiguous in the
+     * title, then retried a single longest word. All three shapes now run in
+     * parallel and are read in order of confidence.
+     */
+    const findEvents = async (
+      term: string,
+      options: { includeEnded?: boolean } = {},
+    ): Promise<PublicEvent[]> => {
       if (term.length < 2) return [];
 
-      // Title and city run together. Both are common shapes ("burna boy",
-      // "events in lagos") and they were previously awaited one after another,
-      // so every lookup that missed on the title paid two round trips before the
-      // third fallback even started.
-      const [byTitle, byCity] = await Promise.all([
+      const statuses = options.includeEnded
+        ? ["published", "cancelled", "completed"]
+        : ["published"];
+      const words = term
+        .split(" ")
+        .map(escapeFilterValue)
+        .filter((word) => word.length >= 3)
+        .slice(0, 4);
+      const tokenFilter = words.length > 1
+        ? words.map((word) => `title.ilike.%${word}%`).join(",")
+        : null;
+
+      // Past lookups want the most recent match; upcoming ones want the soonest.
+      const search = () =>
         supabase
           .from("events")
           .select(eventFields)
-          .eq("status", "published")
-          .ilike("title", `%${escapeLike(term)}%`)
-          .order("start_datetime", { ascending: true })
-          .limit(5),
-        supabase
-          .from("events")
-          .select(eventFields)
-          .eq("status", "published")
-          .ilike("city", `%${escapeLike(term)}%`)
-          .order("start_datetime", { ascending: true })
-          .limit(5),
+          .in("status", statuses)
+          .order("start_datetime", { ascending: !options.includeEnded })
+          .limit(5);
+
+      const empty = { data: [] as PublicEvent[], error: null };
+      const [byPhrase, byToken, byCity] = await Promise.all([
+        search().ilike("title", `%${escapeLike(term)}%`),
+        tokenFilter ? search().or(tokenFilter) : Promise.resolve(empty),
+        search().ilike("city", `%${escapeLike(term)}%`),
       ]);
 
-      if (byTitle.error) {
-        console.error("support-bot: event lookup failed", byTitle.error);
+      if (byPhrase.error) {
+        console.error("support-bot: event lookup failed", byPhrase.error);
         return [];
       }
-      if (byTitle.data && byTitle.data.length > 0) return byTitle.data as PublicEvent[];
 
-      // Retry with the longest word alone: catches "lagos party vibes 2026".
-      // Precedence is unchanged — a word match still beats a city match.
-      const longest = term
-        .split(" ")
-        .filter((word) => word.length >= 4)
-        .sort((a, b) => b.length - a.length)[0];
-      if (longest && longest !== term) {
-        const byWord = await supabase
-          .from("events")
-          .select(eventFields)
-          .eq("status", "published")
-          .ilike("title", `%${escapeLike(longest)}%`)
-          .order("start_datetime", { ascending: true })
-          .limit(5);
-        if (byWord.data && byWord.data.length > 0) return byWord.data as PublicEvent[];
-      }
-
-      // A place rather than a title: "events in lagos".
-      if (byCity.error) return [];
-      return (byCity.data ?? []) as PublicEvent[];
+      const rows = byPhrase.data?.length
+        ? byPhrase.data
+        : byToken.data?.length
+        ? byToken.data
+        : byCity.data ?? [];
+      return rows as PublicEvent[];
     };
 
     const findUpcoming = async (
@@ -803,7 +802,7 @@ serve(async (req: Request) => {
       const { data, error } = await supabase
         .from("events")
         .select(eventFields)
-        .eq("status", "published")
+        .in("status", ["published", "cancelled", "completed"])
         .eq("slug", slug)
         .maybeSingle();
       if (error || !data) return null;
@@ -813,7 +812,9 @@ serve(async (req: Request) => {
     const findTickets = async (eventId: string): Promise<TicketType[]> => {
       const { data, error } = await supabase
         .from("ticket_types")
-        .select("name, price_kobo, quantity_available, quantity_sold, quantity_cancelled")
+        .select(
+          "name, price_kobo, quantity_available, quantity_sold, quantity_cancelled, sales_start_at, sales_end_at",
+        )
         .eq("event_id", eventId)
         .order("price_kobo", { ascending: true })
         .limit(12);
@@ -856,64 +857,74 @@ serve(async (req: Request) => {
     const withTickets = async (event: PublicEvent, includeTickets: boolean) => {
       const base = describeEvent(event);
       if (!includeTickets) return base;
+      if (event.status === "cancelled" || event.status === "completed") {
+        return `${base}\n\nTickets are no longer on sale for this event.`;
+      }
       const types = await findTickets(event.id);
       return `${base}\n\n${describeTickets(types)}`;
     };
 
-    // ---- 1. Small talk ----
-    if (intent === "greeting") {
+    // ---- 1. Answers that are the same for every customer ----
+    // One lookup instead of a chain of branches, and the copy lives in the
+    // shared catalogue where a test can prove every static intent has an answer.
+    const staticAnswer = STATIC_ANSWERS[intent];
+    if (staticAnswer) {
       return reply({
-        reply: "Hi, I'm TixNaija. Ask me about events, tickets or orders.",
+        reply: staticAnswer,
+        links: linksForIntent(intent),
         escalated: false,
         context: contextSlug || undefined,
       });
     }
 
-    if (intent === "thanks") {
+    // A finished or cancelled event can be looked up by name, so "was the Burna
+    // Boy show cancelled?" is answered from the record instead of with policy
+    // prose. Published-only search could never find it.
+    if (intent === "past_event") {
+      if (searchTerm.length >= 2) {
+        const found = await findEvents(searchTerm, { includeEnded: true });
+        if (found.length >= 1) {
+          const match = found[0];
+          return reply({
+            reply: `${
+              describeEvent(match)
+            }\n\n${
+              match.status === "cancelled"
+                ? "This event was cancelled by the organizer. Buyers are emailed automatically, and the refund is handled by the organizer through Paystack."
+                : "This event has ended, so its tickets are no longer on sale. If something went wrong with a ticket you bought for it, say \"talk to a person\" and I'll pass it to the support team."
+            }`,
+            cards: [toCard(match)],
+            escalated: false,
+            context: match.slug,
+          });
+        }
+      }
       return reply({
-        reply: "You're welcome. If you need anything else about an event, ticket or order, just ask.",
+        reply:
+          "Once an event has ended, its tickets come off sale and can't be bought any more — you can see everything still live at /browse.\n\nIf you already bought a ticket for an event that's now over and something went wrong with it, or you were charged for an event that got cancelled rather than simply ending, tell me the event name or say \"talk to a person\" and I'll pass it to the support team.",
         escalated: false,
         context: contextSlug || undefined,
       });
     }
 
     // ---- Resolve which event, if any, this message is about ----
-    // Only event intents search, and the search is skipped for the listing
-    // branch, which runs its own city/date-scoped query. Everything else used
-    // to pay one to three event queries it never read — and a message like
-    // "my payment failed for Burna Boy" could be answered with an event list
-    // instead of payment help.
+    // Only event intents search, and the listing branch runs its own
+    // city/date-scoped query. Everything else used to pay one to three event
+    // queries it never read — and a message like "my payment failed for Burna
+    // Boy" could be answered with an event list instead of payment help.
     let events: PublicEvent[] = [];
     let referencedEvent: PublicEvent | null = null;
 
     if (EVENT_INTENTS.has(intent) || intent === "unknown") {
-      events = searchTerm.length >= 2 ? await findEvents(searchTerm) : [];
+      events = searchTerm.length >= 2
+        ? await findEvents(searchTerm, { includeEnded: intent === "cancelled" })
+        : [];
       if (events.length === 1) {
         referencedEvent = events[0];
       } else if (events.length === 0 && contextSlug) {
         // Follow-up question about the event we just showed.
         referencedEvent = await findEventBySlug(contextSlug);
       }
-    }
-
-    if (intent === "organizer") {
-      return reply({
-        reply:
-          "You can list an event on TixNaija yourself — there's no approval queue. Create an account at /auth, then open /dashboard to publish the event, set your ticket types and prices, and watch sales come in.\n\nTicket money settles to your own bank account through Paystack, and you can track and request payouts from the same dashboard.\n\nWant a hand setting it up? Say \"talk to a person\" and I'll pass you to the team.",
-        escalated: false,
-        context: contextSlug || undefined,
-      });
-    }
-
-    // Answered directly, before the event-search results below can hijack a
-    // yes/no policy question with a listing of upcoming events.
-    if (intent === "past_event") {
-      return reply({
-        reply:
-          "No — once an event has ended, its tickets come off sale and can't be bought any more. Tickets are only on sale for events that are still upcoming; you can see everything currently live at /browse.\n\nIf you already bought a ticket for an event that's now over and something went wrong with it, or you were charged for an event that got cancelled rather than simply ending, say \"talk to a person\" and I'll pass it to the support team.",
-        escalated: false,
-        context: contextSlug || undefined,
-      });
     }
 
     // ---- 2. Events we found ----
@@ -930,9 +941,8 @@ serve(async (req: Request) => {
     // ---- 3. Ticket prices and availability ----
     if (intent === "price" || intent === "availability") {
       if (referencedEvent) {
-        const types = await findTickets(referencedEvent.id);
         return reply({
-          reply: `${describeEvent(referencedEvent)}\n\n${describeTickets(types)}`,
+          reply: await withTickets(referencedEvent, true),
           cards: [toCard(referencedEvent)],
           escalated: false,
           context: referencedEvent.slug,
@@ -959,9 +969,20 @@ serve(async (req: Request) => {
     }
 
     // ---- 4. Date, venue, cancellation ----
-    if (referencedEvent && ["schedule", "venue", "cancelled"].includes(intent)) {
+    if (referencedEvent && ["schedule", "venue"].includes(intent)) {
       return reply({
         reply: await withTickets(referencedEvent, false),
+        cards: [toCard(referencedEvent)],
+        escalated: false,
+        context: referencedEvent.slug,
+      });
+    }
+
+    if (intent === "cancelled" && referencedEvent) {
+      const statusAnswer = eventStatusGuidance(referencedEvent);
+      return reply({
+        reply: `${describeEvent(referencedEvent)}\n\n${statusAnswer}`,
+        links: linksForIntent("refund_policy"),
         cards: [toCard(referencedEvent)],
         escalated: false,
         context: referencedEvent.slug,
@@ -1006,8 +1027,11 @@ serve(async (req: Request) => {
 
       const windowLabel = (() => {
         const text = message.toLowerCase();
+        if (text.includes("next weekend")) return "next weekend";
         if (text.includes("weekend")) return "this weekend";
-        if (text.includes("today") || text.includes("tonight")) return "today";
+        if (text.includes("tomorrow")) return "tomorrow";
+        if (text.includes("today") || text.includes("tonight") || text.includes("this night")) return "today";
+        if (text.includes("next week")) return "next week";
         if (text.includes("this week")) return "this week";
         return "";
       })();
@@ -1025,156 +1049,6 @@ serve(async (req: Request) => {
       return reply({
         reply: `Here's what's on${scope ? ` ${scope}` : ""}:\n\n${upcoming.map(describeEvent).join("\n\n")}\n\nSee everything at /browse.`,
         cards: upcoming.map(toCard),
-        escalated: false,
-        context: contextSlug || undefined,
-      });
-    }
-
-    // ---- 6. Static, policy-safe guidance ----
-    if (intent === "capabilities") {
-      return reply({
-        reply: [
-          "Here's what I can do:",
-          "",
-          "- Find an event and give you the date, time and venue — try \"when is <event name>\"",
-          "- Show ticket prices and how many are left — \"how much is <event name>\"",
-          "- Tell you what's coming up — \"what events are happening\"",
-          "- Show you how to resend your ticket links — \"I didn't get my ticket\"",
-          "- Explain refunds, payments, promo codes, waitlists and accounts",
-          "- Show you how to list and sell tickets for your own event",
-          "- Answer who runs the platform",
-          "",
-          "If I can't answer something, I'll pass it to a person who can.",
-        ].join("\n"),
-        escalated: false,
-        context: contextSlug || undefined,
-      });
-    }
-
-    if (intent === "about") {
-      return reply({
-        reply:
-          "TixNaija was created by Isaac Ogbomo.\n\nIt's an independent Nigerian ticketing platform. TixNaija is not connected to Tix Africa in any way — separate company, separate team, separate platform.",
-        escalated: false,
-        context: contextSlug || undefined,
-      });
-    }
-
-    if (intent === "how_to_buy") {
-      return reply({
-        reply:
-          "Open the event at /browse, pick your ticket type and quantity, then continue to checkout. You can pay with card, bank transfer or USSD, and your tickets are emailed right after payment. You don't need an account to buy.",
-        escalated: false,
-        context: contextSlug || undefined,
-      });
-    }
-
-    if (intent === "payment") {
-      return reply({
-        reply:
-          "Checkout is handled by Paystack: card, bank transfer and USSD all work. If you were debited but no ticket arrived, enter the email you paid with at /my-tickets to resend the links. If it's still missing, I can pass it to the support team.",
-        escalated: false,
-        context: contextSlug || undefined,
-      });
-    }
-
-    if (intent === "promo") {
-      return reply({
-        reply:
-          "If an event has a promo code, the field appears at checkout before you pay. Codes are set by the organizer, so I can't create one — but I can pass a request to the support team.",
-        escalated: false,
-        context: contextSlug || undefined,
-      });
-    }
-
-    if (intent === "waitlist") {
-      return reply({
-        reply:
-          "When a ticket type sells out, the event page offers a waitlist so you're notified if tickets are released. Join it from the event page at /browse.",
-        escalated: false,
-        context: contextSlug || undefined,
-      });
-    }
-
-    if (intent === "account") {
-      return reply({
-        reply:
-          "Sign in at /auth. If you've forgotten your password, use the reset link there. Bought as a guest? You don't need an account — use /my-tickets with your email.",
-        escalated: false,
-        context: contextSlug || undefined,
-      });
-    }
-
-    if (intent === "app") {
-      return reply({
-        reply: "The TixNaija Android app is available at /download. An iPhone version isn't released yet.",
-        escalated: false,
-        context: contextSlug || undefined,
-      });
-    }
-
-    if (intent === "contact") {
-      return reply({
-        reply: `You can reach the team at ${PUBLIC_SUPPORT_ADDRESS}. For a question about a specific event, the organizer's contact is listed on the event page.`,
-        escalated: false,
-        context: contextSlug || undefined,
-      });
-    }
-
-    // Policy and how-to answers. Each of these intents was detected by the
-    // shared brain and then had no branch here, so a question the assistant
-    // knew the answer to was escalated as "I don't have an answer for that one".
-    if (intent === "refund_policy") {
-      return reply({
-        reply: REFUND_POLICY,
-        escalated: false,
-        context: contextSlug || undefined,
-      });
-    }
-
-    if (intent === "entry") {
-      return reply({
-        reply: ENTRY_GUIDANCE,
-        escalated: false,
-        context: contextSlug || undefined,
-      });
-    }
-
-    if (intent === "delivery_confirmation") {
-      return reply({
-        reply: EMAIL_CONFIRMATION_GUIDANCE,
-        escalated: false,
-        context: contextSlug || undefined,
-      });
-    }
-
-    if (intent === "technical") {
-      return reply({
-        reply: TECHNICAL_GUIDANCE,
-        escalated: false,
-        context: contextSlug || undefined,
-      });
-    }
-
-    if (intent === "account_delete") {
-      return reply({
-        reply: ACCOUNT_DELETE_GUIDANCE,
-        escalated: false,
-        context: contextSlug || undefined,
-      });
-    }
-
-    if (intent === "email_change") {
-      return reply({
-        reply: EMAIL_CHANGE_GUIDANCE,
-        escalated: false,
-        context: contextSlug || undefined,
-      });
-    }
-
-    if (intent === "trust") {
-      return reply({
-        reply: TRUST_GUIDANCE,
         escalated: false,
         context: contextSlug || undefined,
       });
@@ -1203,24 +1077,47 @@ serve(async (req: Request) => {
       });
     }
 
-    if (intent === "transfer") {
-      return reply({
-        reply:
-          "Tickets can't be renamed from the assistant — the support team handles attendee changes so the QR codes stay valid. I can pass the request on with your order details.",
-        escalated: false,
-        context: contextSlug || undefined,
-      });
-    }
-
     // ---- 7. Everything that needs a human ----
+    /** The customer's own open case, so a capped reply can point at it. */
+    const findOpenCase = async (): Promise<string | null> => {
+      const { userId, email } = await getCaller();
+      const contact = email ?? guestEmail;
+      if (!userId && !contact) return null;
+
+      let query = supabase
+        .from("support_cases")
+        .select("case_number")
+        .in("status", ["open", "pending"])
+        .order("created_at", { ascending: false })
+        .limit(1);
+      query = userId ? query.eq("customer_id", userId) : query.eq("guest_email", contact);
+
+      const { data, error } = await query.maybeSingle();
+      if (error || !data) return null;
+      return (data as { case_number: string }).case_number;
+    };
+
+    const findKnowledgeAnswer = async () => {
+      const { data, error } = await supabase
+        .from("support_bot_knowledge")
+        .select("id, title, category, content, triggers")
+        .eq("active", true)
+        .limit(100);
+      if (error) {
+        console.error("support-bot: knowledge lookup failed", error);
+        return null;
+      }
+      return rankKnowledge(message, (data ?? []) as BotKnowledgeEntry[], intent);
+    };
+
     const runEscalation = async (lead: string, successText?: string) => {
       const caller = await getCaller();
-      const { status, caseNumber } = await maybeEscalate({
+      const outcome = await maybeEscalate({
         supabase, message, intent, sessionId, ip, caller, guestEmail,
         lastEvent: referencedEvent?.slug ?? (contextSlug || null),
       });
 
-      if (status === "needs_email") {
+      if (outcome.status === "needs_email") {
         return reply({
           needsEmail: true,
           escalated: false,
@@ -1228,14 +1125,18 @@ serve(async (req: Request) => {
         });
       }
 
-      if (status === "capped") {
+      if (outcome.status === "capped") {
         // Deliberately does not claim the new question was captured. The old
         // wording said "they have it, there's no need to send it again", which
         // was untrue for a second, different problem — so the customer stopped
         // chasing something nobody had ever seen.
+        const openCase = await findOpenCase();
         return reply({
           reply:
-            "I've already passed a message from you to the support team recently, so someone is looking into it. To keep the queue moving I can't open a second case just yet.\n\nIf this is a different problem, please try again in about an hour, or email " +
+            (openCase
+              ? `Your case ${openCase} is already with the support team, so someone is on it. I can't open a second case just yet — that keeps the queue moving.\n\n`
+              : "I've already passed a message from you to the support team recently, so someone is looking into it. I can't open a second case just yet.\n\n") +
+            "If this is a different problem, try again in about an hour, or email " +
             PUBLIC_SUPPORT_ADDRESS +
             " and they'll pick it up straight away.",
           escalated: false,
@@ -1243,7 +1144,7 @@ serve(async (req: Request) => {
         });
       }
 
-      if (status === "failed") {
+      if (outcome.status === "failed") {
         return new Response(JSON.stringify({ error: GENERIC_ERROR }), {
           status: 503,
           headers: { ...cors, "Content-Type": "application/json" },
@@ -1256,18 +1157,31 @@ serve(async (req: Request) => {
           PUBLIC_SUPPORT_ADDRESS +
           ".";
 
+      // No receipt is sent to an address we cannot tie to this platform, so the
+      // reply says so instead of promising an email that will never arrive.
+      const unverifiedNote = outcome.notifiedCustomer
+        ? ""
+        : `\n\nI couldn't send a receipt to ${caller.email ?? guestEmail} because it isn't linked to an order here. Keep this case number and email us from that address so the team can verify it.`;
+
       // The case number was fetched and discarded before, so the customer had no
       // reference. Returning later meant starting from zero with nothing to
       // connect the two conversations.
       return reply({
-        reply: caseNumber
-          ? `${confirmation}\n\nYour case number is ${caseNumber}. Keep it — quoting it gets you a faster answer.`
-          : confirmation,
+        reply: (outcome.caseNumber
+          ? `${confirmation}\n\nYour case number is ${outcome.caseNumber}. Keep it — quoting it gets you a faster answer.`
+          : confirmation) + unverifiedNote,
         escalated: true,
-        caseNumber: caseNumber ?? undefined,
+        caseNumber: outcome.caseNumber ?? undefined,
         context: contextSlug || undefined,
       });
     };
+
+    if (intent === "ticket_email_change") {
+      return runEscalation(
+        "For security, a ticket delivered to the wrong checkout email needs the support team to verify the order before it can be reissued.",
+        `I've passed this to the support team for verification. Don't send card details, a PIN or an OTP here. They'll confirm the order and the correct delivery address before reissuing the ticket. You can also email ${PUBLIC_SUPPORT_ADDRESS}.`,
+      );
+    }
 
     if (intent === "refund") {
       return runEscalation(
@@ -1322,6 +1236,16 @@ serve(async (req: Request) => {
       });
     }
 
+    const knowledge = intent === "unknown" ? await findKnowledgeAnswer() : null;
+    if (knowledge) {
+      return reply({
+        reply: knowledge.entry.content,
+        links: linksForKnowledge(knowledge.entry),
+        escalated: false,
+        context: contextSlug || undefined,
+      });
+    }
+
     return runEscalation("I don't have an answer for that one, so a person should take a look.");
   } catch (error) {
     console.error("support-bot: unhandled error", error);
@@ -1341,6 +1265,8 @@ type EscalationStatus = "escalated" | "needs_email" | "capped" | "failed";
 interface EscalationOutcome {
   status: EscalationStatus;
   caseNumber: string | null;
+  /** False when the customer's address is unverified and no receipt was sent. */
+  notifiedCustomer: boolean;
 }
 
 async function maybeEscalate(params: {
@@ -1357,13 +1283,12 @@ async function maybeEscalate(params: {
   const contactEmail = caller.email ?? guestEmail;
 
   // Guests must leave an address before a case is opened.
-  if (!contactEmail) return { status: "needs_email", caseNumber: null };
+  if (!contactEmail) return { status: "needs_email", caseNumber: null, notifiedCustomer: false };
 
   const ipCap = await consumeLimit(
     supabase, ip, "support_bot_escalation", ESCALATION_WINDOW_MS, IP_MAX_ESCALATIONS, true,
   );
-  if (ipCap.unavailable) return { status: "failed", caseNumber: null };
-  if (!ipCap.allowed) return { status: "capped", caseNumber: null };
+  if (!ipCap.allowed) return { status: "capped", caseNumber: null, notifiedCustomer: false };
 
   /**
    * Per-address escalation cap.
@@ -1387,11 +1312,14 @@ async function maybeEscalate(params: {
     EMAIL_MAX_ESCALATIONS,
     true,
   );
-  if (emailCap.unavailable) return { status: "failed", caseNumber: null };
-  if (!emailCap.allowed) return { status: "capped", caseNumber: null };
+  if (!emailCap.allowed) return { status: "capped", caseNumber: null, notifiedCustomer: false };
 
   const result = await escalate(supabase, params);
   return result.ok
-    ? { status: "escalated", caseNumber: result.caseNumber }
-    : { status: "failed", caseNumber: null };
+    ? {
+      status: "escalated",
+      caseNumber: result.caseNumber,
+      notifiedCustomer: result.notifiedCustomer,
+    }
+    : { status: "failed", caseNumber: null, notifiedCustomer: false };
 }

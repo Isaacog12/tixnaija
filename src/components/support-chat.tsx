@@ -10,6 +10,20 @@ const MAX_MESSAGE_LENGTH = 500;
 const SESSION_KEY = "tixnaija-support-session";
 const TRANSCRIPT_KEY = "tixnaija-support-transcript";
 const CASE_KEY = "tixnaija-support-case";
+const CONTEXT_KEY = "tixnaija-support-context";
+const INTENT_KEY = "tixnaija-support-intent";
+
+/**
+ * Shown until the conversation has a subject. Most first messages are one of
+ * these, and typing "talk to a person" exactly is the difference between a
+ * case and a guess.
+ */
+const QUICK_REPLIES = [
+  "What's on this weekend?",
+  "My ticket hasn't arrived",
+  "What is your refund policy?",
+  "Talk to a person",
+];
 
 /** Long enough to be useful after a refresh, short enough to stay out of the way. */
 const MAX_TRANSCRIPT_MESSAGES = 40;
@@ -24,10 +38,16 @@ interface EventCard {
   url: string;
 }
 
+interface ActionLink {
+  label: string;
+  href: string;
+}
+
 interface ChatMessage {
   role: "assistant" | "user";
   text: string;
   cards?: EventCard[];
+  links?: ActionLink[];
   /** Kept out of storage. Used for the address a guest types to escalate. */
   ephemeral?: boolean;
 }
@@ -37,8 +57,14 @@ interface BotReply {
   needsEmail?: boolean;
   error?: string;
   context?: string;
+  intent?: string;
   cards?: EventCard[];
+  links?: ActionLink[];
   caseNumber?: string;
+}
+
+function isSafeInternalHref(href: string): boolean {
+  return href.startsWith("/") && !href.startsWith("//") && !href.includes("\\");
 }
 
 function getSessionId(): string {
@@ -87,12 +113,39 @@ function readStoredMessages(): ChatMessage[] {
   }
 }
 
+function readStoredText(key: string): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return sessionStorage.getItem(key) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function storeText(key: string, value: string): void {
+  try {
+    if (value) sessionStorage.setItem(key, value);
+    else sessionStorage.removeItem(key);
+  } catch {
+    // Conversation memory is helpful, but never worth breaking chat over.
+  }
+}
+
 function readStoredCase(): string | null {
   if (typeof window === "undefined") return null;
   try {
     return sessionStorage.getItem(CASE_KEY);
   } catch {
     return null;
+  }
+}
+
+function readStoredIntent(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return sessionStorage.getItem(INTENT_KEY) ?? "";
+  } catch {
+    return "";
   }
 }
 
@@ -120,12 +173,16 @@ export function SupportChat() {
   const [email, setEmail] = useState("");
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [context, setContext] = useState<string>("");
+  const [context, setContext] = useState<string>(() => readStoredText(CONTEXT_KEY));
   const [caseNumber, setCaseNumber] = useState<string | null>(() => readStoredCase());
+  const [lastIntent, setLastIntent] = useState<string>(() => readStoredIntent());
+  const [copied, setCopied] = useState(false);
 
   const sessionIdRef = useRef<string>("");
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const launcherRef = useRef<HTMLButtonElement | null>(null);
 
   if (!sessionIdRef.current && typeof window !== "undefined") {
     sessionIdRef.current = getSessionId();
@@ -140,13 +197,37 @@ export function SupportChat() {
     if (!open) return;
     inputRef.current?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key !== "Escape") return;
+      setOpen(false);
+      // Return focus to the launcher instead of stranding keyboard users at
+      // the top of the document.
+      launcherRef.current?.focus();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
+  // Tapping or clicking anywhere outside the panel closes it. Pointerdown
+  // rather than click so a mouse, a finger and a pen all behave the same, and
+  // the launcher is excluded because its own handler toggles the panel.
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (panelRef.current?.contains(target)) return;
+      if (launcherRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [open]);
+
   const push = (message: ChatMessage) => setMessages((prev) => [...prev, message]);
+
+  useEffect(() => {
+    storeText(CONTEXT_KEY, context);
+  }, [context]);
 
   useEffect(() => {
     try {
@@ -170,6 +251,8 @@ export function SupportChat() {
           sessionId: sessionIdRef.current,
           email: emailOverride || undefined,
           context: context || undefined,
+          // Lets "and the venue?" keep its subject; the server validates it.
+          previousIntent: lastIntent || undefined,
         },
       });
 
@@ -188,6 +271,15 @@ export function SupportChat() {
         setContext(payload.context);
       }
 
+      if (payload?.intent) {
+        setLastIntent(payload.intent);
+        try {
+          sessionStorage.setItem(INTENT_KEY, payload.intent);
+        } catch {
+          // Losing the follow-up subject is not worth breaking a reply over.
+        }
+      }
+
       if (payload?.caseNumber) {
         setCaseNumber(payload.caseNumber);
         storeCase(payload.caseNumber);
@@ -202,7 +294,7 @@ export function SupportChat() {
       }
 
       if (payload?.reply) {
-        push({ role: "assistant", text: payload.reply, cards: payload.cards });
+        push({ role: "assistant", text: payload.reply, cards: payload.cards, links: payload.links });
       } else if (payload?.error) {
         setError(payload.error);
       } else {
@@ -217,12 +309,29 @@ export function SupportChat() {
     }
   }
 
+  function send(text: string) {
+    const value = text.trim();
+    if (!value || sending) return;
+    push({ role: "user", text: value });
+    void ask(value);
+  }
+
   function handleSend() {
     const text = draft.trim();
     if (!text || sending) return;
     setDraft("");
-    push({ role: "user", text });
-    void ask(text);
+    send(text);
+  }
+
+  async function copyCaseNumber() {
+    if (!caseNumber) return;
+    try {
+      await navigator.clipboard.writeText(caseNumber);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard access can be blocked; the number stays readable either way.
+    }
   }
 
   function handleEmailSubmit() {
@@ -242,23 +351,43 @@ export function SupportChat() {
     <>
       {open && (
         <div
+          ref={panelRef}
           role="dialog"
           aria-label="TixNaija assistant"
           aria-modal="false"
-          className="fixed bottom-24 right-4 z-50 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl sm:right-6"
+          // Edge-to-edge on a phone, capped to the visible viewport so the input
+          // row can never be pushed off-screen by a long conversation.
+          className="fixed bottom-24 left-3 right-3 z-50 flex max-h-[calc(100dvh-7.5rem)] flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl sm:left-auto sm:right-6 sm:w-[24rem]"
         >
-          <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
+          <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-4 py-3">
             <div>
               <p className="font-display text-base font-semibold leading-tight tracking-tight text-foreground">
                 TixNaija
               </p>
               <p className="text-xs text-muted-foreground">
-                {caseNumber ? `Automated assistant · ${caseNumber}` : "Automated assistant"}
+                {caseNumber ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    {`Automated assistant · ${caseNumber}`}
+                    <button
+                      type="button"
+                      onClick={() => void copyCaseNumber()}
+                      className="underline underline-offset-2 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      aria-label="Copy case number"
+                    >
+                      {copied ? "Copied" : "Copy"}
+                    </button>
+                  </span>
+                ) : (
+                  "Automated assistant"
+                )}
               </p>
             </div>
             <button
               type="button"
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                setOpen(false);
+                launcherRef.current?.focus();
+              }}
               aria-label="Close assistant"
               className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
@@ -268,7 +397,7 @@ export function SupportChat() {
 
           <div
             ref={scrollRef}
-            className="flex max-h-80 min-h-40 flex-col gap-3 overflow-y-auto px-4 py-4"
+            className="flex min-h-40 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-4 py-4"
             aria-live="polite"
           >
             {messages.map((message, index) => (
@@ -287,6 +416,21 @@ export function SupportChat() {
                   had to retype them into the address bar on a phone. Cards are
                   the structured form the Edge Function now sends alongside.
                 */}
+                {message.links && message.links.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {message.links.filter((link) => isSafeInternalHref(link.href)).map((link, linkIndex) => (
+                      <a
+                        key={`${link.href}-${linkIndex}`}
+                        href={link.href}
+                        download={link.href === "/Tixnaija.apk" ? "Tixnaija.apk" : undefined}
+                        className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        {link.label}
+                      </a>
+                    ))}
+                  </div>
+                )}
+
                 {message.cards && message.cards.length > 0 && (
                   <div className="mt-2 flex flex-col gap-1.5">
                     {message.cards.map((card, cardIndex) => (
@@ -360,7 +504,21 @@ export function SupportChat() {
             {error && <p className="self-start text-xs text-destructive">{error}</p>}
           </div>
 
-          <div className="border-t border-border px-3 py-3">
+          <div className="shrink-0 border-t border-border px-3 py-3">
+            {messages.length <= 2 && !sending && (
+              <div className="flex flex-wrap gap-1.5 pb-2">
+                {QUICK_REPLIES.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => send(suggestion)}
+                    className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <Input
                 ref={inputRef}
@@ -398,6 +556,7 @@ export function SupportChat() {
       )}
 
       <button
+        ref={launcherRef}
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-label={open ? "Close TixNaija assistant" : "Open TixNaija assistant"}

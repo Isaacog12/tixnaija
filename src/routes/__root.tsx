@@ -91,9 +91,11 @@ class AppErrorBoundary extends Component<
             {/* Support link */}
             <div className="mt-6 pt-6 border-t border-border/40 text-xs text-muted-foreground">
               Persistent issue?{" "}
-              <a href="/support" className="text-primary font-medium hover:underline">
+              {/* Public error screens must not send customers to the staff
+                  support portal, which needs a role they do not have. */}
+              <Link to="/contact" className="text-primary font-medium hover:underline">
                 Contact Customer Support
-              </a>
+              </Link>
             </div>
 
             {/* Dev trace */}
@@ -168,7 +170,7 @@ function NotFoundComponent() {
           <span className="text-border">·</span>
           <Link to="/my-tickets" className="hover:text-foreground transition-colors">Find My Tickets</Link>
           <span className="text-border">·</span>
-          <Link to="/support" className="hover:text-foreground transition-colors">Support Desk</Link>
+          <Link to="/contact" className="hover:text-foreground transition-colors">Contact Support</Link>
         </div>
 
         <div className="mt-10 flex items-baseline justify-center gap-0.5 opacity-40">
@@ -228,9 +230,9 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 
         <div className="mt-6 pt-6 border-t border-border/40 text-xs text-muted-foreground">
           Need assistance?{" "}
-          <a href="/support" className="text-primary font-medium hover:underline">
-            Visit Support Desk
-          </a>
+          <Link to="/contact" className="text-primary font-medium hover:underline">
+            Contact Support
+          </Link>
         </div>
       </div>
     </div>
