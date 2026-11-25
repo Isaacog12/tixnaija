@@ -96,6 +96,14 @@ const EMAIL_MAX_ESCALATIONS = 2;
 const GENERIC_ERROR = "Something went wrong on our side. Please try again.";
 const GENERIC_RATE_LIMIT = "Too many messages. Please wait a few minutes and try again.";
 
+/**
+ * Intents answered from a named event. Every other message skips the event
+ * search entirely — it used to run for any message with a searchable word.
+ */
+const EVENT_INTENTS: ReadonlySet<Intent> = new Set<Intent>([
+  "price", "availability", "schedule", "venue", "cancelled",
+]);
+
 const allowedOrigins = [
   "https://tixnaija.name.ng",
   "https://www.tixnaija.name.ng",
@@ -165,31 +173,35 @@ function escapeLike(value: string): string {
 
 const LAGOS = "Africa/Lagos";
 
+// Building an Intl.DateTimeFormat is the expensive part, not formatting, and
+// every event answer formats three or four dates. Created once per isolate.
+const EVENT_DATE_FORMAT = new Intl.DateTimeFormat("en-NG", {
+  timeZone: LAGOS, weekday: "short", day: "numeric", month: "short", year: "numeric",
+});
+const EVENT_TIME_FORMAT = new Intl.DateTimeFormat("en-NG", {
+  timeZone: LAGOS, hour: "numeric", minute: "2-digit",
+});
+const EVENT_END_DATE_FORMAT = new Intl.DateTimeFormat("en-NG", {
+  timeZone: LAGOS, day: "numeric", month: "short", year: "numeric",
+});
+
 function formatWhen(start: string | null, end: string | null): string {
   if (!start) return "date to be announced";
   const startDate = new Date(start);
   if (Number.isNaN(startDate.getTime())) return "date to be announced";
 
-  const datePart = startDate.toLocaleDateString("en-NG", {
-    timeZone: LAGOS, weekday: "short", day: "numeric", month: "short", year: "numeric",
-  });
-  const timePart = startDate.toLocaleTimeString("en-NG", {
-    timeZone: LAGOS, hour: "numeric", minute: "2-digit",
-  });
+  const datePart = EVENT_DATE_FORMAT.format(startDate);
+  const timePart = EVENT_TIME_FORMAT.format(startDate);
 
   if (!end) return `${datePart}, ${timePart}`;
   const endDate = new Date(end);
   if (Number.isNaN(endDate.getTime())) return `${datePart}, ${timePart}`;
 
   const sameDay = endDate.toDateString() === startDate.toDateString();
-  const endTime = endDate.toLocaleTimeString("en-NG", {
-    timeZone: LAGOS, hour: "numeric", minute: "2-digit",
-  });
+  const endTime = EVENT_TIME_FORMAT.format(endDate);
   return sameDay
     ? `${datePart}, ${timePart} to ${endTime}`
-    : `${datePart}, ${timePart} until ${endDate.toLocaleDateString("en-NG", {
-        timeZone: LAGOS, day: "numeric", month: "short", year: "numeric",
-      })}, ${endTime}`;
+    : `${datePart}, ${timePart} until ${EVENT_END_DATE_FORMAT.format(endDate)}, ${endTime}`;
 }
 
 function naira(kobo: number): string {
@@ -634,9 +646,15 @@ serve(async (req: Request) => {
 
     const ip = clientIp(req);
 
-    const ipLimit = await consumeLimit(
-      supabase, ip, "support_bot_message", IP_WINDOW_MS, IP_MAX_MESSAGES, true,
-    );
+    // Both counters are independent, so they are written and counted in one
+    // round trip instead of two sequential ones before any answer can start.
+    const [ipLimit, sessionLimit] = await Promise.all([
+      consumeLimit(supabase, ip, "support_bot_message", IP_WINDOW_MS, IP_MAX_MESSAGES, true),
+      consumeLimit(
+        supabase, ip, `support_bot_session:${sessionId}`, SESSION_WINDOW_MS,
+        SESSION_MAX_MESSAGES, false,
+      ),
+    ]);
     if (!ipLimit.allowed) {
       return new Response(
         JSON.stringify({ error: ipLimit.unavailable ? GENERIC_ERROR : GENERIC_RATE_LIMIT }),
@@ -647,9 +665,6 @@ serve(async (req: Request) => {
       );
     }
 
-    const sessionLimit = await consumeLimit(
-      supabase, ip, `support_bot_session:${sessionId}`, SESSION_WINDOW_MS, SESSION_MAX_MESSAGES, false,
-    );
     if (!sessionLimit.allowed) {
       return new Response(
         JSON.stringify({ error: sessionLimit.unavailable ? GENERIC_ERROR : GENERIC_RATE_LIMIT }),
@@ -660,15 +675,24 @@ serve(async (req: Request) => {
       );
     }
 
-    const caller = await resolveCaller(req, supabaseUrl, anonKey);
+    // Supabase auth is only contacted when an answer actually needs identity
+    // (order lookups and escalation). A signed-in customer asking a policy
+    // question used to pay an auth round trip for nothing.
+    let callerPromise: Promise<Caller> | null = null;
+    const getCaller = (): Promise<Caller> =>
+      (callerPromise ??= resolveCaller(req, supabaseUrl, anonKey));
+
     const { intent, matched } = detectIntent(message);
     const searchTerm = extractSearchTerm(message, matched);
+    // The message is scanned once; the reply logger and the refusal branch used
+    // to run the same seven patterns twice for every message.
+    const sensitive = containsSensitiveData(message);
 
     const reply = (payload: Record<string, unknown>) => {
       // Bot gap analytics. Deliberately not awaited: measuring the assistant must
       // never add latency to, or fail, a customer's reply. Nothing that looked
       // like a card number, PIN or password is ever written here.
-      if (!containsSensitiveData(message)) {
+      if (!sensitive) {
         void logBotQuery(supabase, {
           sessionId,
           message,
@@ -684,7 +708,7 @@ serve(async (req: Request) => {
 
     // Card numbers, PINs, OTPs and passwords are refused before anything else:
     // they are never stored in a case, an email or a log.
-    if (containsSensitiveData(message)) {
+    if (sensitive) {
       return reply({
         reply: SENSITIVE_REFUSAL,
         escalated: false,
@@ -829,17 +853,6 @@ serve(async (req: Request) => {
       return `Your latest order${event} is ${reference} (${naira(order.total_kobo)}, ${order.status}). ${orderStatusGuidance(order.status)}`;
     };
 
-    // ---- Resolve which event, if any, this message is about ----
-    let events = searchTerm.length >= 2 ? await findEvents(searchTerm) : [];
-    let referencedEvent: PublicEvent | null = null;
-
-    if (events.length === 1) {
-      referencedEvent = events[0];
-    } else if (events.length === 0 && contextSlug) {
-      // Follow-up question about the event we just showed.
-      referencedEvent = await findEventBySlug(contextSlug);
-    }
-
     const withTickets = async (event: PublicEvent, includeTickets: boolean) => {
       const base = describeEvent(event);
       if (!includeTickets) return base;
@@ -862,6 +875,25 @@ serve(async (req: Request) => {
         escalated: false,
         context: contextSlug || undefined,
       });
+    }
+
+    // ---- Resolve which event, if any, this message is about ----
+    // Only event intents search, and the search is skipped for the listing
+    // branch, which runs its own city/date-scoped query. Everything else used
+    // to pay one to three event queries it never read — and a message like
+    // "my payment failed for Burna Boy" could be answered with an event list
+    // instead of payment help.
+    let events: PublicEvent[] = [];
+    let referencedEvent: PublicEvent | null = null;
+
+    if (EVENT_INTENTS.has(intent) || intent === "unknown") {
+      events = searchTerm.length >= 2 ? await findEvents(searchTerm) : [];
+      if (events.length === 1) {
+        referencedEvent = events[0];
+      } else if (events.length === 0 && contextSlug) {
+        // Follow-up question about the event we just showed.
+        referencedEvent = await findEventBySlug(contextSlug);
+      }
     }
 
     if (intent === "organizer") {
@@ -1160,7 +1192,8 @@ serve(async (req: Request) => {
       //
       // A signed-in customer gets their own latest order state as well, so
       // "where is my order" is answered from the record instead of a guess.
-      const known = caller.userId ? await findLatestOrder(caller.userId) : null;
+      const { userId } = await getCaller();
+      const known = userId ? await findLatestOrder(userId) : null;
       return reply({
         reply:
           (known ? `${known}\n\n` : "") +
@@ -1181,6 +1214,7 @@ serve(async (req: Request) => {
 
     // ---- 7. Everything that needs a human ----
     const runEscalation = async (lead: string, successText?: string) => {
+      const caller = await getCaller();
       const { status, caseNumber } = await maybeEscalate({
         supabase, message, intent, sessionId, ip, caller, guestEmail,
         lastEvent: referencedEvent?.slug ?? (contextSlug || null),
@@ -1245,7 +1279,8 @@ serve(async (req: Request) => {
     // Money has already moved, so this opens a case as well as explaining what
     // the customer should not do (pay again).
     if (intent === "payment_issue") {
-      const known = caller.userId ? await findLatestOrder(caller.userId) : null;
+      const { userId } = await getCaller();
+      const known = userId ? await findLatestOrder(userId) : null;
       return runEscalation(
         "I'm sorry about that — a payment that looks failed can still have left your account, so this needs a person to check it.",
         [known, PAYMENT_ISSUE_GUIDANCE]

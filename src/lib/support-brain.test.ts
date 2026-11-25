@@ -84,6 +84,13 @@ describe("support intent detection", () => {
     expect(isIntent("refund_policy")).toBe(true);
     expect(isIntent("not-an-intent")).toBe(false);
   });
+
+  it("matches precompiled phrases on whole words and still tolerates typos", () => {
+    expect(detectIntent("Hi").intent).toBe("greeting");
+    // "hi" must not fire inside "this".
+    expect(detectIntent("This is not acceptable").intent).not.toBe("greeting");
+    expect(detectIntent("My ticekt has not arrived").intent).toBe("order");
+  });
 });
 
 describe("event query extraction", () => {

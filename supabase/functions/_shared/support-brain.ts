@@ -454,28 +454,63 @@ function fuzzyWord(word: string, candidate: string): boolean {
   return editDistance(word, candidate) <= 1 || isAdjacentSwap(word, candidate);
 }
 
-/** Tolerates one typo in words of five letters or more ("refnud", "tickts"). */
-function fuzzyContains(text: string, phrase: string): boolean {
-  const needle = normalise(phrase);
-  if (!needle) return false;
-  if (needle.includes(" ")) return text.includes(needle);
-  if (needle.length < 5) return false;
-  return text.split(" ").some((word) => fuzzyWord(word, needle));
+interface CompiledPhrase {
+  raw: string;
+  needle: string;
+  /** Word-boundary matcher for single-word phrases; null for multi-word ones. */
+  wholeWord: RegExp | null;
 }
+
+/**
+ * Phrases are normalised and their boundaries compiled once, at module load.
+ * Doing it per message meant roughly 300 normalise() calls and regex
+ * compilations before an answer could be chosen, on every single message.
+ */
+function compilePhrase(phrase: string): CompiledPhrase {
+  const needle = normalise(phrase);
+  const wholeWord =
+    needle && !needle.includes(" ")
+      ? new RegExp(`\\b${needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`)
+      : null;
+  return { raw: phrase, needle, wholeWord };
+}
+
+const COMPILED_RULES = INTENT_RULES.map((rule) => ({
+  intent: rule.intent,
+  weight: rule.weight,
+  phrases: rule.phrases.map(compilePhrase),
+}));
 
 export function detectIntent(message: string, previousIntent?: Intent): IntentMatch {
   const text = normalise(message);
+  const textWords = text.split(" ");
   let best: IntentMatch = { intent: "unknown", matched: [], weight: -1 };
 
   // Score exact and fuzzy matches together. A high-risk phrase with one typo
   // ("refnud my ticket") must still beat an exact but less urgent phrase.
-  for (const rule of INTENT_RULES) {
-    const exact = rule.phrases.filter((phrase) => containsPhrase(text, phrase));
-    const fuzzy = exact.length === 0
-      ? rule.phrases.filter((phrase) => fuzzyContains(text, phrase))
-      : [];
-    const matched = exact.length > 0 ? exact : fuzzy;
-    const score = rule.weight - (fuzzy.length > 0 ? 8 : 0);
+  for (const rule of COMPILED_RULES) {
+    const matched: string[] = [];
+    for (const phrase of rule.phrases) {
+      if (!phrase.needle) continue;
+      if (phrase.wholeWord ? phrase.wholeWord.test(text) : text.includes(phrase.needle)) {
+        matched.push(phrase.raw);
+      }
+    }
+
+    // Fuzzy only when nothing matched exactly, so a clean message never pays
+    // for the edit-distance pass.
+    let fuzzy = false;
+    if (matched.length === 0) {
+      for (const phrase of rule.phrases) {
+        if (phrase.wholeWord && phrase.needle.length >= 5 &&
+          textWords.some((word) => fuzzyWord(word, phrase.needle))) {
+          matched.push(phrase.raw);
+          fuzzy = true;
+        }
+      }
+    }
+
+    const score = rule.weight - (fuzzy ? 8 : 0);
     if (matched.length > 0 && score > best.weight) {
       best = { intent: rule.intent, matched, weight: score };
     }
