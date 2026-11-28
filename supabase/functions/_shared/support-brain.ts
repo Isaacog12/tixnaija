@@ -399,7 +399,8 @@ const INTENT_RULES: Rule[] = [
  */
 const TRAINING_ADDITIONS: Partial<Record<Intent, string[]>> = {
   human: [
-    "real agent", "support staff", "customer support", "support please", "agent please",
+    "make i talk to person", "i wan talk to person", "give me person", "abeg human", "person abeg",
+    "someone real", "na person i want", "inason mai mutum", "real agent", "support staff", "customer support", "support please", "agent please",
     "connect me to support", "connect me to an agent", "i need a person", "please send a person",
     "human support", "care agent", "talk to support", "speak with someone", "speak to someone",
     "chat to an agent",
@@ -431,6 +432,7 @@ const TRAINING_ADDITIONS: Partial<Record<Intent, string[]>> = {
     "spelling on ticket", "ticket name", "swap ticket",
   ],
   order: [
+    "ticket no show", "ticket never show", "i no get ticket", "ticket no land", "mail no land",
     "where are my tickets", "where my ticket", "ticket did not come", "ticket didn't come",
     "have not got", "haven't got", "no mail", "mail not received", "did not receive",
     "didn't receive", "not in inbox", "ticket not in email", "download my ticket",
@@ -450,6 +452,9 @@ const TRAINING_ADDITIONS: Partial<Record<Intent, string[]>> = {
   price: [
     "ticket cost", "how much for", "how much na", "amount be", "regular price", "vip price",
     "gate price", "what is the price", "whats the price",
+    // Pidgin, Hausa-flavoured and shorthand phrasings.
+    "how much e be", "how much dis one", "wetin be the amount", "amount nawa", "nawa be the price",
+    "price na wetin", "ticket na how much", "how much una dey sell", "kudi nawa", "nawa ne kudin",
   ],
   availability: [
     "tickets available", "ticket available", "is there ticket", "any tickets", "still selling",
@@ -457,11 +462,13 @@ const TRAINING_ADDITIONS: Partial<Record<Intent, string[]>> = {
     "ticket remain",
   ],
   venue: [
-    "where dem dey", "where the event", "which venue", "venue address", "event location",
+    "wetin be the place", "where e go hold", "place e go hold", "ina ne", "where dem dey",
+    "where the event", "which venue", "venue address", "event location",
     "location of", "place wey", "how to get there", "direction to", "wetin be the venue",
   ],
   schedule: [
-    "when the event", "when dey start", "what time e start", "date for", "event date",
+    "wetin be the time", "time e go start", "wetin be the day", "yaushe ne", "when the event",
+    "when dey start", "what time e start", "date for", "event date",
     "event time", "opening time", "closing time", "what day is", "which date",
     "when go hold", "when e go hold", "time wey",
   ],
@@ -481,7 +488,9 @@ const TRAINING_ADDITIONS: Partial<Record<Intent, string[]>> = {
     "become organiser", "list tickets for my event",
   ],
   payment_issue: [
-    "payment unsuccessful", "payment declined", "card declined", "transfer failed",
+    "money don go", "money don disappear", "money no show", "i no see refund", "my money",
+    "dem charge me", "dem deduct", "alert but no ticket", "bank alert no ticket",
+    "money removed", "kudi na bata", "an cire kudi", "payment unsuccessful", "payment declined", "card declined", "transfer failed",
     "bank transfer failed", "debit without ticket", "charged without ticket",
     "no ticket after paying", "paid without ticket", "payment went through but",
     "payment successful but", "transaction successful but", "bank alert but no ticket",
@@ -907,6 +916,241 @@ export function looksSubstantive(message: string): boolean {
   if (meaningful.length === 0) return false;
   if (meaningful.length === 1 && meaningful[0].length < 5 && !message.includes("?")) return false;
   return true;
+}
+
+// ---------------------------------------------------------------------------
+// Joke, vague complaint or real case
+// ---------------------------------------------------------------------------
+
+/**
+ * How a message should be treated before any case is opened.
+ *
+ * PLAYFUL never opens a case and never spends an escalation slot: a joke or an
+ * insult must not put a stranger in the support queue. CONFIRM is the vague
+ * middle ("nothing works") where asking one question is better than either
+ * guessing or escalating. REAL keeps today's behaviour.
+ */
+export type MessageClass = "PLAYFUL" | "CONFIRM" | "REAL";
+
+export interface MessageClassification {
+  kind: MessageClass;
+  /** True when the message is an insult aimed at a person or the assistant. */
+  abusive: boolean;
+  score: number;
+  signals: string[];
+}
+
+/**
+ * These intents are already a concrete request, so the classifier must not
+ * interrupt them. "How much is X" is not a vague complaint even though it
+ * carries no money-lost signal.
+ */
+const INFORMATIONAL_INTENTS: ReadonlySet<Intent> = new Set<Intent>([
+  "human", "fraud", "trust", "refund", "refund_policy", "transfer", "order",
+  "delivery_confirmation", "entry", "price", "availability", "venue", "schedule",
+  "listing", "past_event", "how_to_buy", "organizer", "payment", "payment_issue",
+  "promo", "waitlist", "cancelled", "account", "account_delete", "email_change",
+  "ticket_email_change", "contact",
+]);
+
+const CLASSIFIER_PATTERNS = {
+  // Money that may have left the account. Always REAL, jokes or not.
+  moneyLost:
+    /\b(?:money|funds?|cash|alert)\b[^.]{0,40}\b(?:comot|gone|left|loss|lost|missing|deducted|debit\w*|charged|disappeared|vanish|don go)\b|\b(?:deducted|debit\w*|charged|overcharged|double charged)\b|\bwrong (?:amount|charge)\b|\bdon comot\b|\bmoney comot\b/i,
+  // A money word with no lost-money shape is still a real subject; "how do I
+  // pay" is handled by its own intent, so this only lifts vague complaints into
+  // a real case when payment is actually mentioned.
+  moneyWord: /\b(?:paid|payment|pay|refund|charged|debited|deducted|transfer)\b/i,
+  fraud: /\b(?:scam\w*|fraud\w*|fake (?:event|ticket|website|organizer)s?|swindl\w*)\b/i,
+  orderReference: /\bTN-[A-Za-z0-9]{4,}\b|\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i,
+  email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/,
+  amount: /(?:₦|\bNGN\b|\bnaira\b)|\b\d+(?:\.\d+)?\s?k\b|\b\d{3,}\b/i,
+  missingDelivery:
+    /\b(?:no|not|never|didnt|didn't|havent|haven't|hasnt|hasn't|isnt|isn't)\b[^.]{0,30}\b(?:ticket|email|mail|qr|confirmation|delivery)\b|\b(?:ticket|email|mail|qr)\b[^.]{0,30}\b(?:missing|not arrived|never arrived|not delivered|not received|not showing|no show)\b/i,
+  deadline: /\b(?:tonight|tomorrow|today|this (?:evening|morning|afternoon)|right now|asap|urgent|gate)\b/i,
+  laughter: /\b(?:lol|lmao|lmfao|rofl|(?:h[ae]){2,}h?)\b|😂|🤣/i,
+  botSmallTalk:
+    /\b(?:are you (?:a )?(?:robot|bot|human|ai|real)|who (?:made|built|created|owns) you|what are you|wetin you dey chop|what (?:do|dey) you (?:eat|chop)|do you sleep|are you single|how old are you)\b/i,
+  greetingOnly: /^(?:hi+|hello+|hey+|yo|sup|good (?:morning|afternoon|evening|day)|how far|how you dey)\b/i,
+  thanksOnly: /^(?:thanks|thank you|thank u|thx|well done|appreciate\w*)\b/i,
+  bye: /^(?:bye|goodbye|good night|good nite|see you|later|ciao)\b/i,
+  insult:
+    /\b(?:stupid|idiot|idiotic|useless|rubbish|trash|nonsense|mad|fool|foolish|dumb|moron|shit|fuck\w*|bloody)\b/i,
+  productWord: /\b(?:app|website|site|platform|tixnaija|service|support|page|checkout)\b/i,
+};
+
+function repeatedWord(text: string): boolean {
+  const words = text.split(" ").filter((word) => word.length >= 2);
+  const counts = new Map<string, number>();
+  for (const word of words) counts.set(word, (counts.get(word) ?? 0) + 1);
+  return Array.from(counts.values()).some((count) => count >= 3);
+}
+
+export function classifyMessage(
+  message: string,
+  options: { intent?: Intent; hasEventContext?: boolean } = {},
+): MessageClassification {
+  const text = normalise(message);
+  const raw = String(message ?? "");
+  const signals: string[] = [];
+  const intent = options.intent ?? "unknown";
+
+  // Safety rule first: anything that says money moved, or names a scam, is a
+  // real case even when the message is half a joke or written in slang.
+  if (CLASSIFIER_PATTERNS.fraud.test(raw)) {
+    return { kind: "REAL", abusive: false, score: 8, signals: ["fraud or scam words"] };
+  }
+  if (CLASSIFIER_PATTERNS.moneyLost.test(raw)) {
+    return { kind: "REAL", abusive: false, score: 8, signals: ["money already moved"] };
+  }
+
+  let score = 0;
+  if (CLASSIFIER_PATTERNS.orderReference.test(raw)) {
+    score += 4;
+    signals.push("order or ticket reference");
+  }
+  if (CLASSIFIER_PATTERNS.email.test(raw)) {
+    score += 3;
+    signals.push("email address");
+  }
+  if (CLASSIFIER_PATTERNS.amount.test(raw)) {
+    score += 2;
+    signals.push("amount in naira");
+  }
+  if (CLASSIFIER_PATTERNS.missingDelivery.test(raw)) {
+    score += 3;
+    signals.push("missing delivery");
+  }
+  if (CLASSIFIER_PATTERNS.moneyWord.test(raw)) {
+    score += 3;
+    signals.push("payment mentioned");
+  }
+  if (CLASSIFIER_PATTERNS.deadline.test(raw)) {
+    score += 2;
+    signals.push("stated deadline");
+  }
+  if (options.hasEventContext) {
+    score += 2;
+    signals.push("event in context");
+  }
+
+  // A concrete request is never turned into a clarifying question.
+  if (INFORMATIONAL_INTENTS.has(intent) && score === 0) {
+    score += 3;
+    signals.push(`specific intent: ${intent}`);
+  }
+
+  const abusive = CLASSIFIER_PATTERNS.insult.test(raw) && !CLASSIFIER_PATTERNS.productWord.test(raw);
+  const insultAtProduct = CLASSIFIER_PATTERNS.insult.test(raw) && CLASSIFIER_PATTERNS.productWord.test(raw);
+
+  if (score >= 3) {
+    return { kind: "REAL", abusive: false, score, signals };
+  }
+
+  let playful = 0;
+  if (CLASSIFIER_PATTERNS.laughter.test(raw)) {
+    playful += 3;
+    signals.push("laughter");
+  }
+  if (CLASSIFIER_PATTERNS.botSmallTalk.test(raw)) {
+    playful += 3;
+    signals.push("question about the assistant");
+  }
+  if (CLASSIFIER_PATTERNS.greetingOnly.test(text)) {
+    playful += 3;
+    signals.push("greeting only");
+  }
+  if (CLASSIFIER_PATTERNS.thanksOnly.test(text) || CLASSIFIER_PATTERNS.bye.test(text)) {
+    playful += 2;
+    signals.push("closing small talk");
+  }
+  if (abusive) {
+    playful += 2;
+    signals.push("insult with no problem");
+  }
+  if (repeatedWord(text)) {
+    playful += 2;
+    signals.push("repeated word");
+  }
+  const words = text.split(" ").filter(Boolean);
+  const asksNothing = !raw.includes("?");
+  // One word with no question mark is small talk ("hmm", "hey"); two words can
+  // already be a complaint ("nothing works"), which deserves a question.
+  if (words.length === 1 && asksNothing && score === 0) {
+    playful += 1;
+    signals.push("very short message");
+  }
+
+  // A short insult at the product is a complaint, not a joke to answer with one
+  // line: ask what broke instead of dismissing it.
+  if (insultAtProduct) {
+    return { kind: "CONFIRM", abusive: false, score, signals: [...signals, "complaint about the product"] };
+  }
+
+  if (score === 0 && playful >= 2) {
+    return { kind: "PLAYFUL", abusive, score: playful, signals };
+  }
+  if (score === 0 && playful === 1 && words.length === 1) {
+    return { kind: "PLAYFUL", abusive, score: playful, signals };
+  }
+
+  return { kind: "CONFIRM", abusive, score, signals };
+}
+
+/** Short replies are interpreted against what the bot asked last. */
+export type FollowUp = "yes" | "no" | "ok" | "thanks" | "bye" | "never_mind" | null;
+
+export function followUpKind(message: string): FollowUp {
+  const text = normalise(message);
+  if (!text) return null;
+  if (/^(?:yes|yeah|yep|yup|sure|ok(?:ay)?|alright|go ahead|please do|abeg do it|do it|open (?:a|the) case)$/.test(text)) {
+    return /^ok/.test(text) || /^alright/.test(text) || /^sure/.test(text) ? "ok" : "yes";
+  }
+  if (/^(?:no|nope|nah|not now|dont|don't|leave it|forget it|never mind|nevermind|no thanks)$/.test(text)) {
+    return /never ?mind|leave it|forget it/.test(text) ? "never_mind" : "no";
+  }
+  if (/^(?:thanks|thank you|thank u|thx|ok thanks|okay thanks|alright thanks)$/.test(text)) return "thanks";
+  if (/^(?:bye|goodbye|good night|good nite|see you|later)$/.test(text)) return "bye";
+  return null;
+}
+
+/**
+ * Best-guess event title for a misspelled search term.
+ *
+ * The database gets a real trigram search when pg_trgm is available; this is
+ * the fallback for a deployment without the extension, and it is what decides
+ * whether a "Did you mean X?" answer is confident enough to give.
+ */
+export function closestEventTitle(
+  term: string,
+  titles: string[],
+): { title: string; score: number } | null {
+  const query = normalise(term);
+  if (!query) return null;
+  const queryWords = query.split(" ").filter((word) => word.length > 1);
+  if (queryWords.length === 0) return null;
+
+  let best: { title: string; score: number } | null = null;
+  for (const title of titles) {
+    const candidate = normalise(title);
+    if (!candidate) continue;
+    const candidateWords = candidate.split(" ");
+    const covered = queryWords.filter((word) =>
+      candidateWords.some((other) =>
+        other === word || other.startsWith(word) || word.startsWith(other) ||
+        // fuzzyWord deliberately ignores short words; a title guess needs them
+        // ("burna boi" -> "Burna Boy"), so allow one edit between 3+ letters.
+        (word.length >= 3 && other.length >= 3 && Math.abs(word.length - other.length) <= 1 &&
+          editDistance(word, other) <= 1) ||
+        fuzzyWord(word, other)
+      )
+    ).length;
+    let score = covered / queryWords.length;
+    if (candidate.includes(query)) score = 1;
+    if (!best || score > best.score) best = { title, score };
+  }
+
+  return best && best.score >= 0.6 ? best : null;
 }
 
 export interface BotKnowledgeEntry {

@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { clientIp } from "../_shared/client-ip.ts";
 
 const allowedOrigins = [
   "https://tixnaija.vercel.app",
@@ -83,7 +84,9 @@ serve(async (req) => {
       }
     }
 
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
+    // Last hop only: the first x-forwarded-for entry is caller-supplied and
+    // would let anyone rotate past this rate limit.
+    const ip = clientIp(req);
 
     await supabase.from("rate_limit_log").insert({ ip_address: ip, endpoint: "initialize_payment" });
 

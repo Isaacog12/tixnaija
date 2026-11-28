@@ -64,7 +64,8 @@ function AdminEscalatedCases() {
           escalated_at,
           escalated_reason,
           created_at,
-          customer_id
+          customer_id,
+          contact_verified
         `)
         .eq("is_escalated", true)
         .order("escalated_at", { ascending: false });
@@ -136,6 +137,7 @@ function AdminEscalatedCases() {
                     <TableHead>Case #</TableHead>
                     <TableHead>Subject</TableHead>
                     <TableHead>Category</TableHead>
+                    <TableHead>Contact</TableHead>
                     <TableHead>Escalation Justification</TableHead>
                     <TableHead>Escalated Date</TableHead>
                     <TableHead>Status</TableHead>
@@ -155,6 +157,21 @@ function AdminEscalatedCases() {
                         <Badge variant="outline" className="text-[10px] capitalize">
                           {c.category?.replace(/_/g, " ")}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {c.contact_verified ? (
+                          <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-400">
+                            Verified
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] border-amber-500/40 text-amber-500"
+                            title="Typed into chat; verify the address before acting on it."
+                          >
+                            Unverified
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell className="text-xs text-rose-400 max-w-[240px] truncate font-medium">
                         {c.escalated_reason}

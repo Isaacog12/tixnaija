@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { clientIp } from "../_shared/client-ip.ts";
 
 const allowedOrigins = [
   "https://tixnaija.vercel.app",
@@ -346,7 +347,8 @@ serve(async (req) => {
         );
       }
     } else {
-      const ipAddress = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+      // Last hop only: the first x-forwarded-for entry is caller-supplied.
+      const ipAddress = clientIp(req);
       const limitClient = createClient(
         modeBSupabaseUrl,
         (Deno.env.get("APP_SECRET_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) ?? "",

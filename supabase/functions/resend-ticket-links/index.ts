@@ -22,6 +22,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { isDeliverableEmail } from "../_shared/email-delivery.ts";
 import { deliverOrderTickets, fetchOrderForDelivery } from "../_shared/ticket-delivery.ts";
+import { clientIp } from "../_shared/client-ip.ts";
 
 const allowedOrigins = [
   "https://tixnaija.vercel.app",
@@ -101,7 +102,9 @@ serve(async (req) => {
       (Deno.env.get("APP_SECRET_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) ?? "",
     );
 
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    // Last hop only: the first x-forwarded-for entry is caller-supplied and
+    // would let anyone rotate past this throttle.
+    const ip = clientIp(req);
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
 
     // Per-IP and per-email throttle. The ip_address column is used as the

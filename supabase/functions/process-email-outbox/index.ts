@@ -6,6 +6,7 @@ import { sendEmail } from "../_shared/zeptomail.ts";
 import { authorizeCronOrRoles } from "../_shared/cron-auth.ts";
 import { escapeHtml } from "../_shared/html.ts";
 import { isDeliverableEmail, normalizeEmail } from "../_shared/email-delivery.ts";
+import { buildSupportAcknowledgement } from "../_shared/support-ack.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -271,6 +272,10 @@ serve(async (req: Request) => {
           const caseNumber = String(item.payload?.case_number || "unassigned").replace(/[\r\n]+/g, " ");
           const customerEmail = String(item.payload?.customer_email || "not provided").replace(/[\r\n]+/g, " ");
           const intent = String(item.payload?.intent || "unknown").replace(/[\r\n]+/g, " ");
+          // A typed address is not proof of ownership. Staff need to see that
+          // before they treat the address as the customer's.
+          const verified = item.payload?.contact_verified === true;
+          const contactVerifiedLabel = verified ? "yes" : "no — typed address, unverified";
           subject = `[TixNaija] Urgent support question — ${caseNumber}`;
           htmlBody = `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1a1a1a; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;">
@@ -283,6 +288,7 @@ serve(async (req: Request) => {
               <table style="width: 100%; font-size: 14px; line-height: 1.6; margin-bottom: 20px; border-collapse: collapse;">
                 <tr><td style="padding: 6px 0; color: #6b7280; width: 130px;">Case</td><td style="padding: 6px 0; font-weight: 600;">${escapeHtml(caseNumber)}</td></tr>
                 <tr><td style="padding: 6px 0; color: #6b7280;">Customer email</td><td style="padding: 6px 0;">${escapeHtml(customerEmail)}</td></tr>
+                <tr><td style="padding: 6px 0; color: #6b7280;">Contact verified</td><td style="padding: 6px 0; font-weight: 600; color: ${verified ? "#111827" : "#b45309"};">${escapeHtml(contactVerifiedLabel)}</td></tr>
                 <tr><td style="padding: 6px 0; color: #6b7280;">Detected topic</td><td style="padding: 6px 0;">${escapeHtml(intent)}</td></tr>
               </table>
               <p style="font-size: 14px; color: #6b7280; margin-bottom: 8px;">What the customer asked:</p>
@@ -298,37 +304,18 @@ serve(async (req: Request) => {
           `;
         } else if (item.template === "support_acknowledgement") {
           // Customer-facing receipt for a question the assistant escalated.
-          // Before this template existed, both support_escalation recipients were
-          // staff inboxes, so the customer who asked the question received no
-          // email at all despite being told a human would follow up.
-          const ackCaseNumber = String(item.payload?.case_number || "unassigned").replace(/[\r\n]+/g, " ");
-          const ackSubject = String(item.payload?.subject || "your question").replace(/[\r\n]+/g, " ");
-          subject = `[TixNaija Support] We received your question — ${ackCaseNumber}`;
-          htmlBody = `
-            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1a1a1a; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;">
-              <div style="margin-bottom: 24px; border-bottom: 2px solid #111827; padding-bottom: 12px;">
-                <h1 style="font-size: 20px; font-weight: bold; margin: 0; color: #111827;">We have your question</h1>
-              </div>
-              <p style="font-size: 15px; line-height: 1.6; margin-bottom: 16px;">
-                The TixNaija assistant couldn't answer this one, so it has been passed to our support team.
-              </p>
-              <div style="background: #f9fafb; border-left: 4px solid #111827; padding: 16px; margin-bottom: 20px; border-radius: 4px; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${escapeHtml(ackSubject)}</div>
-              <table style="width: 100%; font-size: 14px; line-height: 1.6; margin-bottom: 20px; border-collapse: collapse;">
-                <tr><td style="padding: 6px 0; color: #6b7280; width: 150px;">Your case number</td><td style="padding: 6px 0; font-weight: 600;">${escapeHtml(ackCaseNumber)}</td></tr>
-              </table>
-              <p style="font-size: 14px; line-height: 1.6; margin-bottom: 16px;">
-                We review requests within 3 business days and will reply to this email address. Keep the case number handy &mdash; quoting it gets your answer faster.
-              </p>
-              <p style="font-size: 14px; line-height: 1.6;">
-                If your question is about a missing ticket, you can resend the links yourself right now at
-                <a href="https://tixnaija.name.ng/my-tickets" style="color: #111827; text-decoration: underline;">tixnaija.name.ng/my-tickets</a>.
-              </p>
-              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
-              <p style="font-size: 12px; color: #9ca3af; text-align: center;">
-                TixNaija · Independent Nigerian Ticketing Platform
-              </p>
-            </div>
-          `;
+          //
+          // It prints the case number and fixed wording and nothing else. The
+          // customer's own text used to be echoed back here, which made this
+          // template a way to send arbitrary words to any verified address from
+          // our trusted sender. buildSupportAcknowledgement() has no message
+          // parameter at all, so the echo cannot come back by accident.
+          const acknowledgement = buildSupportAcknowledgement({
+            caseNumber: String(item.payload?.case_number || "unassigned"),
+            priority: item.payload?.priority ?? null,
+          });
+          subject = acknowledgement.subject;
+          htmlBody = acknowledgement.html;
         } else {
           subject = `[TixNaija] Update regarding your order`;
           htmlBody = `

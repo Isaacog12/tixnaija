@@ -617,6 +617,15 @@ export function SupportCasesTab({
                         <Badge variant="outline" className="text-[10px] uppercase font-bold">
                           {activeCase.category?.replace(/_/g, " ")}
                         </Badge>
+                        {activeCase.contact_verified === false && (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] border-amber-500/40 text-amber-500"
+                            title="The contact address was typed in chat and is not tied to an account or order. Verify it before acting on it."
+                          >
+                            unverified contact
+                          </Badge>
+                        )}
                         {activeCase.is_escalated && (
                           <Badge className="bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[10px] uppercase font-bold">
                             Escalated to Admin

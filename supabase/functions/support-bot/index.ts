@@ -3,10 +3,13 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // @ts-ignore
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import {
+  classifyMessage,
+  closestEventTitle,
   containsSensitiveData,
   detectIntent,
   extractCity,
   extractSearchTerm,
+  followUpKind,
   isIntent,
   linksForIntent,
   linksForKnowledge,
@@ -19,7 +22,14 @@ import {
   type Intent,
 } from "../_shared/support-brain.ts";
 import {
+  ABUSIVE_REPLY,
+  cappedEscalationReplyFor,
+  CONFIRM_DECLINED_REPLY,
+  CONFIRM_QUESTION,
+  escalationReplyFor,
+  FOLLOW_UP_REPLIES,
   PAYMENT_ISSUE_GUIDANCE,
+  PLAYFUL_REPLY,
   PUBLIC_SUPPORT_ADDRESS,
   REFUND_POLICY,
   STATIC_ANSWERS,
@@ -29,10 +39,13 @@ import {
   describeTickets,
   eventStatusGuidance,
   formatWhen,
+  isStartingSoon,
   naira,
   type PublicEvent,
   type TicketType,
 } from "../_shared/support-events.ts";
+import { redactForLog } from "../_shared/redact.ts";
+import { clientIp } from "../_shared/client-ip.ts";
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -66,13 +79,18 @@ const MAX_MESSAGE_LENGTH = 500;
 const MAX_EMAIL_LENGTH = 254;
 
 const IP_WINDOW_MS = 10 * 60 * 1000;
-const IP_MAX_MESSAGES = 20;
+// Nigerian mobile carriers put thousands of customers behind one NAT address,
+// so a 20-per-10-minutes cap on an IP blocked whole neighbourhoods. The
+// per-session cap is what actually bounds one conversation.
+const IP_MAX_MESSAGES = 60;
 const SESSION_WINDOW_MS = 10 * 60 * 1000;
 const SESSION_MAX_MESSAGES = 12;
 
 const ESCALATION_WINDOW_MS = 60 * 60 * 1000;
-const IP_MAX_ESCALATIONS = 3;
+const IP_MAX_ESCALATIONS = 10;
 const EMAIL_MAX_ESCALATIONS = 2;
+const FEEDBACK_WINDOW_MS = 60 * 60 * 1000;
+const FEEDBACK_MAX_PER_SESSION = 20;
 
 const GENERIC_ERROR = "Something went wrong on our side. Please try again.";
 const GENERIC_RATE_LIMIT = "Too many messages. Please wait a few minutes and try again.";
@@ -125,23 +143,6 @@ function getCorsHeaders(req: Request) {
     : { ...corsHeaders };
 }
 
-/**
- * Last entry of x-forwarded-for, not the first.
- *
- * A caller can send its own x-forwarded-for, and the gateway appends the address
- * it actually observed — so the first value is attacker-chosen and the last is
- * not. Every IP-keyed cap in this function (20 messages per 10 minutes, 3
- * escalations per hour) was bypassable by rotating that header while it read the
- * first value.
- */
-function clientIp(req: Request): string {
-  const header = req.headers.get("x-forwarded-for") ?? "";
-  const entries = header
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter(Boolean);
-  return entries[entries.length - 1] || "unknown";
-}
 
 /** Escapes LIKE wildcards so a customer cannot broaden the search. */
 function escapeLike(value: string): string {
@@ -308,8 +309,13 @@ function categoryFor(intent: Intent): string {
  * intent matched. Every escalation used to be written as "high", so a refund
  * request and a message the assistant simply did not understand arrived
  * identically and the field stopped carrying any triage information.
+ *
+ * urgentDeadline raises a money or fraud case to "urgent" only when the event it
+ * concerns starts within 48 hours — the same problem two weeks out is not an
+ * emergency, and calling everything urgent would empty the word of meaning.
  */
-function priorityFor(intent: Intent): "high" | "medium" {
+function priorityFor(intent: Intent, urgentDeadline = false): "urgent" | "high" | "medium" {
+  if (urgentDeadline && (intent === "payment_issue" || intent === "fraud")) return "urgent";
   switch (intent) {
     // Money has already moved, a paid ticket has not arrived, someone is at the
     // gate, or a scam is being reported.
@@ -332,8 +338,15 @@ interface EscalateResult {
   caseNumber: string | null;
   /** False when the case was created but its notifications could not be queued. */
   notified: boolean;
-  /** False when no receipt was sent to the customer (unverified address). */
+  /**
+   * False when no receipt was sent to the customer (unverified address).
+   *
+   * It is recorded for the log and the staff email only. The customer-facing
+   * reply must read the same either way — see escalationReplyFor().
+   */
   notifiedCustomer: boolean;
+  /** Whether the typed address was tied to an order or a signed-in session. */
+  contactVerified: boolean;
 }
 
 /**
@@ -373,7 +386,9 @@ async function logBotQuery(
   try {
     await supabase.from("support_bot_queries").insert({
       session_id: params.sessionId,
-      message: params.message.slice(0, 500),
+      // Addresses, phone numbers, order references and long digit runs are
+      // masked here; the table is analytics, not a record of customer details.
+      message: redactForLog(params.message),
       matched_intent: params.intent,
       escalated: params.escalated,
     });
@@ -439,22 +454,24 @@ async function escalate(
     caller: Caller;
     guestEmail: string | null;
     lastEvent: string | null;
+    lastOrder: string | null;
+    urgent: boolean;
   },
 ): Promise<EscalateResult> {
-  const { message, intent, sessionId, ip, caller, guestEmail, lastEvent } = params;
+  const { message, intent, sessionId, ip, caller, guestEmail, lastEvent, lastOrder, urgent } = params;
   const contactEmail = caller.email ?? guestEmail;
   const requestedAt = new Date().toISOString();
 
   // A signed-in customer's address is verified by their session. A guest's is
   // only trusted for a receipt when it has bought something here.
   const verifiedContact = caller.userId ? true : await buyerEmailExists(supabase, guestEmail);
+  const priority = priorityFor(intent, urgent);
 
-  const { data: created, error: caseError } = await supabase
-    .from("support_cases")
-    .insert({
+  const caseRow: Record<string, unknown> = {
       customer_id: caller.userId,
       guest_email: caller.userId ? null : guestEmail,
       subject: message.slice(0, 150),
+      contact_verified: verifiedContact,
       // The untruncated question. A guest has no auth.users row, so nothing can
       // be inserted into support_case_messages on their behalf (sender_id is NOT
       // NULL and foreign-keyed to auth.users). support_view_case presents this
@@ -464,17 +481,41 @@ async function escalate(
       guest_message: caller.userId ? null : message,
       category: categoryFor(intent),
       status: "open",
-      priority: priorityFor(intent),
+      priority,
       is_escalated: true,
       escalated_at: requestedAt,
       escalated_reason: "Automated assistant could not resolve this question",
-    })
+  };
+
+  let { data: created, error: caseError } = await supabase
+    .from("support_cases")
+    .insert(caseRow)
     .select("id, case_number")
     .single();
 
+  // Deploying this function before its migration should not take escalation
+  // offline: if contact_verified is not there yet, write the case without it.
+  if (caseError && /contact_verified/i.test(caseError.message ?? "")) {
+    const fallback = { ...caseRow };
+    delete fallback.contact_verified;
+    const retry = await supabase
+      .from("support_cases")
+      .insert(fallback)
+      .select("id, case_number")
+      .single();
+    created = retry.data;
+    caseError = retry.error;
+  }
+
   if (caseError || !created) {
     console.error("support-bot: case insert failed", caseError);
-    return { ok: false, caseNumber: null, notified: false, notifiedCustomer: false };
+    return {
+      ok: false,
+      caseNumber: null,
+      notified: false,
+      notifiedCustomer: false,
+      contactVerified: verifiedContact,
+    };
   }
 
   // A signed-in customer does have an auth.users row, so their question goes
@@ -504,7 +545,10 @@ async function escalate(
       customer_id: caller.userId,
       message,
       intent,
+      priority,
+      contact_verified: verifiedContact,
       last_event: lastEvent,
+      last_order: lastOrder,
       session_id: sessionId,
       ip_address: ip,
       requested_at: requestedAt,
@@ -521,9 +565,12 @@ async function escalate(
           recipient_email: contactEmail,
           template: "support_acknowledgement",
           status: "pending",
+          // No message or subject: the receipt carries the case number and
+          // fixed wording only, so it cannot be used to deliver arbitrary text
+          // to a real customer from our trusted sender.
           payload: {
             case_number: created.case_number,
-            subject: message.slice(0, 300),
+            priority,
             intent,
             requested_at: requestedAt,
           },
@@ -545,6 +592,7 @@ async function escalate(
       caseNumber: created.case_number,
       notified: false,
       notifiedCustomer: verifiedContact,
+      contactVerified: verifiedContact,
     };
   }
 
@@ -553,6 +601,7 @@ async function escalate(
     caseNumber: created.case_number,
     notified: true,
     notifiedCustomer: verifiedContact,
+    contactVerified: verifiedContact,
   };
 }
 
@@ -604,6 +653,54 @@ serve(async (req: Request) => {
     const rawMessage = typeof body?.message === "string" ? body.message : "";
     const message = rawMessage.trim();
 
+    const sessionId = typeof body?.sessionId === "string" ? body.sessionId.trim() : "";
+    if (!/^[A-Za-z0-9_-]{8,80}$/.test(sessionId)) {
+      return new Response(JSON.stringify({ error: "Invalid chat session." }), {
+        status: 400,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    // ---- Reply feedback: written by the bot only, never with message text ----
+    if (body?.feedback && typeof body.feedback === "object") {
+      const helpful = body.feedback.helpful;
+      if (typeof helpful !== "boolean") {
+        return new Response(JSON.stringify({ error: "Invalid feedback." }), {
+          status: 400,
+          headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
+      const feedbackLimit = await consumeLimit(
+        supabase,
+        sessionId,
+        `support_bot_feedback:${sessionId}`,
+        FEEDBACK_WINDOW_MS,
+        FEEDBACK_MAX_PER_SESSION,
+        false,
+      );
+      if (!feedbackLimit.allowed) {
+        return new Response(JSON.stringify({ error: GENERIC_RATE_LIMIT }), {
+          status: 429,
+          headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
+      const ratingIntent = isIntent(body.feedback.intent) ? body.feedback.intent : "unknown";
+      const { error: feedbackError } = await supabase.from("support_bot_feedback").insert({
+        session_id: sessionId,
+        matched_intent: ratingIntent,
+        helpful,
+      });
+      // A missing table or a failed write must not surface to the customer: the
+      // rating is a convenience, not part of the answer.
+      if (feedbackError) console.error("support-bot: feedback insert failed", feedbackError);
+
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" },
+      });
+    }
+
     if (!message) {
       return new Response(JSON.stringify({ error: "Please type a message first." }), {
         status: 400,
@@ -615,14 +712,6 @@ serve(async (req: Request) => {
         JSON.stringify({ error: `Please keep your message under ${MAX_MESSAGE_LENGTH} characters.` }),
         { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
       );
-    }
-
-    const sessionId = typeof body?.sessionId === "string" ? body.sessionId.trim() : "";
-    if (!/^[A-Za-z0-9_-]{8,80}$/.test(sessionId)) {
-      return new Response(JSON.stringify({ error: "Invalid chat session." }), {
-        status: 400,
-        headers: { ...cors, "Content-Type": "application/json" },
-      });
     }
 
     const guestEmailRaw = typeof body?.email === "string" ? body.email.trim() : "";
@@ -642,6 +731,15 @@ serve(async (req: Request) => {
     // used only to choose a reply branch — never as a permission.
     const previousIntentRaw = typeof body?.previousIntent === "string" ? body.previousIntent : "";
     const previousIntent = isIntent(previousIntentRaw) ? previousIntentRaw : undefined;
+
+    // The last order reference shown in this chat, so a follow-up arrives with
+    // its subject and a case carries the reference the customer already has.
+    const lastOrderRaw = typeof body?.lastOrder === "string" ? body.lastOrder.trim() : "";
+    const lastOrder = /^TN-[A-Za-z0-9]{4,20}$/.test(lastOrderRaw) ? lastOrderRaw : null;
+
+    // The confirmation buttons send this back with the message they referred to.
+    const confirmCase = body?.confirmCase;
+    const hasConfirmation = confirmCase === true || confirmCase === false;
 
     const ip = clientIp(req);
 
@@ -681,6 +779,20 @@ serve(async (req: Request) => {
     // to run the same seven patterns twice for every message.
     const sensitive = containsSensitiveData(message);
 
+    // Joke or real case. A button answer is taken as confirmation, so the
+    // customer's decision always wins over the heuristics.
+    const classification = hasConfirmation
+      ? { kind: "REAL" as const, abusive: false, score: 10, signals: ["customer confirmed"] }
+      : classifyMessage(message, { intent, hasEventContext: Boolean(contextSlug) });
+    const follow = hasConfirmation ? null : followUpKind(message);
+
+    // A plain "yes" only counts as consent when the client says it was answering
+    // the confirmation prompt; otherwise it is just the next thing the customer
+    // said, and the previous topic still applies.
+    if (follow === "yes" && previousIntent && !hasConfirmation) {
+      classification.kind = "REAL";
+    }
+
     const reply = (payload: Record<string, unknown>) => {
       // Bot gap analytics. Deliberately not awaited: measuring the assistant must
       // never add latency to, or fail, a customer's reply. Nothing that looked
@@ -707,6 +819,48 @@ serve(async (req: Request) => {
       return reply({
         reply: SENSITIVE_REFUSAL,
         escalated: false,
+        context: contextSlug || undefined,
+      });
+    }
+
+    // ---- 0. Small talk, and the vague middle that needs one question ----
+    // A joke, an insult or "hello" must not reach the case queue, and a vague
+    // complaint should be clarified by the customer rather than guessed at.
+    if (classification.kind === "PLAYFUL") {
+      return reply({
+        reply: classification.abusive ? ABUSIVE_REPLY : PLAYFUL_REPLY,
+        escalated: false,
+        classification: "playful",
+        context: contextSlug || undefined,
+      });
+    }
+
+    if (classification.kind === "CONFIRM" && !hasConfirmation) {
+      return reply({
+        reply: CONFIRM_QUESTION,
+        confirmPrompt: true,
+        escalated: false,
+        classification: "confirm",
+        context: contextSlug || undefined,
+      });
+    }
+
+    if (confirmCase === false) {
+      return reply({
+        reply: CONFIRM_DECLINED_REPLY,
+        escalated: false,
+        classification: "declined",
+        context: contextSlug || undefined,
+      });
+    }
+
+    // "ok", "thanks", "bye" and "never mind" are answered against the last
+    // thing the assistant asked, not as if they were a fresh problem.
+    if (follow === "ok" || follow === "thanks" || follow === "bye" || follow === "never_mind") {
+      return reply({
+        reply: FOLLOW_UP_REPLIES[follow],
+        escalated: false,
+        classification: "follow_up",
         context: contextSlug || undefined,
       });
     }
@@ -831,7 +985,9 @@ serve(async (req: Request) => {
      * Scoped to the verified JWT subject — never to an email or order id the
      * browser sent — so one account cannot read another's order.
      */
-    const findLatestOrder = async (userId: string): Promise<string | null> => {
+    const findLatestOrder = async (
+      userId: string,
+    ): Promise<{ text: string; reference: string } | null> => {
       const { data, error } = await supabase
         .from("orders")
         .select("id, status, total_kobo, created_at, events(title, slug)")
@@ -851,7 +1007,10 @@ serve(async (req: Request) => {
       const reference = `TN-${order.id.slice(0, 8).toUpperCase()}`;
       const event = order.events?.title ? ` for ${order.events.title}` : "";
 
-      return `Your latest order${event} is ${reference} (${naira(order.total_kobo)}, ${order.status}). ${orderStatusGuidance(order.status)}`;
+      return {
+        reference,
+        text: `Your latest order${event} is ${reference} (${naira(order.total_kobo)}, ${order.status}). ${orderStatusGuidance(order.status)}`,
+      };
     };
 
     const withTickets = async (event: PublicEvent, includeTickets: boolean) => {
@@ -915,7 +1074,14 @@ serve(async (req: Request) => {
     let events: PublicEvent[] = [];
     let referencedEvent: PublicEvent | null = null;
 
-    if (EVENT_INTENTS.has(intent) || intent === "unknown") {
+    // Payment and fraud cases also resolve an event when one is named: their
+    // priority depends on whether that event starts within 48 hours.
+    const resolvesEvent = EVENT_INTENTS.has(intent) ||
+      intent === "unknown" ||
+      intent === "payment_issue" ||
+      intent === "fraud";
+
+    if (resolvesEvent) {
       events = searchTerm.length >= 2
         ? await findEvents(searchTerm, { includeEnded: intent === "cancelled" })
         : [];
@@ -927,8 +1093,47 @@ serve(async (req: Request) => {
       }
     }
 
+    /**
+     * A misspelled event name ("detty dicember", "burna boi") matched nothing
+     * above. pg_trgm answers it in SQL when the extension is installed; the
+     * in-code edit distance over upcoming titles is the fallback, so this keeps
+     * working on a database where the migration has not run.
+     */
+    let didYouMean = false;
+    if (
+      !referencedEvent &&
+      events.length === 0 &&
+      searchTerm.length >= 3 &&
+      (EVENT_INTENTS.has(intent) || intent === "unknown")
+    ) {
+      const { data: similar, error: similarError } = await (supabase.rpc as any)(
+        "search_events_by_title",
+        { p_term: searchTerm, p_limit: 3 },
+      );
+      if (similarError) {
+        // Missing function (migration not applied) is expected and quiet; any
+        // other failure is still not worth failing the customer's answer over.
+        if (!/function|does not exist|schema cache/i.test(similarError.message ?? "")) {
+          console.error("support-bot: similar event lookup failed", similarError);
+        }
+      }
+
+      let guess: PublicEvent | null = ((similar ?? []) as PublicEvent[])[0] ?? null;
+      if (!guess) {
+        const upcoming = await findUpcoming(20);
+        const nearest = closestEventTitle(searchTerm, upcoming.map((event) => event.title));
+        guess = nearest ? upcoming.find((event) => event.title === nearest.title) ?? null : null;
+      }
+
+      if (guess) {
+        referencedEvent = guess;
+        events = [guess];
+        didYouMean = true;
+      }
+    }
+
     // ---- 2. Events we found ----
-    if (events.length > 1) {
+    if (events.length > 1 && (EVENT_INTENTS.has(intent) || intent === "unknown")) {
       const header = `I found ${events.length} events that match. Which one do you mean?`;
       return reply({
         reply: `${header}\n\n${events.map(describeEvent).join("\n\n")}`,
@@ -942,7 +1147,9 @@ serve(async (req: Request) => {
     if (intent === "price" || intent === "availability") {
       if (referencedEvent) {
         return reply({
-          reply: await withTickets(referencedEvent, true),
+          reply: `${didYouMean ? `Did you mean ${referencedEvent.title}?\n\n` : ""}${
+            await withTickets(referencedEvent, true)
+          }`,
           cards: [toCard(referencedEvent)],
           escalated: false,
           context: referencedEvent.slug,
@@ -971,7 +1178,9 @@ serve(async (req: Request) => {
     // ---- 4. Date, venue, cancellation ----
     if (referencedEvent && ["schedule", "venue"].includes(intent)) {
       return reply({
-        reply: await withTickets(referencedEvent, false),
+        reply: `${didYouMean ? `Did you mean ${referencedEvent.title}?\n\n` : ""}${
+          await withTickets(referencedEvent, false)
+        }`,
         cards: [toCard(referencedEvent)],
         escalated: false,
         context: referencedEvent.slug,
@@ -1070,8 +1279,9 @@ serve(async (req: Request) => {
       const known = userId ? await findLatestOrder(userId) : null;
       return reply({
         reply:
-          (known ? `${known}\n\n` : "") +
+          (known ? `${known.text}\n\n` : "") +
           "Open /my-tickets and enter the email you bought with plus the purchase date to resend only that day's ticket links. Signed-in buyers can also open /tickets. Still nothing? Say \"talk to a person\" and I'll pass it on.",
+        orderReference: known?.reference,
         escalated: false,
         context: contextSlug || undefined,
       });
@@ -1112,9 +1322,17 @@ serve(async (req: Request) => {
 
     const runEscalation = async (lead: string, successText?: string) => {
       const caller = await getCaller();
+      // The event the customer was just looking at counts as the referenced one
+      // even when their message did not name it again.
+      const escalationEvent = referencedEvent ??
+        (contextSlug ? await findEventBySlug(contextSlug) : null);
       const outcome = await maybeEscalate({
         supabase, message, intent, sessionId, ip, caller, guestEmail,
-        lastEvent: referencedEvent?.slug ?? (contextSlug || null),
+        lastEvent: escalationEvent?.slug ?? (contextSlug || null),
+        lastOrder,
+        // A money or fraud case is urgent only when the event it concerns is
+        // close enough that a slow reply would cost the customer the show.
+        urgent: isStartingSoon(escalationEvent?.start_datetime),
       });
 
       if (outcome.status === "needs_email") {
@@ -1130,15 +1348,16 @@ serve(async (req: Request) => {
         // wording said "they have it, there's no need to send it again", which
         // was untrue for a second, different problem — so the customer stopped
         // chasing something nobody had ever seen.
+        //
+        // A case number is only repeated to a signed-in customer who owns it. A
+        // guest who types someone else's address could otherwise be handed that
+        // person's case reference.
         const openCase = await findOpenCase();
         return reply({
-          reply:
-            (openCase
-              ? `Your case ${openCase} is already with the support team, so someone is on it. I can't open a second case just yet — that keeps the queue moving.\n\n`
-              : "I've already passed a message from you to the support team recently, so someone is looking into it. I can't open a second case just yet.\n\n") +
-            "If this is a different problem, try again in about an hour, or email " +
-            PUBLIC_SUPPORT_ADDRESS +
-            " and they'll pick it up straight away.",
+          reply: cappedEscalationReplyFor({
+            caseNumber: openCase,
+            signedIn: Boolean(caller.userId),
+          }),
           escalated: false,
           context: contextSlug || undefined,
         });
@@ -1153,23 +1372,18 @@ serve(async (req: Request) => {
 
       const confirmation =
         successText ??
-        "I've passed this to the support team and they'll follow up by email. For anything urgent you can also reach them at " +
-          PUBLIC_SUPPORT_ADDRESS +
-          ".";
+        "I've passed this to the support team and they'll follow up by email.";
 
-      // No receipt is sent to an address we cannot tie to this platform, so the
-      // reply says so instead of promising an email that will never arrive.
-      const unverifiedNote = outcome.notifiedCustomer
-        ? ""
-        : `\n\nI couldn't send a receipt to ${caller.email ?? guestEmail} because it isn't linked to an order here. Keep this case number and email us from that address so the team can verify it.`;
-
-      // The case number was fetched and discarded before, so the customer had no
-      // reference. Returning later meant starting from zero with nothing to
-      // connect the two conversations.
+      // The wording is identical whether or not the typed address belongs to a
+      // customer. Saying "I couldn't send a receipt because it isn't linked to an
+      // order" let anyone test whether an email had ever bought a ticket here.
+      // contactVerified is still recorded on the case for staff.
       return reply({
-        reply: (outcome.caseNumber
-          ? `${confirmation}\n\nYour case number is ${outcome.caseNumber}. Keep it — quoting it gets you a faster answer.`
-          : confirmation) + unverifiedNote,
+        reply: escalationReplyFor({
+          caseNumber: outcome.caseNumber,
+          lead: confirmation,
+          contactVerified: outcome.contactVerified,
+        }),
         escalated: true,
         caseNumber: outcome.caseNumber ?? undefined,
         context: contextSlug || undefined,
@@ -1197,7 +1411,7 @@ serve(async (req: Request) => {
       const known = userId ? await findLatestOrder(userId) : null;
       return runEscalation(
         "I'm sorry about that — a payment that looks failed can still have left your account, so this needs a person to check it.",
-        [known, PAYMENT_ISSUE_GUIDANCE]
+        [known?.text, PAYMENT_ISSUE_GUIDANCE]
           .filter(Boolean)
           .join("\n\n") +
           `\n\nI've passed this to the support team with your message. For anything urgent you can also email ${PUBLIC_SUPPORT_ADDRESS}.`,
@@ -1267,6 +1481,7 @@ interface EscalationOutcome {
   caseNumber: string | null;
   /** False when the customer's address is unverified and no receipt was sent. */
   notifiedCustomer: boolean;
+  contactVerified: boolean;
 }
 
 async function maybeEscalate(params: {
@@ -1278,17 +1493,36 @@ async function maybeEscalate(params: {
   caller: Caller;
   guestEmail: string | null;
   lastEvent: string | null;
+  lastOrder: string | null;
+  urgent: boolean;
 }): Promise<EscalationOutcome> {
   const { supabase, ip, caller, guestEmail } = params;
   const contactEmail = caller.email ?? guestEmail;
 
   // Guests must leave an address before a case is opened.
-  if (!contactEmail) return { status: "needs_email", caseNumber: null, notifiedCustomer: false };
+  if (!contactEmail) {
+    return { status: "needs_email", caseNumber: null, notifiedCustomer: false, contactVerified: false };
+  }
+
+  // A signed-in customer is counted by user id, not by IP: shared carrier NAT
+  // puts many unrelated customers behind one address, so an IP cap punished
+  // neighbours for each other's cases. The IP cap stays for guests.
+  const escalationEndpoint = caller.userId
+    ? "support_bot_escalation_user"
+    : "support_bot_escalation";
+  const escalationIdentity = caller.userId ? `user:${caller.userId}` : ip;
 
   const ipCap = await consumeLimit(
-    supabase, ip, "support_bot_escalation", ESCALATION_WINDOW_MS, IP_MAX_ESCALATIONS, true,
+    supabase,
+    escalationIdentity,
+    escalationEndpoint,
+    ESCALATION_WINDOW_MS,
+    IP_MAX_ESCALATIONS,
+    true,
   );
-  if (!ipCap.allowed) return { status: "capped", caseNumber: null, notifiedCustomer: false };
+  if (!ipCap.allowed) {
+    return { status: "capped", caseNumber: null, notifiedCustomer: false, contactVerified: false };
+  }
 
   /**
    * Per-address escalation cap.
@@ -1312,7 +1546,9 @@ async function maybeEscalate(params: {
     EMAIL_MAX_ESCALATIONS,
     true,
   );
-  if (!emailCap.allowed) return { status: "capped", caseNumber: null, notifiedCustomer: false };
+  if (!emailCap.allowed) {
+    return { status: "capped", caseNumber: null, notifiedCustomer: false, contactVerified: false };
+  }
 
   const result = await escalate(supabase, params);
   return result.ok
@@ -1320,6 +1556,7 @@ async function maybeEscalate(params: {
       status: "escalated",
       caseNumber: result.caseNumber,
       notifiedCustomer: result.notifiedCustomer,
+      contactVerified: result.contactVerified,
     }
-    : { status: "failed", caseNumber: null, notifiedCustomer: false };
+    : { status: "failed", caseNumber: null, notifiedCustomer: false, contactVerified: false };
 }

@@ -28,6 +28,8 @@ export type SupportCaseView = {
     customer_id: string | null;
     customer_email: string | null;
     customer_name: string | null;
+    /** False means the contact address was typed in chat and is not proven. */
+    contact_verified: boolean;
     order_id: string | null;
     subject: string;
     category: SupportCaseCategory;

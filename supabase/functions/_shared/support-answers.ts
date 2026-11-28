@@ -108,6 +108,71 @@ export const STATIC_ANSWERS: Partial<Record<Intent, string>> = {
 };
 
 /**
+ * Copy for the classifier's two non-case outcomes.
+ *
+ * PLAYFUL gets one friendly line that steers back to the assistant's actual
+ * job, and never opens a case or spends an escalation slot. CONFIRM asks a
+ * single question and hands the decision to the customer with two buttons.
+ */
+export const PLAYFUL_REPLY =
+  "Ha — noted. I'm best at events, tickets, orders and payments, so tell me what you need and I'll dig in.";
+
+export const ABUSIVE_REPLY =
+  "I'll leave that one. Tell me what went wrong with an event, ticket or payment and I'll get it to a person.";
+
+export const CONFIRM_QUESTION =
+  "That sounds frustrating, and I don't want to guess at it. Do you want me to open a support case so a person looks into it?";
+
+export const CONFIRM_DECLINED_REPLY =
+  "No problem — no case opened. Ask me anything about events, tickets, orders or payments.";
+
+/** Short replies are answered against the last thing the assistant asked. */
+export const FOLLOW_UP_REPLIES: Record<"ok" | "thanks" | "bye" | "never_mind", string> = {
+  ok: "Got it. Anything else about an event, ticket or order?",
+  thanks: "You're welcome. If anything else comes up, I'm here.",
+  bye: "Bye for now — take care.",
+  never_mind: "No problem, I've left it. Ask me anything else whenever you're ready.",
+};
+
+/**
+ * The sentence that follows every successful escalation.
+ *
+ * contactVerified is accepted and deliberately ignored: the wording must not
+ * change depending on whether the typed address has ever bought a ticket here.
+ * The old version said "I couldn't send a receipt ... because it isn't linked to
+ * an order", which let anyone test whether an address had ever transacted.
+ */
+export function escalationReplyFor(params: {
+  caseNumber: string | null;
+  lead?: string;
+  contactVerified?: boolean;
+}): string {
+  const lead = params.lead ??
+    "I've passed this to the support team and they'll follow up by email.";
+  const reference = params.caseNumber
+    ? `\n\nYour case number is ${params.caseNumber}. Keep it — quoting it gets you a faster answer.`
+    : "";
+  return `${lead}${reference}\n\nIf a receipt hasn't reached your inbox within a few minutes, keep this case number and email ${PUBLIC_SUPPORT_ADDRESS}.`;
+}
+
+/**
+ * Reply when the hourly case cap is hit.
+ *
+ * A case number is only repeated to a signed-in customer who owns it. A guest
+ * who typed someone else's address must not be handed that person's reference,
+ * so the guest wording never contains one.
+ */
+export function cappedEscalationReplyFor(params: {
+  caseNumber: string | null;
+  signedIn: boolean;
+}): string {
+  const lead = params.signedIn && params.caseNumber
+    ? `Your case ${params.caseNumber} is already with the support team, so someone is on it. I can't open a second case just yet — that keeps the queue moving.`
+    : "I've already passed a message from you to the support team recently, so someone is looking into it. I can't open a second case just yet.";
+  return `${lead}\n\nIf this is a different problem, try again in about an hour, or email ${PUBLIC_SUPPORT_ADDRESS} and they'll pick it up straight away.`;
+}
+
+/**
  * Intents whose answer must come from live data or a person. Listed explicitly
  * so a future static answer cannot silently shadow the live one.
  */

@@ -1250,6 +1250,30 @@ export type Database = {
         }
         Relationships: []
       }
+      support_bot_feedback: {
+        Row: {
+          created_at: string
+          helpful: boolean
+          id: string
+          matched_intent: string | null
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          helpful: boolean
+          id?: string
+          matched_intent?: string | null
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          helpful?: boolean
+          id?: string
+          matched_intent?: string | null
+          session_id?: string
+        }
+        Relationships: []
+      }
       support_bot_queries: {
         Row: {
           created_at: string
@@ -1317,6 +1341,7 @@ export type Database = {
           assigned_to: string | null
           case_number: string
           category: Database["public"]["Enums"]["support_case_category"]
+          contact_verified: boolean
           created_at: string
           csat_comment: string | null
           csat_rating: number | null
@@ -1343,6 +1368,7 @@ export type Database = {
           assigned_to?: string | null
           case_number?: string
           category?: Database["public"]["Enums"]["support_case_category"]
+          contact_verified?: boolean
           created_at?: string
           csat_comment?: string | null
           csat_rating?: number | null
@@ -1369,6 +1395,7 @@ export type Database = {
           assigned_to?: string | null
           case_number?: string
           category?: Database["public"]["Enums"]["support_case_category"]
+          contact_verified?: boolean
           created_at?: string
           csat_comment?: string | null
           csat_rating?: number | null
@@ -2099,6 +2126,21 @@ export type Database = {
           p_template?: string
         }
         Returns: string
+      }
+      search_events_by_title: {
+        Args: { p_term: string; p_limit?: number }
+        Returns: {
+          id: string
+          title: string
+          slug: string
+          start_datetime: string | null
+          end_datetime: string | null
+          venue_name: string | null
+          city: string | null
+          status: string
+          postponed_at: string | null
+          organizer_note: string | null
+        }[]
       }
       support_resend_ticket_email: {
         Args: { p_order_id: string; p_request_id?: string }

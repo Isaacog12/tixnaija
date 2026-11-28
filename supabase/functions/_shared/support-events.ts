@@ -59,6 +59,25 @@ export function formatWhen(start: string | null, end: string | null): string {
     : `${datePart}, ${timePart} until ${EVENT_END_DATE_FORMAT.format(endDate)}, ${endTime}`;
 }
 
+/**
+ * True when an event starts inside the next `hours` hours.
+ *
+ * Used to raise a money or fraud case to urgent only when the customer's deadline
+ * is real: a payment problem two weeks before the show is not the same emergency
+ * as one an hour before doors open.
+ */
+export function isStartingSoon(
+  start: string | null | undefined,
+  hours = 48,
+  now: Date = new Date(),
+): boolean {
+  if (!start) return false;
+  const startMs = new Date(start).getTime();
+  if (Number.isNaN(startMs)) return false;
+  const delta = startMs - now.getTime();
+  return delta >= 0 && delta <= hours * 60 * 60 * 1000;
+}
+
 export function naira(kobo: number): string {
   if (!kobo || kobo <= 0) return "Free";
   return `NGN ${(kobo / 100).toLocaleString("en-NG")}`;

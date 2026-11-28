@@ -106,6 +106,33 @@ export function SupportOverviewTab({ onNavigateTab }: SupportOverviewTabProps) {
     refetchInterval: 30000,
   });
 
+  /**
+   * What customers typed when the assistant had no answer, already normalised
+   * and grouped by SQL. Deliberately a short list: it exists so a missing rule
+   * can be written from real wording, not to be a second analytics screen.
+   */
+  const { data: botGaps } = useQuery({
+    queryKey: ["support-bot-gap-messages"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("support_bot_gap_messages")
+        .select("normalised_message, matched_intent, seen, last_seen")
+        .order("seen", { ascending: false })
+        .limit(8);
+      if (error) {
+        console.warn("support_bot_gap_messages:", error.message);
+        return [];
+      }
+      return (data ?? []) as Array<{
+        normalised_message: string;
+        matched_intent: string;
+        seen: number;
+        last_seen: string;
+      }>;
+    },
+    refetchInterval: 60000,
+  });
+
   // Flag payment mutation
   const flagMutation = useMutation({
     mutationFn: async ({ paymentId, note }: { paymentId: string; note: string }) => {
@@ -267,6 +294,51 @@ export function SupportOverviewTab({ onNavigateTab }: SupportOverviewTabProps) {
           </span>
           <span className="ml-auto text-[11px] text-muted-foreground">Open cases</span>
         </button>
+      )}
+
+      {/* Assistant knowledge gaps */}
+      {botGaps && botGaps.length > 0 && (
+        <Card className="border-border/60 bg-card/50 backdrop-blur shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold">Assistant questions without an answer</CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Last 30 days, normalised and grouped. Add a phrase to an intent rule or an entry
+              to bot knowledge for the wording that keeps appearing here.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-xl border border-border/60 overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-secondary/30">
+                    <TableHead>Question</TableHead>
+                    <TableHead>Topic</TableHead>
+                    <TableHead>Seen</TableHead>
+                    <TableHead>Last seen</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {botGaps.map((gap) => (
+                    <TableRow key={`${gap.normalised_message}-${gap.matched_intent}`}>
+                      <TableCell className="text-xs text-foreground max-w-[380px] truncate">
+                        {gap.normalised_message || "(empty)"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-[10px]">
+                          {gap.matched_intent}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs font-semibold text-foreground">{gap.seen}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {new Date(gap.last_seen).toLocaleDateString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Unmatched Payments Reconciliation Queue */}

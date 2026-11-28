@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { MessageCircle, Send, X } from "lucide-react";
+import { MessageCircle, Send, ThumbsDown, ThumbsUp, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,8 @@ const TRANSCRIPT_KEY = "tixnaija-support-transcript";
 const CASE_KEY = "tixnaija-support-case";
 const CONTEXT_KEY = "tixnaija-support-context";
 const INTENT_KEY = "tixnaija-support-intent";
+const ORDER_KEY = "tixnaija-support-order";
+const PENDING_KEY = "tixnaija-support-pending";
 
 /**
  * Shown until the conversation has a subject. Most first messages are one of
@@ -48,6 +50,8 @@ interface ChatMessage {
   text: string;
   cards?: EventCard[];
   links?: ActionLink[];
+  /** The intent the server matched, so a rating can name the reply it scores. */
+  intent?: string;
   /** Kept out of storage. Used for the address a guest types to escalate. */
   ephemeral?: boolean;
 }
@@ -61,6 +65,9 @@ interface BotReply {
   cards?: EventCard[];
   links?: ActionLink[];
   caseNumber?: string;
+  /** The server only asks for a decision; "yes" opens the case. */
+  confirmPrompt?: boolean;
+  orderReference?: string;
 }
 
 function isSafeInternalHref(href: string): boolean {
@@ -176,6 +183,9 @@ export function SupportChat() {
   const [context, setContext] = useState<string>(() => readStoredText(CONTEXT_KEY));
   const [caseNumber, setCaseNumber] = useState<string | null>(() => readStoredCase());
   const [lastIntent, setLastIntent] = useState<string>(() => readStoredIntent());
+  const [orderRef, setOrderRef] = useState<string>(() => readStoredText(ORDER_KEY));
+  const [confirmPending, setConfirmPending] = useState<string>(() => readStoredText(PENDING_KEY));
+  const [ratings, setRatings] = useState<Record<number, "up" | "down">>({});
   const [copied, setCopied] = useState(false);
 
   const sessionIdRef = useRef<string>("");
@@ -230,6 +240,14 @@ export function SupportChat() {
   }, [context]);
 
   useEffect(() => {
+    storeText(ORDER_KEY, orderRef);
+  }, [orderRef]);
+
+  useEffect(() => {
+    storeText(PENDING_KEY, confirmPending);
+  }, [confirmPending]);
+
+  useEffect(() => {
     try {
       const storable = messages
         .filter((message) => !message.ephemeral)
@@ -241,7 +259,11 @@ export function SupportChat() {
     }
   }, [messages]);
 
-  async function ask(message: string, emailOverride?: string) {
+  async function ask(
+    message: string,
+    emailOverride?: string,
+    options: { confirmCase?: boolean } = {},
+  ) {
     setSending(true);
     setError(null);
     try {
@@ -253,6 +275,9 @@ export function SupportChat() {
           context: context || undefined,
           // Lets "and the venue?" keep its subject; the server validates it.
           previousIntent: lastIntent || undefined,
+          lastOrder: orderRef || undefined,
+          // Only sent when the customer pressed a confirmation button.
+          confirmCase: options.confirmCase,
         },
       });
 
@@ -285,6 +310,19 @@ export function SupportChat() {
         storeCase(payload.caseNumber);
       }
 
+      if (payload?.orderReference) {
+        setOrderRef(payload.orderReference);
+      }
+
+      // The server asks for a decision instead of opening a case on a vague
+      // complaint. The message it is about is kept so the buttons can send it
+      // back as a confirmed case, and so a typed "yes" works the same way.
+      if (payload?.confirmPrompt) {
+        setConfirmPending(message);
+      } else if (options.confirmCase !== undefined) {
+        setConfirmPending("");
+      }
+
       if (payload?.needsEmail) {
         setNeedsEmail(true);
         setPendingMessage(message);
@@ -294,7 +332,13 @@ export function SupportChat() {
       }
 
       if (payload?.reply) {
-        push({ role: "assistant", text: payload.reply, cards: payload.cards, links: payload.links });
+        push({
+          role: "assistant",
+          text: payload.reply,
+          cards: payload.cards,
+          links: payload.links,
+          intent: payload.intent,
+        });
       } else if (payload?.error) {
         setError(payload.error);
       } else {
@@ -312,8 +356,47 @@ export function SupportChat() {
   function send(text: string) {
     const value = text.trim();
     if (!value || sending) return;
+
+    // A typed "yes"/"no" answers the pending confirmation, so it is sent with
+    // the message the question was about instead of as a fresh one-word query.
+    if (confirmPending) {
+      const answer = value.toLowerCase().replace(/[^a-z ]/g, "").trim();
+      const yes = /^(?:yes|yeah|yep|yup|sure|ok|okay|alright|open it|open a case)$/.test(answer);
+      const no = /^(?:no|nope|nah|not now|leave it|never mind|nevermind)$/.test(answer);
+      if (yes || no) {
+        push({ role: "user", text: value });
+        void ask(confirmPending, undefined, { confirmCase: yes });
+        return;
+      }
+    }
+
     push({ role: "user", text: value });
     void ask(value);
+  }
+
+  function answerConfirmation(openCase: boolean) {
+    if (!confirmPending || sending) return;
+    push({ role: "user", text: openCase ? "Yes, open a support case" : "No, just a question" });
+    void ask(confirmPending, undefined, { confirmCase: openCase });
+  }
+
+  /**
+   * Reply rating. No message text is sent or stored: the intent is enough to
+   * tell which answers help, which is what the feedback table contains.
+   */
+  async function rateReply(index: number, intent: string | undefined, helpful: boolean) {
+    if (ratings[index]) return;
+    setRatings((prev) => ({ ...prev, [index]: helpful ? "up" : "down" }));
+    try {
+      await supabase.functions.invoke("support-bot", {
+        body: {
+          sessionId: sessionIdRef.current,
+          feedback: { helpful, intent: intent || "unknown" },
+        },
+      });
+    } catch {
+      // A rating that does not reach the server is not worth an error message.
+    }
   }
 
   function handleSend() {
@@ -452,7 +535,43 @@ export function SupportChat() {
                           </span>
                         )}
                       </Link>
-                    ))}
+                                            ))}
+                  </div>
+                )}
+
+                {/* Rating lives under the answer it describes, and sends only
+                    the intent and a boolean. No sparkle or AI decoration. */}
+                {message.role === "assistant" && index > 0 && message.text && (
+                  <div className="mt-2 flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => void rateReply(index, message.intent, true)}
+                      disabled={Boolean(ratings[index])}
+                      aria-label="This answer helped"
+                      className={`rounded-md p-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                        ratings[index] === "up"
+                          ? "text-emerald-600"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <ThumbsUp className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void rateReply(index, message.intent, false)}
+                      disabled={Boolean(ratings[index])}
+                      aria-label="This answer did not help"
+                      className={`rounded-md p-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                        ratings[index] === "down"
+                          ? "text-destructive"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <ThumbsDown className="h-3.5 w-3.5" />
+                    </button>
+                    {ratings[index] && (
+                      <span className="text-[10px] text-muted-foreground">Thanks</span>
+                    )}
                   </div>
                 )}
               </div>
@@ -505,7 +624,25 @@ export function SupportChat() {
           </div>
 
           <div className="shrink-0 border-t border-border px-3 py-3">
-            {messages.length <= 2 && !sending && (
+            {confirmPending && !sending && (
+              <div className="flex flex-wrap gap-1.5 pb-2">
+                <button
+                  type="button"
+                  onClick={() => answerConfirmation(true)}
+                  className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  Yes, open a support case
+                </button>
+                <button
+                  type="button"
+                  onClick={() => answerConfirmation(false)}
+                  className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  No, just a question
+                </button>
+              </div>
+            )}
+            {messages.length <= 2 && !sending && !confirmPending && (
               <div className="flex flex-wrap gap-1.5 pb-2">
                 {QUICK_REPLIES.map((suggestion) => (
                   <button
