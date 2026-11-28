@@ -70,14 +70,6 @@ async function fetchEvent(eventId: string) {
     .order("created_at", { ascending: false });
   if (e4) throw e4;
 
-  // Free tickets are logged apart from sales. The table is newer than most
-  // deployments, so a missing one must not break the rest of this page.
-  const { data: freeTicketLog } = await (supabase as any)
-    .from("free_tickets")
-    .select("id, recipient_name, recipient_email, created_at, ticket_id, ticket_types(name)")
-    .eq("event_id", eventId)
-    .order("created_at", { ascending: false });
-
   const { data: profile } = await supabase
     .from("profiles")
     .select("paystack_subaccount_code")
@@ -119,7 +111,6 @@ async function fetchEvent(eventId: string) {
     types: typesWithRevenue,
     promoCodes: promoCodes ?? [],
     waitlists: waitlists ?? [],
-    freeTickets: (freeTicketLog ?? []) as any[],
     hasPayoutAccount: !!profile?.paystack_subaccount_code,
   };
 }
@@ -515,7 +506,6 @@ function EditEventPage() {
       <FreeTicketsSection
         eventId={eventId}
         ticketTypes={data.types}
-        freeTickets={data.freeTickets}
         disabled={isAdminCancelled}
       />
 
@@ -1101,26 +1091,19 @@ function FreeTicketDialog({
 function FreeTicketsSection({
   eventId,
   ticketTypes,
-  freeTickets,
   disabled,
 }: {
   eventId: string;
   ticketTypes: any[];
-  freeTickets: any[];
   disabled?: boolean;
 }) {
   const qc = useQueryClient();
 
   return (
     <section className="mt-10 rounded-2xl border border-border bg-card/60 p-6">
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold">
-            Free tickets
-            <span className="ml-2 text-sm font-normal text-muted-foreground">
-              {freeTickets.length} issued
-            </span>
-          </h2>
+          <h2 className="text-lg font-semibold">Free tickets</h2>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
             Send a ticket to any email at no cost. Free tickets never count towards tickets sold,
             remaining stock or revenue.
@@ -1132,35 +1115,6 @@ function FreeTicketsSection({
             ticketTypes={ticketTypes}
             onIssued={() => qc.invalidateQueries({ queryKey: ["event", eventId] })}
           />
-        )}
-      </div>
-
-      <div className="space-y-2">
-        {freeTickets.map((f) => (
-          <div
-            key={f.id}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-background/50 p-3"
-          >
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{f.recipient_name || "Attendee"}</p>
-              <p className="truncate text-xs text-muted-foreground">{f.recipient_email}</p>
-            </div>
-            <div className="text-right text-xs text-muted-foreground">
-              <p>{f.ticket_types?.name || "General"}</p>
-              <p>
-                {new Date(f.created_at).toLocaleString("en-NG", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
-              </p>
-            </div>
-          </div>
-        ))}
-        {freeTickets.length === 0 && (
-          <p className="text-sm text-muted-foreground">No free tickets sent yet.</p>
         )}
       </div>
     </section>
