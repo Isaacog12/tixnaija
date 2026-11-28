@@ -617,6 +617,9 @@ function containsPhrase(text: string, phrase: string): boolean {
   return new RegExp(`\\b${needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(text);
 }
 
+/** Endings that make a word a different form of another word, not a typo. */
+const INFLECTION_ENDINGS = ["s", "es", "d", "ed", "ing"];
+
 function isAdjacentSwap(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   const diffs: number[] = [];
@@ -628,10 +631,22 @@ function isAdjacentSwap(a: string, b: string): boolean {
   return j === i + 1 && a[i] === b[j] && a[j] === b[i];
 }
 
+/**
+ * True when one word is just the other with a plural or verb ending stuck on.
+ * Those are different words, not typos: "no ticket" must not match the
+ * "no tickets" in "No tickets available", which is an availability question.
+ */
+function isInflection(a: string, b: string): boolean {
+  const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
+  if (shorter.length === 0 || !longer.startsWith(shorter)) return false;
+  return INFLECTION_ENDINGS.includes(longer.slice(shorter.length));
+}
+
 function fuzzyWord(word: string, candidate: string): boolean {
   if (word === candidate) return true;
   if (word.length < 5 || candidate.length < 5) return false;
   if (Math.abs(word.length - candidate.length) > 1) return false;
+  if (isInflection(word, candidate)) return false;
   return editDistance(word, candidate) <= 1 || isAdjacentSwap(word, candidate);
 }
 

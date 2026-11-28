@@ -70,6 +70,14 @@ async function fetchEvent(eventId: string) {
     .order("created_at", { ascending: false });
   if (e4) throw e4;
 
+  // Free tickets are logged apart from sales. The table is newer than most
+  // deployments, so a missing one must not break the rest of this page.
+  const { data: freeTicketLog } = await (supabase as any)
+    .from("free_tickets")
+    .select("id, recipient_name, recipient_email, created_at, ticket_id, ticket_types(name)")
+    .eq("event_id", eventId)
+    .order("created_at", { ascending: false });
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("paystack_subaccount_code")
@@ -111,6 +119,7 @@ async function fetchEvent(eventId: string) {
     types: typesWithRevenue,
     promoCodes: promoCodes ?? [],
     waitlists: waitlists ?? [],
+    freeTickets: (freeTicketLog ?? []) as any[],
     hasPayoutAccount: !!profile?.paystack_subaccount_code,
   };
 }
@@ -501,6 +510,14 @@ function EditEventPage() {
           )}
         </div>
       </section>
+
+      {/* Free tickets */}
+      <FreeTicketsSection
+        eventId={eventId}
+        ticketTypes={data.types}
+        freeTickets={data.freeTickets}
+        disabled={isAdminCancelled}
+      />
 
       {/* Promo Codes */}
       <PromoCodesSection
@@ -963,6 +980,190 @@ function CompTicketsDialog({ eventId, ticketTypes }: { eventId: string; ticketTy
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function FreeTicketDialog({
+  eventId,
+  ticketTypes,
+  onIssued,
+}: {
+  eventId: string;
+  ticketTypes: any[];
+  onIssued: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [ticketTypeId, setTicketTypeId] = useState("");
+  const [recipientName, setRecipientName] = useState("");
+  const [recipientEmail, setRecipientEmail] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!ticketTypeId) return toast.error("Select a ticket tier");
+    const email = recipientEmail.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return toast.error("Enter a valid email address");
+
+    setBusy(true);
+    const { data, error } = await (supabase.rpc as any)("issue_free_tickets", {
+      p_event_id: eventId,
+      p_ticket_type_id: ticketTypeId,
+      p_recipients: [{ name: recipientName.trim(), email }],
+    });
+
+    if (error) {
+      setBusy(false);
+      return toast.error(error.message);
+    }
+
+    const orderId = Array.isArray(data) ? data[0] : null;
+    let emailFailed = false;
+    if (orderId) {
+      const { error: invokeError } = await supabase.functions.invoke("send-ticket-confirmation", {
+        body: { orderId },
+      });
+      emailFailed = !!invokeError;
+      if (invokeError) console.error("Failed to email the free ticket:", invokeError);
+    }
+
+    setBusy(false);
+    setOpen(false);
+    setTicketTypeId("");
+    setRecipientName("");
+    setRecipientEmail("");
+    onIssued();
+
+    if (emailFailed) {
+      toast.error("Free ticket issued, but the email could not be sent.");
+    } else {
+      toast.success(`Free ticket sent to ${email}`);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline">Send free ticket</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Send a free ticket</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground">
+          This ticket is emailed to the address below and scans like any other. It is not counted
+          in tickets sold, remaining stock or revenue.
+        </p>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Field label="Ticket Tier">
+            <Select value={ticketTypeId} onValueChange={setTicketTypeId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select ticket tier" />
+              </SelectTrigger>
+              <SelectContent>
+                {ticketTypes.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Recipient Name">
+            <Input
+              value={recipientName}
+              onChange={(e) => setRecipientName(e.target.value)}
+              placeholder="Chinedu Okafor"
+            />
+          </Field>
+          <Field label="Recipient Email">
+            <Input
+              type="email"
+              required
+              value={recipientEmail}
+              onChange={(e) => setRecipientEmail(e.target.value)}
+              placeholder="chinedu@company.com"
+            />
+          </Field>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={busy}>
+              {busy ? "Sending..." : "Send ticket"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function FreeTicketsSection({
+  eventId,
+  ticketTypes,
+  freeTickets,
+  disabled,
+}: {
+  eventId: string;
+  ticketTypes: any[];
+  freeTickets: any[];
+  disabled?: boolean;
+}) {
+  const qc = useQueryClient();
+
+  return (
+    <section className="mt-10 rounded-2xl border border-border bg-card/60 p-6">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-semibold">
+            Free tickets
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
+              {freeTickets.length} issued
+            </span>
+          </h2>
+          <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+            Send a ticket to any email at no cost. Free tickets never count towards tickets sold,
+            remaining stock or revenue.
+          </p>
+        </div>
+        {!disabled && (
+          <FreeTicketDialog
+            eventId={eventId}
+            ticketTypes={ticketTypes}
+            onIssued={() => qc.invalidateQueries({ queryKey: ["event", eventId] })}
+          />
+        )}
+      </div>
+
+      <div className="space-y-2">
+        {freeTickets.map((f) => (
+          <div
+            key={f.id}
+            className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-background/50 p-3"
+          >
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">{f.recipient_name || "Attendee"}</p>
+              <p className="truncate text-xs text-muted-foreground">{f.recipient_email}</p>
+            </div>
+            <div className="text-right text-xs text-muted-foreground">
+              <p>{f.ticket_types?.name || "General"}</p>
+              <p>
+                {new Date(f.created_at).toLocaleString("en-NG", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+              </p>
+            </div>
+          </div>
+        ))}
+        {freeTickets.length === 0 && (
+          <p className="text-sm text-muted-foreground">No free tickets sent yet.</p>
+        )}
+      </div>
+    </section>
   );
 }
 
